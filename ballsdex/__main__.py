@@ -201,6 +201,7 @@ _app = init_fastapi_app()
 async def start_fastapi(loop: asyncio.BaseEventLoop):
     config = uvicorn.Config(
         "ballsdex.__main__:_app",
+        host="0.0.0.0",
         port=8000,
         log_level="info",
         debug=True,
