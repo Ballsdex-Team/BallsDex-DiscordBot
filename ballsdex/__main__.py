@@ -12,6 +12,7 @@ import aioredis
 
 from rich import print
 from tortoise import Tortoise
+from signal import SIGTERM
 
 from fastapi import FastAPI
 from fastapi_admin.app import app as admin_app
@@ -71,6 +72,7 @@ def print_welcome():
 async def shutdown_handler(bot: BallsDexBot, signal_type: str = None):
     if signal_type:
         log.info(f"Received {signal_type}, stopping the bot...")
+        sys.exit(signal_type)
     else:
         log.info("Shutting down the bot...")
     try:
@@ -256,6 +258,9 @@ def main():
 
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
+        loop.add_signal_handler(
+            SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))
+        )
 
         log.info("Initialized bot, connecting to Discord...")
         future = loop.create_task(bot.start(token))
