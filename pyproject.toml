@@ -1,0 +1,15 @@
+[build-system]
+    requires = [
+        "setuptools>=42",
+        "wheel"
+    ]
+    build-backend = "setuptools.build_meta"
+
+[tool.black]
+    line-length = 99
+    target-version = ['py38']
+    include = '\.py$'
+
+[tool.flake8]
+    ignore = "W503,E203"
+    max-line-length = 99
