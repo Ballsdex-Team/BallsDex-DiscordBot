@@ -8,6 +8,7 @@ __pycache__
 # Python binaries
 *.egg-info
 dist
+build
 
 # log files
 *.log*
@@ -16,6 +17,7 @@ dist
 venv
 .venv
 .python-version
+.env
 
 # Visual Studio code settings
 .vscode
