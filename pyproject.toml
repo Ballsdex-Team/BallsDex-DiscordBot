@@ -1,9 +1,39 @@
+[tool.poetry]
+name = "ballsdex"
+version = "1.0.0a1"
+description = ""
+authors = ["laggron42 <laggron42@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+# asyncio
+uvloop = "^0.16.0"
+
+# discord
+"discord.py" = "^2.0.1"
+discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus", rev = "8686b5d1bbc1d3c862292eb436ab630d6e9c9b53"}
+
+# fastapi
+fastapi = "^0.82.0"
+fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "5f34bf0d7356afa4c6034a7ab3942ea843d3b8ce"}
+uvicorn = "^0.18.3"
+
+# database ORM
+tortoise-orm = {extras = ["asyncpg"], version = "^0.19.2"}
+aioredis = "^2.0.1"
+
+# misc
+rich = "^12.5.1"
+python-dateutil = "^2.8.2"
+Pillow = "^9.2.0"
+
+[tool.poetry.dev-dependencies]
+
 [build-system]
-    requires = [
-        "setuptools>=42",
-        "wheel"
-    ]
-    build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.black]
     line-length = 99
