@@ -50,6 +50,7 @@ def parse_cli_flags(arguments: str) -> argparse.ArgumentParser:
     parser.add_argument("--version", "-V", action="store_true", help="Display the bot's version")
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--token", action="store", type=str, help="Bot's token")
+    parser.add_argument("--db-url", action="store", type=str, help="DB URL")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
     args = parser.parse_args(arguments)
     return args
@@ -124,12 +125,14 @@ def bot_exception_handler(bot: BallsDexBot, bot_task: asyncio.Future):
         asyncio.create_task(shutdown_handler(bot))
 
 
-async def init_tortoise():
+async def init_tortoise(db_url: str):
+    log.debug(f"Database URL: {db_url}")
     await Tortoise.init(
-        db_url="sqlite://db.sqlite3",
+        db_url=db_url,
         modules={
             "core": ["ballsdex.core.models"],
         },
+        _create_db=True,
     )
     await Tortoise.generate_schemas()
 
@@ -251,7 +254,17 @@ def main():
             time.sleep(1)
             sys.exit(0)
 
-        loop.run_until_complete(init_tortoise())
+        db_url = cli_flags.db_url or os.environ.get("BALLSDEXBOT_DB_URL", None)
+        if not db_url:
+            log.error("Database URL not found!")
+            print(
+                "[yellow]You must provide a DB URL with the --db-url flag "
+                "or the BALLSDEXBOT_DB_URL env var.[/yellow]"
+            )
+            time.sleep(1)
+            sys.exit(0)
+
+        loop.run_until_complete(init_tortoise(db_url))
         log.debug("Tortoise ORM and database ready.")
 
         bot = BallsDexBot(command_prefix="!?", dev=cli_flags.dev)
