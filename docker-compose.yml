@@ -12,6 +12,8 @@ services:
     depends_on:
       - db
       - redis-cache
+    volumes:
+      - bot-static:/code/static/uploads
 
   db:
     image: postgres
@@ -39,5 +41,6 @@ services:
       - cache-data:/data
 
 volumes:
+  bot-static:
   database-data:
   cache-data:
