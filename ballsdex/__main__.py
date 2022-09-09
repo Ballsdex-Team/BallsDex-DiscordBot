@@ -12,6 +12,7 @@ import aioredis
 
 from rich import print
 from tortoise import Tortoise
+from aerich import Command
 from signal import SIGTERM
 
 from fastapi import FastAPI
@@ -42,6 +43,16 @@ from ballsdex.core.admin.resources import User
 BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(__file__, os.path.pardir)))
 log = logging.getLogger("ballsdex")
 
+TORTOISE_ORM = {
+    "connections": {"default": os.environ.get("BALLSDEXBOT_DB_URL")},
+    "apps": {
+        "models": {
+            "models": ["ballsdex.core.models", "aerich.models"],
+            "default_connection": "default",
+        },
+    },
+}
+
 
 def parse_cli_flags(arguments: str) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -50,8 +61,6 @@ def parse_cli_flags(arguments: str) -> argparse.ArgumentParser:
     parser.add_argument("--version", "-V", action="store_true", help="Display the bot's version")
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--token", action="store", type=str, help="Bot's token")
-    parser.add_argument("--db-url", action="store", type=str, help="DB URL")
-    parser.add_argument("--redis-url", action="store", type=str, help="Redis server URL")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
     args = parser.parse_args(arguments)
     return args
@@ -128,13 +137,14 @@ def bot_exception_handler(bot: BallsDexBot, bot_task: asyncio.Future):
 
 async def init_tortoise(db_url: str):
     log.debug(f"Database URL: {db_url}")
-    await Tortoise.init(
-        db_url=db_url,
-        modules={
-            "core": ["ballsdex.core.models"],
-        },
-    )
-    await Tortoise.generate_schemas()
+    await Tortoise.init(config=TORTOISE_ORM)
+
+    # migrations
+    command = Command(TORTOISE_ORM, app="models")
+    await command.init()
+    migrations = await command.upgrade()
+    if migrations:
+        log.info(f"Ran {len(migrations)} migrations: {', '.join(migrations)}")
 
 
 def init_fastapi_app() -> FastAPI:
@@ -237,7 +247,6 @@ def main():
     if cli_flags.version:
         print(f"BallsDex Discord bot - {bot_version}")
         sys.exit(0)
-    os.environ.setdefault("BALLSDEXBOT_REDIS_URL", cli_flags.redis_url)
 
     print_welcome()
 
@@ -247,22 +256,27 @@ def main():
 
         init_logger(cli_flags.debug)
 
-        token = cli_flags.token or os.environ.get("BALLSDEXBOT_TOKEN", None)
+        token = os.environ.get("BALLSDEXBOT_TOKEN", None)
         if not token:
             log.error("Token not found!")
+            print("[yellow]You must provide a token with the BALLSDEXBOT_TOKEN env var.[/yellow]")
+            time.sleep(1)
+            sys.exit(0)
+
+        db_url = os.environ.get("BALLSDEXBOT_DB_URL", None)
+        if not db_url:
+            log.error("Database URL not found!")
             print(
-                "[yellow]You must provide a token with the --token flag "
-                "or the BALLSDEXBOT_TOKEN env var.[/yellow]"
+                "[yellow]You must provide a DB URL with the BALLSDEXBOT_DB_URL env var.[/yellow]"
             )
             time.sleep(1)
             sys.exit(0)
 
-        db_url = cli_flags.db_url or os.environ.get("BALLSDEXBOT_DB_URL", None)
-        if not db_url:
-            log.error("Database URL not found!")
+        if not os.environ.get("BALLSDEXBOT_REDIS_URL", None):
+            log.error("Redis URL not found!")
             print(
-                "[yellow]You must provide a DB URL with the --db-url flag "
-                "or the BALLSDEXBOT_DB_URL env var.[/yellow]"
+                "[yellow]You must provide a Redis URL with "
+                "the BALLSDEXBOT_REDIS_URL env var.[/yellow]"
             )
             time.sleep(1)
             sys.exit(0)

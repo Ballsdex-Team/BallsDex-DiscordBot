@@ -83,9 +83,9 @@ class Ball(models.Model):
 
 
 class BallInstance(models.Model):
-    ball: fields.ForeignKeyRelation[Ball] = fields.ForeignKeyField("core.Ball")
+    ball: fields.ForeignKeyRelation[Ball] = fields.ForeignKeyField("models.Ball")
     player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyRelation(
-        "core.Player", related_name="balls"
+        "models.Player", related_name="balls"
     )  # type: ignore
     count = fields.IntField()
     catch_date = fields.DatetimeField(auto_now_add=True)
@@ -93,7 +93,7 @@ class BallInstance(models.Model):
     health_bonus = fields.IntField(default=0)
     attack_bonus = fields.IntField(default=0)
     trade_player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
-        "core.Player", blank=True, default=None
+        "models.Player", blank=True, default=None
     )
 
     def __str__(self) -> str:

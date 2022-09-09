@@ -28,8 +28,15 @@ aioredis = "^2.0.1"
 rich = "^12.5.1"
 python-dateutil = "^2.8.2"
 Pillow = "^9.2.0"
+aerich = "^0.6.3"
 
 [tool.poetry.dev-dependencies]
+
+
+[tool.aerich]
+tortoise_orm = "ballsdex.__main__.TORTOISE_ORM"
+location = "./migrations"
+src_folder = "./ballsdex"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
