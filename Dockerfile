@@ -17,7 +17,7 @@ COPY poetry.lock pyproject.toml /code/
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
 COPY . /code
-RUN mkdir /code/static
+RUN mkdir -p /code/static
 
 # wait for postgres to be ready
 CMD sleep 5 && poetry run python3 -m ballsdex --dev
