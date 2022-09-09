@@ -99,6 +99,7 @@ class BallResource(Model):
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
+        "credits",
         Field(
             name="capacity_name",
             label="Capacity name",
