@@ -17,7 +17,12 @@ class CountryBall:
 
     @classmethod
     async def get_random(cls):
-        pk = random.randint(1, await Ball.all().count())
+        partial_countryballs = await Ball.all().only("id", "rarity")
+        if not partial_countryballs:
+            raise RuntimeError("No ball to spawn")
+        pks = [x.pk for x in partial_countryballs]
+        rarities = [x.rarity for x in partial_countryballs]
+        pk = random.choices(population=pks, weights=rarities, k=1)[0]
         return cls(await Ball.get(pk=pk))
 
     async def spawn(self, channel: discord.abc.Messageable):
