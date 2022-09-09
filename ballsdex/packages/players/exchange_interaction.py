@@ -79,9 +79,11 @@ class ExchangeConfirmationView(discord.ui.View):
         async with in_transaction():
             if self.player1.ball:
                 self.player1.ball.player = self.player2.player
+                self.player1.ball.trade_player = self.player1.player
                 await self.player1.ball.save()
             if self.player2.ball:
                 self.player2.ball.player = self.player1.player
+                self.player2.ball.trade_player = self.player2.player
                 await self.player2.ball.save()
         self.accept_button.disabled = True
         self.deny_button.disabled = True
