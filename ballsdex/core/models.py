@@ -67,6 +67,7 @@ class Ball(models.Model):
     collection_card = fields.CharField(
         max_length=200, description="Image used when displaying balls"
     )
+    credits = fields.CharField(max_length=64, description="Author of the collection artwork")
     capacity_name = fields.CharField(
         max_length=64, description="Name of the countryball's capacity"
     )
@@ -91,6 +92,9 @@ class BallInstance(models.Model):
     special = fields.IntField(description="Defines rare instances, like a shiny", default=0)
     health_bonus = fields.IntField(default=0)
     attack_bonus = fields.IntField(default=0)
+    trade_player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "core.Player", blank=True, default=None
+    )
 
     def __str__(self) -> str:
         return f"{self.ball.country} #{self.count}"
