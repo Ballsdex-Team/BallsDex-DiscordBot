@@ -93,7 +93,7 @@ class BallInstance(models.Model):
     health_bonus = fields.IntField(default=0)
     attack_bonus = fields.IntField(default=0)
     trade_player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
-        "models.Player", blank=True, default=None
+        "models.Player", null=True, default=None
     )
 
     def __str__(self) -> str:
