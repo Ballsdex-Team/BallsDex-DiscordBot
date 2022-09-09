@@ -49,6 +49,7 @@ class Config(commands.GroupCog):
             return
         config.spawn_channel = channel.id  # type: ignore
         await config.save()
+        self.bot.dispatch("ballsdex_settings_change", guild, channel=channel)
         await interaction.response.send_message(
             f"The new spawn channel was successfully set to {channel.mention}.\n"
             "Balls will start spawning as users talk unless the bot is disabled."
@@ -64,6 +65,7 @@ class Config(commands.GroupCog):
         if config.enabled:
             config.enabled = False  # type: ignore
             await config.save()
+            self.bot.dispatch("ballsdex_settings_change", guild, enabled=False)
             await interaction.response.send_message(
                 "BallsDex is now disabled in this server. Commands will still be available, but "
                 "the spawn of new countryballs is suspended.\n"
@@ -72,6 +74,7 @@ class Config(commands.GroupCog):
         else:
             config.enabled = True  # type: ignore
             await config.save()
+            self.bot.dispatch("ballsdex_settings_change", guild, enabled=True)
             if config.spawn_channel and (
                 channel := guild.get_channel(config.spawn_channel)
             ):
