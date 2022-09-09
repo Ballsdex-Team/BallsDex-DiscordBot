@@ -111,19 +111,19 @@ class BallResource(Model):
             name="capacity_description",
             label="Capacity description",
         ),
-        Field(
-            name="capacity_logic",
-            label="Capacity logic",
-            input_=inputs.Json(
-                null=True,
-                options={
-                    "schema": ref,
-                    "allowSchemaSuggestions": "true",
-                    "mode": "tree",
-                    "modes": ["tree", "view", "form", "code", "text", "preview"],
-                },
-            ),
-        ),
+        # Field(
+        #     name="capacity_logic",
+        #     label="Capacity logic",
+        #     input_=inputs.Json(
+        #         null=True,
+        #         options={
+        #             "schema": ref,
+        #             "allowSchemaSuggestions": "true",
+        #             "mode": "tree",
+        #             "modes": ["tree", "view", "form", "code", "text", "preview"],
+        #         },
+        #     ),
+        # ),
     ]
 
     async def get_actions(self, request: Request) -> List[Action]:
