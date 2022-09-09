@@ -132,7 +132,6 @@ async def init_tortoise(db_url: str):
         modules={
             "core": ["ballsdex.core.models"],
         },
-        _create_db=True,
     )
     await Tortoise.generate_schemas()
 
