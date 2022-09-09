@@ -18,6 +18,7 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 
 COPY . /code
 RUN mkdir -p /code/static
+RUN mkdir -p /code/static/uploads
 
 # wait for postgres to be ready
 CMD sleep 5 && poetry run python3 -m ballsdex --dev
