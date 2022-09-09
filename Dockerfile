@@ -2,9 +2,6 @@
 
 FROM python:3.10-buster
 
-ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3/wait /wait
-RUN chmod +x /wait
-
 ENV PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
   PYTHONHASHSEED=random \
@@ -22,4 +19,4 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 COPY . /code
 
 # wait for postgres to be ready
-CMD /wait && poetry run python3 -m ballsdex --dev
+CMD sleep 10 && poetry run python3 -m ballsdex --dev
