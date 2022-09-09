@@ -8,9 +8,10 @@ services:
     environment:
       - BALLSDEXBOT_TOKEN
       - "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
-      - "WAIT_HOSTS=postgres:5432"
+      - "BALLSDEXBOT_REDIS_URL=redis://redis"
     depends_on:
       - db
+      - redis-cache
 
   db:
     image: postgres
@@ -25,5 +26,18 @@ services:
     volumes:  # Persist the db data
       - database-data:/var/lib/postgresql/data
 
+  redis-cache:
+    image: redis:latest
+    restart: always
+    hostname: redis
+    expose:
+      - 6379
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    command: redis-server --save 20 1 --loglevel warning
+    volumes: 
+      - cache-data:/data
+
 volumes:
   database-data:
+  cache-data:

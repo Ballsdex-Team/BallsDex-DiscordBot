@@ -51,6 +51,7 @@ def parse_cli_flags(arguments: str) -> argparse.ArgumentParser:
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--token", action="store", type=str, help="Bot's token")
     parser.add_argument("--db-url", action="store", type=str, help="DB URL")
+    parser.add_argument("--redis-url", action="store", type=str, help="Redis server URL")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
     args = parser.parse_args(arguments)
     return args
@@ -155,7 +156,9 @@ def init_fastapi_app() -> FastAPI:
 
     @app.on_event("startup")
     async def startup():
-        redis = aioredis.from_url("redis://localhost", decode_responses=True, encoding="utf8")
+        redis = aioredis.from_url(
+            os.environ.get("BALLSDEXBOT_REDIS_URL"), decode_responses=True, encoding="utf8"
+        )
         await admin_app.configure(
             logo_url="https://preview.tabler.io/static/logo-white.svg",
             template_folders=[os.path.join(BASE_DIR, "ballsdex", "templates")],
@@ -234,6 +237,7 @@ def main():
     if cli_flags.version:
         print(f"BallsDex Discord bot - {bot_version}")
         sys.exit(0)
+    os.environ.setdefault("BALLSDEXBOT_REDIS_URL", cli_flags.redis_url)
 
     print_welcome()
 
