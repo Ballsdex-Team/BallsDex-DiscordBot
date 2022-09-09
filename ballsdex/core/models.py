@@ -74,7 +74,9 @@ class Ball(models.Model):
     capacity_description = fields.CharField(
         max_length=256, description="Description of the countryball's capacity"
     )
-    capacity_logic = fields.JSONField(description="Effect of this capacity", default={})
+    capacity_logic = fields.JSONField(
+        description="Effect of this capacity", default={}, blank=True
+    )
 
     instances: fields.BackwardFKRelation[BallInstance]
 
