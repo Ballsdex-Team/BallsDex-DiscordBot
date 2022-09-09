@@ -28,10 +28,10 @@ class User(AbstractAdmin):
 
 
 class GuildConfig(models.Model):
-    guild_id = fields.IntField(
+    guild_id = fields.BigIntField(
         description="Discord guild ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
-    spawn_channel = fields.IntField(
+    spawn_channel = fields.BigIntField(
         description="Discord channel ID where balls will spawn", null=True
     )
     enabled = fields.BooleanField(
@@ -58,7 +58,7 @@ class Ball(models.Model):
     health = fields.IntField(description="Ball health stat")
     attack = fields.IntField(description="Ball attack stat")
     rarity = fields.FloatField(description="Rarity of this ball")
-    emoji_id = fields.IntField(
+    emoji_id = fields.BigIntField(
         description="Emoji ID for this ball", validators=[DiscordSnowflakeValidator()]
     )
     wild_card = fields.CharField(
@@ -133,7 +133,7 @@ class BallInstance(models.Model):
 
 
 class Player(models.Model):
-    discord_id = fields.IntField(
+    discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
     balls: fields.BackwardFKRelation[BallInstance]
