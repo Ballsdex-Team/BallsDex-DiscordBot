@@ -213,7 +213,7 @@ class CountryballsExchangerPaginator(CountryballsSelector):
                 f"{player1.user.mention} proposed an exchange, but you do not have any "
                 "countryball yet.\n"
                 f"{player1.user.name}, you may still donate that countryball.",
-                embed=view.generate_embed(self.bot),
+                embed=view.generate_embed(cast("BallsDexBot", interaction.client)),
                 view=view,
             )
         else:
