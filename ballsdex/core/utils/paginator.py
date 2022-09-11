@@ -150,12 +150,9 @@ class Pages(discord.ui.View):
 
     async def on_timeout(self) -> None:
         self.stop()
-        if self.original_interaction.message and not self.original_interaction.message.content:
-            await self.original_interaction.followup.edit_message(
-                "@original", content="Timed out.", view=None
-            )
-        else:
-            await self.original_interaction.followup.edit_message("@original", view=None)
+        for item in self.children:
+            item.disabled = True  # type: ignore
+        await self.original_interaction.followup.edit_message("@original", view=self)
 
     async def on_error(
         self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item
