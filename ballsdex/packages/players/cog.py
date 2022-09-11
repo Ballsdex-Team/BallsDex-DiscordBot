@@ -132,7 +132,10 @@ class Players(commands.GroupCog, group_name="balls"):
             await interaction.response.send_message("You don't have any countryball yet.")
             return
         paginator = CountryballsViewer(interaction, balls)
-        await paginator.start()
+        if user == interaction.user:
+            await paginator.start()
+        else:
+            await paginator.start(content=f"Viewing {user.name}'s countryballs")
 
     @app_commands.command()
     @app_commands.describe(countryball="The countryball you want to inspect")
