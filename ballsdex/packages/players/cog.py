@@ -174,6 +174,7 @@ class Players(commands.GroupCog, group_name="balls"):
                 "You cannot exchange with yourself.", ephemeral=True
             )
             return
+        await interaction.response.defer(thinking=True)
         # theorically, the player should always be created by the autocomplete function
         # let's still handle the case where autocomplete wasn't invoked and the player may not
         # have been created yet
