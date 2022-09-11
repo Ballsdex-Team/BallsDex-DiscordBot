@@ -49,7 +49,7 @@ def draw_card(ball_instance: "BallInstance"):
     if ball.economy == Economy.CAPITALIST:
         icon = capitalist.copy()
     elif ball.economy == Economy.COMMUNIST:
-        icon = communist.copy
+        icon = communist.copy()
     elif ball.economy == Economy.ANARCHY:
         icon = communist.copy()
     else:
