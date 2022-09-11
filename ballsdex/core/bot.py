@@ -45,6 +45,11 @@ class BallsDexBot(commands.Bot):
             log.info(f"Packages loaded: {', '.join(loaded_packages)}")
         else:
             log.info("No package loaded.")
+        synced_commands = await self.tree.sync()
+        if synced_commands:
+            log.info(f"Synced {len(synced_commands)} commands.")
+        else:
+            log.info(f"No command to sync.")
         print("\n    [bold][red]BallsDex bot[/red] [green]is now operational![/green][/bold]\n")
 
     async def on_command_error(
