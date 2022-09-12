@@ -25,3 +25,5 @@ jobs:
         with:
           tags: "ghcr.io/laggron42/ballsdex:${{ github.sha }}"
           push: ${{ github.ref == 'refs/heads/master' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
