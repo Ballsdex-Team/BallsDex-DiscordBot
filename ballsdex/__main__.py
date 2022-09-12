@@ -4,7 +4,6 @@ import time
 import functools
 import asyncio
 import logging
-from traceback import format_exc
 import discord
 import argparse
 import uvicorn
@@ -172,7 +171,8 @@ def init_fastapi_app() -> FastAPI:
         await admin_app.configure(
             logo_url="https://preview.tabler.io/static/logo-white.svg",
             template_folders=[os.path.join(BASE_DIR, "ballsdex", "templates")],
-            favicon_url="https://raw.githubusercontent.com/fastapi-admin/fastapi-admin/dev/images/favicon.png",
+            favicon_url="https://raw.githubusercontent.com/fastapi-admin/"
+            "fastapi-admin/dev/images/favicon.png",
             providers=[
                 UsernamePasswordProvider(
                     login_logo_url="https://preview.tabler.io/static/logo.svg",

@@ -75,9 +75,7 @@ class Config(commands.GroupCog):
             config.enabled = True  # type: ignore
             await config.save()
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=True)
-            if config.spawn_channel and (
-                channel := guild.get_channel(config.spawn_channel)
-            ):
+            if config.spawn_channel and (channel := guild.get_channel(config.spawn_channel)):
                 await interaction.response.send_message(
                     "BallsDex is now enabled in this server, countryballs will start spawning "
                     f"soon in {channel.mention}."

@@ -66,7 +66,7 @@ class CountryballsViewer(CountryballsSelector):
 
         await ball_instance.fetch_related("trade_player")
         if ball_instance.trade_player:
-            
+
             original_player = None
             # we want to avoid calling fetch_user if possible (heavily rate-limited call)
             if interaction.guild:
@@ -83,7 +83,7 @@ class CountryballsViewer(CountryballsSelector):
                     )
                 except discord.NotFound:
                     pass
-            
+
             original_player_name = (
                 original_player.name
                 if original_player

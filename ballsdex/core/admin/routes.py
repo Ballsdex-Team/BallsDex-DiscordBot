@@ -2,7 +2,7 @@ import io
 
 from fastapi import Depends, Path
 from starlette.requests import Request
-from starlette.responses import StreamingResponse, Response
+from starlette.responses import Response
 
 from fastapi_admin.app import app
 from fastapi_admin.depends import get_resources
