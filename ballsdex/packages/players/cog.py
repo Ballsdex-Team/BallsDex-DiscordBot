@@ -144,11 +144,39 @@ class Players(commands.GroupCog, group_name="balls"):
         interaction: discord.Interaction,
         countryball: app_commands.Transform[BallInstance, BallInstanceTransformer],
     ):
+        """
+        Display info from a specific countryball.
+        """
         if not countryball:
             return
+        await interaction.response.defer(thinking=True)
         embed, buffer = countryball.prepare_for_message()
-        await interaction.response.send_message(
+        await interaction.followup.send(
             content=f"Caught on {format_dt(countryball.catch_date)} "
+            f"({format_dt(countryball.catch_date, style='R')})",
+            file=discord.File(buffer, "card.png"),
+        )
+
+    @app_commands.command()
+    async def last(self, interaction: discord.Interaction):
+        """
+        Display info of your last caught countryball.
+        """
+        await interaction.response.defer(thinking=True)
+        try:
+            player = await Player.get(discord_id=interaction.user.id)
+        except DoesNotExist:
+            await interaction.followup.send("You do not have any countryball yet.", ephemeral=True)
+            return
+
+        countryball = await player.balls.all().order_by("-id").first().select_related("ball")
+        if not countryball:
+            await interaction.followup.send("You do not have any countryball yet.", ephemeral=True)
+            return
+
+        embed, buffer = countryball.prepare_for_message()
+        await interaction.followup.send(
+            content=f"Caught {format_dt(countryball.catch_date, style='R')} "
             f"({format_dt(countryball.catch_date, style='R')})",
             file=discord.File(buffer, "card.png"),
         )
@@ -164,6 +192,9 @@ class Players(commands.GroupCog, group_name="balls"):
         user: discord.User,
         countryball: app_commands.Transform[BallInstance, BallInstanceTransformer] = None,
     ):
+        """
+        Exchange a countryball with another player.
+        """
         if user.bot:
             await interaction.response.send_message(
                 "You cannot exchange with bots.", ephemeral=True
