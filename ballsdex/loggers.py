@@ -128,7 +128,7 @@ class RichHandler(DefaultRichHandler):
         )
 
 
-def init_logger(debug: bool = False):
+def init_logger(disable_rich_logging: bool = False, debug: bool = False):
     log = logging.getLogger("ballsdex")
     log.setLevel(logging.DEBUG)
     dpy_log = logging.getLogger("discord")
@@ -177,16 +177,16 @@ def init_logger(debug: bool = False):
         log.addHandler(file_handler)
 
     # stdout logger
-    if enable_rich_logging is True:
+    if disable_rich_logging:
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(formatter)
+    else:
         rich_formatter = logging.Formatter("{message}", datefmt="[%X]", style="{")
         stream_handler = RichHandler(
             rich_tracebacks=False,
             highlighter=NullHighlighter(),
         )
         stream_handler.setFormatter(rich_formatter)
-    else:
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setFormatter(formatter)
     level = logging.DEBUG if debug else logging.INFO
     stream_handler.setLevel(level)
     for log in loggers:

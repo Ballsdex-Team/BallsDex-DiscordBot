@@ -53,15 +53,22 @@ TORTOISE_ORM = {
 }
 
 
-def parse_cli_flags(arguments: str) -> argparse.ArgumentParser:
+class CLIFlags(argparse.Namespace):
+    version: bool
+    disable_rich: bool
+    debug: bool
+    dev: bool
+
+
+def parse_cli_flags(arguments: list[str]) -> CLIFlags:
     parser = argparse.ArgumentParser(
         prog="BallsDex bot", description="Collect and exchange countryballs on Discord"
     )
     parser.add_argument("--version", "-V", action="store_true", help="Display the bot's version")
+    parser.add_argument("--disable-rich", action="store_true", help="Disable rich log format")
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
-    parser.add_argument("--token", action="store", type=str, help="Bot's token")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
-    args = parser.parse_args(arguments)
+    args = parser.parse_args(arguments, namespace=CLIFlags())
     return args
 
 
@@ -254,7 +261,7 @@ def main():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        init_logger(cli_flags.debug)
+        init_logger(cli_flags.disable_rich, cli_flags.debug)
 
         token = os.environ.get("BALLSDEXBOT_TOKEN", None)
         if not token:
