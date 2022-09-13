@@ -1,10 +1,9 @@
 import discord
-import random
 import sys
 import logging
 
 from typing import TYPE_CHECKING
-from tortoise.transactions import in_transaction
+from tortoise.contrib.postgres.functions import Random
 
 from discord import app_commands
 from discord.ext import commands
@@ -29,16 +28,11 @@ class Info(commands.Cog):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
 
-    async def _get_10_balls_emojis(self, balls_count: int) -> list[discord.Emoji]:
-        # ball_count is reused
-        balls_pks = random.choices(list(range(1, balls_count + 1)), k=max(balls_count, 10))
-
-        balls: list[Ball] = []
+    async def _get_10_balls_emojis(self) -> list[discord.Emoji]:
+        balls: list[Ball] = (
+            await Ball.annotate(order=Random()).order_by("order").limit(10).only("emoji_id")
+        )
         emotes: list[discord.Emoji] = []
-
-        async with in_transaction():
-            for pk in balls_pks:
-                balls.append(await Ball.get(pk=pk).only("emoji_id"))
 
         for ball in balls:
             if emoji := self.bot.get_emoji(ball.emoji_id):
@@ -53,15 +47,15 @@ class Info(commands.Cog):
         """
         embed = discord.Embed(title="BallsDex Discord bot", color=discord.Colour.blurple())
 
-        balls_count = await Ball.all().count()
         try:
-            balls = await self._get_10_balls_emojis(balls_count)
+            balls = await self._get_10_balls_emojis()
         except Exception:
             log.error("Failed to fetch 10 balls emotes", exc_info=True)
             balls = []
 
         # TODO: find a better solution to get the count of all rows
         # possible track: https://stackoverflow.com/a/7945274
+        balls_count = await Ball.all().count()
         players_count = await Player.all().count()
         balls_instances_count = await BallInstance.all().count()
 
