@@ -54,6 +54,7 @@ TORTOISE_ORM = {
 
 
 class CLIFlags(argparse.Namespace):
+    prefix: str
     version: bool
     disable_rich: bool
     debug: bool
@@ -64,6 +65,7 @@ def parse_cli_flags(arguments: list[str]) -> CLIFlags:
     parser = argparse.ArgumentParser(
         prog="BallsDex bot", description="Collect and exchange countryballs on Discord"
     )
+    parser.add_argument("--prefix", type=str, help="Change the bot's prefix for text commands")
     parser.add_argument("--version", "-V", action="store_true", help="Display the bot's version")
     parser.add_argument("--disable-rich", action="store_true", help="Disable rich log format")
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
@@ -288,10 +290,12 @@ def main():
             time.sleep(1)
             sys.exit(0)
 
+        prefix = cli_flags.prefix or os.environ.get("BALLSDEXBOT_PREFIX", "!?")
+
         loop.run_until_complete(init_tortoise(db_url))
         log.debug("Tortoise ORM and database ready.")
 
-        bot = BallsDexBot(command_prefix="!?", dev=cli_flags.dev)
+        bot = BallsDexBot(command_prefix=prefix, dev=cli_flags.dev)
         bot.owner_id = 348415857728159745
 
         exc_handler = functools.partial(global_exception_handler, bot)
