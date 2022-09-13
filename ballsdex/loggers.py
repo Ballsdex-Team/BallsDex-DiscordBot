@@ -4,7 +4,7 @@ import rich
 import logging
 import logging.handlers
 
-from rich.highlighter import NullHighlighter, Highlighter
+from rich.highlighter import Highlighter
 from rich.logging import RichHandler as DefaultRichHandler
 from rich.style import Style
 from rich.theme import Theme
@@ -162,7 +162,6 @@ def init_logger(disable_rich_logging: bool = False, debug: bool = False):
     rich_console.file = sys.stdout
     PathHighlighter.highlights = []
 
-    enable_rich_logging = True
     formatter = logging.Formatter(
         "[{asctime}] {levelname} {name}: {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{"
     )
@@ -182,10 +181,7 @@ def init_logger(disable_rich_logging: bool = False, debug: bool = False):
         stream_handler.setFormatter(formatter)
     else:
         rich_formatter = logging.Formatter("{message}", datefmt="[%X]", style="{")
-        stream_handler = RichHandler(
-            rich_tracebacks=False,
-            highlighter=NullHighlighter(),
-        )
+        stream_handler = RichHandler(rich_tracebacks=True)
         stream_handler.setFormatter(rich_formatter)
     level = logging.DEBUG if debug else logging.INFO
     stream_handler.setLevel(level)
