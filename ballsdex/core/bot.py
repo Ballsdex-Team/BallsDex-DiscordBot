@@ -11,7 +11,7 @@ from ballsdex.core.commands import Core
 
 log = logging.getLogger("ballsdex.core.bot")
 
-PACKAGES = ["config", "players", "countryballs"]
+PACKAGES = ["config", "players", "countryballs", "info"]
 
 
 class BallsDexBot(commands.Bot):
