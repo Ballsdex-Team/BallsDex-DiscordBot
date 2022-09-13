@@ -18,7 +18,7 @@ class CountryBall:
 
     @classmethod
     async def get_random(cls):
-        partial_countryballs = await Ball.all().only("id", "rarity")
+        partial_countryballs = await Ball.filter(enabled=True).only("id", "rarity")
         if not partial_countryballs:
             raise RuntimeError("No ball to spawn")
         pks = [x.pk for x in partial_countryballs]

@@ -83,6 +83,7 @@ class BallResource(Model):
         "health",
         "attack",
         "rarity",
+        "enabled",
         Field(
             name="emoji_id",
             label="Emoji ID",
