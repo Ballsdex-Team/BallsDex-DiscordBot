@@ -104,6 +104,16 @@ class BallInstance(models.Model):
     class Meta:
         unique_together = ("player", "id")
 
+    @property
+    def attack(self) -> int:
+        bonus = int(self.ball.attack * self.attack_bonus * 0.01)
+        return self.ball.attack + bonus
+
+    @property
+    def health(self) -> int:
+        bonus = int(self.ball.health * self.health_bonus * 0.01)
+        return self.ball.health + bonus
+
     def prepare_for_message(self) -> Tuple[discord.Embed, BytesIO]:
         from ballsdex.core.image_generator.image_gen import draw_card
 

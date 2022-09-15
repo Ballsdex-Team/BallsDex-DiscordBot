@@ -1,5 +1,6 @@
 from __future__ import annotations
 import discord
+import random
 
 from typing import TYPE_CHECKING
 from discord.ui import Modal, TextInput, Button, View
@@ -41,8 +42,17 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
     async def catch_ball(self, user: discord.abc.User):
         player, created = await Player.get_or_create(discord_id=user.id)
         await player.fetch_related("balls")
+
+        # stat may vary by +/- 20% of base stat
+        bonus_attack = random.randint(-20, 20)
+        bonus_health = random.randint(-20, 20)
+
         await BallInstance.create(
-            ball=self.ball.model, player=player, count=(await player.balls.all().count()) + 1
+            ball=self.ball.model,
+            player=player,
+            count=(await player.balls.all().count()) + 1,
+            attack_bonus=bonus_attack,
+            health_bonus=bonus_health,
         )
 
 

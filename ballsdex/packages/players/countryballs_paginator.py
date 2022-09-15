@@ -38,7 +38,8 @@ class CountryballsSelector(Pages):
             options.append(
                 discord.SelectOption(
                     label=f"{favorite}{ball.count}# {ball.ball.country}",
-                    description=f"Caught on {ball.catch_date.strftime('%d/%m/%y %H:%M')}",
+                    description=f"ATK: {ball.attack_bonus:+d}% • HP: {ball.health_bonus:+d}% • "
+                    f"Caught on {ball.catch_date.strftime('%d/%m/%y %H:%M')}",
                     emoji=emoji,
                     value=f"{ball.pk}",
                 )

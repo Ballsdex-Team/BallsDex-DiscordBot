@@ -76,7 +76,7 @@ def draw_card(ball_instance: "BallInstance"):
         )
     draw.text(
         (320, 1670),
-        str(ball.health + ball_instance.health_bonus),
+        str(ball_instance.health),
         font=stats_font,
         fill=(237, 115, 101, 255),
         stroke_width=1,
@@ -84,7 +84,7 @@ def draw_card(ball_instance: "BallInstance"):
     )
     draw.text(
         (960, 1670),
-        str(ball.attack + ball_instance.attack_bonus),
+        str(ball_instance.attack),
         font=stats_font,
         fill=(252, 194, 76, 255),
         stroke_width=1,
