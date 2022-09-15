@@ -181,7 +181,7 @@ def init_logger(disable_rich_logging: bool = False, debug: bool = False):
         stream_handler.setFormatter(formatter)
     else:
         rich_formatter = logging.Formatter("{message}", datefmt="[%X]", style="{")
-        stream_handler = RichHandler(rich_tracebacks=True)
+        stream_handler = RichHandler(rich_tracebacks=True, tracebacks_extra_lines=2)
         stream_handler.setFormatter(rich_formatter)
     level = logging.DEBUG if debug else logging.INFO
     stream_handler.setLevel(level)
