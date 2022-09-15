@@ -34,12 +34,13 @@ class CountryballsSelector(Pages):
         options: List[discord.SelectOption] = []
         for ball in balls:
             emoji = self.bot.get_emoji(int(ball.ball.emoji_id))
+            favorite = "❤️ " if ball.favorite else ""
             options.append(
                 discord.SelectOption(
-                    label=f"{ball.count}# {ball.ball.country}",
+                    label=f"{favorite}{ball.count}# {ball.ball.country}",
                     description=f"Caught on {ball.catch_date.strftime('%d/%m/%y %H:%M')}",
                     emoji=emoji,
-                    value=f"{ball.id}",
+                    value=f"{ball.pk}",
                 )
             )
         self.select_ball_menu.options = options

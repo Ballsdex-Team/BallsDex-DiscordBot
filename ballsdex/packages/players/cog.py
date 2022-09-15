@@ -122,15 +122,18 @@ class Players(commands.GroupCog, group_name="balls"):
         List your countryballs.
         """
         user: discord.User | discord.Member = user or interaction.user
+
         player, created = await Player.get_or_create(discord_id=user.id)
         if created:
             await interaction.response.send_message("You don't have any countryball yet.")
             return
+
         await player.fetch_related("balls")
-        balls = await player.balls.all().prefetch_related("ball")
+        balls = await player.balls.all().order_by("-favorite").prefetch_related("ball")
         if len(balls) < 1:
             await interaction.response.send_message("You don't have any countryball yet.")
             return
+
         paginator = CountryballsViewer(interaction, balls)
         if user == interaction.user:
             await paginator.start()
@@ -180,6 +183,44 @@ class Players(commands.GroupCog, group_name="balls"):
             f"({format_dt(countryball.catch_date, style='R')})",
             file=discord.File(buffer, "card.png"),
         )
+
+    @app_commands.command()
+    @app_commands.describe(countryball="The countryball you want to set/unset as favorite")
+    async def favorite(
+        self,
+        interaction: discord.Interaction,
+        countryball: app_commands.Transform[BallInstance, BallInstanceTransformer],
+    ):
+        """
+        Set favorite countryballs.
+        """
+        if not countryball.favorite:
+
+            player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
+            if await player.balls.filter(favorite=True).count() > 6:
+                await interaction.response.send_message(
+                    "You cannot set more than 6 favorite countryballs.", ephemeral=True
+                )
+                return
+
+            countryball.favorite = True  # type: ignore
+            await countryball.save()
+            emoji = self.bot.get_emoji(countryball.ball.emoji_id) or ""
+            await interaction.response.send_message(
+                f"{emoji} `{countryball.count}#` {countryball.ball.country} "
+                "is now a favorite countryball!",
+                ephemeral=True,
+            )
+
+        else:
+            countryball.favorite = False  # type: ignore
+            await countryball.save()
+            emoji = self.bot.get_emoji(countryball.ball.emoji_id) or ""
+            await interaction.response.send_message(
+                f"{emoji} `{countryball.count}#` {countryball.ball.country} "
+                "isn't a favorite countryball anymore.",
+                ephemeral=True,
+            )
 
     @app_commands.command()
     @app_commands.describe(

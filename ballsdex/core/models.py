@@ -96,6 +96,7 @@ class BallInstance(models.Model):
     trade_player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
         "models.Player", null=True, default=None
     )
+    favorite = fields.BooleanField(default=False)
 
     def __str__(self) -> str:
         return f"{self.ball.country} #{self.count}"
