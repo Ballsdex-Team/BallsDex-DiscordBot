@@ -21,4 +21,4 @@ RUN mkdir -p /code/static
 RUN mkdir -p /code/static/uploads
 
 # wait for postgres to be ready
-CMD sleep 5 && poetry run python3 -m ballsdex --dev --disable-rich
+CMD sleep 2

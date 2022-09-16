@@ -1,21 +1,38 @@
+version: '3.4'
+
+x-common-env-vars:
+  - &postgres-url
+    "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
+
 services:
 
   bot:
     restart: "no"
+    image: ballsdex
     build: .
+    environment:
+      - *postgres-url
+      - BALLSDEXBOT_TOKEN
+    depends_on:
+      - postgres-db
+    command: poetry run python3 -m ballsdex --dev --disable-rich
+
+  admin-panel:
+    image: ballsdex
     ports:
       - "8000:8000"
     environment:
-      - BALLSDEXBOT_TOKEN
-      - "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
+      - *postgres-url
       - "BALLSDEXBOT_REDIS_URL=redis://redis"
     depends_on:
-      - db
+      - bot
+      - postgres-db
       - redis-cache
     volumes:
       - bot-static:/code/static/uploads
+    command: poetry run uvicorn ballsdex.core.admin:_app --host 0.0.0.0
 
-  db:
+  postgres-db:
     image: postgres
     restart: always
     hostname: postgres
