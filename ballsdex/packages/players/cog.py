@@ -9,7 +9,6 @@ from tortoise.exceptions import DoesNotExist
 
 from discord import app_commands
 from discord.ext import commands, tasks
-from discord.utils import format_dt
 
 from ballsdex.core.models import Player, BallInstance
 
@@ -153,12 +152,8 @@ class Players(commands.GroupCog, group_name="balls"):
         if not countryball:
             return
         await interaction.response.defer(thinking=True)
-        embed, buffer = countryball.prepare_for_message()
-        await interaction.followup.send(
-            content=f"Caught on {format_dt(countryball.catch_date)} "
-            f"({format_dt(countryball.catch_date, style='R')})",
-            file=discord.File(buffer, "card.png"),
-        )
+        content, file = await countryball.prepare_for_message(interaction)
+        await interaction.followup.send(content=content, file=file)
 
     @app_commands.command()
     async def last(self, interaction: discord.Interaction):
@@ -177,12 +172,8 @@ class Players(commands.GroupCog, group_name="balls"):
             await interaction.followup.send("You do not have any countryball yet.", ephemeral=True)
             return
 
-        embed, buffer = countryball.prepare_for_message()
-        await interaction.followup.send(
-            content=f"Caught {format_dt(countryball.catch_date, style='R')} "
-            f"({format_dt(countryball.catch_date, style='R')})",
-            file=discord.File(buffer, "card.png"),
-        )
+        content, file = await countryball.prepare_for_message(interaction)
+        await interaction.followup.send(content=content, file=file)
 
     @app_commands.command()
     @app_commands.describe(countryball="The countryball you want to set/unset as favorite")

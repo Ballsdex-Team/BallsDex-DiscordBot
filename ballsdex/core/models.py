@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import discord
+from discord.utils import format_dt
 
 from io import BytesIO
 from enum import IntEnum
 from datetime import datetime
 from typing import Tuple
+from concurrent.futures import ThreadPoolExecutor
 
 from tortoise import models, fields, validators, exceptions
 from fastapi_admin.models import AbstractAdmin
@@ -114,32 +116,59 @@ class BallInstance(models.Model):
         bonus = int(self.ball.health * self.health_bonus * 0.01)
         return self.ball.health + bonus
 
-    def prepare_for_message(self) -> Tuple[discord.Embed, BytesIO]:
+    def draw_card(self) -> BytesIO:
         from ballsdex.core.image_generator.image_gen import draw_card
 
-        ball = self.ball
-        embed = discord.Embed()
-
-        if ball.regime == Regime.DEMOCRACY:
-            embed.colour = discord.Colour.blue()
-        elif ball.regime == Regime.DICTATORSHIP:
-            embed.colour = discord.Colour.red()
-        elif ball.regime == Regime.UNION:
-            embed.colour = discord.Colour.green()
-
-        embed.title = f"{self.count}# {ball.country}"
-        embed.description = (
-            f"Caught on {self.catch_date}\n"
-            f"Special: {self.special}\n"
-            f"Attack: `{self.attack_bonus + ball.attack}`\n"
-            f"Health: `{self.health_bonus + ball.health}`"
-        )
         image = draw_card(self)
         buffer = BytesIO()
         image.save(buffer, format="png")
         buffer.seek(0)
+        return buffer
 
-        return embed, buffer
+    async def prepare_for_message(
+        self, interaction: discord.Interaction
+    ) -> Tuple[str, discord.File]:
+        # message content
+        trade_content = ""
+        await self.fetch_related("trade_player")
+        if self.trade_player:
+
+            original_player = None
+            # we want to avoid calling fetch_user if possible (heavily rate-limited call)
+            if interaction.guild:
+                try:
+                    original_player = await interaction.guild.fetch_member(
+                        int(self.trade_player.discord_id)
+                    )
+                except discord.NotFound:
+                    pass
+            elif original_player is None:  # try again if not found in guild
+                try:
+                    original_player = await interaction.client.fetch_user(
+                        int(self.trade_player.discord_id)
+                    )
+                except discord.NotFound:
+                    pass
+
+            original_player_name = (
+                original_player.name
+                if original_player
+                else f"user with ID {self.trade_player.discord_id}"
+            )
+            trade_content = f"Obtained by trade with {original_player_name}.\n"
+        content = (
+            f"Caught on {format_dt(self.catch_date)} "
+            f"({format_dt(self.catch_date, style='R')}).\n"
+            f"{trade_content}\n"
+            f"ATK: {self.attack} ({self.attack_bonus:+d}%)\n"
+            f"HP: {self.health} ({self.health_bonus:+d}%)"
+        )
+
+        # draw image
+        with ThreadPoolExecutor() as pool:
+            buffer = await interaction.client.loop.run_in_executor(pool, self.draw_card)
+
+        return content, discord.File(buffer, "card.png")
 
 
 class Player(models.Model):

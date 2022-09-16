@@ -3,7 +3,6 @@ from __future__ import annotations
 import discord
 
 from typing import TYPE_CHECKING, List, cast
-from discord.utils import format_dt
 
 from ballsdex.core.models import BallInstance, Player
 from ballsdex.core.utils.paginator import Pages
@@ -60,43 +59,8 @@ class CountryballsSelector(Pages):
 
 class CountryballsViewer(CountryballsSelector):
     async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):
-        embed, buffer = ball_instance.prepare_for_message()
-        content = (
-            f"Caught on {format_dt(ball_instance.catch_date)} "
-            f"({format_dt(ball_instance.catch_date, style='R')})."
-        )
-
-        await ball_instance.fetch_related("trade_player")
-        if ball_instance.trade_player:
-
-            original_player = None
-            # we want to avoid calling fetch_user if possible (heavily rate-limited call)
-            if interaction.guild:
-                try:
-                    original_player = await interaction.guild.fetch_member(
-                        int(ball_instance.trade_player.discord_id)
-                    )
-                except discord.NotFound:
-                    pass
-            elif original_player is None:  # try again if not found in guild
-                try:
-                    original_player = await self.bot.fetch_user(
-                        int(ball_instance.trade_player.discord_id)
-                    )
-                except discord.NotFound:
-                    pass
-
-            original_player_name = (
-                original_player.name
-                if original_player
-                else f"user with ID {ball_instance.trade_player.discord_id}"
-            )
-            content += f"\nObtained by trade with {original_player_name}."
-
-        await interaction.followup.send(
-            content=content,
-            file=discord.File(buffer, "card.png"),
-        )
+        content, file = await ball_instance.prepare_for_message(interaction)
+        await interaction.followup.send(content=content, file=file)
 
 
 class CountryballsExchangerPaginator(CountryballsSelector):
