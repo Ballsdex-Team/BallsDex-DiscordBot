@@ -20,6 +20,7 @@ class CountryballsSource(menus.ListPageSource):
 
     async def format_page(self, menu: CountryballsSelector, balls: List[BallInstance]):
         menu.set_options(balls)
+        return True  # signal to edit the page
 
 
 class CountryballsSelector(Pages):
