@@ -2,6 +2,7 @@ import discord
 import logging
 
 from rich import print
+from typing import cast
 
 from discord import app_commands
 from discord.ext import commands
@@ -29,7 +30,32 @@ class BallsDexBot(commands.Bot):
     async def on_shard_ready(self, shard_id: int):
         log.debug(f"Connected to shard #{shard_id}")
 
+    def assign_ids_to_app_groups(
+        self, group: app_commands.Group, synced_commands: list[app_commands.AppCommandGroup]
+    ):
+        for synced_command in synced_commands:
+            bot_command = group.get_command(synced_command.name)
+            if not bot_command:
+                continue
+            bot_command.extras["mention"] = synced_command.mention
+            if isinstance(bot_command, app_commands.Group) and bot_command.commands:
+                self.assign_ids_to_app_groups(
+                    bot_command, cast(list[app_commands.AppCommandGroup], synced_command.options)
+                )
+
+    def assign_ids_to_app_commands(self, synced_commands: list[app_commands.AppCommand]):
+        for synced_command in synced_commands:
+            bot_command = self.tree.get_command(synced_command.name, type=synced_command.type)
+            if not bot_command:
+                continue
+            bot_command.extras["mention"] = synced_command.mention
+            if isinstance(bot_command, app_commands.Group) and bot_command.commands:
+                self.assign_ids_to_app_groups(
+                    bot_command, cast(list[app_commands.AppCommandGroup], synced_command.options)
+                )
+
     async def on_ready(self):
+        assert self.user
         log.info(f"Successfully logged in as {self.user} ({self.user.id})!")
         log.info("Loading packages...")
         await self.add_cog(Core(self))
@@ -50,6 +76,10 @@ class BallsDexBot(commands.Bot):
         synced_commands = await self.tree.sync()
         if synced_commands:
             log.info(f"Synced {len(synced_commands)} commands.")
+            try:
+                self.assign_ids_to_app_commands(synced_commands)
+            except Exception:
+                log.error("Failed to assign IDs to app commands", exc_info=True)
         else:
             log.info("No command to sync.")
         print("\n    [bold][red]BallsDex bot[/red] [green]is now operational![/green][/bold]\n")
