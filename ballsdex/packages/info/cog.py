@@ -20,6 +20,16 @@ GITHUB_LINK = "https://github.com/laggron42/BallsDex-DiscordBot"
 DISCORD_SERVER_LINK = "https://discord.gg/w9HJU5nGJT"
 
 
+def mention_app_command(app_command: app_commands.Command | app_commands.Group) -> str:
+    if "mention" in app_command.extras:
+        return app_command.extras["mention"]
+    else:
+        if isinstance(app_command, app_commands.ContextMenu):
+            return f"`{app_command.name}`"
+        else:
+            return f"`/{app_command.name}`"
+
+
 class Info(commands.Cog):
     """
     Simple info commands.
@@ -100,5 +110,26 @@ class Info(commands.Cog):
         embed.set_footer(
             text=f"Python {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}"
         )
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command()
+    async def help(self, interaction: discord.Interaction):
+        """
+        Show the list of commands from the bot.
+        """
+        assert self.bot.user
+        embed = discord.Embed(
+            title="BallsDex Discord bot - help menu", color=discord.Colour.blurple()
+        )
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+
+        for cog in self.bot.cogs.values():
+            content = ""
+            for app_command in cog.walk_app_commands():
+                content += f"{mention_app_command(app_command)}: {app_command.description}\n"
+            if not content:
+                continue
+            embed.add_field(name=cog.qualified_name, value=content, inline=False)
 
         await interaction.response.send_message(embed=embed)
