@@ -15,7 +15,7 @@ SPAWN_CHANCE_RANGE = (20, 120)
 @dataclass
 class SpawnCooldown:
     author: int
-    time: float = field(default_factory=lambda: datetime.utcnow().timestamp())
+    time: datetime
     amount: int = field(default=1)
     chance: int = field(default_factory=lambda: random.randint(*SPAWN_CHANCE_RANGE))
 
@@ -30,10 +30,10 @@ class SpawnManager:
             return
         cooldown = self.cooldowns.get(guild.id, None)
         if not cooldown:
-            cooldown = SpawnCooldown(message.author.id)
+            cooldown = SpawnCooldown(message.author.id, message.created_at)
             self.cooldowns[guild.id] = cooldown
             log.debug(f"Created cooldown manager for guild {guild.id}")
-        delta = datetime.utcnow().timestamp() - cooldown.time
+        delta = (message.created_at - cooldown.time).total_seconds()
         if cooldown.author == message.author.id:
             if delta < 10:
                 log.debug(f"Handled message {message.id}, cooldown ignore")
