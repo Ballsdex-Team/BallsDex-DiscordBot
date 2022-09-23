@@ -28,6 +28,7 @@ stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
 democracy = Image.open(str(SOURCES_PATH / "democracy.png"))
 dictatorship = Image.open(str(SOURCES_PATH / "dictatorship.png"))
 union = Image.open(str(SOURCES_PATH / "union.png"))
+shiny = Image.open(str(SOURCES_PATH / "shiny.png"))
 
 capitalist = Image.open(str(SOURCES_PATH / "capitalist.png"))
 communist = Image.open(str(SOURCES_PATH / "communist.png"))
@@ -37,10 +38,15 @@ test = Image.open(str(SOURCES_PATH / "fr_test.png"))
 
 def draw_card(ball_instance: "BallInstance"):
     ball = ball_instance.ball
-    if ball.regime == Regime.DEMOCRACY:
+    ball_health = (237, 115, 101, 255)
+    if ball_instance.shiny:
+        image = shiny.copy()
+        ball_health = (255, 255, 255, 255)
+    elif ball.regime == Regime.DEMOCRACY:
         image = democracy.copy()
     elif ball.regime == Regime.DICTATORSHIP:
         image = dictatorship.copy()
+        ball_health = (131, 98, 240, 255)
     elif ball.regime == Regime.UNION:
         image = union.copy()
     else:
@@ -78,7 +84,7 @@ def draw_card(ball_instance: "BallInstance"):
         (320, 1670),
         str(ball_instance.health),
         font=stats_font,
-        fill=(131, 98, 240, 255) if ball.regime == Regime.DICTATORSHIP else (237, 115, 101, 255),
+        fill=ball_health,
         stroke_width=1,
         stroke_fill=(0, 0, 0, 255),
     )
