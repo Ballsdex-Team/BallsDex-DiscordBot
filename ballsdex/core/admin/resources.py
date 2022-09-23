@@ -78,6 +78,7 @@ class BallResource(Model):
     ]
     fields = [
         "country",
+        "short_name",
         "regime",
         "economy",
         "health",

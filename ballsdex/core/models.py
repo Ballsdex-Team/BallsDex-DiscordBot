@@ -55,6 +55,7 @@ class Economy(IntEnum):
 
 class Ball(models.Model):
     country = fields.CharField(max_length=48, unique=True)
+    short_name = fields.CharField(max_length=12, null=True, default=None)
     regime = fields.IntEnumField(Regime, description="Political regime of this country")
     economy = fields.IntEnumField(Economy, description="Economical regime of this country")
     health = fields.IntField(description="Ball health stat")
