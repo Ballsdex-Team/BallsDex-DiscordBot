@@ -30,27 +30,32 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
             return
         if self.name.value.lower() == self.ball.name.lower():
             self.ball.catched = True
-            await self.catch_ball(interaction.user)
+            ball = await self.catch_ball(interaction.user)
             await interaction.response.send_message(
-                f"{interaction.user.mention} You caught **{self.ball.name}!**"
+                f"{interaction.user.mention} You caught **{self.ball.name}!**\n\n"
+                + "✨ ***It's a shiny countryball !*** ✨"
+                if ball.shiny
+                else ""
             )
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
             await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
 
-    async def catch_ball(self, user: discord.abc.User):
+    async def catch_ball(self, user: discord.abc.User) -> BallInstance:
         player, created = await Player.get_or_create(discord_id=user.id)
         await player.fetch_related("balls")
 
         # stat may vary by +/- 20% of base stat
         bonus_attack = random.randint(-20, 20)
         bonus_health = random.randint(-20, 20)
+        shiny = random.randint(1, 512) == 1
 
-        await BallInstance.create(
+        return await BallInstance.create(
             ball=self.ball.model,
             player=player,
             count=(await player.balls.all().count()) + 1,
+            shiny=shiny,
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
         )
