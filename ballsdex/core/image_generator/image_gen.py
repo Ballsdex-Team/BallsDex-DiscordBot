@@ -78,7 +78,7 @@ def draw_card(ball_instance: "BallInstance"):
         (320, 1670),
         str(ball_instance.health),
         font=stats_font,
-        fill=(237, 115, 101, 255),
+        fill=(131, 98, 240, 255) if ball.regime == Regime.DICTATORSHIP else (237, 115, 101, 255),
         stroke_width=1,
         stroke_fill=(0, 0, 0, 255),
     )
