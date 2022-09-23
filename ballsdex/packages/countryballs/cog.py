@@ -38,8 +38,6 @@ class CountryBallsSpawner(commands.Cog):
             return
         if guild.id not in self.cache:
             return
-        if self.cache[guild.id] != message.channel.id:
-            return
         await self.spawn_manager.handle_message(message)
 
     @commands.Cog.listener()
