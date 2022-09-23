@@ -128,7 +128,7 @@ class Players(commands.GroupCog, group_name="balls"):
             return
 
         await player.fetch_related("balls")
-        balls = await player.balls.all().order_by("-favorite").prefetch_related("ball")
+        balls = await player.balls.all().order_by("-favorite", "-shiny").prefetch_related("ball")
         if len(balls) < 1:
             await interaction.response.send_message("You don't have any countryball yet.")
             return
