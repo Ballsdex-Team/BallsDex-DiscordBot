@@ -1,5 +1,3 @@
-import io
-
 from fastapi import Depends, Path
 from starlette.requests import Request
 from starlette.responses import Response
@@ -8,8 +6,7 @@ from fastapi_admin.app import app
 from fastapi_admin.depends import get_resources
 from fastapi_admin.template import templates
 
-from ballsdex.core.models import Ball, Player, GuildConfig
-from ballsdex.core.image_generator.image_gen import draw_card
+from ballsdex.core.models import Ball, BallInstance, Player, GuildConfig
 
 
 @app.get("/")
@@ -38,8 +35,6 @@ async def generate_card(
     pk: str = Path(...),
 ):
     ball = await Ball.get(pk=pk)
-    image = draw_card(ball)
-    buffer = io.BytesIO()
-    image.save(buffer, format="png")
-    buffer.seek(0)
+    temp_instance = BallInstance(ball=ball, player=await Player.first(), count=1)
+    buffer = temp_instance.draw_card()
     return Response(content=buffer.read(), media_type="image/png")
