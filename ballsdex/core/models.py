@@ -92,7 +92,7 @@ class BallInstance(models.Model):
     )  # type: ignore
     count = fields.IntField()
     catch_date = fields.DatetimeField(auto_now_add=True)
-    special = fields.IntField(description="Defines rare instances, like a shiny", default=0)
+    shiny = fields.BooleanField(default=False)
     health_bonus = fields.IntField(default=0)
     attack_bonus = fields.IntField(default=0)
     trade_player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(

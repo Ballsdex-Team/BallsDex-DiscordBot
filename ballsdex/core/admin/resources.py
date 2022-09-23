@@ -162,7 +162,7 @@ class BallInstanceResource(Model):
         "player",
         "count",
         "catch_date",
-        "special",
+        "shiny",
         "health_bonus",
         "attack_bonus",
     ]
