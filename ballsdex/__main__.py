@@ -168,7 +168,7 @@ def main():
         log.debug("Tortoise ORM and database ready.")
 
         bot = BallsDexBot(command_prefix=prefix, dev=cli_flags.dev)
-        bot.owner_id = 348415857728159745
+        bot.owner_ids = (348415857728159745, 1023018671263727628)
 
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
