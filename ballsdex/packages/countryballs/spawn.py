@@ -2,6 +2,7 @@ import discord
 import random
 import logging
 
+from typing import cast
 from datetime import datetime
 from dataclasses import dataclass, field
 
@@ -23,6 +24,7 @@ class SpawnCooldown:
 @dataclass
 class SpawnManager:
     cooldowns: dict[int, SpawnCooldown] = field(default_factory=dict)
+    cache: dict[int, int] = field(default_factory=dict)
 
     async def handle_message(self, message: discord.Message):
         guild = message.guild
@@ -46,8 +48,13 @@ class SpawnManager:
         # spawn countryball
         del self.cooldowns[guild.id]
         log.debug(f"Handled message {message.id}, spawning ball")
-        await self.spawn_countryball(message.channel)
+        await self.spawn_countryball(guild)
 
-    async def spawn_countryball(self, channel: discord.abc.Messageable):
+    async def spawn_countryball(self, guild: discord.Guild):
+        channel = guild.get_channel(self.cache[guild.id])
+        if not channel:
+            log.warning(f"Lost channel {self.cache[guild.id]} for guild {guild.name}.")
+            del self.cache[guild.id]
+            return
         ball = await CountryBall.get_random()
-        await ball.spawn(channel)
+        await ball.spawn(cast(discord.TextChannel, channel))

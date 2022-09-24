@@ -15,7 +15,6 @@ log = logging.getLogger("ballsdex.packages.countryballs")
 
 class CountryBallsSpawner(commands.Cog):
     def __init__(self):
-        self.cache: dict[int, int] = {}
         self.spawn_manager = SpawnManager()
 
     async def load_cache(self):
@@ -25,7 +24,7 @@ class CountryBallsSpawner(commands.Cog):
                 continue
             if not config.spawn_channel:
                 continue
-            self.cache[config.guild_id] = config.spawn_channel
+            self.spawn_manager.cache[config.guild_id] = config.spawn_channel
             i += 1
         log.info(f"Loaded {i} guilds in cache")
 
@@ -36,7 +35,7 @@ class CountryBallsSpawner(commands.Cog):
         guild = message.guild
         if not guild:
             return
-        if guild.id not in self.cache:
+        if guild.id not in self.spawn_manager.cache:
             return
         await self.spawn_manager.handle_message(message)
 
@@ -47,23 +46,23 @@ class CountryBallsSpawner(commands.Cog):
         channel: Optional[discord.TextChannel] = None,
         enabled: Optional[bool] = None,
     ):
-        if guild.id not in self.cache:
+        if guild.id not in self.spawn_manager.cache:
             if enabled is False:
                 return  # do nothing
             if channel:
-                self.cache[guild.id] = channel.id
+                self.spawn_manager.cache[guild.id] = channel.id
             else:
                 try:
                     config = await GuildConfig.get(guild_id=guild.id)
                 except DoesNotExist:
                     return
                 else:
-                    self.cache[guild.id] = config.spawn_channel
+                    self.spawn_manager.cache[guild.id] = config.spawn_channel
         else:
             if enabled is False:
-                del self.cache[guild.id]
+                del self.spawn_manager.cache[guild.id]
             elif channel:
-                self.cache[guild.id] = channel.id
+                self.spawn_manager.cache[guild.id] = channel.id
 
     @commands.command()
     @commands.is_owner()
@@ -96,7 +95,7 @@ class CountryBallsSpawner(commands.Cog):
         Get details about countryball spawner.
         """
         assert ctx.guild
-        if ctx.guild.id not in self.cache:
+        if ctx.guild.id not in self.spawn_manager.cache:
             await ctx.send("That guild does not have a registered spawn channel.")
             return
         cooldown_manager = self.spawn_manager.cooldowns[ctx.guild.id]
