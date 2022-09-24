@@ -25,8 +25,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
         # TODO: use lock
         if self.ball.catched:
             await interaction.response.send_message(
-                f"{interaction.user.mention} I was caught already!",
-                ephemeral=False,
+                f"{interaction.user.mention} I was caught already!"
             )
             return
         if self.name.value.lower() == self.ball.name.lower():
@@ -34,10 +33,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
             ball = await self.catch_ball(interaction.user)
             await interaction.response.send_message(
                 f"{interaction.user.mention} You caught **{self.ball.name}!**\n\n"
-                + "✨ ***It's a shiny countryball !*** ✨"
-                if ball.shiny
-                else "",
-                ephemeral=False,
+                + ("✨ ***It's a shiny countryball !*** ✨" if ball.shiny else ""),
             )
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
