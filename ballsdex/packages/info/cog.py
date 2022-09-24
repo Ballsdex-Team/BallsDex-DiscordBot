@@ -101,6 +101,10 @@ class Info(commands.Cog):
             f"**{balls_count}** countryballs to collect\n"
             f"**{players_count}** players that caught **{balls_instances_count}** countryballs\n"
             f"**{len(self.bot.guilds)}** servers playing\n\n"
+            "Made by **El Laggron** (coding) and **Speedroide** (writing cards), with help from "
+            "**Bob the second** for correction.\n"
+            "All pictures are used with permission from [Polandball Wiki]"
+            "(https://www.polandballwiki.com/wiki/Polandball_Wiki)!\n\n"
             f"[Discord server]({DISCORD_SERVER_LINK}) • [Invite me]({invite_link}) • "
             f"[Source code and issues]({GITHUB_LINK})"
         )
