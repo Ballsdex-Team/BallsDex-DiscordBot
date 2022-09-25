@@ -6,7 +6,7 @@ from fastapi_admin.file_upload import FileUpload
 from fastapi_admin.resources import Field, Link, Model, Action
 from fastapi_admin.widgets import displays, filters, inputs
 from starlette.requests import Request
-from ballsdex.core.models import BallInstance, User, Ball, Player, GuildConfig
+from ballsdex.core.models import BallInstance, User, Ball, Player, GuildConfig, BlacklistedID
 from typing import List
 
 
@@ -205,3 +205,12 @@ class GuildConfigResource(Model):
         ),
     ]
     fields = ["guild_id", "spawn_channel", "enabled"]
+
+
+@app.register
+class BlacklistedIDResource(Model):
+    label = "Blacklisted user ID"
+    model = BlacklistedID
+    icon = "fas fa-lock"
+    page_title = "Blacklisted user IDs"
+    fields = ["discord_id"]

@@ -180,3 +180,12 @@ class Player(models.Model):
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+
+class BlacklistedID(models.Model):
+    discord_id = fields.BigIntField(
+        description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
+    )
+
+    def __str__(self) -> str:
+        return str(self.discord_id)
