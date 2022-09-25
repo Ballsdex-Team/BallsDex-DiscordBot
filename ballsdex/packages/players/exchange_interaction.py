@@ -25,8 +25,11 @@ class ExchangeConfirmationView(discord.ui.View):
         self.player2 = player2
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        bot = cast("BallsDexBot", interaction.client)
+        if not await bot.blacklist_check(interaction):
+            return False
         if interaction.user and interaction.user.id in (
-            cast("BallsDexBot", interaction.client).owner_id,
+            bot.owner_id,
             self.player1.user.id,
             self.player2.user.id,
         ):

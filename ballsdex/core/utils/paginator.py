@@ -142,6 +142,9 @@ class Pages(discord.ui.View):
             pass
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        bot = cast("BallsDexBot", interaction.client)
+        if not await bot.blacklist_check(interaction):
+            return False
         if interaction.user and interaction.user.id in (
             self.bot.owner_id,
             self.original_interaction.user.id,

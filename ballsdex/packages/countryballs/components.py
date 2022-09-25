@@ -2,12 +2,13 @@ from __future__ import annotations
 import discord
 import random
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from discord.ui import Modal, TextInput, Button, View
 
 from ballsdex.core.models import Player, BallInstance
 
 if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
     from ballsdex.packages.countryballs.countryball import CountryBall
 
 
@@ -77,6 +78,10 @@ class CatchView(View):
         self.ball = ball
         self.button = CatchButton(ball)
         self.add_item(self.button)
+
+    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+        bot = cast("BallsDexBot", interaction.client)
+        return await bot.blacklist_check(interaction)
 
     async def on_timeout(self):
         self.button.disabled = True
