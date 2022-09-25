@@ -52,3 +52,9 @@ class Core(commands.Cog):
             log.error(f"Failed to reload extension {package}", exc_info=True)
         else:
             await ctx.send("Extension reloaded.")
+
+    @commands.command()
+    @commands.is_owner()
+    async def reloadblacklist(self, ctx: commands.Context):
+        await self.bot.load_blacklist()
+        await ctx.message.add_reaction("✅")
