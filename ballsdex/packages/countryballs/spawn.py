@@ -25,7 +25,7 @@ class SpawnCooldown:
         if self.lock.locked():
             return False
         async with self.lock:
-            self.chance += 1
+            self.amount += 1
             await asyncio.sleep(4)
         return True
 
