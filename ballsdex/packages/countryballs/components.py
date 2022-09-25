@@ -29,7 +29,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
                 f"{interaction.user.mention} I was caught already!"
             )
             return
-        if self.name.value.lower() == self.ball.name.lower():
+        if self.name.value.lower().strip() == self.ball.name.lower():
             self.ball.catched = True
             ball = await self.catch_ball(interaction.user)
             await interaction.response.send_message(
