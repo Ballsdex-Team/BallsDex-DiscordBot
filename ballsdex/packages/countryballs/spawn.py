@@ -10,7 +10,7 @@ from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
-SPAWN_CHANCE_RANGE = (60, 180)
+SPAWN_CHANCE_RANGE = (40, 140)
 
 
 @dataclass
