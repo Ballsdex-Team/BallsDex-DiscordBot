@@ -47,7 +47,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
         # stat may vary by +/- 20% of base stat
         bonus_attack = random.randint(-20, 20)
         bonus_health = random.randint(-20, 20)
-        shiny = random.randint(1, 512) == 1
+        shiny = random.randint(1, 2048) == 1
 
         return await BallInstance.create(
             ball=self.ball.model,
