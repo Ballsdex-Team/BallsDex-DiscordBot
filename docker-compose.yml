@@ -27,7 +27,6 @@ services:
       - *postgres-url
       - "BALLSDEXBOT_REDIS_URL=redis://redis"
     depends_on:
-      - bot
       - postgres-db
       - redis-cache
     volumes:
