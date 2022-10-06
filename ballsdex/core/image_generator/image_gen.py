@@ -24,6 +24,7 @@ title_font = ImageFont.truetype(str(SOURCES_PATH / "ArsenicaTrial-Extrabold.ttf"
 capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
 capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
 stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
+credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 
 democracy = Image.open(str(SOURCES_PATH / "democracy.png"))
 dictatorship = Image.open(str(SOURCES_PATH / "dictatorship.png"))
@@ -95,6 +96,16 @@ def draw_card(ball_instance: "BallInstance"):
         fill=(252, 194, 76, 255),
         stroke_width=1,
         stroke_fill=(0, 0, 0, 255),
+    )
+    draw.text(
+        (30, 1870),
+        # Modifying the line below is breaking the licence as you are removing credits
+        # If you don't want to receive a DMCA, just don't
+        "Created by Speedroide and El Laggron\n" f"Artwork author: {ball.credits}",
+        font=credits_font,
+        fill=(0, 0, 0, 255),
+        stroke_width=0,
+        stroke_fill=(255, 255, 255, 255),
     )
 
     artwork = Image.open("." + ball.collection_card)
