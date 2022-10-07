@@ -6,7 +6,15 @@ from fastapi_admin.file_upload import FileUpload
 from fastapi_admin.resources import Field, Link, Model, Action
 from fastapi_admin.widgets import displays, filters, inputs
 from starlette.requests import Request
-from ballsdex.core.models import BallInstance, User, Ball, Player, GuildConfig, BlacklistedID
+from ballsdex.core.models import (
+    Special,
+    BallInstance,
+    User,
+    Ball,
+    Player,
+    GuildConfig,
+    BlacklistedID,
+)
 from typing import List
 
 
@@ -59,6 +67,55 @@ class AdminResource(Model):
         if field.name == "id":
             return {"class": "bg-danger text-white"}
         return await super().cell_attributes(request, obj, field)
+
+
+@app.register
+class SpecialResource(Model):
+    label = "Special events"
+    model = Special
+    icon = "fas fa-sparkles"
+    page_pre_title = "special list"
+    page_title = "Special events list"
+    filters = [
+        filters.Search(
+            name="name", label="Name", search_mode="contains", placeholder="Search for events"
+        )
+    ]
+    fields = [
+        "name",
+        "catch_phrase",
+        Field(
+            name="start_date",
+            label="Start date of the event",
+            display=displays.DateDisplay(),
+            input_=inputs.Date(help_text="Date when special balls will start spawning"),
+        ),
+        Field(
+            name="end_date",
+            label="End date of the event",
+            display=displays.DateDisplay(),
+            input_=inputs.Date(help_text="Date when special balls will stop spawning"),
+        ),
+        "rarity",
+        Field(
+            name="democracy_card",
+            label="Democracy card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="dictatorship_card",
+            label="Dictatorship card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="union_card",
+            label="Union card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+    ]
 
 
 @app.register
@@ -164,6 +221,7 @@ class BallInstanceResource(Model):
         "count",
         "catch_date",
         "shiny",
+        "special",
         "health_bonus",
         "attack_bonus",
     ]

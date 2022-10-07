@@ -53,6 +53,37 @@ class Economy(IntEnum):
     ANARCHY = 3
 
 
+class Special(models.Model):
+    name = fields.CharField(max_length=64)
+    catch_phrase = fields.CharField(
+        max_length=128,
+        description="Sentence sent in bonus when someone catches a special card",
+        null=True,
+        default=None,
+    )
+    start_date = fields.DatetimeField()
+    end_date = fields.DatetimeField()
+    rarity = fields.FloatField(
+        description="Value between 0 and 1, chances of using this special background."
+    )
+    democracy_card = fields.CharField(max_length=200)
+    dictatorship_card = fields.CharField(max_length=200)
+    union_card = fields.CharField(max_length=200)
+
+    def __str__(self) -> str:
+        return self.name
+
+    def get_background(self, regime: Regime) -> str | None:
+        if regime == Regime.DEMOCRACY:
+            return self.democracy_card
+        elif regime == Regime.DICTATORSHIP:
+            return self.dictatorship_card
+        elif regime == Regime.UNION:
+            return self.union_card
+        else:
+            return None
+
+
 class Ball(models.Model):
     country = fields.CharField(max_length=48, unique=True)
     short_name = fields.CharField(max_length=12, null=True, default=None)
@@ -94,6 +125,9 @@ class BallInstance(models.Model):
     count = fields.IntField()
     catch_date = fields.DatetimeField(auto_now_add=True)
     shiny = fields.BooleanField(default=False)
+    special: fields.ForeignKeyRelation[Special] = fields.ForeignKeyField(
+        "models.Special", null=True, default=None, on_delete=fields.SET_NULL
+    )
     health_bonus = fields.IntField(default=0)
     attack_bonus = fields.IntField(default=0)
     trade_player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
@@ -117,6 +151,11 @@ class BallInstance(models.Model):
         bonus = int(self.ball.health * self.health_bonus * 0.01)
         return self.ball.health + bonus
 
+    @property
+    def special_card(self) -> str | None:
+        if self.special:
+            return self.special.get_background(self.ball.regime) or self.ball.collection_card
+
     def draw_card(self) -> BytesIO:
         from ballsdex.core.image_generator.image_gen import draw_card
 
@@ -131,7 +170,7 @@ class BallInstance(models.Model):
     ) -> Tuple[str, discord.File]:
         # message content
         trade_content = ""
-        await self.fetch_related("trade_player")
+        await self.fetch_related("trade_player", "ball", "special")
         if self.trade_player:
 
             original_player = None
