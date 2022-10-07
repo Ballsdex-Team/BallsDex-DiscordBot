@@ -1,6 +1,7 @@
 from __future__ import annotations
 import discord
 import random
+import logging
 
 from typing import TYPE_CHECKING, cast
 from discord.ui import Modal, TextInput, Button, View
@@ -9,7 +10,10 @@ from ballsdex.core.models import Player, BallInstance
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+    from ballsdex.core.models import Special
     from ballsdex.packages.countryballs.countryball import CountryBall
+
+log = logging.getLogger("ballsdex.packages.countryballs.components")
 
 
 class CountryballNamePrompt(Modal, title="Catch this countryball!"):
@@ -31,7 +35,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
             return
         if self.name.value.lower().strip() == self.ball.name.lower():
             self.ball.catched = True
-            ball = await self.catch_ball(interaction.user)
+            ball = await self.catch_ball(cast("BallsDexBot", interaction.client), interaction.user)
             await interaction.response.send_message(
                 f"{interaction.user.mention} You caught **{self.ball.name}!**\n\n"
                 + ("✨ ***It's a shiny countryball !*** ✨" if ball.shiny else ""),
@@ -41,7 +45,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
         else:
             await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
 
-    async def catch_ball(self, user: discord.abc.User) -> BallInstance:
+    async def catch_ball(self, bot: "BallsDexBot", user: discord.abc.User) -> BallInstance:
         player, created = await Player.get_or_create(discord_id=user.id)
         await player.fetch_related("balls")
 
@@ -50,11 +54,32 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
         bonus_health = random.randint(-20, 20)
         shiny = random.randint(1, 2048) == 1
 
+        # check if we can spawn cards with a special background
+        special: "Special" | None = None
+        if not shiny:
+            # calculate the average rarity of all current events to determine the weight of a
+            # common countryball. If average=1, no common countryball may spawn, average=0.5 means
+            # half common half special, and average=0 means only commons
+            average_rarity = sum(x.rarity for x in bot.special_cache) / len(bot.special_cache)
+            common_ball_weight = 1 - average_rarity
+
+            population = range(-1, len(bot.special_cache))  # picking -1 = common
+            index = random.choices(
+                population=population,
+                weights=[x.rarity for x in bot.special_cache] + [common_ball_weight],
+                k=1,
+            )[0]
+            if index != -1:  # not common
+                special = bot.special_cache[index]
+
+        log.debug(f"{user} caught countryball {self.ball.model}, {shiny=} {special=}")
+
         return await BallInstance.create(
             ball=self.ball.model,
             player=player,
             count=(await player.balls.all().count()) + 1,
             shiny=shiny,
+            special=special,
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
         )
