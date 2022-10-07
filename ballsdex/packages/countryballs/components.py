@@ -36,9 +36,15 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
         if self.name.value.lower().strip() == self.ball.name.lower():
             self.ball.catched = True
             ball = await self.catch_ball(cast("BallsDexBot", interaction.client), interaction.user)
+
+            special = ""
+            if ball.shiny:
+                special += "✨ ***It's a shiny countryball !*** ✨\n"
+            if ball.special and ball.special.catch_phrase:
+                special += f"*{ball.special.catch_phrase}*\n"
+
             await interaction.response.send_message(
-                f"{interaction.user.mention} You caught **{self.ball.name}!**\n\n"
-                + ("✨ ***It's a shiny countryball !*** ✨" if ball.shiny else ""),
+                f"{interaction.user.mention} You caught **{self.ball.name}!**\n\n{special}",
             )
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
@@ -60,13 +66,14 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
             # calculate the average rarity of all current events to determine the weight of a
             # common countryball. If average=1, no common countryball may spawn, average=0.5 means
             # half common half special, and average=0 means only commons
-            average_rarity = sum(x.rarity for x in bot.special_cache) / len(bot.special_cache)
+            weights = [x.rarity for x in bot.special_cache]
+            average_rarity = sum(weights) / len(bot.special_cache)
             common_ball_weight = 1 - average_rarity
 
-            population = range(-1, len(bot.special_cache))  # picking -1 = common
+            population = list(range(-1, len(bot.special_cache)))  # picking -1 = common
             index = random.choices(
                 population=population,
-                weights=[x.rarity for x in bot.special_cache] + [common_ball_weight],
+                weights=weights + [common_ball_weight],
                 k=1,
             )[0]
             if index != -1:  # not common
