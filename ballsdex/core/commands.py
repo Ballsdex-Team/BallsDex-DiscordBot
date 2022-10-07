@@ -56,5 +56,23 @@ class Core(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def reloadblacklist(self, ctx: commands.Context):
+        """
+        Reload the cache of blacklisted users.
+
+        This is needed each time the database is updated, otherwise changes won't reflect until
+        next start.
+        """
         await self.bot.load_blacklist()
+        await ctx.message.add_reaction("✅")
+
+    @commands.command()
+    @commands.is_owner()
+    async def reloadspecial(self, ctx: commands.Context):
+        """
+        Reload the cache of special balls (events and backgrounds).
+
+        This is needed each time the database is updated, otherwise changes won't reflect until
+        next start.
+        """
+        await self.bot.load_special_cache()
         await ctx.message.add_reaction("✅")

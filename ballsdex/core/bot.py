@@ -5,12 +5,13 @@ import logging
 
 from rich import print
 from typing import cast
+from datetime import datetime
 
 from discord import app_commands
 from discord.ext import commands
 
 from ballsdex.core.dev import Dev
-from ballsdex.core.models import BlacklistedID
+from ballsdex.core.models import BlacklistedID, Special
 from ballsdex.core.commands import Core
 
 log = logging.getLogger("ballsdex.core.bot")
@@ -36,6 +37,7 @@ class BallsDexBot(commands.Bot):
         self.dev = dev
         self.tree.error(self.on_application_command_error)
         self.blacklist: list[int] = []
+        self.special_cache: list[Special] = []
 
     async def on_shard_ready(self, shard_id: int):
         log.debug(f"Connected to shard #{shard_id}")
@@ -69,11 +71,16 @@ class BallsDexBot(commands.Bot):
             await BlacklistedID.all().only("discord_id").values_list("discord_id", flat=True)
         )  # type: ignore
 
+    async def load_special_cache(self):
+        now = datetime.now()
+        self.special_cache = await Special.filter(start_date__lte=now, end_date__gt=now)
+
     async def on_ready(self):
         assert self.user
         log.info(f"Successfully logged in as {self.user} ({self.user.id})!")
 
         await self.load_blacklist()
+        await self.load_special_cache()
         if self.blacklist:
             log.info(f"{len(self.blacklist)} blacklisted users.")
 
