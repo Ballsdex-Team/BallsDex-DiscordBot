@@ -40,9 +40,12 @@ test = Image.open(str(SOURCES_PATH / "fr_test.png"))
 def draw_card(ball_instance: "BallInstance"):
     ball = ball_instance.ball
     ball_health = (237, 115, 101, 255)
+
     if ball_instance.shiny:
         image = shiny.copy()
         ball_health = (255, 255, 255, 255)
+    elif special_image := ball_instance.special_card:
+        image = Image.open("." + special_image).copy()
     elif ball.regime == Regime.DEMOCRACY:
         image = democracy.copy()
     elif ball.regime == Regime.DICTATORSHIP:
