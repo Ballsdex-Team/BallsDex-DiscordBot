@@ -104,7 +104,11 @@ class Info(commands.Cog):
             "Made by **El Laggron** (coding) and **Speedroide** (writing cards), with help from "
             "**Bob the second** for correction.\n"
             "All pictures are used with permission from [Polandball Wiki]"
-            "(https://www.polandballwiki.com/wiki/Polandball_Wiki)!\n\n"
+            "(https://www.polandballwiki.com/wiki/Polandball_Wiki) and/or "
+            "from the respective artists.\n"
+            "**The complete list of artworks credits can be found [here]("
+            "https://docs.google.com/document/d/1XqPysHQCDgifBkM_FHwgoDyy37bFz5GS9ItYpg-IxYo/edit)"
+            "**\n\n"
             f"[Discord server]({DISCORD_SERVER_LINK}) • [Invite me]({invite_link}) • "
             f"[Source code and issues]({GITHUB_LINK})"
         )
