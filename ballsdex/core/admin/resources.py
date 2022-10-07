@@ -117,6 +117,19 @@ class SpecialResource(Model):
         ),
     ]
 
+    async def get_actions(self, request: Request) -> List[Action]:
+        actions = await super().get_actions(request)
+        actions.append(
+            Action(
+                icon="fas fa-upload",
+                label="Generate card",
+                name="generate",
+                method=Method.GET,
+                ajax=False,
+            )
+        )
+        return actions
+
 
 @app.register
 class BallResource(Model):
