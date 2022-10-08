@@ -62,7 +62,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
 
         # check if we can spawn cards with a special background
         special: "Special" | None = None
-        if not shiny:
+        if not shiny and bot.special_cache:
             # calculate the average rarity of all current events to determine the weight of a
             # common countryball. If average=1, no common countryball may spawn, average=0.5 means
             # half common half special, and average=0 means only commons
