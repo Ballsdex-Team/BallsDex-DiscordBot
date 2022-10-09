@@ -27,10 +27,7 @@ You can directly post an issue in this repo, be sure to use the template!
 
 The bot comes as a [poetry](https://python-poetry.org/) Python package and can run using Docker.
 
-You must first setup a Discord bot with the following intents enabled:
-
-- Server members intent
-- Message content intent (will be removed at a later date)
+You must first setup a Discord bot. **No privileged intents are required!**
 
 ### With Docker (recommended)
 
