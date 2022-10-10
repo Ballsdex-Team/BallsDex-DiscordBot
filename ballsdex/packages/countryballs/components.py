@@ -63,21 +63,17 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
         # check if we can spawn cards with a special background
         special: "Special" | None = None
         if not shiny and bot.special_cache:
-            # calculate the average rarity of all current events to determine the weight of a
-            # common countryball. If average=1, no common countryball may spawn, average=0.5 means
-            # half common half special, and average=0 means only commons
-            weights = [x.rarity for x in bot.special_cache]
-            average_rarity = sum(weights) / len(bot.special_cache)
-            common_ball_weight = 1 - average_rarity
+            population = bot.special_cache + [None]  # None for common card
 
-            population = list(range(-1, len(bot.special_cache)))  # picking -1 = common
-            index = random.choices(
-                population=population,
-                weights=weights + [common_ball_weight],
-                k=1,
-            )[0]
-            if index != -1:  # not common
-                special = bot.special_cache[index]
+            # Here we try to determine what should be the chance of having a common card
+            # since the rarity field is a value between 0 and 1, 1 being no common
+            # and 0 only common, we get the remaining value by doing (1-rarity)
+            # We the sum each value for each current event, and we should get an algorithm
+            # that kinda makes sense.
+            common_weight = sum(1 - x.rarity for x in bot.special_cache)
+
+            weights = [x.rarity for x in bot.special_cache] + [common_weight]
+            special = random.choices(population=population, weights=weights, k=1)[0]
 
         log.debug(f"{user} caught countryball {self.ball.model}, {shiny=} {special=}")
 
