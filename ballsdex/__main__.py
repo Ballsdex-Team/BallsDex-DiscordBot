@@ -65,7 +65,7 @@ def print_welcome():
     print("")
 
 
-async def shutdown_handler(bot: BallsDexBot, signal_type: str = None):
+async def shutdown_handler(bot: BallsDexBot, signal_type: str | None = None):
     if signal_type:
         log.info(f"Received {signal_type}, stopping the bot...")
         sys.exit(signal_type)
@@ -141,10 +141,10 @@ def main():
 
     print_welcome()
 
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
+    try:
         init_logger(cli_flags.disable_rich, cli_flags.debug)
 
         token = os.environ.get("BALLSDEXBOT_TOKEN", None)
