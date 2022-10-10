@@ -44,8 +44,9 @@ class CountryballCache:
             if time - cache.time > 60:
                 raise KeyError  # refresh cache after a minute
         except KeyError:
-            player, created = await Player.get_or_create(discord_id=user.id)
-            if created:
+            try:
+                player = await Player.get(discord_id=user.id)
+            except DoesNotExist:
                 balls = []
             else:
                 balls = await BallInstance.filter(player=player).select_related("ball").all()
@@ -122,8 +123,9 @@ class Players(commands.GroupCog, group_name="balls"):
         """
         user: discord.User | discord.Member = user or interaction.user
 
-        player, created = await Player.get_or_create(discord_id=user.id)
-        if created:
+        try:
+            player = await Player.get(discord_id=user.id)
+        except DoesNotExist:
             await interaction.response.send_message("You don't have any countryball yet.")
             return
 
