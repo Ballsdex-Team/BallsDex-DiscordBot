@@ -183,29 +183,31 @@ class Players(commands.GroupCog, group_name="balls"):
                 if len(buffer) + len(text) > 1024:
                     # hitting embed limits, adding an intermediate field
                     if first_field_added:
-                        embed.add_field(name=f"{title} (continued)", value=buffer, inline=False)
+                        embed.add_field(name=f"*{title} (continued)*", value=buffer, inline=False)
                     else:
-                        embed.add_field(name=title, value=buffer, inline=False)
+                        embed.add_field(name=f"__**{title}**__", value=buffer, inline=False)
                         first_field_added = True
                     buffer = ""
                 buffer += text
 
             if buffer:  # add what's remaining
                 if first_field_added:
-                    embed.add_field(name=f"{title} (continued)", value=buffer, inline=False)
+                    embed.add_field(name=f"*{title} (continued)*", value=buffer, inline=False)
                 else:
-                    embed.add_field(name=title, value=buffer, inline=False)
+                    embed.add_field(name=f"__**{title}**__", value=buffer, inline=False)
 
         if owned_countryballs:
             fill_fields("Owned countryballs", owned_countryballs)
         else:
-            embed.add_field(name="Owned countryballs", value="Nothing yet.")
+            embed.add_field(name="__**Owned countryballs__**", value="Nothing yet.", inline=False)
 
         if missing := bot_countryballs - owned_countryballs:
             fill_fields("Missing countryballs", missing)
         else:
             embed.add_field(
-                name=":tada: No missing countryball, congratulations! :tada:", value="\u200B"
+                name="__**:tada: No missing countryball, congratulations! :tada:**__",
+                value="\u200B",
+                inline=False,
             )  # force empty field value
 
         await interaction.response.send_message(embed=embed)
