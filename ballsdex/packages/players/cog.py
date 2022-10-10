@@ -160,26 +160,55 @@ class Players(commands.GroupCog, group_name="balls"):
         bot_countryballs = set(await Ball.all())
         owned_countryballs = set(x.ball for x in await player.balls.all().prefetch_related("ball"))
 
-        text = ""
-        if owned_countryballs:
-            text += "**Obtained countryballs:**\n"
-            for ball in owned_countryballs:
+        embed = discord.Embed(
+            description="BallsDex progression: "
+            f"**{(len(owned_countryballs)/len(bot_countryballs))*100}%**",
+            colour=discord.Colour.blurple(),
+        )
+        embed.set_author(
+            name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
+        )
+
+        def fill_fields(title: str, countryballs: set[Ball]):
+            # check if we need to add "(continued)" to the field name
+            first_field_added = False
+            buffer = ""
+
+            for ball in countryballs:
                 emoji = self.bot.get_emoji(ball.emoji_id)
-                if emoji:
-                    text += f"{emoji} "
+                if not emoji:
+                    continue
+
+                text = f"{emoji} "
+                if len(buffer) + len(text) > 1024:
+                    # hitting embed limits, adding an intermediate field
+                    if first_field_added:
+                        embed.add_field(name=f"{title} (continued)", value=buffer, inline=False)
+                    else:
+                        embed.add_field(name=title, value=buffer, inline=False)
+                        first_field_added = True
+                    buffer = ""
+                buffer += text
+
+            if buffer:  # add what's remaining
+                if first_field_added:
+                    embed.add_field(name=f"{title} (continued)", value=buffer, inline=False)
+                else:
+                    embed.add_field(name=title, value=buffer, inline=False)
+
+        if owned_countryballs:
+            fill_fields("Owned countryballs", owned_countryballs)
         else:
-            text += "**No countryball possessed yet.**"
+            embed.add_field(name="Owned countryballs", value="Nothing yet.")
 
         if missing := bot_countryballs - owned_countryballs:
-            text += "\n\n**Missing countryballs:**\n"
-            for ball in missing:
-                emoji = self.bot.get_emoji(ball.emoji_id)
-                if emoji:
-                    text += f"{emoji} "
+            fill_fields("Missing countryballs", missing)
         else:
-            text += "\n\n**:tada: No missing countryball, congratulations! :tada:**"
+            embed.add_field(
+                name=":tada: No missing countryball, congratulations! :tada:", value="\u200B"
+            )  # force empty field value
 
-        await interaction.response.send_message(text)
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
     @app_commands.describe(countryball="The countryball you want to inspect")
