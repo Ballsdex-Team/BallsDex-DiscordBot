@@ -18,6 +18,8 @@ log = logging.getLogger("ballsdex.packages.info")
 
 GITHUB_LINK = "https://github.com/laggron42/BallsDex-DiscordBot"
 DISCORD_SERVER_LINK = "https://discord.gg/w9HJU5nGJT"
+TERMS_OF_SERVICE = "https://gist.github.com/laggron42/52ae099c55c6ee1320a260b0a3ecac4e"
+PRIVACY_POLICY = "https://gist.github.com/laggron42/1eaa122013120cdfcc6d27f9485fe0bf"
 
 
 def mention_app_command(app_command: app_commands.Command | app_commands.Group) -> str:
@@ -110,7 +112,8 @@ class Info(commands.Cog):
             "https://docs.google.com/document/d/1XqPysHQCDgifBkM_FHwgoDyy37bFz5GS9ItYpg-IxYo/edit)"
             "**\n\n"
             f"[Discord server]({DISCORD_SERVER_LINK}) • [Invite me]({invite_link}) • "
-            f"[Source code and issues]({GITHUB_LINK})"
+            f"[Source code and issues]({GITHUB_LINK}) • [Terms of Service]({TERMS_OF_SERVICE}) • "
+            f"[Privacy policy]({PRIVACY_POLICY})"
         )
 
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
