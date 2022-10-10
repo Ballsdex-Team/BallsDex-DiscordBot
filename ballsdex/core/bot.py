@@ -128,12 +128,12 @@ class BallsDexBot(commands.Bot):
     async def on_command_error(
         self, context: commands.Context, exception: commands.errors.CommandError
     ):
-        assert context.command
         if isinstance(
             exception, (commands.CommandNotFound, commands.CheckFailure, commands.DisabledCommand)
         ):
             return
 
+        assert context.command
         if isinstance(exception, (commands.ConversionError, commands.UserInputError)):
             # in case we need to know what happened
             log.debug("Silenced command exception", exc_info=exception)
