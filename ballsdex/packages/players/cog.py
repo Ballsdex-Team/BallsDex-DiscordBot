@@ -10,7 +10,7 @@ from tortoise.exceptions import DoesNotExist
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from ballsdex.core.models import Player, BallInstance
+from ballsdex.core.models import Ball, Player, BallInstance
 
 from ballsdex.packages.players.countryballs_paginator import (
     CountryballsViewer,
@@ -146,6 +146,40 @@ class Players(commands.GroupCog, group_name="balls"):
             await paginator.start()
         else:
             await paginator.start(content=f"Viewing {user.name}'s countryballs")
+
+    @app_commands.command()
+    async def completion(self, interaction: discord.Interaction):
+        """
+        Show your current completion of the BallsDex.
+        """
+        try:
+            player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
+        except DoesNotExist:
+            await interaction.response.send_message("You are not a player yet.", ephemeral=True)
+            return
+        bot_countryballs = set(await Ball.all())
+        owned_countryballs = set(x.ball for x in await player.balls.all().prefetch_related("ball"))
+
+        text = ""
+        if owned_countryballs:
+            text += "**Obtained countryballs:**\n"
+            for ball in owned_countryballs:
+                emoji = self.bot.get_emoji(ball.emoji_id)
+                if emoji:
+                    text += f"{emoji} "
+        else:
+            text += "**No countryball possessed yet.**"
+
+        if missing := bot_countryballs - owned_countryballs:
+            text += "\n\n**Missing countryballs:**\n"
+            for ball in missing:
+                emoji = self.bot.get_emoji(ball.emoji_id)
+                if emoji:
+                    text += f"{emoji} "
+        else:
+            text += "\n\n**:tada: No missing countryball, congratulations! :tada:**"
+
+        await interaction.response.send_message(text)
 
     @app_commands.command()
     @app_commands.describe(countryball="The countryball you want to inspect")
