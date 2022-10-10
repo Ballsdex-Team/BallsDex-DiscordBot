@@ -11,6 +11,7 @@ from rich import print
 from tortoise import Tortoise
 from aerich import Command
 from signal import SIGTERM
+from discord.ext.commands import when_mentioned_or
 
 from ballsdex import __version__ as bot_version
 from ballsdex.loggers import init_logger
@@ -167,7 +168,9 @@ def main():
         loop.run_until_complete(init_tortoise(db_url))
         log.debug("Tortoise ORM and database ready.")
 
-        bot = BallsDexBot(command_prefix=prefix, dev=cli_flags.dev)
+        bot = BallsDexBot(
+            command_prefix=when_mentioned_or(prefix), dev=cli_flags.dev  # type: ignore
+        )
         bot.owner_ids = (348415857728159745, 651065240561123338)
 
         exc_handler = functools.partial(global_exception_handler, bot)
