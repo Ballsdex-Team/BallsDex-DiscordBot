@@ -132,13 +132,23 @@ class Players(commands.GroupCog, group_name="balls"):
         try:
             player = await Player.get(discord_id=user.id)
         except DoesNotExist:
-            await interaction.response.send_message("You don't have any countryball yet.")
+            if user == interaction.user:
+                await interaction.response.send_message("You don't have any countryball yet.")
+            else:
+                await interaction.response.send_message(
+                    f"{user.name} doesn't have any countryball yet."
+                )
             return
 
         await player.fetch_related("balls")
         balls = await player.balls.all().order_by("-favorite", "-shiny").prefetch_related("ball")
         if len(balls) < 1:
-            await interaction.response.send_message("You don't have any countryball yet.")
+            if user == interaction.user:
+                await interaction.response.send_message("You don't have any countryball yet.")
+            else:
+                await interaction.response.send_message(
+                    f"{user.name} doesn't have any countryball yet."
+                )
             return
 
         paginator = CountryballsViewer(interaction, balls)
