@@ -14,10 +14,11 @@ Using Docker:
 3. Create an `.env` file like this:
 
    ```env
+   BALLSDEXBOT_TOKEN=your discord token
    BALLSDEXBOT_DB_PASSWORD=a random string
    ```
 
-4. Run `docker compose up -d db redis-cache`. This will not start the bot.
+4. Run `docker compose up -d postgres-db redis-cache`. This will not start the bot.
 
 ----
 
@@ -29,14 +30,73 @@ Export the appropriate environment variables as described in the
 
 1. Get Python 3.10 and pip
 2. Install poetry with `pip install poetry`
-3. Run `poetry install --dev`
+3. Run `poetry install`
 4. You may run commands inside the virtualenv with `poetry run ...`, or use `poetry shell`
 5. Set up your IDE Python version to the one from Poetry. The path to the virtualenv can
    be obtained with `poetry show -v`.
 
-### Running the bot
+## Running the code
 
-`poetry run python3 -m ballsdex --dev --debug`
+### Starting the bot
+
+- `poetry shell`
+- ```bash
+  BALLSDEXBOT_DB_URL="postgres://ballsdex:password@localhost:5432/ballsdex" \
+  python3 -m ballsdex --dev --debug
+  ```
+
+Replace `password` with the same value as the one in the `.env` file.
+If appropriate, you may also replace `localhost` and `5432` for the host and the port.
+
+### Starting the admin panel
+
+**Warning: You need to run migrations from the bot at least once before starting the admin
+panel without the other components.**
+
+If you're not actively working on the admin panel, you can just do `docker compose up admin-panel`.
+Otherwise, follow these instructions to directly have the process without rebuilding.
+
+- `poetry shell`
+- ```bash
+  BALLSDEXBOT_DB_URL="postgres://ballsdex:password@localhost:5432/ballsdex" \
+  BALLSDEXBOT_REDIS_URL="redis://127.0.0.1" \
+  python3 -m ballsdex --dev --debug
+  ```
+
+Once again, replace `password` with the same value as the one in the `.env` file.
+If appropriate, you may also replace `localhost` and `5432` for the host and the port.
+
+## Migrations
+
+When modifying the Tortoise models, you need to create a migration file to reflect the changes
+everywhere. For this, we're using [aerich](https://github.com/tortoise/aerich).
+
+### Applying the changes from remote
+
+When new migrations are available, you can either start the bot to run them automatically, or
+execute the following command:
+
+```sh
+BALLSDEXBOT_DB_URL="postgres://ballsdex:password@localhost:5432/ballsdex" \
+aerich upgrade
+```
+
+Once again, replace `password` with the same value as the one in the `.env` file.
+If appropriate, you may also replace `localhost` and `5432` for the host and the port.
+
+### Creating new migrations
+
+If you modified the models, `aerich` can automatically generate a migration file.
+
+**You need to make sure you have already ran previous migrations, and that your database
+is not messy!** Aerich's behaviour can be odd if not in ideal conditions.
+
+Execute the following command to generate migrations, and push the created files:
+
+```sh
+BALLSDEXBOT_DB_URL="postgres://ballsdex:password@localhost:5432/ballsdex" \
+aerich migrate
+```
 
 ## Coding style
 
