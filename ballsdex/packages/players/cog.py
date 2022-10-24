@@ -1,9 +1,11 @@
 import discord
 import time
 import logging
+import enum
 
 from typing import TYPE_CHECKING, Optional, List, Union, AsyncIterator
 from dataclasses import dataclass
+from collections import defaultdict
 from datetime import datetime
 from tortoise.exceptions import DoesNotExist
 
@@ -24,6 +26,17 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.countryballs")
 
 CACHE_TIME = 30
+
+
+class SortingChoices(enum.Enum):
+    alphabetic = "ball__country"
+    catch_date = "-catch_date"
+    rarity = "ball__rarity"
+    special = "special__id"
+
+    # manual sorts are not sorted by SQL queries but by our code
+    # this may be do-able with SQL still, but I don't have much experience ngl
+    duplicates = "manualsort-duplicates"
 
 
 @dataclass
@@ -123,7 +136,16 @@ class Players(commands.GroupCog, group_name="balls"):
         self.bot = bot
 
     @app_commands.command()
-    async def list(self, interaction: discord.Interaction, user: Optional[discord.User] = None):
+    @app_commands.describe(
+        user="View someone else's collection",
+        sort="Modify the default sorting of your countryballs",
+    )
+    async def list(
+        self,
+        interaction: discord.Interaction,
+        user: Optional[discord.User] = None,
+        sort: SortingChoices | None = None,
+    ):
         """
         List your countryballs.
         """
@@ -132,16 +154,41 @@ class Players(commands.GroupCog, group_name="balls"):
         try:
             player = await Player.get(discord_id=user.id)
         except DoesNotExist:
-            await interaction.response.send_message("You don't have any countryball yet.")
+            if user == interaction.user:
+                await interaction.response.send_message("You don't have any countryball yet.")
+            else:
+                await interaction.response.send_message(
+                    f"{user.name} doesn't have any countryball yet."
+                )
             return
 
         await player.fetch_related("balls")
-        balls = await player.balls.all().order_by("-favorite", "-shiny").prefetch_related("ball")
-        if len(balls) < 1:
-            await interaction.response.send_message("You don't have any countryball yet.")
+        if sort:
+            if sort == SortingChoices.duplicates:
+                countryballs = await player.balls.all().prefetch_related("ball")
+                count = defaultdict(int)
+                for countryball in countryballs:
+                    count[countryball.ball.pk] += 1
+                countryballs.sort(key=lambda m: -count[m.ball.pk])
+            else:
+                countryballs = (
+                    await player.balls.all().prefetch_related("ball").order_by(sort.value)
+                )
+        else:
+            countryballs = (
+                await player.balls.all().prefetch_related("ball").order_by("-favorite", "-shiny")
+            )
+
+        if len(countryballs) < 1:
+            if user == interaction.user:
+                await interaction.response.send_message("You don't have any countryball yet.")
+            else:
+                await interaction.response.send_message(
+                    f"{user.name} doesn't have any countryball yet."
+                )
             return
 
-        paginator = CountryballsViewer(interaction, balls)
+        paginator = CountryballsViewer(interaction, countryballs)
         if user == interaction.user:
             await paginator.start()
         else:
@@ -162,7 +209,7 @@ class Players(commands.GroupCog, group_name="balls"):
 
         embed = discord.Embed(
             description="BallsDex progression: "
-            f"**{round(len(owned_countryballs)/len(bot_countryballs), 3)*100}%**",
+            f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 4)}%**",
             colour=discord.Colour.blurple(),
         )
         embed.set_author(
