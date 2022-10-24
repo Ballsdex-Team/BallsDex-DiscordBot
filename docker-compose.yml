@@ -3,6 +3,12 @@ version: '3.4'
 x-common-env-vars:
   - &postgres-url
     "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
+  - &postgres-db
+    POSTGRES_DB=ballsdex
+  - &postgres-user
+    POSTGRES_USER=ballsdex
+  - &postgres-password
+    POSTGRES_PASSWORD
 
 services:
 
@@ -38,13 +44,34 @@ services:
     restart: always
     hostname: postgres
     environment:
-      - POSTGRES_USER=ballsdex
-      - POSTGRES_DB=ballsdex
-      - POSTGRES_PASSWORD
+      - *postgres-db
+      - *postgres-user
+      - *postgres-password
     ports:
       - "5432:5432"
     volumes:  # Persist the db data
       - database-data:/var/lib/postgresql/data
+
+  postgres-backup:
+    image: prodrigestivill/postgres-backup-local
+    restart: always
+    user: postgres:postgres # Optional: see below
+    volumes:
+      - /var/opt/pgbackups:/backups
+    links:
+      - postgres-db
+    depends_on:
+      - postgres-db
+    environment:
+      - *postgres-db
+      - *postgres-user
+      - *postgres-password
+      - POSTGRES_HOST=postgres
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+      - HEALTHCHECK_PORT=3928
 
   redis-cache:
     image: redis:latest
