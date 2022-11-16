@@ -9,7 +9,7 @@ ENV PYTHONFAULTHANDLER=1 \
   PIP_DISABLE_PIP_VERSION_CHECK=on \
   PIP_DEFAULT_TIMEOUT=100
 
-RUN pip install poetry==1.2.0
+RUN pip install poetry==1.2.2
 
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
