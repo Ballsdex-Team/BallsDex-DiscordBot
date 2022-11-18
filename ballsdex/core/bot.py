@@ -25,7 +25,7 @@ class CommandTree(app_commands.CommandTree):
         return await bot.blacklist_check(interaction)
 
 
-class BallsDexBot(commands.Bot):
+class BallsDexBot(commands.AutoShardedBot):
     """
     BallsDex Discord bot
     """
