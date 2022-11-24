@@ -13,7 +13,6 @@ uvloop = { version = "^0.16.0", markers = "sys_platform != 'win32'" }
 
 # discord
 "discord.py" = "^2.0.1"
-discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus", rev = "8686b5d1bbc1d3c862292eb436ab630d6e9c9b53"}
 
 # fastapi
 fastapi = "^0.82.0"
