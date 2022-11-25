@@ -37,7 +37,7 @@ You must first setup a Discord bot. **No privileged intents are required!**
 
    ```env
    BALLSDEXBOT_TOKEN=your token here
-   BALLSDEXBOT_DB_PASSWORD=a random string
+   POSTGRES_PASSWORD=a random string
    ```
 
 4. Run the bot with `docker compose up -d`

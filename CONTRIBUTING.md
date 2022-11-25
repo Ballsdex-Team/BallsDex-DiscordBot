@@ -15,7 +15,7 @@ Using Docker:
 
    ```env
    BALLSDEXBOT_TOKEN=your discord token
-   BALLSDEXBOT_DB_PASSWORD=a random string
+   POSTGRES_PASSWORD=a random string
    ```
 
 4. Run `docker compose up -d postgres-db redis-cache`. This will not start the bot.
