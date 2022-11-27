@@ -36,6 +36,9 @@ class CLIFlags(argparse.Namespace):
     disable_rich: bool
     debug: bool
     dev: bool
+    prometheus: bool
+    prometheus_host: str
+    prometheus_port: int
 
 
 def parse_cli_flags(arguments: list[str]) -> CLIFlags:
@@ -47,6 +50,23 @@ def parse_cli_flags(arguments: list[str]) -> CLIFlags:
     parser.add_argument("--disable-rich", action="store_true", help="Disable rich log format")
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
+    parser.add_argument(
+        "--prometheus",
+        action="store_true",
+        help="Enable Prometheus HTTP server for metrics collection",
+    )
+    parser.add_argument(
+        "--prometheus-host",
+        type=str,
+        default="localhost",
+        help="Define host for HTTP server serving Prometheus endpoint (default to localhost).",
+    )
+    parser.add_argument(
+        "--prometheus-port",
+        type=int,
+        default=15260,
+        help="Define port for HTTP server serving Prometheus endpoint (default to 15260).",
+    )
     args = parser.parse_args(arguments, namespace=CLIFlags())
     return args
 
@@ -134,6 +154,7 @@ async def init_tortoise(db_url: str):
 
 def main():
     bot = None
+    server = None
     cli_flags = parse_cli_flags(sys.argv[1:])
     if cli_flags.version:
         print(f"BallsDex Discord bot - {bot_version}")
@@ -173,6 +194,13 @@ def main():
         )
         bot.owner_ids = (348415857728159745, 651065240561123338)
 
+        # metrics
+        if cli_flags.prometheus:
+            from ballsdex.core.metrics import PrometheusServer
+
+            server = PrometheusServer(bot, cli_flags.prometheus_host, cli_flags.prometheus_port)
+            loop.run_until_complete(server.run())
+
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
         loop.add_signal_handler(
@@ -197,6 +225,8 @@ def main():
             loop.run_until_complete(shutdown_handler(bot))
     finally:
         loop.run_until_complete(loop.shutdown_asyncgens())
+        if server is not None:
+            loop.run_until_complete(server.stop())
         if Tortoise._inited:
             loop.run_until_complete(Tortoise.close_connections())
         asyncio.set_event_loop(None)
