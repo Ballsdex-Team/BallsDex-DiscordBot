@@ -22,7 +22,9 @@ services:
     depends_on:
       - postgres-db
     volumes:
-      - bot-static:/code/static/uploads
+      - type: bind
+        source: ./
+        target: /code
     command: poetry run python3 -m ballsdex --dev --disable-rich
 
   admin-panel:
@@ -36,7 +38,9 @@ services:
       - postgres-db
       - redis-cache
     volumes:
-      - bot-static:/code/static/uploads
+      - type: bind
+        source: ./
+        target: /code
     command: poetry run uvicorn ballsdex.core.admin:_app --host 0.0.0.0
 
   postgres-db:
@@ -55,11 +59,9 @@ services:
   postgres-backup:
     image: prodrigestivill/postgres-backup-local
     restart: always
-    user: postgres:postgres # Optional: see below
+    user: postgres:postgres
     volumes:
       - /var/opt/pgbackups:/backups
-    links:
-      - postgres-db
     depends_on:
       - postgres-db
     environment:
@@ -86,6 +88,5 @@ services:
       - cache-data:/data
 
 volumes:
-  bot-static:
   database-data:
   cache-data:
