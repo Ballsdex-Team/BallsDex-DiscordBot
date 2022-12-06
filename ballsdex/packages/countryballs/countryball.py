@@ -40,5 +40,7 @@ class CountryBall:
                 view=CatchView(self),
                 file=discord.File(file_location, filename=file_name),
             )
+        except discord.Forbidden:
+            log.error(f"Missing permission to spawn ball in channel {channel}.")
         except discord.HTTPException:
             log.error("Failed to spawn ball", exc_info=True)

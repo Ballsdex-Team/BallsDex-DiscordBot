@@ -159,7 +159,10 @@ class Pages(discord.ui.View):
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
-        await self.original_interaction.followup.edit_message("@original", view=self)
+        try:
+            await self.original_interaction.followup.edit_message("@original", view=self)
+        except discord.HTTPException:
+            pass
 
     async def on_error(
         self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item

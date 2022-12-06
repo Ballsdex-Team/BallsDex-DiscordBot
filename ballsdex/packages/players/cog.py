@@ -104,10 +104,22 @@ class BallInstanceTransformer(app_commands.Transformer):
         # in theory, the selected ball should be in the cache
         # but it's possible that the autocomplete was never invoked
         try:
-            balls = self.cache.cache[interaction.user.id].balls
-            for ball in balls:
-                if ball.id == int(value):
-                    return ball
+            try:
+                balls = self.cache.cache[interaction.user.id].balls
+                for ball in balls:
+                    if ball.id == int(value):
+                        return ball
+            except KeyError:
+                # maybe the cache didn't have time to build, let's try anyway to fetch the value
+                try:
+                    return await BallInstance.get(id=int(value)).prefetch_related("ball")
+                except DoesNotExist:
+                    await interaction.response.send_message(
+                        "The ball could not be found. Make sure to use the autocomplete "
+                        "function on this command."
+                    )
+                    return None
+
         except ValueError:
             # autocomplete didn't work and user tried to force a custom value
             await interaction.response.send_message(
@@ -115,16 +127,6 @@ class BallInstanceTransformer(app_commands.Transformer):
                 "function on this command."
             )
             return None
-        except KeyError:
-            # maybe the cache didn't have time to build, let's try anyway to fetch the value
-            try:
-                return await BallInstance.get(id=int(value)).prefetch_related("ball")
-            except DoesNotExist:
-                await interaction.response.send_message(
-                    "The ball could not be found. Make sure to use the autocomplete "
-                    "function on this command."
-                )
-                return None
 
 
 class Players(commands.GroupCog, group_name="balls"):

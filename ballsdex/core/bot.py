@@ -181,8 +181,6 @@ class BallsDexBot(commands.AutoShardedBot):
     async def on_application_command_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
     ):
-        assert interaction.command
-
         async def send(content: str):
             if interaction.response.is_done():
                 await interaction.followup.send(content, ephemeral=True)
@@ -194,6 +192,7 @@ class BallsDexBot(commands.AutoShardedBot):
             return
 
         if isinstance(error, app_commands.CommandInvokeError):
+            assert interaction.command
 
             if isinstance(error.original, discord.Forbidden):
                 await send("The bot does not have the permission to do something.")
@@ -204,14 +203,26 @@ class BallsDexBot(commands.AutoShardedBot):
                 )
                 return
 
-            log.error(f"Error in text command {interaction.command.name}", exc_info=error.original)
+            if isinstance(error.original, discord.InteractionResponded):
+                # most likely an interaction received twice (happens sometimes),
+                # or two instances are running on the same token.
+                log.warning(
+                    f"Tried invoking command {interaction.command.name}, but the "
+                    "interaction was already responded to.",
+                    exc_info=error.original,
+                )
+                # still including traceback because it may be a programming error
+
+            log.error(
+                f"Error in slash command {interaction.command.name}", exc_info=error.original
+            )
             await send(
                 "An error occured when running the command. Contact support if this persists."
             )
             return
 
         await send("An error occured when running the command. Contact support if this persists.")
-        log.error(f"Unknown error in text command {interaction.command.name}", exc_info=error)
+        log.error("Unknown error in interaction", exc_info=error)
 
     async def on_error(self, event_method: str, /, *args, **kwargs):
         formatted_args = ", ".join(args)

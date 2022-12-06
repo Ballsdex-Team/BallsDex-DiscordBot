@@ -114,4 +114,7 @@ class CatchView(View):
     async def on_timeout(self):
         self.button.disabled = True
         if self.ball.message:
-            await self.ball.message.edit(view=self)
+            try:
+                await self.ball.message.edit(view=self)
+            except discord.HTTPException:
+                pass
