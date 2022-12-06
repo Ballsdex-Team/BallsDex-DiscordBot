@@ -171,7 +171,7 @@ class Players(commands.GroupCog, group_name="balls"):
                 count = defaultdict(int)
                 for countryball in countryballs:
                     count[countryball.ball.pk] += 1
-                countryballs.sort(key=lambda m: -count[m.ball.pk])
+                countryballs.sort(key=lambda m: (-count[m.ball.pk], m.ball.pk))
             else:
                 countryballs = (
                     await player.balls.all().prefetch_related("ball").order_by(sort.value)
