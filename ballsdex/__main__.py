@@ -192,7 +192,6 @@ def main():
         bot = BallsDexBot(
             command_prefix=when_mentioned_or(prefix), dev=cli_flags.dev  # type: ignore
         )
-        bot.owner_ids = (348415857728159745, 651065240561123338)
 
         # metrics
         if cli_flags.prometheus:
