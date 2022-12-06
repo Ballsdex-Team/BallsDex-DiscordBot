@@ -99,7 +99,8 @@ class CountryBallsSpawner(commands.Cog):
             await ctx.send("That guild does not have a registered spawn channel.")
             return
         cooldown_manager = self.spawn_manager.cooldowns[ctx.guild.id]
+        delta = (ctx.message.created_at - cooldown_manager.time).total_seconds()
         await ctx.send(
             f"Initiated {format_dt(cooldown_manager.time, style='R')}\n"
-            f"Counter: {cooldown_manager.amount}/{cooldown_manager.chance}"
+            f"Counter: {cooldown_manager.amount}/{cooldown_manager.chance - (delta // 60)}"
         )
