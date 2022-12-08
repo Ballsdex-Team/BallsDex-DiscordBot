@@ -7,6 +7,8 @@ from fastapi_admin.resources import Field, Link, Model, Action
 from fastapi_admin.widgets import displays, filters, inputs
 from starlette.requests import Request
 from ballsdex.core.models import (
+    Regime,
+    Economy,
     Special,
     BallInstance,
     User,
@@ -73,12 +75,12 @@ class AdminResource(Model):
 class SpecialResource(Model):
     label = "Special events"
     model = Special
-    icon = "fas fa-sparkles"
+    icon = "fas fa-star"
     page_pre_title = "special list"
     page_title = "Special events list"
     filters = [
         filters.Search(
-            name="name", label="Name", search_mode="contains", placeholder="Search for events"
+            name="name", label="Name", search_mode="icontains", placeholder="Search for events"
         )
     ]
     fields = [
@@ -135,6 +137,7 @@ class SpecialResource(Model):
 class BallResource(Model):
     label = "Ball"
     model = Ball
+    page_size = 50
     icon = "fas fa-globe"
     page_pre_title = "ball list"
     page_title = "Balls"
@@ -142,9 +145,12 @@ class BallResource(Model):
         filters.Search(
             name="country",
             label="Country",
-            search_mode="contains",
+            search_mode="icontains",
             placeholder="Search for balls",
         ),
+        filters.Enum(enum=Regime, name="regime", label="Regime"),
+        filters.Enum(enum=Economy, name="economy", label="Economy"),
+        filters.Boolean(name="enabled", label="Enabled"),
     ]
     fields = [
         "country",
@@ -216,16 +222,11 @@ class BallResource(Model):
 class BallInstanceResource(Model):
     label = "Ball instance"
     model = BallInstance
-    icon = "fas fa-globe"
+    icon = "fas fa-atlas"
     page_pre_title = "ball instances list"
     page_title = "Ball instances"
     filters = [
-        filters.Search(
-            name="ball",
-            label="Ball",
-            search_mode="contains",
-            placeholder="Search for balls",
-        ),
+        filters.Select(name="ball", label="Countryball"),
     ]
     fields = [
         "id",
@@ -251,7 +252,7 @@ class PlayerResource(Model):
         filters.Search(
             name="discord_id",
             label="ID",
-            search_mode="contains",
+            search_mode="icontains",
             placeholder="Filter by ID",
         ),
     ]
@@ -271,7 +272,7 @@ class GuildConfigResource(Model):
         filters.Search(
             name="guild_id",
             label="ID",
-            search_mode="contains",
+            search_mode="icontains",
             placeholder="Filter by ID",
         ),
     ]
@@ -284,4 +285,14 @@ class BlacklistedIDResource(Model):
     model = BlacklistedID
     icon = "fas fa-lock"
     page_title = "Blacklisted user IDs"
-    fields = ["discord_id"]
+    filters = [
+        filters.Search(
+            name="discord_id",
+            label="ID",
+            search_mode="icontains",
+            placeholder="Filter by ID",
+        ),
+    ]
+    fields = [
+        "discord_id",
+    ]
