@@ -201,13 +201,18 @@ class Players(commands.GroupCog, group_name="balls"):
         """
         Show your current completion of the BallsDex.
         """
-        try:
-            player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
-        except DoesNotExist:
-            await interaction.response.send_message("You are not a player yet.", ephemeral=True)
-            return
-        bot_countryballs = set(await Ball.all())
-        owned_countryballs = set(x.ball for x in await player.balls.all().prefetch_related("ball"))
+        # Filter disabled balls, they do not count towards progression
+        # Only ID and emoji is interesting for us
+        bot_countryballs = {
+            x.pk: x.emoji_id for x in await Ball.filter(enabled=True).only("id", "emoji_id")
+        }
+        # Set of ball IDs owned by the player
+        owned_countryballs = set(
+            x[0]
+            for x in await BallInstance.filter(player__discord_id=interaction.user.id)
+            .distinct()  # Do not query everything
+            .values_list("ball_id")
+        )
 
         embed = discord.Embed(
             description="BallsDex progression: "
@@ -218,13 +223,13 @@ class Players(commands.GroupCog, group_name="balls"):
             name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
         )
 
-        def fill_fields(title: str, countryballs: set[Ball]):
+        def fill_fields(title: str, emoji_ids: set[int]):
             # check if we need to add "(continued)" to the field name
             first_field_added = False
             buffer = ""
 
-            for ball in countryballs:
-                emoji = self.bot.get_emoji(ball.emoji_id)
+            for emoji_id in emoji_ids:
+                emoji = self.bot.get_emoji(emoji_id)
                 if not emoji:
                     continue
 
@@ -246,11 +251,12 @@ class Players(commands.GroupCog, group_name="balls"):
                     embed.add_field(name=f"__**{title}**__", value=buffer, inline=False)
 
         if owned_countryballs:
-            fill_fields("Owned countryballs", owned_countryballs)
+            # Getting the list of emoji IDs from the IDs of the owned countryballs
+            fill_fields("Owned countryballs", set(bot_countryballs[x] for x in owned_countryballs))
         else:
-            embed.add_field(name="__**Owned countryballs__**", value="Nothing yet.", inline=False)
+            embed.add_field(name="__**Owned countryballs**__", value="Nothing yet.", inline=False)
 
-        if missing := bot_countryballs - owned_countryballs:
+        if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
             fill_fields("Missing countryballs", missing)
         else:
             embed.add_field(
