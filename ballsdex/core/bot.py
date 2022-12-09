@@ -149,7 +149,7 @@ class BallsDexBot(commands.AutoShardedBot):
         if isinstance(exception, (commands.ConversionError, commands.UserInputError)):
             # in case we need to know what happened
             log.debug("Silenced command exception", exc_info=exception)
-            await context.send_help()
+            await context.send_help(context.command)
             return
 
         if isinstance(exception, commands.MissingRequiredAttachment):

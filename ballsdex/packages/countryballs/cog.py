@@ -9,6 +9,7 @@ from discord.utils import format_dt
 from ballsdex.core.models import GuildConfig, Ball
 from ballsdex.packages.countryballs.spawn import SpawnManager
 from ballsdex.packages.countryballs.countryball import CountryBall
+from ballsdex.packages.countryballs.components import CountryballNamePrompt
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
@@ -104,3 +105,34 @@ class CountryBallsSpawner(commands.Cog):
             f"Initiated {format_dt(cooldown_manager.time, style='R')}\n"
             f"Counter: {cooldown_manager.amount}/{cooldown_manager.chance - (delta // 60)}"
         )
+
+    @commands.command()
+    @commands.is_owner()
+    async def giveball(self, ctx: commands.Context, ball: str, *users: discord.User):
+        """
+        Give a countryball to one or more users.
+
+        If the countryball name has spaces, put it between quotes.
+        Multiple users may be given afterwards (mention or ID)
+        """
+        if not users:
+            await ctx.send("No users were provided.")
+            return
+        try:
+            ball_model = await Ball.get(country__iexact=ball.lower())
+        except DoesNotExist:
+            await ctx.send("No such ball exists.")
+            return
+
+        # reusing the catch function from components.py
+        # this is ugly, this will change later I hope with the queries rewrite
+        fake_prompt = CountryballNamePrompt(CountryBall(ball_model), None)  # type: ignore
+        async with ctx.typing():
+            for user in users:
+                await fake_prompt.catch_ball(ctx.bot, user)
+        if len(users) > 1:
+            await ctx.send(
+                f'The "{ball_model.country}" countryball was given to {len(users)} users.'
+            )
+        else:
+            await ctx.send(f'The "{ball_model.country}" countryball was given to {users[0]}.')
