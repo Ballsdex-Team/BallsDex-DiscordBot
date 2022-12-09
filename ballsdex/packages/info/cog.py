@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.info")
 
 GITHUB_LINK = "https://github.com/laggron42/BallsDex-DiscordBot"
-DISCORD_SERVER_LINK = "https://discord.gg/w9HJU5nGJT"
+DISCORD_SERVER_LINK = "https://discord.gg/Qn2Rkdkxwc"
 TERMS_OF_SERVICE = "https://gist.github.com/laggron42/52ae099c55c6ee1320a260b0a3ecac4e"
 PRIVACY_POLICY = "https://gist.github.com/laggron42/1eaa122013120cdfcc6d27f9485fe0bf"
 
@@ -103,8 +103,7 @@ class Info(commands.Cog):
             f"**{balls_count}** countryballs to collect\n"
             f"**{players_count}** players that caught **{balls_instances_count}** countryballs\n"
             f"**{len(self.bot.guilds)}** servers playing\n\n"
-            "Made by **El Laggron** (coding) and **Speedroide** (writing cards), with help from "
-            "**Bob the second** for correction.\n"
+            "Coded by **El Laggron**, original concept from **Speedroide**.\n"
             "All pictures are used with permission from [Polandball Wiki]"
             "(https://www.polandballwiki.com/wiki/Polandball_Wiki) and/or "
             "from the respective artists.\n"

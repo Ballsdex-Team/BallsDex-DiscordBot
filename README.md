@@ -1,6 +1,6 @@
 # BallsDex Discord Bot
 
-[![Discord server](https://discordapp.com/api/guilds/999999863553003550/embed.png)](https://discord.gg/w9HJU5nGJT)
+[![Discord server](https://discordapp.com/api/guilds/1049118743101452329/embed.png)](https://discord.gg/Qn2Rkdkxwc)
 [![Pre-commit](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/pre-commit.yml)
 [![Docker build](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/docker.yml/badge.svg)](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/docker.yml)
 [![CodeQL](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/codeql-analysis.yml)
@@ -13,7 +13,7 @@ BallsDex is a bot for collecting countryballs on Discord and exchange them with 
 
 You can invite the bot [here](https://discord.com/api/oauth2/authorize?client_id=999736048596816014&permissions=537193536&scope=bot%20applications.commands).
 
-[![Discord server](https://discordapp.com/api/guilds/999999863553003550/embed.png?style=banner3)](https://discord.gg/w9HJU5nGJT)
+[![Discord server](https://discordapp.com/api/guilds/1049118743101452329/embed.png?style=banner3)](https://discord.gg/Qn2Rkdkxwc)
 
 ## Suggestions, questions and bug reports
 
