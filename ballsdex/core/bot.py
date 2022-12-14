@@ -19,6 +19,10 @@ log = logging.getLogger("ballsdex.core.bot")
 PACKAGES = ["config", "players", "countryballs", "info"]
 
 
+def owner_check(ctx: commands.Context[BallsDexBot]):
+    return ctx.bot.is_owner(ctx.author)
+
+
 class CommandTree(app_commands.CommandTree):
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
         bot = cast(BallsDexBot, interaction.client)
@@ -44,6 +48,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self.tree.error(self.on_application_command_error)
         self.blacklist: list[int] = []
         self.special_cache: list[Special] = []
+        self.add_check(owner_check)  # Only owners are able to use text commands
 
     async def on_shard_ready(self, shard_id: int):
         log.debug(f"Connected to shard #{shard_id}")
