@@ -4,6 +4,7 @@ import random
 import logging
 
 from typing import TYPE_CHECKING, cast
+from prometheus_client import Counter
 from discord.ui import Modal, TextInput, Button, View
 
 from ballsdex.core.models import Player, BallInstance
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
     from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.countryballs.components")
+caught_balls = Counter("caught_cb", "Caught countryballs", ["country", "shiny", "special"])
 
 
 class CountryballNamePrompt(Modal, title="Catch this countryball!"):
@@ -75,9 +77,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
             weights = [x.rarity for x in bot.special_cache] + [common_weight]
             special = random.choices(population=population, weights=weights, k=1)[0]
 
-        log.debug(f"{user} caught countryball {self.ball.model}, {shiny=} {special=}")
-
-        return await BallInstance.create(
+        ball = await BallInstance.create(
             ball=self.ball.model,
             player=player,
             count=(await player.balls.all().count()) + 1,
@@ -86,6 +86,9 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
         )
+        log.debug(f"{user} caught countryball {self.ball.model}, {shiny=} {special=}")
+        caught_balls.labels(country=self.ball.model.country, shiny=shiny, special=special).inc()
+        return ball
 
 
 class CatchButton(Button):
