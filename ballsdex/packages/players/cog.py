@@ -237,7 +237,7 @@ class Players(commands.GroupCog, group_name="balls"):
                 if len(buffer) + len(text) > 1024:
                     # hitting embed limits, adding an intermediate field
                     if first_field_added:
-                        embed.add_field(name=f"*{title} (continued)*", value=buffer, inline=False)
+                        embed.add_field(name="\u200B", value=buffer, inline=False)
                     else:
                         embed.add_field(name=f"__**{title}**__", value=buffer, inline=False)
                         first_field_added = True
@@ -246,7 +246,7 @@ class Players(commands.GroupCog, group_name="balls"):
 
             if buffer:  # add what's remaining
                 if first_field_added:
-                    embed.add_field(name=f"*{title} (continued)*", value=buffer, inline=False)
+                    embed.add_field(name="\u200B", value=buffer, inline=False)
                 else:
                     embed.add_field(name=f"__**{title}**__", value=buffer, inline=False)
 
