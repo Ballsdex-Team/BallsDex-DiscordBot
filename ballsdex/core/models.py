@@ -163,6 +163,7 @@ class BallInstance(models.Model):
         buffer = BytesIO()
         image.save(buffer, format="png")
         buffer.seek(0)
+        image.close()
         return buffer
 
     async def prepare_for_message(

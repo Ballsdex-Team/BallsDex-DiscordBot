@@ -282,6 +282,7 @@ class Players(commands.GroupCog, group_name="balls"):
         await interaction.response.defer(thinking=True)
         content, file = await countryball.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file)
+        file.close()
 
     @app_commands.command()
     async def last(self, interaction: discord.Interaction):
@@ -302,6 +303,7 @@ class Players(commands.GroupCog, group_name="balls"):
 
         content, file = await countryball.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file)
+        file.close()
 
     @app_commands.command()
     @app_commands.describe(countryball="The countryball you want to set/unset as favorite")

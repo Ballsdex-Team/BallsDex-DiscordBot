@@ -19,22 +19,11 @@ RECTANGLE_HEIGHT = (HEIGHT // 5) * 2
 CORNERS = ((34, 261), (1393, 992))
 artwork_size = [b - a for a, b in zip(*CORNERS)]
 
-
 title_font = ImageFont.truetype(str(SOURCES_PATH / "ArsenicaTrial-Extrabold.ttf"), 170)
 capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
 capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
 stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
 credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
-
-democracy = Image.open(str(SOURCES_PATH / "democracy.png"))
-dictatorship = Image.open(str(SOURCES_PATH / "dictatorship.png"))
-union = Image.open(str(SOURCES_PATH / "union.png"))
-shiny = Image.open(str(SOURCES_PATH / "shiny.png"))
-
-capitalist = Image.open(str(SOURCES_PATH / "capitalist.png"))
-communist = Image.open(str(SOURCES_PATH / "communist.png"))
-
-test = Image.open(str(SOURCES_PATH / "fr_test.png"))
 
 
 def draw_card(ball_instance: "BallInstance"):
@@ -42,26 +31,24 @@ def draw_card(ball_instance: "BallInstance"):
     ball_health = (237, 115, 101, 255)
 
     if ball_instance.shiny:
-        image = shiny.copy()
+        image = Image.open(str(SOURCES_PATH / "shiny.png"))
         ball_health = (255, 255, 255, 255)
     elif special_image := ball_instance.special_card:
-        image = Image.open("." + special_image).copy()
+        image = Image.open("." + special_image)
     elif ball.regime == Regime.DEMOCRACY:
-        image = democracy.copy()
+        image = Image.open(str(SOURCES_PATH / "democracy.png"))
     elif ball.regime == Regime.DICTATORSHIP:
-        image = dictatorship.copy()
+        image = Image.open(str(SOURCES_PATH / "dictatorship.png"))
         ball_health = (131, 98, 240, 255)
     elif ball.regime == Regime.UNION:
-        image = union.copy()
+        image = Image.open(str(SOURCES_PATH / "union.png"))
     else:
         raise RuntimeError(f"Regime unknown: {ball.regime}")
 
     if ball.economy == Economy.CAPITALIST:
-        icon = capitalist.copy()
-    elif ball.economy == Economy.COMMUNIST:
-        icon = communist.copy()
-    elif ball.economy == Economy.ANARCHY:
-        icon = communist.copy()
+        icon = Image.open(str(SOURCES_PATH / "capitalist.png"))
+    elif ball.economy == Economy.COMMUNIST or ball.economy == Economy.ANARCHY:
+        icon = Image.open(str(SOURCES_PATH / "communist.png"))
     else:
         raise RuntimeError(f"Economy unknown: {ball.economy}")
 
@@ -116,5 +103,8 @@ def draw_card(ball_instance: "BallInstance"):
 
     icon = ImageOps.fit(icon, (192, 192))
     image.paste(icon, (1200, 30), mask=icon)
+
+    icon.close()
+    artwork.close()
 
     return image
