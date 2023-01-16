@@ -1,6 +1,7 @@
 import sys
 
 import rich
+import discord
 import logging
 import logging.handlers
 
@@ -19,6 +20,8 @@ from typing import Iterable, List, Optional, TYPE_CHECKING, Union, Callable
 if TYPE_CHECKING:
     from rich.console import Console, ConsoleRenderable, RenderableType
     from rich.table import Table
+
+discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
 
 
 class LogRender(DefaultLogRender):
@@ -132,16 +135,10 @@ def init_logger(disable_rich_logging: bool = False, debug: bool = False):
     log = logging.getLogger("ballsdex")
     log.setLevel(logging.DEBUG)
     dpy_log = logging.getLogger("discord")
-    dpy_log.setLevel(logging.WARNING)
+    dpy_log.setLevel(logging.INFO)
     tortoise_log = logging.getLogger("tortoise")
     tortoise_log.setLevel(logging.INFO)
-    fastapi_log = logging.getLogger("fastapi")
-    fastapi_log.setLevel(logging.INFO)
-    uvicorn_access_log = logging.getLogger("uvicorn.access")
-    uvicorn_access_log.setLevel(logging.INFO)
-    uvicorn_error_log = logging.getLogger("uvicorn.error")
-    uvicorn_error_log.setLevel(logging.INFO)
-    loggers = (log, dpy_log, tortoise_log, uvicorn_access_log, uvicorn_error_log)
+    loggers = (log, dpy_log, tortoise_log)
 
     rich_console = rich.get_console()
     rich.reconfigure(tab_size=4)

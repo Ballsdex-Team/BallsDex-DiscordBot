@@ -26,6 +26,8 @@ def owner_check(ctx: commands.Context[BallsDexBot]):
 class CommandTree(app_commands.CommandTree):
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
         bot = cast(BallsDexBot, interaction.client)
+        if bot.is_ready():
+            return False  # wait for all shards to be connected
         return await bot.blacklist_check(interaction)
 
 
