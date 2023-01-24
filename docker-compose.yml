@@ -27,7 +27,8 @@ services:
       - type: bind
         source: ./
         target: /code
-    command: poetry run python3 -m ballsdex --dev --disable-rich --prometheus --prometheus-host 0.0.0.0
+    tty: true
+    command: poetry run python3 -m ballsdex --dev --prometheus --prometheus-host 0.0.0.0
 
   admin-panel:
     image: ballsdex
@@ -43,6 +44,7 @@ services:
       - type: bind
         source: ./
         target: /code
+    tty: true
     command: poetry run uvicorn ballsdex.core.admin:_app --host 0.0.0.0
 
   postgres-db:

@@ -4,6 +4,7 @@ import time
 import functools
 import asyncio
 import logging
+import logging.handlers
 import discord
 import argparse
 
@@ -11,12 +12,13 @@ from rich import print
 from tortoise import Tortoise
 from aerich import Command
 from signal import SIGTERM
+from discord.utils import setup_logging
 from discord.ext.commands import when_mentioned_or
 
 from ballsdex import __version__ as bot_version
-from ballsdex.loggers import init_logger
 from ballsdex.core.bot import BallsDexBot
 
+discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
 log = logging.getLogger("ballsdex")
 
 TORTOISE_ORM = {
@@ -140,6 +142,28 @@ def bot_exception_handler(bot: BallsDexBot, bot_task: asyncio.Future):
         asyncio.create_task(shutdown_handler(bot))
 
 
+def init_logger(disable_rich: bool = False, debug: bool = False):
+    formatter = logging.Formatter(
+        "[{asctime}] {levelname} {name}: {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{"
+    )
+
+    if disable_rich:
+        setup_logging(formatter=formatter, level=logging.INFO)
+    else:
+        setup_logging(level=logging.INFO)
+
+    if debug:
+        log.setLevel(logging.DEBUG)
+
+    # file handler
+    file_handler = logging.handlers.RotatingFileHandler(
+        "ballsdex.log", maxBytes=8**7, backupCount=8
+    )
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    logging.getLogger().addHandler(file_handler)
+
+
 async def init_tortoise(db_url: str):
     log.debug(f"Database URL: {db_url}")
     await Tortoise.init(config=TORTOISE_ORM)
@@ -186,7 +210,11 @@ def main():
 
         prefix = cli_flags.prefix or os.environ.get("BALLSDEXBOT_PREFIX", "b.")
 
-        loop.run_until_complete(init_tortoise(db_url))
+        try:
+            loop.run_until_complete(init_tortoise(db_url))
+        except Exception:
+            log.exception("Failed to connect to database.")
+            return  # will exit with code 1
         log.debug("Tortoise ORM and database ready.")
 
         bot = BallsDexBot(
@@ -197,8 +225,13 @@ def main():
         if cli_flags.prometheus:
             from ballsdex.core.metrics import PrometheusServer
 
-            server = PrometheusServer(bot, cli_flags.prometheus_host, cli_flags.prometheus_port)
-            loop.run_until_complete(server.run())
+            try:
+                server = PrometheusServer(
+                    bot, cli_flags.prometheus_host, cli_flags.prometheus_port
+                )
+                loop.run_until_complete(server.run())
+            except Exception:
+                log.exception("Failed to start Prometheus server, stats will be unavailable.")
 
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
