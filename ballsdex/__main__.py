@@ -184,7 +184,7 @@ def main():
             time.sleep(1)
             sys.exit(0)
 
-        prefix = cli_flags.prefix or os.environ.get("BALLSDEXBOT_PREFIX", "!?")
+        prefix = cli_flags.prefix or os.environ.get("BALLSDEXBOT_PREFIX", "b.")
 
         loop.run_until_complete(init_tortoise(db_url))
         log.debug("Tortoise ORM and database ready.")

@@ -27,7 +27,7 @@ You can directly post an issue in this repo, be sure to use the template!
 
 The bot comes as a [poetry](https://python-poetry.org/) Python package and can run using Docker.
 
-You must first setup a Discord bot. **No privileged intents are required!**
+You must first setup a Discord bot. **The privileged message content intent is required!**
 
 ### With Docker (recommended)
 
@@ -38,6 +38,12 @@ You must first setup a Discord bot. **No privileged intents are required!**
    ```env
    BALLSDEXBOT_TOKEN=your token here
    POSTGRES_PASSWORD=a random string
+   ```
+
+   If you want to override the default prefix for text commands (`b.`), add this line
+
+   ```env
+   BALLSDEXBOT_PREFIX=custom_prefix
    ```
 
 4. Run the bot with `docker compose up -d`
