@@ -462,7 +462,7 @@ tests = ["check-manifest (>=0.42)", "mock (>=1.3.0)", "pytest (==5.4.3)", "pytes
 
 [[package]]
 name = "discord.py"
-version = "2.2.0a4714+gae78b0c1"
+version = "2.2.0a4714+g7e95f985"
 description = "A Python wrapper for the Discord API"
 category = "main"
 optional = false
@@ -482,8 +482,8 @@ voice = ["PyNaCl (>=1.3.0,<1.6)"]
 [package.source]
 type = "git"
 url = "https://github.com/Rapptz/discord.py"
-reference = "fix-view-leak"
-resolved_reference = "ae78b0c1fd38ec962bb9bd627cf0999efe807b85"
+reference = "7e95f985210f6d91f133a2538ce9dcf684df63e0"
+resolved_reference = "7e95f985210f6d91f133a2538ce9dcf684df63e0"
 
 [[package]]
 name = "distlib"
@@ -1783,4 +1783,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "b27c69eaaf25a69317f3206b17e3f4ad6ddd97e0554bb6b3aa1efd91d1cb9580"
+content-hash = "d37a6f2eb3f51513b5c2813ca649514c8d8fcffcb3e50bba29a0ae974ea05a42"

@@ -12,7 +12,7 @@ python = "^3.10"
 uvloop = { version = "^0.16.0", markers = "sys_platform != 'win32'" }
 
 # discord
-"discord.py" = {git = "https://github.com/Rapptz/discord.py", branch = "fix-view-leak"}
+"discord.py" = {git = "https://github.com/Rapptz/discord.py", rev = "7e95f985210f6d91f133a2538ce9dcf684df63e0"}
 
 # fastapi
 fastapi = "^0.82.0"
