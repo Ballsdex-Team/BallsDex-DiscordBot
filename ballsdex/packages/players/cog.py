@@ -1,19 +1,16 @@
 import discord
-import time
 import logging
 import enum
 
-from typing import TYPE_CHECKING, Optional, List, Union, AsyncIterator
-from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from collections import defaultdict
-from datetime import datetime
 from tortoise.exceptions import DoesNotExist
 
 from discord import app_commands
-from discord.ext import commands, tasks
+from discord.ext import commands
 
 from ballsdex.core.models import Ball, Player, BallInstance
-
+from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.packages.players.countryballs_paginator import (
     CountryballsViewer,
     CountryballsExchangerPaginator,
@@ -25,8 +22,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
-CACHE_TIME = 30
-
 
 class SortingChoices(enum.Enum):
     alphabetic = "ball__country"
@@ -37,96 +32,6 @@ class SortingChoices(enum.Enum):
     # manual sorts are not sorted by SQL queries but by our code
     # this may be do-able with SQL still, but I don't have much experience ngl
     duplicates = "manualsort-duplicates"
-
-
-@dataclass
-class UserCountryballsCache:
-    time: float
-    balls: List[BallInstance]
-
-
-class CountryballCache:
-    def __init__(self):
-        self.cache: dict[int, UserCountryballsCache] = {}
-        self.clear_cache.start()
-
-    async def get(self, user: discord.abc.User, value: str) -> AsyncIterator[BallInstance]:
-        time = datetime.utcnow().timestamp()
-        try:
-            cache = self.cache[user.id]
-            if time - cache.time > 60:
-                raise KeyError  # refresh cache after a minute
-        except KeyError:
-            try:
-                player = await Player.get(discord_id=user.id)
-            except DoesNotExist:
-                balls = []
-            else:
-                balls = await BallInstance.filter(player=player).select_related("ball").all()
-            cache = UserCountryballsCache(time, balls)
-            self.cache[user.id] = cache
-
-        total = 0
-        for ball in cache.balls:
-            if value in ball.ball.country.lower():
-                yield ball
-                total += 1
-                if total >= 25:
-                    return
-
-    @tasks.loop(seconds=10, reconnect=True)
-    async def clear_cache(self):
-        time = datetime.utcnow().timestamp()
-        to_delete: List[int] = []
-        for id, user in self.cache.items():
-            if time - user.time > CACHE_TIME:
-                to_delete.append(id)
-        for id in to_delete:
-            del self.cache[id]
-
-
-class BallInstanceTransformer(app_commands.Transformer):
-    def __init__(self):
-        self.cache = CountryballCache()
-
-    async def autocomplete(
-        self, interaction: discord.Interaction, value: str
-    ) -> List[app_commands.Choice[Union[int, float, str]]]:
-        t1 = time.time()
-        choices: List[app_commands.Choice] = []
-        async for ball in self.cache.get(interaction.user, value):
-            choices.append(app_commands.Choice(name=str(ball), value=str(ball.id)))
-        t2 = time.time()
-        log.debug(f"Autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
-        return choices
-
-    async def transform(self, interaction: discord.Interaction, value: str) -> BallInstance | None:
-        # in theory, the selected ball should be in the cache
-        # but it's possible that the autocomplete was never invoked
-        try:
-            try:
-                balls = self.cache.cache[interaction.user.id].balls
-                for ball in balls:
-                    if ball.id == int(value):
-                        return ball
-            except KeyError:
-                # maybe the cache didn't have time to build, let's try anyway to fetch the value
-                try:
-                    return await BallInstance.get(id=int(value)).prefetch_related("ball")
-                except DoesNotExist:
-                    await interaction.response.send_message(
-                        "The ball could not be found. Make sure to use the autocomplete "
-                        "function on this command."
-                    )
-                    return None
-
-        except ValueError:
-            # autocomplete didn't work and user tried to force a custom value
-            await interaction.response.send_message(
-                "The ball could not be found. Make sure to use the autocomplete "
-                "function on this command."
-            )
-            return None
 
 
 class Players(commands.GroupCog, group_name="balls"):
@@ -145,7 +50,7 @@ class Players(commands.GroupCog, group_name="balls"):
     async def list(
         self,
         interaction: discord.Interaction,
-        user: Optional[discord.User] = None,
+        user: discord.User | None = None,
         sort: SortingChoices | None = None,
     ):
         """
@@ -272,7 +177,7 @@ class Players(commands.GroupCog, group_name="balls"):
     async def info(
         self,
         interaction: discord.Interaction,
-        countryball: app_commands.Transform[BallInstance, BallInstanceTransformer],
+        countryball: BallInstanceTransform,
     ):
         """
         Display info from a specific countryball.
@@ -310,7 +215,7 @@ class Players(commands.GroupCog, group_name="balls"):
     async def favorite(
         self,
         interaction: discord.Interaction,
-        countryball: app_commands.Transform[BallInstance, BallInstanceTransformer],
+        countryball: BallInstanceTransform,
     ):
         """
         Set favorite countryballs.
@@ -352,7 +257,7 @@ class Players(commands.GroupCog, group_name="balls"):
         self,
         interaction: discord.Interaction,
         user: discord.User,
-        countryball: app_commands.Transform[BallInstance, BallInstanceTransformer] = None,
+        countryball: BallInstanceTransform = None,
     ):
         """
         Exchange a countryball with another player.
