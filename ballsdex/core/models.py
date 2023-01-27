@@ -226,6 +226,7 @@ class BlacklistedID(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
+    reason = fields.TextField(null=True, default=None)
 
     def __str__(self) -> str:
         return str(self.discord_id)

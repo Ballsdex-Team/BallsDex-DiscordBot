@@ -292,7 +292,14 @@ class BlacklistedIDResource(Model):
             search_mode="icontains",
             placeholder="Filter by ID",
         ),
+        filters.Search(
+            name="reason",
+            label="Reason",
+            search_mode="search",
+            placeholder="Search by reason",
+        ),
     ]
     fields = [
         "discord_id",
+        "reason",
     ]
