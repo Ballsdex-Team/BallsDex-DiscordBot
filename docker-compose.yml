@@ -19,6 +19,9 @@ services:
     environment:
       - *postgres-url
       - BALLSDEXBOT_TOKEN
+      - BALLSDEXBOT_ADMIN_GUILDS
+      - BALLSDEXBOT_ADMIN_ROLES
+      - BALLSDEXBOT_ROOT_ROLES
     depends_on:
       - postgres-db
     ports:
