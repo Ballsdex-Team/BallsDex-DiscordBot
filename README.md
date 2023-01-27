@@ -83,6 +83,39 @@ We assume that you have Python 3.10 and pip installed.
 There are some command line options available when starting the bot.
 See them with `python3 -m ballsdex --help`.
 
+## Using the admin panel
+
+Go to https://localhost:8000/admin/init to create the first admin user (you).
+
+You now have access to the admin panel for adding new balls, and managing everything!
+
+If you encounter a 403 error, click the logout button in the top right corner, and login again.
+
+**Unless you know about networking and security, it is not recommended to expose this website.**
+
+## Configuring admin commands
+
+There is a `/admin` command available for providing useful tools for the bot admins (anti cheat,
+giving items, forcing spawn and blacklist management).
+
+It has to be enabled explicitely by adding the following lines in your `.env` file:
+
+```env
+BALLSDEXBOT_ADMIN_GUILDS=ID1,ID2,...
+BALLSDEXBOT_ADMIN_ROLES=ID1,ID2,...
+BALLSDEXBOT_ROOT_ROLES=ID1,ID2,...
+```
+
+- `BALLSDEXBOT_ADMIN_GUILDS` is for the servers where you want to register the admin slash command.
+  That way, it will not be visible to other servers.
+- `BALLSDEXBOT_ADMIN_ROLES` allows the given roles to use `/admin guilds` and `/admin blacklist`.
+  These are your moderators that help for anti cheat.
+- `BALLSDEXBOT_ROOT_ROLES` allows the given roles to use `/admin spawn` and `/admin give`, in
+  addition to the commands above. Be careful who you grant this permission to!
+
+You can have multiple servers with admin commands, but having the roles configured alongside is a
+strict requirement, even for the owners.
+
 ## Contributing
 
 Take a look at [the contribution guide](CONTRIBUTING.md) for setting up your environment!
