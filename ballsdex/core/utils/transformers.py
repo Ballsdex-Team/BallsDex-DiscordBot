@@ -171,14 +171,14 @@ class SpecialTransformer(app_commands.Transformer):
                     break
         return choices
 
-    async def transform(self, interaction: discord.Interaction, value: str) -> Ball | None:
+    async def transform(self, interaction: discord.Interaction, value: str) -> Special | None:
         if not value:
             await interaction.response.send_message(
                 "You need to use the autocomplete function for the special background selection."
             )
             return None
         try:
-            return await Ball.get(pk=int(value))
+            return await Special.get(pk=int(value))
         except (ValueError, DoesNotExist):
             await interaction.response.send_message(
                 "The special event could not be found. Make sure to use the autocomplete "
@@ -187,4 +187,4 @@ class SpecialTransformer(app_commands.Transformer):
             return None
 
 
-BallTransform = app_commands.Transform[Ball, BallTransformer]
+SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
