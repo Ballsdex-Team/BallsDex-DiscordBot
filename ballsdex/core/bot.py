@@ -97,14 +97,10 @@ class BallsDexBot(commands.AutoShardedBot):
         # set bot owners
         assert self.application
         if self.application.team:
-            self.owner_ids = [m.id for m in self.application.team.members]
-            log.info(
-                f"{len(self.owner_ids)} users from team {self.application.team.name} "
-                "are set as bot owners."
-            )
+            self.owner_id = self.application.team.owner_id
         else:
             self.owner_id = self.application.owner.id
-            log.info(f"{self.application.owner} is set as the bot owner.")
+        log.info(f"{self.owner_id} is set as the bot owner.")
 
         await self.load_blacklist()
         await self.load_special_cache()
