@@ -16,7 +16,7 @@ from ballsdex.core.commands import Core
 
 log = logging.getLogger("ballsdex.core.bot")
 
-PACKAGES = ["config", "players", "countryballs", "info"]
+PACKAGES = ["config", "players", "countryballs", "info", "admin"]
 
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
@@ -115,6 +115,7 @@ class BallsDexBot(commands.AutoShardedBot):
         await self.add_cog(Core(self))
         if self.dev:
             await self.add_cog(Dev())
+
         loaded_packages = []
         for package in PACKAGES:
             try:
@@ -127,6 +128,7 @@ class BallsDexBot(commands.AutoShardedBot):
             log.info(f"Packages loaded: {', '.join(loaded_packages)}")
         else:
             log.info("No package loaded.")
+
         synced_commands = await self.tree.sync()
         if synced_commands:
             log.info(f"Synced {len(synced_commands)} commands.")
@@ -136,6 +138,14 @@ class BallsDexBot(commands.AutoShardedBot):
                 log.error("Failed to assign IDs to app commands", exc_info=True)
         else:
             log.info("No command to sync.")
+
+        if "admin" in PACKAGES:
+            from ballsdex.packages.admin.cog import admin_guilds
+
+            for guild in admin_guilds:
+                synced_commands = await self.tree.sync(guild=guild)
+                log.info(f"Synced {len(synced_commands)} admin commands for guild {guild.id}.")
+
         print("\n    [bold][red]BallsDex bot[/red] [green]is now operational![/green][/bold]\n")
 
     async def blacklist_check(self, interaction: discord.Interaction) -> bool:
