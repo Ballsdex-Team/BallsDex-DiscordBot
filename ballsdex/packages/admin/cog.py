@@ -32,6 +32,19 @@ except TypeError:
     sys.exit(1)
 
 try:
+    if roles := os.environ.get("BALLSDEXBOT_ADMIN_ROLES"):
+        admin_roles = [int(x) for x in roles.split(",")]
+    else:
+        admin_roles = []
+except ValueError:
+    log.critical(
+        "The value of BALLSDEX_ADMIN_ROLES is incorrect. "
+        "It must be a list of role IDs separated by commas.",
+        exc_info=True,
+    )
+    sys.exit(1)
+
+try:
     if roles := os.environ.get("BALLSDEXBOT_ROOT_ROLES"):
         root_roles = [int(x) for x in roles.split(",")]
     else:
@@ -59,6 +72,7 @@ class Admin(commands.GroupCog):
     blacklist = app_commands.Group(name="blacklist", description="Bot blacklist management")
 
     @app_commands.command()
+    @app_commands.checks.has_any_role(*root_roles, *admin_roles)
     async def guilds(
         self,
         interaction: discord.Interaction,
@@ -237,6 +251,7 @@ class Admin(commands.GroupCog):
         )
 
     @blacklist.command(name="add")
+    @app_commands.checks.has_any_role(*root_roles, *admin_roles)
     async def blacklist_add(
         self,
         interaction: discord.Interaction,
@@ -290,6 +305,7 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message("User is now blacklisted.")
 
     @blacklist.command(name="remove")
+    @app_commands.checks.has_any_role(*root_roles, *admin_roles)
     async def blacklist_remove(
         self,
         interaction: discord.Interaction,
