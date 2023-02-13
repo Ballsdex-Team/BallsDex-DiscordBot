@@ -116,6 +116,10 @@ BALLSDEXBOT_ROOT_ROLES=ID1,ID2,...
 You can have multiple servers with admin commands, but having the roles configured alongside is a
 strict requirement, even for the owners.
 
+## Supporting
+
+If you appreciate my work, you can support me on my [Patreon](https://patreon.com/retke)!
+
 ## Contributing
 
 Take a look at [the contribution guide](CONTRIBUTING.md) for setting up your environment!
