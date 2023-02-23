@@ -27,6 +27,10 @@ class CommandTree(app_commands.CommandTree):
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
         bot = cast(BallsDexBot, interaction.client)
         if not bot.is_ready():
+            await interaction.response.send_message(
+                "The bot is currently starting, please wait for a few minutes... "
+                f"({round(len(bot.shards)/bot.shard_count)}%)"
+            )
             return False  # wait for all shards to be connected
         return await bot.blacklist_check(interaction)
 
@@ -53,9 +57,6 @@ class BallsDexBot(commands.AutoShardedBot):
         self.blacklist: list[int] = []
         self.special_cache: list[Special] = []
         self.add_check(owner_check)  # Only owners are able to use text commands
-
-    async def on_shard_ready(self, shard_id: int):
-        log.debug(f"Connected to shard #{shard_id}")
 
     def assign_ids_to_app_groups(
         self, group: app_commands.Group, synced_commands: list[app_commands.AppCommandGroup]
