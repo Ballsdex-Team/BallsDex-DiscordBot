@@ -163,6 +163,8 @@ def init_logger(disable_rich: bool = False, debug: bool = False):
     file_handler.setFormatter(formatter)
     logging.getLogger().addHandler(file_handler)
 
+    logging.getLogger("aiohttp").setLevel(logging.WARNING)  # don't log each prometheus call
+
 
 async def init_tortoise(db_url: str):
     log.debug(f"Database URL: {db_url}")
