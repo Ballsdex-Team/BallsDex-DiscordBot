@@ -18,8 +18,8 @@ activation_embed = discord.Embed(
     f"read and accept the [Terms of Service]({TERMS_OF_SERVICE}).\n\n"
     "As a summary, these are the rules of the bot:\n"
     "- No farming (spamming or creating servers for balls)\n"
-    "- Selling or exchaning balls against money or other goods\n"
-    "- Attempting to abuse the bot's internals\n"
+    "- Selling or exchaning balls against money or other goods is forbidden\n"
+    "- Do not attempt to abuse the bot's internals\n"
     "**Not respecting these rules will lead to a blacklist**",
 )
 
