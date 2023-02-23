@@ -26,13 +26,14 @@ def owner_check(ctx: commands.Context[BallsDexBot]):
 class CommandTree(app_commands.CommandTree):
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
         bot = cast(BallsDexBot, interaction.client)
-        if not bot.is_ready() and not interaction.type.autocomplete:
-            await interaction.response.send_message(
-                "The bot is currently starting, please wait for a few minutes... "
-                f"({round((len(bot.shards)/bot.shard_count)*100)}%)",
-                ephemeral=True,
-            )
-            return False  # wait for all shards to be connected
+        if not bot.is_ready():
+            if interaction.type != discord.InteractionType.autocomplete:
+                await interaction.response.send_message(
+                    "The bot is currently starting, please wait for a few minutes... "
+                    f"({round((len(bot.shards)/bot.shard_count)*100)}%)",
+                    ephemeral=True,
+                )
+                return False  # wait for all shards to be connected
         return await bot.blacklist_check(interaction)
 
 
