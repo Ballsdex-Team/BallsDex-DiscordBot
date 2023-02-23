@@ -5,9 +5,23 @@ from typing import TYPE_CHECKING, cast
 from discord import app_commands
 from discord.ext import commands
 from ballsdex.core.models import GuildConfig
+from ballsdex.packages.config.components import AcceptTOSView
+from ballsdex.packages.info.cog import TERMS_OF_SERVICE
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+
+activation_embed = discord.Embed(
+    colour=0x00D936,
+    title="Ballsdex activation",
+    description="To enable Ballsdex in your server, you must "
+    f"read and accept the [Terms of Service]({TERMS_OF_SERVICE}).\n\n"
+    "As a summary, these are the rules of the bot:\n"
+    "- No farming (spamming or creating servers for balls)\n"
+    "- Selling or exchaning balls against money or other goods\n"
+    "- Attempting to abuse the bot's internals\n"
+    "**Not respecting these rules will lead to a blacklist**",
+)
 
 
 @app_commands.default_permissions(manage_guild=True)
@@ -37,7 +51,6 @@ class Config(commands.GroupCog):
                 "You need the permission to manage the server to use this."
             )
             return
-        config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
         if not channel.permissions_for(guild.me).read_messages:
             await interaction.response.send_message(
                 f"I need the permission to read messages in {channel.mention}."
@@ -53,12 +66,8 @@ class Config(commands.GroupCog):
                 f"I need the permission to send embed links in {channel.mention}."
             )
             return
-        config.spawn_channel = channel.id  # type: ignore
-        await config.save()
-        self.bot.dispatch("ballsdex_settings_change", guild, channel=channel)
         await interaction.response.send_message(
-            f"The new spawn channel was successfully set to {channel.mention}.\n"
-            "Balls will start spawning as users talk unless the bot is disabled."
+            embed=activation_embed, view=AcceptTOSView(interaction, channel)
         )
 
     @app_commands.command()
