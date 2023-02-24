@@ -35,7 +35,10 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
                 f"{interaction.user.mention} I was caught already!"
             )
             return
-        possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
+        if self.ball.model.catch_names:
+            possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
+        else:
+            possible_names = (self.ball.name.lower(),)
         if self.name.value.lower().strip() in possible_names:
             self.ball.catched = True
             ball = await self.catch_ball(cast("BallsDexBot", interaction.client), interaction.user)
