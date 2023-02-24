@@ -33,7 +33,7 @@ class CommandTree(app_commands.CommandTree):
                     f"({round((len(bot.shards)/bot.shard_count)*100)}%)",
                     ephemeral=True,
                 )
-                return False  # wait for all shards to be connected
+            return False  # wait for all shards to be connected
         return await bot.blacklist_check(interaction)
 
 
