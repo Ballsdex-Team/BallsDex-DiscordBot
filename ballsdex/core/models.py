@@ -6,11 +6,24 @@ from discord.utils import format_dt
 from io import BytesIO
 from enum import IntEnum
 from datetime import datetime
-from typing import Tuple
+from typing import TYPE_CHECKING, Tuple, Type, Iterable
 from concurrent.futures import ThreadPoolExecutor
 
-from tortoise import models, fields, validators, exceptions
+from tortoise import models, fields, validators, exceptions, signals
 from fastapi_admin.models import AbstractAdmin
+
+if TYPE_CHECKING:
+    from tortoise.backends.base.client import BaseDBAsyncClient
+
+
+async def lower_catch_names(
+    model: Type[Ball],
+    instance: Ball,
+    created: bool,
+    using_db: "BaseDBAsyncClient" | None = None,
+    update_fields: Iterable[str] | None = None,
+):
+    instance.catch_names = instance.catch_names.lower()
 
 
 class DiscordSnowflakeValidator(validators.Validator):
@@ -87,6 +100,11 @@ class Special(models.Model):
 class Ball(models.Model):
     country = fields.CharField(max_length=48, unique=True)
     short_name = fields.CharField(max_length=12, null=True, default=None)
+    catch_names = fields.TextField(
+        null=True,
+        default=None,
+        description="Additional possible names for catching this ball, separated by semicolons",
+    )
     regime = fields.IntEnumField(Regime, description="Political regime of this country")
     economy = fields.IntEnumField(Economy, description="Economical regime of this country")
     health = fields.IntField(description="Ball health stat")
@@ -115,6 +133,9 @@ class Ball(models.Model):
 
     def __str__(self) -> str:
         return self.country
+
+
+Ball.register_listener(signals.Signals.pre_save, lower_catch_names)
 
 
 class BallInstance(models.Model):
