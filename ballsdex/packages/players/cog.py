@@ -233,7 +233,7 @@ class Players(commands.GroupCog, group_name="balls"):
             await countryball.save()
             emoji = self.bot.get_emoji(countryball.ball.emoji_id) or ""
             await interaction.response.send_message(
-                f"{emoji} `{countryball.count}#` {countryball.ball.country} "
+                f"{emoji} `#{countryball.pk:0X}` {countryball.ball.country} "
                 "is now a favorite countryball!",
                 ephemeral=True,
             )
@@ -243,7 +243,7 @@ class Players(commands.GroupCog, group_name="balls"):
             await countryball.save()
             emoji = self.bot.get_emoji(countryball.ball.emoji_id) or ""
             await interaction.response.send_message(
-                f"{emoji} `{countryball.count}#` {countryball.ball.country} "
+                f"{emoji} `#{countryball.pk:0X}` {countryball.ball.country} "
                 "isn't a favorite countryball anymore.",
                 ephemeral=True,
             )

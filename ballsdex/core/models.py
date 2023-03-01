@@ -143,7 +143,6 @@ class BallInstance(models.Model):
     player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyRelation(
         "models.Player", related_name="balls"
     )  # type: ignore
-    count = fields.IntField()
     catch_date = fields.DatetimeField(auto_now_add=True)
     shiny = fields.BooleanField(default=False)
     special: fields.ForeignKeyRelation[Special] = fields.ForeignKeyField(
@@ -157,7 +156,7 @@ class BallInstance(models.Model):
     favorite = fields.BooleanField(default=False)
 
     def __str__(self) -> str:
-        return f"{self.ball.country} #{self.count}"
+        return f"{self.ball.country} #{self.pk:0X}"
 
     class Meta:
         unique_together = ("player", "id")

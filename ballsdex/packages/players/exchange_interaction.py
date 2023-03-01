@@ -53,7 +53,7 @@ class ExchangeConfirmationView(discord.ui.View):
                 emoji = bot.get_emoji(player.ball.ball.emoji_id) or ""
                 value = (
                     "You will give this countryball:\n"
-                    f"{emoji} `{player.ball.count}#` {player.ball.ball.country}"
+                    f"{emoji} `#{player.ball.pk:0X}` {player.ball.ball.country}"
                 )
             else:
                 value = "You are not giving anything back."

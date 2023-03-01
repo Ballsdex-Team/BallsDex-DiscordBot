@@ -83,7 +83,6 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
         ball = await BallInstance.create(
             ball=self.ball.model,
             player=player,
-            count=(await player.balls.all().count()) + 1,
             shiny=shiny,
             special=special,
             attack_bonus=bonus_attack,

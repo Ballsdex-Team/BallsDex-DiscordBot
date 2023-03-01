@@ -38,7 +38,7 @@ class CountryballsSelector(Pages):
             shiny = "✨ " if ball.shiny else ""
             options.append(
                 discord.SelectOption(
-                    label=f"{favorite}{shiny}{ball.count}# {ball.ball.country}",
+                    label=f"{favorite}{shiny}#{ball.pk:0X} {ball.ball.country}",
                     description=f"ATK: {ball.attack_bonus:+d}% • HP: {ball.health_bonus:+d}% • "
                     f"Caught on {ball.catch_date.strftime('%d/%m/%y %H:%M')}",
                     emoji=emoji,

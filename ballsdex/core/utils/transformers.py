@@ -73,7 +73,15 @@ class BallInstanceTransformer(app_commands.Transformer):
         t1 = time.time()
         choices: list[app_commands.Choice] = []
         async for ball in self.cache.get(interaction.user, value):
-            choices.append(app_commands.Choice(name=str(ball), value=str(ball.pk)))
+            favorite = "❤️ " if ball.favorite else ""
+            shiny = "✨ " if ball.shiny else ""
+            choices.append(
+                app_commands.Choice(
+                    name=f"{favorite}{shiny}#{ball.pk:0X} {ball.ball.country} "
+                    f"{ball.attack_bonus:+d}%🗡/{ball.health_bonus:+d}%❤️",
+                    value=str(ball.pk),
+                )
+            )
         t2 = time.time()
         log.debug(f"Autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
         return choices
