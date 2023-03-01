@@ -196,6 +196,10 @@ class Admin(commands.GroupCog):
             countryball = CountryBall(ball)
         await countryball.spawn(channel or interaction.channel)  # type: ignore
         await interaction.followup.send("Ball spawned.", ephemeral=True)
+        log.info(
+            f"{interaction.user} spawned ball {countryball.name} "
+            f"in {channel or interaction.channel}."
+        )
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*root_roles)
@@ -248,6 +252,11 @@ class Admin(commands.GroupCog):
             f"Special: `{special.name if special else None}` • ATK:`{instance.attack_bonus:+d}` • "
             f"HP:`{instance.health_bonus:+d}` • Shiny: `{instance.shiny}`"
         )
+        log.info(
+            f"{interaction.user} gave ball {ball.country} to {user}. "
+            f"Special={special.name if special else None} ATK={instance.attack_bonus:+d} "
+            f"HP={instance.health_bonus:+d} shiny={instance.shiny}"
+        )
 
     @blacklist.command(name="add")
     @app_commands.checks.has_any_role(*root_roles, *admin_roles)
@@ -290,18 +299,18 @@ class Admin(commands.GroupCog):
                 )
                 return
 
-        if reason:
-            reason += f"\nDone through the bot by {interaction.user} ({interaction.user.id})"
-        else:
-            reason = f"\nDone through the bot by {interaction.user} ({interaction.user.id})"
+        final_reason = f"\nDone through the bot by {interaction.user} ({interaction.user.id})"
 
         try:
-            await BlacklistedID.create(discord_id=user.id, reason=reason)
+            await BlacklistedID.create(discord_id=user.id, reason=final_reason)
         except IntegrityError:
             await interaction.response.send_message("That user was already blacklisted.")
         else:
             self.bot.blacklist.append(user.id)
             await interaction.response.send_message("User is now blacklisted.")
+        log.info(
+            f"{interaction.user} blacklisted {user} ({user.id}) for the following reason: {reason}"
+        )
 
     @blacklist.command(name="remove")
     @app_commands.checks.has_any_role(*root_roles, *admin_roles)
@@ -349,3 +358,4 @@ class Admin(commands.GroupCog):
             await blacklisted.delete()
             self.bot.blacklist.remove(user.id)
             await interaction.response.send_message("User is now removed from blacklist.")
+        log.info(f"{interaction.user} removed blacklist for user {user} ({user.id})")
