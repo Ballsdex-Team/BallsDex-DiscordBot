@@ -5,12 +5,14 @@ import sys
 import os
 
 from discord import app_commands
+from discord.ui import Button
 from discord.ext import commands
 from tortoise.exceptions import IntegrityError, DoesNotExist
 from typing import TYPE_CHECKING
 
 from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
+from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.packages.countryballs.countryball import CountryBall
 
 if TYPE_CHECKING:
@@ -129,11 +131,7 @@ class Admin(commands.GroupCog):
                 )
             return
 
-        if len(guilds) > 1:
-            text = f"__**{len(guilds)} servers shared with {user.mention}**__"
-        else:
-            text = f"__**1 server shared with {user.mention}**__\n\n"
-
+        entries: list[tuple[str, str]] = []
         for guild in guilds:
 
             if config := await GuildConfig.get_or_none(guild_id=guild.id):
@@ -141,32 +139,53 @@ class Admin(commands.GroupCog):
             else:
                 spawn_enabled = False
 
-            text += f"\n\n`{guild.id}`\n"
+            field_name = f"`{guild.id}`"
+            field_value = ""
 
             # highlight suspicious server names
             if any(x in guild.name.lower() for x in ("farm", "grind", "spam")):
-                text += f"- :warning: **{guild.name}**\n"
+                field_value += f"- :warning: **{guild.name}**\n"
             else:
-                text += f"- {guild.name}\n"
+                field_value += f"- {guild.name}\n"
 
             # highlight low member count
             if guild.member_count <= 3:  # type: ignore
-                text += f"- :warning: **{guild.member_count} members**\n"
+                field_value += f"- :warning: **{guild.member_count} members**\n"
             else:
-                text += f"- {guild.member_count} members\n"
+                field_value += f"- {guild.member_count} members\n"
 
             # highlight if spawning is enabled
             if spawn_enabled:
-                text += "- :warning: **Spawn is enabled**"
+                field_value += "- :warning: **Spawn is enabled**"
             else:
-                text += "- Spawn is disabled"
+                field_value += "- Spawn is disabled"
+
+            entries.append((field_name, field_value))
+
+        source = FieldPageSource(entries, per_page=25, inline=True)
+        source.embed.set_author(name=f"{user} ({user.id})", icon_url=user.display_avatar.url)
+
+        if len(guilds) > 1:
+            source.embed.title = f"{len(guilds)} servers shared"
+        else:
+            source.embed.title = "1 server shared"
 
         if not self.bot.intents.members:
-            text += (
-                "\n\n:warning: *The bot cannot be aware of the member's presence in servers, "
-                "it is only aware of server ownerships.*"
+            source.embed.set_footer(
+                text="\N{WARNING SIGN} The bot cannot be aware of the member's "
+                "presence in servers, it is only aware of server ownerships."
             )
-        await interaction.response.send_message(text, ephemeral=True)
+
+        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages.add_item(
+            Button(
+                style=discord.ButtonStyle.link,
+                label="View profile",
+                url=f"discord://-/users/{user.id}",
+                emoji="\N{LEFT-POINTING MAGNIFYING GLASS}",
+            )
+        )
+        await pages.start(ephemeral=True)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*root_roles)
