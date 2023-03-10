@@ -226,14 +226,11 @@ class BallInstanceResource(Model):
     icon = "fas fa-atlas"
     page_pre_title = "ball instances list"
     page_title = "Ball instances"
-    filters = [
-        filters.Select(name="ball", label="Countryball"),
-    ]
+    filters = []
     fields = [
         "id",
         "ball",
         "player",
-        "count",
         "catch_date",
         "shiny",
         "special",
