@@ -36,7 +36,7 @@ class Pages(discord.ui.View):
         source: menus.PageSource,
         *,
         interaction: discord.Interaction,
-        check_embeds: bool = True,
+        check_embeds: bool = False,
         compact: bool = False,
     ):
         super().__init__()
