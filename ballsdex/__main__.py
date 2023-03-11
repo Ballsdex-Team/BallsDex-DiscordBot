@@ -220,20 +220,12 @@ def main():
         log.debug("Tortoise ORM and database ready.")
 
         bot = BallsDexBot(
-            command_prefix=when_mentioned_or(prefix), dev=cli_flags.dev  # type: ignore
+            command_prefix=when_mentioned_or(prefix),  # type: ignore
+            dev=cli_flags.dev,
+            prometheus=cli_flags.prometheus,
+            prometheus_host=cli_flags.prometheus_host,
+            prometheus_port=cli_flags.prometheus_port,
         )
-
-        # metrics
-        if cli_flags.prometheus:
-            from ballsdex.core.metrics import PrometheusServer
-
-            try:
-                server = PrometheusServer(
-                    bot, cli_flags.prometheus_host, cli_flags.prometheus_port
-                )
-                loop.run_until_complete(server.run())
-            except Exception:
-                log.exception("Failed to start Prometheus server, stats will be unavailable.")
 
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)

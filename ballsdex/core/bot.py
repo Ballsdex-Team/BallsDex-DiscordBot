@@ -11,6 +11,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from ballsdex.core.dev import Dev
+from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.models import BlacklistedID, Special
 from ballsdex.core.commands import Core
 
@@ -42,7 +43,15 @@ class BallsDexBot(commands.AutoShardedBot):
     BallsDex Discord bot
     """
 
-    def __init__(self, command_prefix: str, dev: bool = False, **options):
+    def __init__(
+        self,
+        command_prefix: str,
+        dev: bool = False,
+        prometheus: bool = False,
+        prometheus_host: str = "localhost",
+        prometheus_port: int = 15260,
+        **options,
+    ):
         # An explaination for the used intents
         # guilds: needed for basically anything, the bot needs to know what guilds it has
         # and accordingly enable automatic spawning in the enabled ones
@@ -53,12 +62,23 @@ class BallsDexBot(commands.AutoShardedBot):
         )
 
         super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
-        self._shutdown = 0
+
         self.dev = dev
+        self.prometheus_enable = prometheus
+        self.prometheus_host = prometheus_host
+        self.prometheus_port = prometheus_port
+        self.prometheus_server: PrometheusServer | None = None
+
         self.tree.error(self.on_application_command_error)
+        self.add_check(owner_check)  # Only owners are able to use text commands
+
+        self._shutdown = 0
         self.blacklist: list[int] = []
         self.special_cache: list[Special] = []
-        self.add_check(owner_check)  # Only owners are able to use text commands
+
+    async def start_prometheus_server(self):
+        self.prometheus_server = PrometheusServer(self, self.prometheus_host, self.prometheus_port)
+        await self.prometheus_server.run()
 
     def assign_ids_to_app_groups(
         self, group: app_commands.Group, synced_commands: list[app_commands.AppCommandGroup]
@@ -144,6 +164,12 @@ class BallsDexBot(commands.AutoShardedBot):
             for guild in admin_guilds:
                 synced_commands = await self.tree.sync(guild=guild)
                 log.info(f"Synced {len(synced_commands)} admin commands for guild {guild.id}.")
+
+        if self.prometheus_enable:
+            try:
+                await self.start_prometheus_server()
+            except Exception:
+                log.exception("Failed to start Prometheus server, stats will be unavailable.")
 
         print("\n    [bold][red]BallsDex bot[/red] [green]is now operational![/green][/bold]\n")
 
