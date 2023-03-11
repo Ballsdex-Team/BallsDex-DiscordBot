@@ -18,6 +18,25 @@ T = TypeVar("T")
 
 
 @dataclass
+class CachedBallInstance:
+    """
+    Used to compute the searchable terms for a countryball only once.
+    """
+
+    model: BallInstance
+    searchable: str = ""
+
+    def __post_init__(self):
+        self.searchable = " ".join(
+            (
+                self.model.ball.country.lower(),
+                "{:0X}".format(self.model.pk),
+                *(self.model.ball.catch_names.split(";") if self.model.ball.catch_names else []),
+            )
+        )
+
+
+@dataclass
 class ListCache(Generic[T]):
     time: float
     balls: list[T]
@@ -25,7 +44,7 @@ class ListCache(Generic[T]):
 
 class BallInstanceCache:
     def __init__(self):
-        self.cache: dict[int, ListCache[BallInstance]] = {}
+        self.cache: dict[int, ListCache[CachedBallInstance]] = {}
         self.clear_cache.start()
 
     async def get(self, user: discord.abc.User, value: str) -> AsyncIterator[BallInstance]:
@@ -41,13 +60,13 @@ class BallInstanceCache:
                 balls = []
             else:
                 balls = await BallInstance.filter(player=player).select_related("ball").all()
-            cache = ListCache(time, balls)
+            cache = ListCache(time, [CachedBallInstance(x) for x in balls])
             self.cache[user.id] = cache
 
         total = 0
         for ball in cache.balls:
-            if value in ball.ball.country.lower():
-                yield ball
+            if value in ball.searchable:
+                yield ball.model
                 total += 1
                 if total >= 25:
                     return
@@ -93,8 +112,8 @@ class BallInstanceTransformer(app_commands.Transformer):
             try:
                 balls = self.cache.cache[interaction.user.id].balls
                 for ball in balls:
-                    if ball.pk == int(value):
-                        return ball
+                    if ball.model.pk == int(value):
+                        return ball.model
             except KeyError:
                 # maybe the cache didn't have time to build, let's try anyway to fetch the value
                 try:
