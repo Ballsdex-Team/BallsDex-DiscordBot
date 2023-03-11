@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import math
 import discord
 import random
 import logging
@@ -15,7 +17,9 @@ if TYPE_CHECKING:
     from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.countryballs.components")
-caught_balls = Counter("caught_cb", "Caught countryballs", ["country", "shiny", "special"])
+caught_balls = Counter(
+    "caught_cb", "Caught countryballs", ["country", "shiny", "special", "guild_size"]
+)
 
 
 class CountryballNamePrompt(Modal, title="Catch this countryball!"):
@@ -57,7 +61,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
         else:
             await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
 
-    async def catch_ball(self, bot: "BallsDexBot", user: discord.abc.User) -> BallInstance:
+    async def catch_ball(self, bot: "BallsDexBot", user: discord.Member) -> BallInstance:
         player, created = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
@@ -89,7 +93,13 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
             health_bonus=bonus_health,
         )
         log.debug(f"{user} caught countryball {self.ball.model}, {shiny=} {special=}")
-        caught_balls.labels(country=self.ball.model.country, shiny=shiny, special=special).inc()
+        caught_balls.labels(
+            country=self.ball.model.country,
+            shiny=shiny,
+            special=special,
+            # observe the size of the server, rounded to the nearest power of 10
+            guild_size=10 ** math.ceil(math.log(max(user.guild.member_count - 1, 1), 10)),
+        ).inc()
         return ball
 
 
