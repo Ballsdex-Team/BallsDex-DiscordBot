@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import math
 import discord
 import random
@@ -62,7 +63,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
             await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
 
     async def catch_ball(self, bot: "BallsDexBot", user: discord.Member) -> BallInstance:
-        player, created = await Player.get_or_create(discord_id=user.id)
+        player, _ = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
         bonus_attack = random.randint(-20, 20)
@@ -129,7 +130,8 @@ class CatchView(View):
     async def on_timeout(self):
         self.button.disabled = True
         if self.ball.message:
-            try:
-                await self.ball.message.edit(view=self)
-            except discord.HTTPException:
-                pass
+            with contextlib.suppress(discord.HTTPException):
+                await self.ball.message.edit(
+                    content=f"Looks like **{self.ball.name}** wasn't caught...",
+                    view=self
+                )
