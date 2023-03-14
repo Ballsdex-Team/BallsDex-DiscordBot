@@ -49,7 +49,10 @@ class SpawnCooldown:
     def reset(self, time: datetime):
         self.amount = 1.0
         self.chance = random.randint(*SPAWN_CHANCE_RANGE)
-        self.lock.release()
+        try:
+            self.lock.release()
+        except RuntimeError:  # lock is not acquired
+            pass
         self.time = time
 
     async def increase(self, message: discord.Message) -> bool:
