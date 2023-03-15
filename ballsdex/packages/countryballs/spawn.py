@@ -12,7 +12,7 @@ from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
-SPAWN_CHANCE_RANGE = (20, 35)
+SPAWN_CHANCE_RANGE = (30, 55)
 
 CachedMessage = namedtuple("CachedMessage", ["content", "author_id"])
 
@@ -100,7 +100,16 @@ class SpawnManager:
             log.debug(f"Created cooldown manager for guild {guild.id}")
 
         delta = (message.created_at - cooldown.time).total_seconds()
-        chance = cooldown.chance - 0.1 * (delta // 60)
+        # change how the threshold varies according to the member count, while nuking farm servers
+        if guild.member_count < 5:
+            multiplier = 0.1
+        elif guild.member_count < 100:
+            multiplier = 0.8
+        elif guild.member_count < 1000:
+            multiplier = 0.5
+        else:
+            multiplier = 0.2
+        chance = cooldown.chance - multiplier * (delta // 60)
 
         # manager cannot be increased more than once per 5 seconds
         if not await cooldown.increase(message):
