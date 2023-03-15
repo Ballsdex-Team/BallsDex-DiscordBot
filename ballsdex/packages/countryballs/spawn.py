@@ -100,7 +100,7 @@ class SpawnManager:
             log.debug(f"Created cooldown manager for guild {guild.id}")
 
         delta = (message.created_at - cooldown.time).total_seconds()
-        chance = cooldown.chance - (delta // 60)
+        chance = cooldown.chance - 0.1 * (delta // 60)
 
         # manager cannot be increased more than once per 5 seconds
         if not await cooldown.increase(message):
