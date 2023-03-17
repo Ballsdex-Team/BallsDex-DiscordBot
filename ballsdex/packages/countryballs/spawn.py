@@ -12,7 +12,7 @@ from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
-SPAWN_CHANCE_RANGE = (30, 55)
+SPAWN_CHANCE_RANGE = (40, 55)
 
 CachedMessage = namedtuple("CachedMessage", ["content", "author_id"])
 
@@ -68,7 +68,7 @@ class SpawnCooldown:
 
         async with self.lock:
             amount = 1
-            if message.guild.member_count < 5:  # type: ignore
+            if message.guild.member_count < 5 or message.guild.member_count > 1000:  # type: ignore
                 amount /= 2
             if len(message.content) < 5:
                 amount /= 2
@@ -79,7 +79,7 @@ class SpawnCooldown:
             ):
                 amount /= 2
             self.amount += amount
-            await asyncio.sleep(5)
+            await asyncio.sleep(10)
         return True
 
 
@@ -122,9 +122,9 @@ class SpawnManager:
             return
 
         # at this point, the goal is reached
-        if delta < 120:
-            # wait for at least 2 minutes before spawning
-            log.debug(f"Handled message {message.id}, waiting for manager to be 2 mins old")
+        if delta < 600:
+            # wait for at least 10 minutes before spawning
+            log.debug(f"Handled message {message.id}, waiting for manager to be 10 mins old")
             return
 
         # spawn countryball
