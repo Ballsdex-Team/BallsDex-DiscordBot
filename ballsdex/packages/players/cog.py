@@ -11,11 +11,7 @@ from discord.ext import commands
 
 from ballsdex.core.models import Ball, Player, BallInstance
 from ballsdex.core.utils.transformers import BallInstanceTransform
-from ballsdex.packages.players.countryballs_paginator import (
-    CountryballsViewer,
-    CountryballsExchangerPaginator,
-)
-from ballsdex.packages.players.exchange_interaction import ExchangePlayer
+from ballsdex.packages.players.countryballs_paginator import CountryballsViewer
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -246,42 +242,4 @@ class Players(commands.GroupCog, group_name="balls"):
                 f"{emoji} `#{countryball.pk:0X}` {countryball.ball.country} "
                 "isn't a favorite countryball anymore.",
                 ephemeral=True,
-            )
-
-    @app_commands.command()
-    @app_commands.describe(
-        user="The user you want to exchange a countryball with",
-        countryball="The countryball you want to exchange",
-    )
-    async def exchange(
-        self,
-        interaction: discord.Interaction,
-        user: discord.User,
-        countryball: BallInstanceTransform = None,
-    ):
-        """
-        Exchange a countryball with another player.
-        """
-        if user.bot:
-            await interaction.response.send_message(
-                "You cannot exchange with bots.", ephemeral=True
-            )
-            return
-        if user.id == interaction.user.id:
-            await interaction.response.send_message(
-                "You cannot exchange with yourself.", ephemeral=True
-            )
-            return
-        await interaction.response.defer(thinking=True)
-        # theorically, the player should always be created by the autocomplete function
-        # let's still handle the case where autocomplete wasn't invoked and the player may not
-        # have been created yet
-        if countryball is None:
-            await CountryballsExchangerPaginator.begin_blank_exchange(
-                interaction, interaction.user, user
-            )
-        else:
-            player, created = await Player.get_or_create(discord_id=interaction.user.id)
-            await CountryballsExchangerPaginator.half_ready_exchange(
-                interaction, ExchangePlayer(interaction.user, player, countryball), user
             )
