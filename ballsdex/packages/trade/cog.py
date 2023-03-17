@@ -131,6 +131,9 @@ class Trade(commands.GroupCog):
         countryball: BallInstance
             The countryball you want to add to your proposal
         """
+        if not countryball:
+            return
+
         trade, trader = self.get_trade(interaction)
         if not trade or not trader:
             await interaction.response.send_message(
@@ -164,6 +167,9 @@ class Trade(commands.GroupCog):
         countryball: BallInstance
             The countryball you want to remove from your proposal
         """
+        if not countryball:
+            return
+
         trade, trader = self.get_trade(interaction)
         if not trade or not trader:
             await interaction.response.send_message(
