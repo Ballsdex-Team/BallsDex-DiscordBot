@@ -292,7 +292,7 @@ class TradeMenu:
         """
         self._generate_embed()
         self.message = await self.channel.send(
-            content=f"Het {self.trader2.user.mention}, {self.trader1.user.name} "
+            content=f"Hey {self.trader2.user.mention}, {self.trader1.user.name} "
             "is proposing a trade with you!",
             embed=self.embed,
             view=self.current_view,
