@@ -155,9 +155,6 @@ class BallInstance(models.Model):
     )
     favorite = fields.BooleanField(default=False)
 
-    def __str__(self) -> str:
-        return f"{self.ball.country} #{self.pk:0X}"
-
     class Meta:
         unique_together = ("player", "id")
 
@@ -175,6 +172,38 @@ class BallInstance(models.Model):
     def special_card(self) -> str | None:
         if self.special:
             return self.special.get_background(self.ball.regime) or self.ball.collection_card
+
+    def __str__(self) -> str:
+        emotes = ""
+        if self.favorite:
+            emotes += "❤️"
+        if self.shiny:
+            emotes += "✨"
+        if emotes:
+            emotes += " "
+        country = self.ball.country if isinstance(self.ball, Ball) else f"<Ball {self.ball_id}>"
+        return f"{emotes}#{self.pk:0X} {country} "
+
+    def description(
+        self,
+        *,
+        short: bool = False,
+        include_emoji: bool = False,
+        bot: discord.Client | None = None,
+    ) -> str:
+        text = str(self)
+        if not short:
+            text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
+        if include_emoji:
+            if not bot:
+                raise TypeError(
+                    "You need to provide the bot argument when using with include_emoji=True"
+                )
+            if isinstance(self.ball, Ball):
+                emoji = bot.get_emoji(self.ball.emoji_id)
+                if emoji:
+                    text = f"{emoji} {text}"
+        return text
 
     def draw_card(self) -> BytesIO:
         from ballsdex.core.image_generator.image_gen import draw_card
