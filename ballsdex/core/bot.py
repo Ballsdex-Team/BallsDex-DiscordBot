@@ -17,7 +17,7 @@ from ballsdex.core.commands import Core
 
 log = logging.getLogger("ballsdex.core.bot")
 
-PACKAGES = ["config", "players", "countryballs", "info", "admin"]
+PACKAGES = ["config", "players", "countryballs", "info", "admin", "trade"]
 
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
