@@ -171,7 +171,10 @@ class TradeMenu:
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*You have 15 minutes before this interaction ends.*"
         )
-        self.embed.set_footer(text="This message may take some time to update with your proposal.")
+        self.embed.set_footer(
+            text="This message is updated every 15 seconds, "
+            "but you can keep on editing your proposal."
+        )
 
     def _get_prefix_emote(self, trader: TradingUser) -> str:
         if trader.cancelled:
@@ -272,7 +275,7 @@ class TradeMenu:
         start_time = datetime.utcnow()
 
         while True:
-            await asyncio.sleep(5)
+            await asyncio.sleep(15)
             if datetime.utcnow() - start_time > timedelta(minutes=15):
                 self.embed.colour = discord.Colour.dark_red()
                 await self.cancel("The trade timed out")
@@ -295,6 +298,7 @@ class TradeMenu:
         Start the trade by sending the initial message and opening up the proposals.
         """
         self._generate_embed()
+        self.update_proposals()
         self.message = await self.channel.send(
             content=f"Hey {self.trader2.user.mention}, {self.trader1.user.name} "
             "is proposing a trade with you!",
