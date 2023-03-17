@@ -273,8 +273,10 @@ class TradeMenu:
 
         while True:
             await asyncio.sleep(5)
-            if datetime.utcnow() - start_time > timedelta(minutes=30):
-                pass  # TODO: cancel
+            if datetime.utcnow() - start_time > timedelta(minutes=15):
+                self.embed.colour = discord.Colour.dark_red()
+                await self.cancel("The trade timed out")
+                return
 
             try:
                 self.update_proposals()
@@ -284,7 +286,9 @@ class TradeMenu:
                     f"Failed to refresh the trade menu guild={self.message.guild.id} "
                     f"trader1={self.trader1.user.id} trader2={self.trader2.user.id}"
                 )
-                # TODO: cancel
+                self.embed.colour = discord.Colour.dark_red()
+                await self.cancel("The trade timed out")
+                return
 
     async def start(self):
         """
