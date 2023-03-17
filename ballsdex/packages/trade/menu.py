@@ -352,10 +352,12 @@ class TradeMenu:
         for countryball in self.trader1.proposal:
             countryball.player = self.trader2.player
             countryball.trade_player = self.trader1.player
+            countryball.favorite = False
             await countryball.save()
         for countryball in self.trader2.proposal:
             countryball.player = self.trader1.player
             countryball.trade_player = self.trader2.player
+            countryball.favorite = False
             await countryball.save()
 
     async def confirm(self, trader: TradingUser):
