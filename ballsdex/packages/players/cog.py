@@ -219,7 +219,7 @@ class Players(commands.GroupCog, group_name="balls"):
         if not countryball.favorite:
 
             player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
-            if await player.balls.filter(favorite=True).count() > 6:
+            if await player.balls.filter(favorite=True).count() > 20:
                 await interaction.response.send_message(
                     "You cannot set more than 6 favorite countryballs.", ephemeral=True
                 )
