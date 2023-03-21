@@ -59,7 +59,9 @@ class BallInstanceCache:
             except DoesNotExist:
                 balls = []
             else:
-                balls = await BallInstance.filter(player=player).select_related("ball").all()
+                balls = (
+                    await BallInstance.filter(player=player).select_related("ball", "player").all()
+                )
             cache = ListCache(time, [CachedBallInstance(x) for x in balls])
             self.cache[user.id] = cache
 
@@ -86,6 +88,18 @@ class BallInstanceTransformer(app_commands.Transformer):
     def __init__(self):
         self.cache = BallInstanceCache()
 
+    async def validate(
+        self, interaction: discord.Interaction, ball: BallInstance
+    ) -> BallInstance | None:
+        # checking if the ball does belong to user, and a custom ID wasn't forced
+        if ball.player.discord_id != interaction.user.id:
+            await interaction.response.send_message(
+                "That countryball doesn't belong to you.", ephemeral=True
+            )
+            return None
+        else:
+            return ball
+
     async def autocomplete(
         self, interaction: discord.Interaction, value: str
     ) -> list[app_commands.Choice[int | float | str]]:
@@ -105,11 +119,12 @@ class BallInstanceTransformer(app_commands.Transformer):
                 balls = self.cache.cache[interaction.user.id].balls
                 for ball in balls:
                     if ball.model.pk == int(value):
-                        return ball.model
+                        return await self.validate(interaction, ball.model)
             except KeyError:
                 # maybe the cache didn't have time to build, let's try anyway to fetch the value
                 try:
-                    return await BallInstance.get(id=int(value)).prefetch_related("ball")
+                    ball = await BallInstance.get(id=int(value)).prefetch_related("ball", "player")
+                    return await self.validate(interaction, ball)
                 except DoesNotExist:
                     await interaction.response.send_message(
                         "The ball could not be found. Make sure to use the autocomplete "
