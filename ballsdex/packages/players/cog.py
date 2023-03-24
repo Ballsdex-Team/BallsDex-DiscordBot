@@ -263,10 +263,17 @@ class Players(commands.GroupCog, group_name="balls"):
         """
         new_player, _ = await Player.get_or_create(discord_id=user.id)
         old_player = countryball.player
+
+        if new_player == old_player:
+            await interaction.response.send_message("You cannot give a ball to yourself.")
+            return
+
         countryball.player = new_player
         countryball.trade_player = old_player
+        await countryball.save()
+
         await interaction.response.send_message(
             "You just gave the countryball "
-            f"{countryball.description(short=False, include_emoji=True, bot=self.bot)} to "
+            f"{countryball.description(short=True, include_emoji=True, bot=self.bot)} to "
             f"{user.mention}!"
         )
