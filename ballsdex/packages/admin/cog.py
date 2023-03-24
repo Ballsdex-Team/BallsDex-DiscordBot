@@ -318,7 +318,9 @@ class Admin(commands.GroupCog):
                 )
                 return
 
-        final_reason = f"\nDone through the bot by {interaction.user} ({interaction.user.id})"
+        final_reason = (
+            f"{reason}\nDone through the bot by {interaction.user} ({interaction.user.id})"
+        )
 
         try:
             await BlacklistedID.create(discord_id=user.id, reason=final_reason)
