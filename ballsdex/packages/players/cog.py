@@ -243,3 +243,30 @@ class Players(commands.GroupCog, group_name="balls"):
                 "isn't a favorite countryball anymore.",
                 ephemeral=True,
             )
+
+    @app_commands.command()
+    async def give(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User,
+        countryball: BallInstanceTransform,
+    ):
+        """
+        Give a countryball to a user.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to give a countryball to
+        countryball: BallInstance
+            The countryball you're giving away
+        """
+        new_player, _ = await Player.get_or_create(discord_id=user.id)
+        old_player = countryball.player
+        countryball.player = new_player
+        countryball.trade_player = old_player
+        await interaction.response.send_message(
+            "You just gave the countryball "
+            f"{countryball.description(short=False, include_emoji=True, bot=self.bot)} to "
+            f"{user.mention}!"
+        )
