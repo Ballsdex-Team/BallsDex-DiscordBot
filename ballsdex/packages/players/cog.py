@@ -261,6 +261,12 @@ class Players(commands.GroupCog, group_name="balls"):
         countryball: BallInstance
             The countryball you're giving away
         """
+        if not countryball:
+            return
+        if user.bot:
+            await interaction.response.send_message("You cannot donate to bots.")
+            return
+
         new_player, _ = await Player.get_or_create(discord_id=user.id)
         old_player = countryball.player
 
