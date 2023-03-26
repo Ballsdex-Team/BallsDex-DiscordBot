@@ -91,7 +91,7 @@ def read_settings(path: "Path"):
 
     settings.admin_guild_ids = content["admin-command"]["guild-ids"] or []
     settings.root_role_ids = content["admin-command"]["root-role-ids"] or []
-    settings.admin_guild_ids = content["admin-command"]["admin-role-ids"] or []
+    settings.admin_role_ids = content["admin-command"]["admin-role-ids"] or []
 
     settings.prometheus_enabled = content["prometheus"]["enabled"]
     settings.prometheus_host = content["prometheus"]["host"]
