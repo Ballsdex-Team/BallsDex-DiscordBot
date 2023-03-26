@@ -261,9 +261,20 @@ class BallInstance(models.Model):
         return content, discord.File(buffer, "card.png")
 
 
+class DonationPolicy(IntEnum):
+    ALWAYS_ACCEPT = 1
+    REQUEST_APPROVAL = 2
+    ALWAYS_DENY = 3
+
+
 class Player(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
+    )
+    donation_policy = fields.IntEnumField(
+        DonationPolicy,
+        description="How you want to handle donations",
+        default=DonationPolicy.ALWAYS_ACCEPT,
     )
     balls: fields.BackwardFKRelation[BallInstance]
 
