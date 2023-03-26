@@ -10,6 +10,7 @@ from discord import app_commands
 from discord.ui import View, Button, button
 from discord.ext import commands
 
+from ballsdex.settings import settings
 from ballsdex.core.models import Ball, Player, BallInstance, DonationPolicy
 from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.packages.players.countryballs_paginator import CountryballsViewer
@@ -83,7 +84,7 @@ class SortingChoices(enum.Enum):
     duplicates = "manualsort-duplicates"
 
 
-class Players(commands.GroupCog, group_name="balls"):
+class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
     """
     View and manage your countryballs collection.
     """
