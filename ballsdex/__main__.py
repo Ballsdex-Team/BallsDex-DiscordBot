@@ -17,7 +17,7 @@ from discord.utils import setup_logging
 from discord.ext.commands import when_mentioned_or
 
 from ballsdex import __version__ as bot_version
-from ballsdex.settings import settings, read_settings
+from ballsdex.settings import settings, read_settings, write_default_settings
 from ballsdex.core.bot import BallsDexBot
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
@@ -37,6 +37,7 @@ TORTOISE_ORM = {
 class CLIFlags(argparse.Namespace):
     version: bool
     config_file: Path
+    reset_settings: bool
     disable_rich: bool
     debug: bool
     dev: bool
@@ -50,11 +51,23 @@ def parse_cli_flags(arguments: list[str]) -> CLIFlags:
     parser.add_argument(
         "--config-file", type=Path, help="Set the path to config.yml", default=Path("./config.yml")
     )
+    parser.add_argument(
+        "--reset-settings",
+        action="store_true",
+        help="Reset the config file with the latest default configuration",
+    )
     parser.add_argument("--disable-rich", action="store_true", help="Disable rich log format")
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
     args = parser.parse_args(arguments, namespace=CLIFlags())
     return args
+
+
+def reset_settings(path: Path):
+    write_default_settings(path)
+    print(f"[green]A new settings file has been written at [blue]{path}[/blue].[/green]")
+    print("[yellow]Configure the [bold]discord-token[/bold] value and restart the bot.[/yellow]")
+    sys.exit(0)
 
 
 def print_welcome():
@@ -169,7 +182,15 @@ def main():
     if cli_flags.version:
         print(f"BallsDex Discord bot - {bot_version}")
         sys.exit(0)
-    read_settings(cli_flags.config_file)
+    if cli_flags.reset_settings:
+        print("[yellow]Resetting configuration file.[/yellow]")
+        reset_settings(cli_flags.config_file)
+
+    try:
+        read_settings(cli_flags.config_file)
+    except FileNotFoundError:
+        print("[yellow]The config file could not be found, generating a default one.[/yellow]")
+        reset_settings(cli_flags.config_file)
 
     print_welcome()
 
@@ -182,16 +203,14 @@ def main():
         token = settings.bot_token
         if not token:
             log.error("Token not found!")
-            print("[yellow]You must provide a token inside the config.yml file.[/yellow]")
+            print("[red]You must provide a token inside the config.yml file.[/red]")
             time.sleep(1)
             sys.exit(0)
 
         db_url = os.environ.get("BALLSDEXBOT_DB_URL", None)
         if not db_url:
             log.error("Database URL not found!")
-            print(
-                "[yellow]You must provide a DB URL with the BALLSDEXBOT_DB_URL env var.[/yellow]"
-            )
+            print("[red]You must provide a DB URL with the BALLSDEXBOT_DB_URL env var.[/red]")
             time.sleep(1)
             sys.exit(0)
 

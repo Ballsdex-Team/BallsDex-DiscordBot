@@ -53,3 +53,59 @@ def read_settings(path: "Path"):
     settings.prometheus_host = content["prometheus"]["host"]
     settings.prometheus_port = content["prometheus"]["port"]
     log.info("Settings loaded.")
+
+
+def write_default_settings(path: "Path"):
+    path.write_text(
+        """
+# paste the bot token after regenerating it here
+discord-token:
+
+# prefix for old-style text commands, mostly unused
+text-prefix: b.
+
+# define the elements given with the /about command
+about:
+
+  # define the beginning of the description of /about
+  # the other parts is automatically generated
+  description: >
+    Collect countryballs on Discord, exchange them and battle with friends!
+
+  # override this if you have a fork
+  github-link: https://github.com/laggron42/BallsDex-DiscordBot
+
+  # valid invite for a Discord server
+  discord-invite: https://discord.gg/ballsdex  # BallsDex official server
+
+  terms-of-service: https://gist.github.com/laggron42/52ae099c55c6ee1320a260b0a3ecac4e
+  privacy-policy: https://gist.github.com/laggron42/1eaa122013120cdfcc6d27f9485fe0bf
+
+# WORK IN PROGRESS, DOES NOT FULLY WORK
+# override the name "countryballs" in the bot
+collectible-name: countryball
+
+# enables the /admin command
+admin-command:
+
+  # all items here are list of IDs. example on how to write IDs in a list:
+  # guild-ids:
+  #   - 1049118743101452329
+  #   - 1078701108500897923
+
+  # list of guild IDs where /admin should be registered
+  guild-ids:
+
+  # list of role IDs having full access to /admin
+  root-role-ids:
+
+  # list of role IDs having partial access to /admin
+  admin-role-ids:
+
+# prometheus metrics collection, leave disabled if you don't know what this is
+prometheus:
+  enabled: false
+  host: "0.0.0.0"
+  port: 15260
+  """
+    )

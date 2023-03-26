@@ -31,3 +31,6 @@ static
 
 # cache
 .pytest_cache
+
+# settings
+config.yml
