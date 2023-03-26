@@ -103,7 +103,7 @@ def write_default_settings(path: "Path"):
     path.write_text(
         """
 # paste the bot token after regenerating it here
-discord-token:
+discord-token: 
 
 # prefix for old-style text commands, mostly unused
 text-prefix: b.
@@ -159,5 +159,5 @@ prometheus:
   enabled: false
   host: "0.0.0.0"
   port: 15260
-  """
+  """  # noqa: W291
     )
