@@ -175,7 +175,7 @@ class Admin(commands.GroupCog):
             countryball = CountryBall(ball)
         await countryball.spawn(channel or interaction.channel)  # type: ignore
         await interaction.followup.send(
-            f"{settings.collectible_name.title} spawned.", ephemeral=True
+            f"{settings.collectible_name.title()} spawned.", ephemeral=True
         )
         log.info(
             f"{interaction.user} spawned {settings.collectible_name} {countryball.name} "
