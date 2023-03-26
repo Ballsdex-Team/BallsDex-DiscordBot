@@ -112,10 +112,12 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             player = await Player.get(discord_id=user.id)
         except DoesNotExist:
             if user == interaction.user:
-                await interaction.response.send_message("You don't have any countryball yet.")
+                await interaction.response.send_message(
+                    f"You don't have any {settings.collectible_name} yet."
+                )
             else:
                 await interaction.response.send_message(
-                    f"{user.name} doesn't have any countryball yet."
+                    f"{user.name} doesn't have any {settings.collectible_name} yet."
                 )
             return
 
@@ -138,10 +140,12 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if len(countryballs) < 1:
             if user == interaction.user:
-                await interaction.response.send_message("You don't have any countryball yet.")
+                await interaction.response.send_message(
+                    f"You don't have any {settings.collectible_name} yet."
+                )
             else:
                 await interaction.response.send_message(
-                    f"{user.name} doesn't have any countryball yet."
+                    f"{user.name} doesn't have any {settings.collectible_name} yet."
                 )
             return
 
@@ -149,7 +153,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         if user == interaction.user:
             await paginator.start()
         else:
-            await paginator.start(content=f"Viewing {user.name}'s countryballs")
+            await paginator.start(content=f"Viewing {user.name}'s {settings.collectible_name}s")
 
     @app_commands.command()
     async def completion(self, interaction: discord.Interaction):
@@ -207,15 +211,23 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if owned_countryballs:
             # Getting the list of emoji IDs from the IDs of the owned countryballs
-            fill_fields("Owned countryballs", set(bot_countryballs[x] for x in owned_countryballs))
-        else:
-            embed.add_field(name="__**Owned countryballs**__", value="Nothing yet.", inline=False)
-
-        if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields("Missing countryballs", missing)
+            fill_fields(
+                f"Owned {settings.collectible_name}s",
+                set(bot_countryballs[x] for x in owned_countryballs),
+            )
         else:
             embed.add_field(
-                name="__**:tada: No missing countryball, congratulations! :tada:**__",
+                name=f"__**Owned {settings.collectible_name}s**__",
+                value="Nothing yet.",
+                inline=False,
+            )
+
+        if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
+            fill_fields(f"Missing {settings.collectible_name}s", missing)
+        else:
+            embed.add_field(
+                name=f"__**:tada: No missing {settings.collectible_name}, "
+                "congratulations! :tada:**__",
                 value="\u200B",
                 inline=False,
             )  # force empty field value
@@ -248,12 +260,16 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         try:
             player = await Player.get(discord_id=interaction.user.id)
         except DoesNotExist:
-            await interaction.followup.send("You do not have any countryball yet.", ephemeral=True)
+            await interaction.followup.send(
+                f"You do not have any {settings.collectible_name} yet.", ephemeral=True
+            )
             return
 
         countryball = await player.balls.all().order_by("-id").first().select_related("ball")
         if not countryball:
-            await interaction.followup.send("You do not have any countryball yet.", ephemeral=True)
+            await interaction.followup.send(
+                f"You do not have any {settings.collectible_name} yet.", ephemeral=True
+            )
             return
 
         content, file = await countryball.prepare_for_message(interaction)
@@ -275,7 +291,8 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
             if await player.balls.filter(favorite=True).count() > 20:
                 await interaction.response.send_message(
-                    "You cannot set more than 20 favorite countryballs.", ephemeral=True
+                    f"You cannot set more than 20 favorite {settings.collectible_name}s.",
+                    ephemeral=True,
                 )
                 return
 
@@ -284,7 +301,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             emoji = self.bot.get_emoji(countryball.ball.emoji_id) or ""
             await interaction.response.send_message(
                 f"{emoji} `#{countryball.pk:0X}` {countryball.ball.country} "
-                "is now a favorite countryball!",
+                f"is now a favorite {settings.collectible_name}!",
                 ephemeral=True,
             )
 
@@ -294,7 +311,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             emoji = self.bot.get_emoji(countryball.ball.emoji_id) or ""
             await interaction.response.send_message(
                 f"{emoji} `#{countryball.pk:0X}` {countryball.ball.country} "
-                "isn't a favorite countryball anymore.",
+                f"isn't a favorite {settings.collectible_name} anymore.",
                 ephemeral=True,
             )
 
@@ -321,7 +338,8 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         player.donation_policy = policy.value
         if policy.value == DonationPolicy.ALWAYS_ACCEPT:
             await interaction.response.send_message(
-                "Setting updated, you will now receive all donated countryballs immediately."
+                f"Setting updated, you will now receive all donated {settings.collectible_name}s "
+                "immediately."
             )
         elif policy.value == DonationPolicy.REQUEST_APPROVAL:
             await interaction.response.send_message(
@@ -364,7 +382,9 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         old_player = countryball.player
 
         if new_player == old_player:
-            await interaction.response.send_message("You cannot give a ball to yourself.")
+            await interaction.response.send_message(
+                f"You cannot give a {settings.collectible_name} to yourself."
+            )
             return
         if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
             await interaction.response.send_message(
@@ -384,7 +404,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         await countryball.save()
 
         await interaction.response.send_message(
-            "You just gave the countryball "
+            f"You just gave the {settings.collectible_name} "
             f"{countryball.description(short=True, include_emoji=True, bot=self.bot)} to "
             f"{user.mention}!"
         )

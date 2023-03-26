@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from tortoise.exceptions import DoesNotExist
 from typing import TypeVar, Generic, AsyncIterator
 
+from ballsdex.settings import settings
 from ballsdex.core.models import Ball, BallInstance, Player, Special
 
 log = logging.getLogger("ballsdex.core.utils.transformers")
@@ -94,7 +95,7 @@ class BallInstanceTransformer(app_commands.Transformer):
         # checking if the ball does belong to user, and a custom ID wasn't forced
         if ball.player.discord_id != interaction.user.id:
             await interaction.response.send_message(
-                "That countryball doesn't belong to you.", ephemeral=True
+                f"That {settings.collectible_name} doesn't belong to you.", ephemeral=True
             )
             return None
         else:

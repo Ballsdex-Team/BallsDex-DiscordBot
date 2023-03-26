@@ -6,6 +6,7 @@ from discord.ext import commands
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
+from ballsdex.settings import settings
 from ballsdex.core.models import Player
 from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.packages.trade.menu import TradeMenu, TradingUser
@@ -149,7 +150,8 @@ class Trade(commands.GroupCog):
             return
         if countryball in trader.proposal:
             await interaction.response.send_message(
-                "You already have this countryball in your proposal.", ephemeral=True
+                f"You already have this {settings.collectible_name} in your proposal.",
+                ephemeral=True,
             )
             return
         trader.proposal.append(countryball)
@@ -185,7 +187,7 @@ class Trade(commands.GroupCog):
             return
         if countryball not in trader.proposal:
             await interaction.response.send_message(
-                "That countryball is not in your proposal.", ephemeral=True
+                f"That {settings.collectible_name} is not in your proposal.", ephemeral=True
             )
             return
         trader.proposal.remove(countryball)

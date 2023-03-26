@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, cast
 from prometheus_client import Counter
 from discord.ui import Modal, TextInput, Button, View
 
+from ballsdex.settings import settings
 from ballsdex.core.models import Player, BallInstance
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ caught_balls = Counter(
 )
 
 
-class CountryballNamePrompt(Modal, title="Catch this countryball!"):
+class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name}!"):
     name = TextInput(
         label="Name of this country", style=discord.TextStyle.short, placeholder="Your guess"
     )
@@ -49,7 +50,7 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
 
             special = ""
             if ball.shiny:
-                special += "✨ ***It's a shiny countryball !*** ✨\n"
+                special += f"✨ ***It's a shiny {settings.collectible_name} !*** ✨\n"
             if ball.special and ball.special.catch_phrase:
                 special += f"*{ball.special.catch_phrase}*\n"
 
@@ -92,7 +93,9 @@ class CountryballNamePrompt(Modal, title="Catch this countryball!"):
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
         )
-        log.debug(f"{user} caught countryball {self.ball.model}, {shiny=} {special=}")
+        log.debug(
+            f"{user} caught {settings.collectible_name} {self.ball.model}, {shiny=} {special=}"
+        )
         caught_balls.labels(
             country=self.ball.model.country,
             shiny=shiny,

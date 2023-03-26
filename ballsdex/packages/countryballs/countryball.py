@@ -3,6 +3,7 @@ import logging
 import random
 import string
 
+from ballsdex.settings import settings
 from ballsdex.core.models import Ball
 from ballsdex.packages.countryballs.components import CatchView
 
@@ -36,7 +37,7 @@ class CountryBall:
         file_name = f"nt_{generate_random_name()}.{extension}"
         try:
             self.message = await channel.send(
-                "A wild countryball appeared!",
+                f"A wild {settings.collectible_name} appeared!",
                 view=CatchView(self),
                 file=discord.File(file_location, filename=file_name),
             )

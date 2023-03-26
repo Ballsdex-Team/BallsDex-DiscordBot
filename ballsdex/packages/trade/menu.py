@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 from discord.ui import View, button, Button
 
+from ballsdex.settings import settings
 from ballsdex.core.models import Player, BallInstance
 
 if TYPE_CHECKING:
@@ -162,11 +163,11 @@ class TradeMenu:
         add_command = self.cog.add.extras.get("mention", "`/trade add`")
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
 
-        self.embed.title = "Countryballs trading"
+        self.embed.title = f"{settings.collectible_name.title()}s trading"
         self.embed.color = discord.Colour.blurple()
         self.embed.description = (
-            "Add or remove countryballs you want to propose to the other player using the "
-            f"{add_command} and {remove_command} commands.\n"
+            f"Add or remove {settings.collectible_name}s you want to propose to the other player "
+            f"using the {add_command} and {remove_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*You have 15 minutes before this interaction ends.*"

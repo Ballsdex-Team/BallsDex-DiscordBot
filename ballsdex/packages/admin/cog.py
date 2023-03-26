@@ -174,9 +174,11 @@ class Admin(commands.GroupCog):
         else:
             countryball = CountryBall(ball)
         await countryball.spawn(channel or interaction.channel)  # type: ignore
-        await interaction.followup.send("Ball spawned.", ephemeral=True)
+        await interaction.followup.send(
+            f"{settings.collectible_name.title} spawned.", ephemeral=True
+        )
         log.info(
-            f"{interaction.user} spawned ball {countryball.name} "
+            f"{interaction.user} spawned {settings.collectible_name} {countryball.name} "
             f"in {channel or interaction.channel}."
         )
 
