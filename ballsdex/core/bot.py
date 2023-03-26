@@ -199,7 +199,10 @@ class BallsDexBot(commands.AutoShardedBot):
             except Exception:
                 log.exception("Failed to start Prometheus server, stats will be unavailable.")
 
-        print("\n    [bold][red]BallsDex bot[/red] [green]is now operational![/green][/bold]\n")
+        print(
+            f"\n    [bold][red]{settings.bot_name} bot[/red] [green]"
+            "is now operational![/green][/bold]\n"
+        )
 
     async def blacklist_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id in self.blacklist:

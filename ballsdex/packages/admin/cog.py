@@ -79,12 +79,12 @@ class Admin(commands.GroupCog):
         if not guilds:
             if self.bot.intents.members:
                 await interaction.response.send_message(
-                    "The user does not own any server with Ballsdex.",
+                    f"The user does not own any server with {settings.bot_name}.",
                     ephemeral=True,
                 )
             else:
                 await interaction.response.send_message(
-                    "The user does not own any server with Ballsdex.\n"
+                    f"The user does not own any server with {settings.bot_name}.\n"
                     ":warning: *The bot cannot be aware of the member's presence in servers, "
                     "it is only aware of server ownerships.*",
                     ephemeral=True,

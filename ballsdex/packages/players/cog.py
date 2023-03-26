@@ -174,7 +174,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         )
 
         embed = discord.Embed(
-            description="BallsDex progression: "
+            description=f"{settings.bot_name} progression: "
             f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 4)}%**",
             colour=discord.Colour.blurple(),
         )

@@ -23,6 +23,8 @@ class Settings:
         Prefix for text commands, mostly unused. Defaults to "b."
     collectible_name: str
         Usually "countryball", can be replaced when possible
+    bot_name: str
+        Usually "BallsDex", can be replaced when possible
     players_group_cog_name: str
         Set the name of the base command of the "players" cog, /balls by default
     about_description: str
@@ -46,7 +48,8 @@ class Settings:
     bot_token: str = ""
     prefix: str = "b."
 
-    collectible_name: str = ""
+    collectible_name: str = "countryball"
+    bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
 
     # /about
@@ -77,6 +80,7 @@ def read_settings(path: "Path"):
     settings.prefix = content["text-prefix"]
 
     settings.collectible_name = content["collectible-name"]
+    settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
 
     settings.about_description = content["about"]["description"]
@@ -124,6 +128,10 @@ about:
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "countryballs" in the bot
 collectible-name: countryball
+
+# WORK IN PROGRESS, DOES NOT FULLY WORK
+# override the name "BallsDex" in the bot
+bot-name: BallsDex
 
 # players group cog command name
 # this is /balls by default, but you can change it for /animals or /rocks for example

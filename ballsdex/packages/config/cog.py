@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 
 activation_embed = discord.Embed(
     colour=0x00D936,
-    title="Ballsdex activation",
-    description="To enable Ballsdex in your server, you must "
+    title=f"{settings.bot_name} activation",
+    description=f"To enable {settings.bot_name} in your server, you must "
     f"read and accept the [Terms of Service]({settings.terms_of_service}).\n\n"
     "As a summary, these are the rules of the bot:\n"
     "- No farming (spamming or creating servers for balls)\n"
@@ -89,8 +89,8 @@ class Config(commands.GroupCog):
             await config.save()
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=False)
             await interaction.response.send_message(
-                "BallsDex is now disabled in this server. Commands will still be available, but "
-                f"the spawn of new {settings.collectible_name}s is suspended.\n"
+                f"{settings.bot_name} is now disabled in this server. Commands will still be "
+                f"available, but the spawn of new {settings.collectible_name}s is suspended.\n"
                 "To re-enable the spawn, use the same command."
             )
         else:
@@ -99,11 +99,11 @@ class Config(commands.GroupCog):
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=True)
             if config.spawn_channel and (channel := guild.get_channel(config.spawn_channel)):
                 await interaction.response.send_message(
-                    f"BallsDex is now enabled in this server, {settings.collectible_name}s "
-                    f"will start spawning soon in {channel.mention}."
+                    f"{settings.bot_name} is now enabled in this server, "
+                    f"{settings.collectible_name}s will start spawning soon in {channel.mention}."
                 )
             else:
                 await interaction.response.send_message(
-                    "BallsDex is now enabled in this server, however there is no spawning "
-                    "channel set. Please configure one with `/config channel`."
+                    f"{settings.bot_name} is now enabled in this server, however there is no "
+                    "spawning channel set. Please configure one with `/config channel`."
                 )

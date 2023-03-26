@@ -53,7 +53,9 @@ class Info(commands.Cog):
         """
         Get information about this bot.
         """
-        embed = discord.Embed(title="BallsDex Discord bot", color=discord.Colour.blurple())
+        embed = discord.Embed(
+            title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple()
+        )
 
         try:
             balls = await self._get_10_balls_emojis()
@@ -123,7 +125,7 @@ class Info(commands.Cog):
         """
         assert self.bot.user
         embed = discord.Embed(
-            title="BallsDex Discord bot - help menu", color=discord.Colour.blurple()
+            title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple()
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
