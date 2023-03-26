@@ -50,9 +50,6 @@ class BallsDexBot(commands.AutoShardedBot):
         self,
         command_prefix: str,
         dev: bool = False,
-        prometheus: bool = False,
-        prometheus_host: str = "localhost",
-        prometheus_port: int = 15260,
         **options,
     ):
         # An explaination for the used intents
@@ -67,9 +64,6 @@ class BallsDexBot(commands.AutoShardedBot):
         super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
 
         self.dev = dev
-        self.prometheus_enable = prometheus
-        self.prometheus_host = prometheus_host
-        self.prometheus_port = prometheus_port
         self.prometheus_server: PrometheusServer | None = None
 
         self.tree.error(self.on_application_command_error)
@@ -80,7 +74,9 @@ class BallsDexBot(commands.AutoShardedBot):
         self.special_cache: list[Special] = []
 
     async def start_prometheus_server(self):
-        self.prometheus_server = PrometheusServer(self, self.prometheus_host, self.prometheus_port)
+        self.prometheus_server = PrometheusServer(
+            self, settings.prometheus_host, settings.prometheus_port
+        )
         await self.prometheus_server.run()
 
     def assign_ids_to_app_groups(
@@ -193,7 +189,7 @@ class BallsDexBot(commands.AutoShardedBot):
                 synced_commands = await self.tree.sync(guild=guild)
                 log.info(f"Synced {len(synced_commands)} admin commands for guild {guild.id}.")
 
-        if self.prometheus_enable:
+        if settings.prometheus_enabled:
             try:
                 await self.start_prometheus_server()
             except Exception:
