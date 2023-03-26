@@ -68,7 +68,7 @@ class BallInstanceCache:
 
         total = 0
         for ball in cache.balls:
-            if value in ball.searchable:
+            if value.lower() in ball.searchable:
                 yield ball.model
                 total += 1
                 if total >= 25:
