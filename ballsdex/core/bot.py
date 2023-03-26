@@ -12,6 +12,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.gateway import DiscordWebSocket
 
+from ballsdex.settings import settings
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.models import BlacklistedID, Special
@@ -185,9 +186,10 @@ class BallsDexBot(commands.AutoShardedBot):
             log.info("No command to sync.")
 
         if "admin" in PACKAGES:
-            from ballsdex.packages.admin.cog import admin_guilds
-
-            for guild in admin_guilds:
+            for guild_id in settings.admin_guild_ids:
+                guild = self.get_guild(guild_id)
+                if not guild:
+                    continue
                 synced_commands = await self.tree.sync(guild=guild)
                 log.info(f"Synced {len(synced_commands)} admin commands for guild {guild.id}.")
 

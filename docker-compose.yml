@@ -8,7 +8,7 @@ x-common-env-vars:
   - &postgres-user
     POSTGRES_USER=ballsdex
   - &postgres-password
-    POSTGRES_PASSWORD
+    POSTGRES_PASSWORD=ballsdexdefaultpassword
 
 services:
 
@@ -31,7 +31,7 @@ services:
         source: ./
         target: /code
     tty: true
-    command: poetry run python3 -m ballsdex --dev --prometheus --prometheus-host 0.0.0.0
+    command: poetry run python3 -m ballsdex --dev
 
   admin-panel:
     image: ballsdex

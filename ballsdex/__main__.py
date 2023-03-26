@@ -8,6 +8,7 @@ import logging.handlers
 import discord
 import argparse
 
+from pathlib import Path
 from rich import print
 from tortoise import Tortoise
 from aerich import Command
@@ -16,6 +17,7 @@ from discord.utils import setup_logging
 from discord.ext.commands import when_mentioned_or
 
 from ballsdex import __version__ as bot_version
+from ballsdex.settings import settings, read_settings
 from ballsdex.core.bot import BallsDexBot
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
@@ -33,42 +35,24 @@ TORTOISE_ORM = {
 
 
 class CLIFlags(argparse.Namespace):
-    prefix: str
     version: bool
+    config_file: Path
     disable_rich: bool
     debug: bool
     dev: bool
-    prometheus: bool
-    prometheus_host: str
-    prometheus_port: int
 
 
 def parse_cli_flags(arguments: list[str]) -> CLIFlags:
     parser = argparse.ArgumentParser(
         prog="BallsDex bot", description="Collect and exchange countryballs on Discord"
     )
-    parser.add_argument("--prefix", type=str, help="Change the bot's prefix for text commands")
     parser.add_argument("--version", "-V", action="store_true", help="Display the bot's version")
+    parser.add_argument(
+        "--config-file", type=Path, help="Set the path to config.yml", default=Path("./config.yml")
+    )
     parser.add_argument("--disable-rich", action="store_true", help="Disable rich log format")
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
-    parser.add_argument(
-        "--prometheus",
-        action="store_true",
-        help="Enable Prometheus HTTP server for metrics collection",
-    )
-    parser.add_argument(
-        "--prometheus-host",
-        type=str,
-        default="localhost",
-        help="Define host for HTTP server serving Prometheus endpoint (default to localhost).",
-    )
-    parser.add_argument(
-        "--prometheus-port",
-        type=int,
-        default=15260,
-        help="Define port for HTTP server serving Prometheus endpoint (default to 15260).",
-    )
     args = parser.parse_args(arguments, namespace=CLIFlags())
     return args
 
@@ -185,6 +169,7 @@ def main():
     if cli_flags.version:
         print(f"BallsDex Discord bot - {bot_version}")
         sys.exit(0)
+    read_settings(cli_flags.config_file)
 
     print_welcome()
 
@@ -194,10 +179,10 @@ def main():
     try:
         init_logger(cli_flags.disable_rich, cli_flags.debug)
 
-        token = os.environ.get("BALLSDEXBOT_TOKEN", None)
+        token = settings.bot_token
         if not token:
             log.error("Token not found!")
-            print("[yellow]You must provide a token with the BALLSDEXBOT_TOKEN env var.[/yellow]")
+            print("[yellow]You must provide a token inside the config.yml file.[/yellow]")
             time.sleep(1)
             sys.exit(0)
 
@@ -210,7 +195,7 @@ def main():
             time.sleep(1)
             sys.exit(0)
 
-        prefix = cli_flags.prefix or os.environ.get("BALLSDEXBOT_PREFIX", "b.")
+        prefix = settings.prefix
 
         try:
             loop.run_until_complete(init_tortoise(db_url))
@@ -220,11 +205,7 @@ def main():
         log.debug("Tortoise ORM and database ready.")
 
         bot = BallsDexBot(
-            command_prefix=when_mentioned_or(prefix),  # type: ignore
-            dev=cli_flags.dev,
-            prometheus=cli_flags.prometheus,
-            prometheus_host=cli_flags.prometheus_host,
-            prometheus_port=cli_flags.prometheus_port,
+            command_prefix=when_mentioned_or(prefix), dev=cli_flags.dev  # type: ignore
         )
 
         exc_handler = functools.partial(global_exception_handler, bot)
