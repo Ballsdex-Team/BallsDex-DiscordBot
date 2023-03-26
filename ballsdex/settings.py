@@ -21,6 +21,20 @@ class Settings:
         Discord token for the bot to connect
     prefix: str
         Prefix for text commands, mostly unused. Defaults to "b."
+    collectible_name: str
+        Usually "countryball", can be replaced when possible
+    players_group_cog_name: str
+        Set the name of the base command of the "players" cog, /balls by default
+    about_description: str
+        Used in the /about command
+    github_link: str
+        Used in the /about command
+    discord_invite: str
+        Used in the /about command
+    terms_of_service: str
+        Used in the /about command
+    privacy_policy: str
+        Used in the /about command
     admin_guild_ids: list[int]
         List of guilds where the /admin command must be registered
     root_role_ids: list[int]
@@ -31,9 +45,23 @@ class Settings:
 
     bot_token: str = ""
     prefix: str = "b."
+
+    collectible_name: str = ""
+    players_group_cog_name: str = "balls"
+
+    # /about
+    about_description: str = ""
+    github_link: str = ""
+    discord_invite: str = ""
+    terms_of_service: str = ""
+    privacy_policy: str = ""
+
+    # /admin
     admin_guild_ids: list[int] = field(default_factory=list)
     root_role_ids: list[int] = field(default_factory=list)
     admin_role_ids: list[int] = field(default_factory=list)
+
+    # metrics and prometheus
     prometheus_enabled: bool = False
     prometheus_host: str = "0.0.0.0"
     prometheus_port: int = 15260
@@ -44,11 +72,23 @@ settings = Settings()
 
 def read_settings(path: "Path"):
     content = yaml.load(path.read_text(), yaml.Loader)
+
     settings.bot_token = content["discord-token"]
     settings.prefix = content["text-prefix"]
+
+    settings.collectible_name = content["collectible-name"]
+    settings.players_group_cog_name = content["players-group-cog-name"]
+
+    settings.about_description = content["about"]["description"]
+    settings.github_link = content["about"]["github-link"]
+    settings.discord_invite = content["about"]["discord-invite"]
+    settings.terms_of_service = content["about"]["terms-of-service"]
+    settings.privacy_policy = content["about"]["privacy-policy"]
+
     settings.admin_guild_ids = content["admin-command"]["guild-ids"] or []
     settings.root_role_ids = content["admin-command"]["root-role-ids"] or []
     settings.admin_guild_ids = content["admin-command"]["admin-role-ids"] or []
+
     settings.prometheus_enabled = content["prometheus"]["enabled"]
     settings.prometheus_host = content["prometheus"]["host"]
     settings.prometheus_port = content["prometheus"]["port"]
@@ -84,6 +124,10 @@ about:
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "countryballs" in the bot
 collectible-name: countryball
+
+# players group cog command name
+# this is /balls by default, but you can change it for /animals or /rocks for example
+players-group-cog-name: balls
 
 # enables the /admin command
 admin-command:

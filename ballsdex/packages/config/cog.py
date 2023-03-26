@@ -4,9 +4,10 @@ from typing import TYPE_CHECKING, cast
 
 from discord import app_commands
 from discord.ext import commands
+
+from ballsdex.settings import settings
 from ballsdex.core.models import GuildConfig
 from ballsdex.packages.config.components import AcceptTOSView
-from ballsdex.packages.info.cog import TERMS_OF_SERVICE
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -15,7 +16,7 @@ activation_embed = discord.Embed(
     colour=0x00D936,
     title="Ballsdex activation",
     description="To enable Ballsdex in your server, you must "
-    f"read and accept the [Terms of Service]({TERMS_OF_SERVICE}).\n\n"
+    f"read and accept the [Terms of Service]({settings.terms_of_service}).\n\n"
     "As a summary, these are the rules of the bot:\n"
     "- No farming (spamming or creating servers for balls)\n"
     "- Selling or exchaning balls against money or other goods is forbidden\n"
