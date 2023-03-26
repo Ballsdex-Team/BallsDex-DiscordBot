@@ -398,6 +398,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                 "Do you accept this donation?",
                 view=DonationRequest(interaction, countryball, new_player),
             )
+            return
 
         countryball.player = new_player
         countryball.trade_player = old_player
