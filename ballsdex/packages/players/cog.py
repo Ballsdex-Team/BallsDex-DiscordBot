@@ -286,6 +286,9 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         """
         Set favorite countryballs.
         """
+        if not countryball:
+            return
+
         if not countryball.favorite:
 
             player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
