@@ -1,14 +1,14 @@
 version: '3.4'
 
 x-common-env-vars:
+  - &postgres-password
+    POSTGRES_PASSWORD=ballsdexdefaultpassword
   - &postgres-url
     "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
   - &postgres-db
     POSTGRES_DB=ballsdex
   - &postgres-user
     POSTGRES_USER=ballsdex
-  - &postgres-password
-    POSTGRES_PASSWORD=ballsdexdefaultpassword
 
 services:
 
