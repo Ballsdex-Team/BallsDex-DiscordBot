@@ -27,7 +27,7 @@ services:
         source: ./
         target: /code
     tty: true
-    command: poetry run python3 -m ballsdex --dev --debug
+    command: poetry run python3 -m ballsdex --dev
 
   admin-panel:
     image: ballsdex
