@@ -21,7 +21,7 @@ uvicorn = "^0.21.1"
 
 # database ORM
 tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
-aioredis = "^2.0.1"
+redis = "^4.5.3"
 
 # misc
 rich = "^12.6.0"

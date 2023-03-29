@@ -2,7 +2,7 @@ from ballsdex.core.admin import resources, routes  # noqa: F401
 
 import os
 import pathlib
-import aioredis
+from redis import asyncio as aioredis
 
 from tortoise.contrib.fastapi import register_tortoise
 
