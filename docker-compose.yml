@@ -1,14 +1,12 @@
 version: '3.4'
 
 x-common-env-vars:
-  - &postgres-password
-    POSTGRES_PASSWORD=ballsdexdefaultpassword
-  - &postgres-url
-    "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
   - &postgres-db
     POSTGRES_DB=ballsdex
   - &postgres-user
     POSTGRES_USER=ballsdex
+  - &postgres-url
+    "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
 
 services:
 
@@ -18,25 +16,25 @@ services:
     build: .
     environment:
       - *postgres-url
-      - BALLSDEXBOT_TOKEN
-      - BALLSDEXBOT_ADMIN_GUILDS
-      - BALLSDEXBOT_ADMIN_ROLES
-      - BALLSDEXBOT_ROOT_ROLES
     depends_on:
       - postgres-db
-    ports:
-      - "15260:15260"
+    # ports:
+    #   - "15260:15260"
+    networks:
+      - internal
     volumes:
       - type: bind
         source: ./
         target: /code
     tty: true
-    command: poetry run python3 -m ballsdex --dev
+    command: poetry run python3 -m ballsdex --dev --debug
 
   admin-panel:
     image: ballsdex
     ports:
       - "8000:8000"
+    networks:
+      - internal
     environment:
       - *postgres-url
       - "BALLSDEXBOT_REDIS_URL=redis://redis"
@@ -57,9 +55,12 @@ services:
     environment:
       - *postgres-db
       - *postgres-user
-      - *postgres-password
-    ports:
-      - "5432:5432"
+      - POSTGRES_PASSWORD
+    # WARNING: before exposing ports, change the default db password in the .env file!
+    # ports:
+    #   - "5432:5432"
+    networks:
+      - internal
     volumes:  # Persist the db data
       - database-data:/var/lib/postgresql/data
 
@@ -71,10 +72,12 @@ services:
       - /var/opt/pgbackups:/backups
     depends_on:
       - postgres-db
+    networks:
+      - internal
     environment:
       - *postgres-db
       - *postgres-user
-      - *postgres-password
+      - POSTGRES_PASSWORD
       - POSTGRES_HOST=postgres
       - SCHEDULE=@daily
       - BACKUP_KEEP_DAYS=7
@@ -86,8 +89,10 @@ services:
     image: redis:latest
     restart: always
     hostname: redis
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
+    networks:
+      - internal
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     command: redis-server --save 20 1 --loglevel warning
@@ -97,3 +102,6 @@ services:
 volumes:
   database-data:
   cache-data:
+
+networks:
+  internal:
