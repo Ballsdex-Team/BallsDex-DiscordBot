@@ -31,7 +31,7 @@ class CachedBallInstance:
         self.searchable = " ".join(
             (
                 self.model.ball.country.lower(),
-                "{:0X}".format(self.model.pk),
+                "{:0x}".format(self.model.pk),
                 *(self.model.ball.catch_names.split(";") if self.model.ball.catch_names else []),
             )
         )
