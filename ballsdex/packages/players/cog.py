@@ -107,16 +107,17 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         List your countryballs.
         """
         user: discord.User | discord.Member = user or interaction.user
+        await interaction.response.defer(thinking=True)
 
         try:
             player = await Player.get(discord_id=user.id)
         except DoesNotExist:
             if user == interaction.user:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You don't have any {settings.collectible_name} yet."
                 )
             else:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"{user.name} doesn't have any {settings.collectible_name} yet."
                 )
             return
@@ -140,11 +141,11 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if len(countryballs) < 1:
             if user == interaction.user:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You don't have any {settings.collectible_name} yet."
                 )
             else:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"{user.name} doesn't have any {settings.collectible_name} yet."
                 )
             return
