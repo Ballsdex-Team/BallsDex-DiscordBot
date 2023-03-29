@@ -6,37 +6,37 @@ authors = ["laggron42 <laggron42@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 
 # asyncio
-uvloop = { version = "^0.16.0", markers = "sys_platform != 'win32'" }
+uvloop = { version = "^0.17.0", markers = "sys_platform != 'win32'" }
 
 # discord
-"discord.py" = "^2.2.0"
+"discord.py" = "^2.2.2"
 
 # fastapi
-fastapi = "^0.82.0"
+fastapi = "^0.95.0"
 fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "5f34bf0d7356afa4c6034a7ab3942ea843d3b8ce"}
-uvicorn = "^0.18.3"
+uvicorn = "^0.21.1"
 
 # database ORM
-tortoise-orm = {extras = ["asyncpg"], version = "^0.19.2"}
+tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
 aioredis = "^2.0.1"
 
 # misc
-rich = "^12.5.1"
+rich = "^12.6.0"
 python-dateutil = "^2.8.2"
-Pillow = "^9.2.0"
+Pillow = "^9.4.0"
 aerich = "^0.6.3"
 pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
-pre-commit = "^2.20.0"
-black = {version = "^22.10.0", allow-prereleases = true}
+pre-commit = "^3.2.1"
+black = {version = "^23.1.0", allow-prereleases = true}
 
 
 [tool.poetry.group.metrics.dependencies]
-prometheus-client = "^0.15.0"
+prometheus-client = "^0.16.0"
 
 [tool.aerich]
 tortoise_orm = "ballsdex.__main__.TORTOISE_ORM"
