@@ -225,7 +225,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
             )  # force empty field value
 
-        source = FieldPageSource(entries, per_page=25, inline=False)
+        source = FieldPageSource(entries, per_page=5, inline=False)
         source.embed.description = (
             f"{settings.bot_name} progression: "
             f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 4)}%**"
