@@ -95,10 +95,6 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
-    @app_commands.describe(
-        user="View someone else's collection",
-        sort="Modify the default sorting of your countryballs",
-    )
     async def list(
         self,
         interaction: discord.Interaction,
@@ -107,6 +103,13 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
     ):
         """
         List your countryballs.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user whose collection you want to view, if not yours.
+        sort: SortingCHoices
+            Choose how countryballs are sorted. Can be used to show duplicates.
         """
         user: discord.User | discord.Member = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -235,14 +238,14 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
-    @app_commands.describe(countryball="The countryball you want to inspect")
-    async def info(
-        self,
-        interaction: discord.Interaction,
-        countryball: BallInstanceTransform,
-    ):
+    async def info(self, interaction: discord.Interaction, countryball: BallInstanceTransform):
         """
         Display info from a specific countryball.
+
+        Parameters
+        ----------
+        countryball: BallInstance
+            The countryball you want to inspect
         """
         if not countryball:
             return
@@ -278,14 +281,14 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         file.close()
 
     @app_commands.command()
-    @app_commands.describe(countryball="The countryball you want to set/unset as favorite")
-    async def favorite(
-        self,
-        interaction: discord.Interaction,
-        countryball: BallInstanceTransform,
-    ):
+    async def favorite(self, interaction: discord.Interaction, countryball: BallInstanceTransform):
         """
         Set favorite countryballs.
+
+        Parameters
+        ----------
+        countryball: BallInstance
+            The countryball you want to set/unset as favorite
         """
         if not countryball:
             return
@@ -334,6 +337,8 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         """
         Chance how you want to receive donations from /balls give
 
+        Parameters
+        ----------
         policy: DonationPolicy
             The new policy for accepting donations
         """
