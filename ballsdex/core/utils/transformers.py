@@ -9,7 +9,8 @@ from dataclasses import dataclass
 from tortoise.exceptions import DoesNotExist
 from typing import TypeVar, Generic, AsyncIterator
 
-from ballsdex.core.models import Ball, BallInstance, Player, Special
+from ballsdex.settings import settings
+from ballsdex.core.models import Ball, BallInstance, Player, Special, balls
 
 log = logging.getLogger("ballsdex.core.utils.transformers")
 
@@ -29,9 +30,13 @@ class CachedBallInstance:
     def __post_init__(self):
         self.searchable = " ".join(
             (
-                self.model.ball.country.lower(),
-                "{:0X}".format(self.model.pk),
-                *(self.model.ball.catch_names.split(";") if self.model.ball.catch_names else []),
+                self.model.countryball.country.lower(),
+                "{:0x}".format(self.model.pk),
+                *(
+                    self.model.countryball.catch_names.split(";")
+                    if self.model.countryball.catch_names
+                    else []
+                ),
             )
         )
 
@@ -59,13 +64,15 @@ class BallInstanceCache:
             except DoesNotExist:
                 balls = []
             else:
-                balls = await BallInstance.filter(player=player).select_related("ball").all()
+                balls = (
+                    await BallInstance.filter(player=player).select_related("ball", "player").all()
+                )
             cache = ListCache(time, [CachedBallInstance(x) for x in balls])
             self.cache[user.id] = cache
 
         total = 0
         for ball in cache.balls:
-            if value in ball.searchable:
+            if value.lower() in ball.searchable:
                 yield ball.model
                 total += 1
                 if total >= 25:
@@ -86,21 +93,25 @@ class BallInstanceTransformer(app_commands.Transformer):
     def __init__(self):
         self.cache = BallInstanceCache()
 
+    async def validate(
+        self, interaction: discord.Interaction, ball: BallInstance
+    ) -> BallInstance | None:
+        # checking if the ball does belong to user, and a custom ID wasn't forced
+        if ball.player.discord_id != interaction.user.id:
+            await interaction.response.send_message(
+                f"That {settings.collectible_name} doesn't belong to you.", ephemeral=True
+            )
+            return None
+        else:
+            return ball
+
     async def autocomplete(
         self, interaction: discord.Interaction, value: str
     ) -> list[app_commands.Choice[int | float | str]]:
         t1 = time.time()
         choices: list[app_commands.Choice] = []
         async for ball in self.cache.get(interaction.user, value):
-            favorite = "❤️ " if ball.favorite else ""
-            shiny = "✨ " if ball.shiny else ""
-            choices.append(
-                app_commands.Choice(
-                    name=f"{favorite}{shiny}#{ball.pk:0X} {ball.ball.country} "
-                    f"{ball.attack_bonus:+d}%🗡/{ball.health_bonus:+d}%❤️",
-                    value=str(ball.pk),
-                )
-            )
+            choices.append(app_commands.Choice(name=ball.description(), value=str(ball.pk)))
         t2 = time.time()
         log.debug(f"Autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
         return choices
@@ -113,11 +124,12 @@ class BallInstanceTransformer(app_commands.Transformer):
                 balls = self.cache.cache[interaction.user.id].balls
                 for ball in balls:
                     if ball.model.pk == int(value):
-                        return ball.model
+                        return await self.validate(interaction, ball.model)
             except KeyError:
                 # maybe the cache didn't have time to build, let's try anyway to fetch the value
                 try:
-                    return await BallInstance.get(id=int(value)).prefetch_related("ball")
+                    ball = await BallInstance.get(id=int(value)).prefetch_related("player")
+                    return await self.validate(interaction, ball)
                 except DoesNotExist:
                     await interaction.response.send_message(
                         "The ball could not be found. Make sure to use the autocomplete "
@@ -142,7 +154,6 @@ class BallTransformer(app_commands.Transformer):
         self.cache: ListCache[Ball] | None = None
 
     async def load_cache(self):
-        balls = await Ball.all()
         self.cache = ListCache(time.time(), balls)
 
     async def autocomplete(
@@ -165,8 +176,8 @@ class BallTransformer(app_commands.Transformer):
             )
             return None
         try:
-            return await Ball.get(pk=int(value))
-        except (ValueError, DoesNotExist):
+            return next(filter(lambda ball: ball.pk == int(value), balls))
+        except (StopIteration, ValueError):
             await interaction.response.send_message(
                 "The ball could not be found. Make sure to use the autocomplete "
                 "function on this command."

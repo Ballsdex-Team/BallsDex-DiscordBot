@@ -76,3 +76,15 @@ class Core(commands.Cog):
         """
         await self.bot.load_special_cache()
         await ctx.message.add_reaction("✅")
+
+    @commands.command()
+    @commands.is_owner()
+    async def reloadballs(self, ctx: commands.Context):
+        """
+        Reload the cache of countryballs.
+
+        This is needed each time the database is updated, otherwise changes won't reflect until
+        next start.
+        """
+        await self.bot.load_balls()
+        await ctx.message.add_reaction("✅")

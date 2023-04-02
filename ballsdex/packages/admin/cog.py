@@ -1,8 +1,6 @@
 import discord
 import logging
 import random
-import sys
-import os
 
 from discord import app_commands
 from discord.ui import Button
@@ -10,6 +8,7 @@ from discord.ext import commands
 from tortoise.exceptions import IntegrityError, DoesNotExist
 from typing import TYPE_CHECKING
 
+from ballsdex.settings import settings
 from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
@@ -20,47 +19,8 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.admin.cog")
 
-try:
-    if guilds := os.environ.get("BALLSDEXBOT_ADMIN_GUILDS"):
-        admin_guilds = [discord.Object(x) for x in guilds.split(",")]
-    else:
-        admin_guilds = []
-except TypeError:
-    log.critical(
-        "The value of BALLSDEX_ADMIN_GUILDS is incorrect. "
-        "It must be a list of guild IDs separated by commas.",
-        exc_info=True,
-    )
-    sys.exit(1)
 
-try:
-    if roles := os.environ.get("BALLSDEXBOT_ADMIN_ROLES"):
-        admin_roles = [int(x) for x in roles.split(",")]
-    else:
-        admin_roles = []
-except ValueError:
-    log.critical(
-        "The value of BALLSDEX_ADMIN_ROLES is incorrect. "
-        "It must be a list of role IDs separated by commas.",
-        exc_info=True,
-    )
-    sys.exit(1)
-
-try:
-    if roles := os.environ.get("BALLSDEXBOT_ROOT_ROLES"):
-        root_roles = [int(x) for x in roles.split(",")]
-    else:
-        root_roles = []
-except ValueError:
-    log.critical(
-        "The value of BALLSDEX_ROOT_ROLES is incorrect. "
-        "It must be a list of role IDs separated by commas.",
-        exc_info=True,
-    )
-    sys.exit(1)
-
-
-@app_commands.guilds(*admin_guilds)
+@app_commands.guilds(*settings.admin_guild_ids)
 @app_commands.default_permissions(administrator=True)
 class Admin(commands.GroupCog):
     """
@@ -74,7 +34,7 @@ class Admin(commands.GroupCog):
     blacklist = app_commands.Group(name="blacklist", description="Bot blacklist management")
 
     @app_commands.command()
-    @app_commands.checks.has_any_role(*root_roles, *admin_roles)
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def guilds(
         self,
         interaction: discord.Interaction,
@@ -119,12 +79,12 @@ class Admin(commands.GroupCog):
         if not guilds:
             if self.bot.intents.members:
                 await interaction.response.send_message(
-                    "The user does not own any server with Ballsdex.",
+                    f"The user does not own any server with {settings.bot_name}.",
                     ephemeral=True,
                 )
             else:
                 await interaction.response.send_message(
-                    "The user does not own any server with Ballsdex.\n"
+                    f"The user does not own any server with {settings.bot_name}.\n"
                     ":warning: *The bot cannot be aware of the member's presence in servers, "
                     "it is only aware of server ownerships.*",
                     ephemeral=True,
@@ -188,7 +148,7 @@ class Admin(commands.GroupCog):
         await pages.start(ephemeral=True)
 
     @app_commands.command()
-    @app_commands.checks.has_any_role(*root_roles)
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def spawn(
         self,
         interaction: discord.Interaction,
@@ -214,14 +174,16 @@ class Admin(commands.GroupCog):
         else:
             countryball = CountryBall(ball)
         await countryball.spawn(channel or interaction.channel)  # type: ignore
-        await interaction.followup.send("Ball spawned.", ephemeral=True)
+        await interaction.followup.send(
+            f"{settings.collectible_name.title()} spawned.", ephemeral=True
+        )
         log.info(
-            f"{interaction.user} spawned ball {countryball.name} "
+            f"{interaction.user} spawned {settings.collectible_name} {countryball.name} "
             f"in {channel or interaction.channel}."
         )
 
     @app_commands.command()
-    @app_commands.checks.has_any_role(*root_roles)
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def give(
         self,
         interaction: discord.Interaction,
@@ -278,7 +240,7 @@ class Admin(commands.GroupCog):
         )
 
     @blacklist.command(name="add")
-    @app_commands.checks.has_any_role(*root_roles, *admin_roles)
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_add(
         self,
         interaction: discord.Interaction,
@@ -318,7 +280,9 @@ class Admin(commands.GroupCog):
                 )
                 return
 
-        final_reason = f"\nDone through the bot by {interaction.user} ({interaction.user.id})"
+        final_reason = (
+            f"{reason}\nDone through the bot by {interaction.user} ({interaction.user.id})"
+        )
 
         try:
             await BlacklistedID.create(discord_id=user.id, reason=final_reason)
@@ -332,7 +296,7 @@ class Admin(commands.GroupCog):
         )
 
     @blacklist.command(name="remove")
-    @app_commands.checks.has_any_role(*root_roles, *admin_roles)
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_remove(
         self,
         interaction: discord.Interaction,

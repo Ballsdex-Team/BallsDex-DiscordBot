@@ -5,28 +5,81 @@ import asyncio
 
 from typing import cast
 from datetime import datetime
+from collections import deque, namedtuple
 from dataclasses import dataclass, field
 
 from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
-SPAWN_CHANCE_RANGE = (65, 100)
+SPAWN_CHANCE_RANGE = (40, 55)
+
+CachedMessage = namedtuple("CachedMessage", ["content", "author_id"])
 
 
 @dataclass
 class SpawnCooldown:
+    """
+    Represents the spawn internal system per guild. Contains the counters that will determine
+    if a countryball should be spawned next or not.
+
+    Attributes
+    ----------
     time: datetime
-    amount: int = field(default=1)
+        Time when the object was initialized. Block spawning when it's been less than two minutes
+    amount: float
+        A number starting at 0, incrementing with the messages until reaching `chance`. At this
+        point, a ball will be spawned next.
+    chance: int
+        The number `amount` has to reach for spawn. Determined randomly with `SPAWN_CHANCE_RANGE`
+    lock: asyncio.Lock
+        Used to ratelimit messages and ignore fast spam
+    message_cache: ~collections.deque[CachedMessage]
+        A list of recent messages used to reduce the spawn chance when too few different chatters
+        are present. Limited to the 100 most recent messages in the guild.
+    """
+
+    time: datetime
+    # initialize partially started, to reduce the dead time after starting the bot
+    amount: float = field(default=SPAWN_CHANCE_RANGE[0] // 2)
     chance: int = field(default_factory=lambda: random.randint(*SPAWN_CHANCE_RANGE))
     lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
+    message_cache: deque[CachedMessage] = field(default_factory=lambda: deque(maxlen=100))
 
-    async def increase(self) -> bool:
+    def reset(self, time: datetime):
+        self.amount = 1.0
+        self.chance = random.randint(*SPAWN_CHANCE_RANGE)
+        try:
+            self.lock.release()
+        except RuntimeError:  # lock is not acquired
+            pass
+        self.time = time
+
+    async def increase(self, message: discord.Message) -> bool:
+        # this is a deque, not a list
+        # its property is that, once the max length is reached (100 for us),
+        # the oldest element is removed, thus we only have the last 100 messages in memory
+        self.message_cache.append(
+            CachedMessage(content=message.content, author_id=message.author.id)
+        )
+
         if self.lock.locked():
             return False
+
         async with self.lock:
-            self.amount += 1
-            await asyncio.sleep(4)
+            amount = 1
+            if message.guild.member_count < 5 or message.guild.member_count > 1000:  # type: ignore
+                amount /= 2
+            if len(message.content) < 5:
+                amount /= 2
+            if len(set(x.author_id for x in self.message_cache)) < 4 or (
+                len(list(filter(lambda x: x.author_id == message.author.id, self.message_cache)))
+                / self.message_cache.maxlen  # type: ignore
+                > 0.4
+            ):
+                amount /= 2
+            self.amount += amount
+            await asyncio.sleep(10)
         return True
 
 
@@ -47,10 +100,19 @@ class SpawnManager:
             log.debug(f"Created cooldown manager for guild {guild.id}")
 
         delta = (message.created_at - cooldown.time).total_seconds()
-        chance = cooldown.chance - (delta // 60)
+        # change how the threshold varies according to the member count, while nuking farm servers
+        if guild.member_count < 5:
+            multiplier = 0.1
+        elif guild.member_count < 100:
+            multiplier = 0.8
+        elif guild.member_count < 1000:
+            multiplier = 0.5
+        else:
+            multiplier = 0.2
+        chance = cooldown.chance - multiplier * (delta // 60)
 
         # manager cannot be increased more than once per 5 seconds
-        if not await cooldown.increase():
+        if not await cooldown.increase(message):
             log.debug(f"Handled message {message.id}, skipping due to spam control")
             return
 
@@ -60,13 +122,13 @@ class SpawnManager:
             return
 
         # at this point, the goal is reached
-        if delta < 120:
-            # wait for at least 2 minutes before spawning
-            log.debug(f"Handled message {message.id}, waiting for manager to be 2 mins old")
+        if delta < 600:
+            # wait for at least 10 minutes before spawning
+            log.debug(f"Handled message {message.id}, waiting for manager to be 10 mins old")
             return
 
         # spawn countryball
-        del self.cooldowns[guild.id]
+        cooldown.reset(message.created_at)
         log.debug(f"Handled message {message.id}, spawning ball")
         await self.spawn_countryball(guild)
 

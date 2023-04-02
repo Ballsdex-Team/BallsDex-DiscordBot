@@ -7,6 +7,7 @@ repos:
     rev: v4.3.0
     hooks:
       - id: trailing-whitespace
+        exclude: settings\.py
       - id: end-of-file-fixer
       - id: check-added-large-files
         files: ''

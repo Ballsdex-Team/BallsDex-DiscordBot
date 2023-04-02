@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
 
 
+balls: list[Ball] = []
+
+
 async def lower_catch_names(
     model: Type[Ball],
     instance: Ball,
@@ -155,26 +158,71 @@ class BallInstance(models.Model):
     )
     favorite = fields.BooleanField(default=False)
 
-    def __str__(self) -> str:
-        return f"{self.ball.country} #{self.pk:0X}"
-
     class Meta:
         unique_together = ("player", "id")
 
     @property
     def attack(self) -> int:
-        bonus = int(self.ball.attack * self.attack_bonus * 0.01)
-        return self.ball.attack + bonus
+        bonus = int(self.countryball.attack * self.attack_bonus * 0.01)
+        return self.countryball.attack + bonus
 
     @property
     def health(self) -> int:
-        bonus = int(self.ball.health * self.health_bonus * 0.01)
-        return self.ball.health + bonus
+        bonus = int(self.countryball.health * self.health_bonus * 0.01)
+        return self.countryball.health + bonus
 
     @property
     def special_card(self) -> str | None:
         if self.special:
-            return self.special.get_background(self.ball.regime) or self.ball.collection_card
+            return (
+                self.special.get_background(self.countryball.regime)
+                or self.countryball.collection_card
+            )
+
+    @property
+    def countryball(self) -> Ball:
+        if balls:
+            try:
+                return next(filter(lambda ball: ball.pk == self.ball_id, balls))
+            except StopIteration:
+                pass
+        return self.ball
+
+    def __str__(self) -> str:
+        emotes = ""
+        if self.favorite:
+            emotes += "❤️"
+        if self.shiny:
+            emotes += "✨"
+        if emotes:
+            emotes += " "
+        country = (
+            self.countryball.country
+            if isinstance(self.countryball, Ball)
+            else f"<Ball {self.ball_id}>"
+        )
+        return f"{emotes}#{self.pk:0X} {country} "
+
+    def description(
+        self,
+        *,
+        short: bool = False,
+        include_emoji: bool = False,
+        bot: discord.Client | None = None,
+    ) -> str:
+        text = str(self)
+        if not short:
+            text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
+        if include_emoji:
+            if not bot:
+                raise TypeError(
+                    "You need to provide the bot argument when using with include_emoji=True"
+                )
+            if isinstance(self.countryball, Ball):
+                emoji = bot.get_emoji(self.countryball.emoji_id)
+                if emoji:
+                    text = f"{emoji} {text}"
+        return text
 
     def draw_card(self) -> BytesIO:
         from ballsdex.core.image_generator.image_gen import draw_card
@@ -191,7 +239,7 @@ class BallInstance(models.Model):
     ) -> Tuple[str, discord.File]:
         # message content
         trade_content = ""
-        await self.fetch_related("trade_player", "ball", "special")
+        await self.fetch_related("trade_player", "special")
         if self.trade_player:
 
             original_player = None
@@ -232,9 +280,20 @@ class BallInstance(models.Model):
         return content, discord.File(buffer, "card.png")
 
 
+class DonationPolicy(IntEnum):
+    ALWAYS_ACCEPT = 1
+    REQUEST_APPROVAL = 2
+    ALWAYS_DENY = 3
+
+
 class Player(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
+    )
+    donation_policy = fields.IntEnumField(
+        DonationPolicy,
+        description="How you want to handle donations",
+        default=DonationPolicy.ALWAYS_ACCEPT,
     )
     balls: fields.BackwardFKRelation[BallInstance]
 

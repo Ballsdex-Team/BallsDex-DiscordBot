@@ -17,7 +17,6 @@ build
 venv
 .venv
 .python-version
-.env
 
 # Visual Studio code settings
 .vscode
@@ -31,3 +30,7 @@ static
 
 # cache
 .pytest_cache
+
+# settings
+config.yml
+docker-compose.override.yml

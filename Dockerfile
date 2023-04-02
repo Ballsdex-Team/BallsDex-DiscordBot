@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.10-buster
+FROM python:3.11-buster
 
 ENV PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
@@ -9,7 +9,7 @@ ENV PYTHONFAULTHANDLER=1 \
   PIP_DISABLE_PIP_VERSION_CHECK=on \
   PIP_DEFAULT_TIMEOUT=100
 
-RUN pip install poetry==1.2.2
+RUN pip install poetry==1.4.1
 
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/

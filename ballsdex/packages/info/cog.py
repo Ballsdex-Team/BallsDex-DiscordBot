@@ -1,25 +1,21 @@
 import discord
 import sys
 import logging
+import random
 
 from typing import TYPE_CHECKING
-from tortoise.contrib.postgres.functions import Random
 
 from discord import app_commands
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
-from ballsdex.core.models import Ball, BallInstance, Player
+from ballsdex.settings import settings
+from ballsdex.core.models import Ball, BallInstance, Player, balls as countryballs
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.packages.info")
-
-GITHUB_LINK = "https://github.com/laggron42/BallsDex-DiscordBot"
-DISCORD_SERVER_LINK = "https://discord.gg/Qn2Rkdkxwc"
-TERMS_OF_SERVICE = "https://gist.github.com/laggron42/52ae099c55c6ee1320a260b0a3ecac4e"
-PRIVACY_POLICY = "https://gist.github.com/laggron42/1eaa122013120cdfcc6d27f9485fe0bf"
 
 
 def mention_app_command(app_command: app_commands.Command | app_commands.Group) -> str:
@@ -41,9 +37,7 @@ class Info(commands.Cog):
         self.bot = bot
 
     async def _get_10_balls_emojis(self) -> list[discord.Emoji]:
-        balls: list[Ball] = (
-            await Ball.annotate(order=Random()).order_by("order").limit(10).only("emoji_id")
-        )
+        balls: list[Ball] = random.choices(countryballs, k=min(10, len(countryballs)))
         emotes: list[discord.Emoji] = []
 
         for ball in balls:
@@ -57,7 +51,9 @@ class Info(commands.Cog):
         """
         Get information about this bot.
         """
-        embed = discord.Embed(title="BallsDex Discord bot", color=discord.Colour.blurple())
+        embed = discord.Embed(
+            title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple()
+        )
 
         try:
             balls = await self._get_10_balls_emojis()
@@ -67,7 +63,7 @@ class Info(commands.Cog):
 
         # TODO: find a better solution to get the count of all rows
         # possible track: https://stackoverflow.com/a/7945274
-        balls_count = await Ball.all().count()
+        balls_count = len(balls)
         players_count = await Player.all().count()
         balls_instances_count = await BallInstance.all().count()
 
@@ -98,19 +94,18 @@ class Info(commands.Cog):
             )
         embed.description = (
             f"{' '.join(str(x) for x in balls)}\n"
-            "Collect countryballs on Discord, exchange them and battle with friends!\n"
-            f"*Running version **[{ballsdex_version}]({GITHUB_LINK}/releases)***\n\n"
-            f"**{balls_count}** countryballs to collect\n"
-            f"**{players_count}** players that caught **{balls_instances_count}** countryballs\n"
+            f"{settings.about_description}\n"
+            f"*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\n\n"
+            f"**{balls_count}** {settings.collectible_name}s to collect\n"
+            f"**{players_count}** players that caught "
+            f"**{balls_instances_count}** {settings.collectible_name}s\n"
             f"**{len(self.bot.guilds)}** servers playing\n\n"
             "This bot was made by **El Laggron**, consider supporting me on my "
-            "[Patreon](https://patreon.com/retke) :heart:\n"
-            "All pictures are used with permission from [Polandball Wiki]"
-            "(https://www.polandballwiki.com/wiki/Polandball_Wiki) and/or "
-            "from the respective artists mentioned in the cards.\n\n"
-            f"[Discord server]({DISCORD_SERVER_LINK}) • [Invite me]({invite_link}) • "
-            f"[Source code and issues]({GITHUB_LINK})\n[Terms of Service]({TERMS_OF_SERVICE}) • "
-            f"[Privacy policy]({PRIVACY_POLICY})"
+            "[Patreon](https://patreon.com/retke) :heart:\n\n"
+            f"[Discord server]({settings.discord_invite}) • [Invite me]({invite_link}) • "
+            f"[Source code and issues]({settings.github_link})\n"
+            f"[Terms of Service]({settings.terms_of_service}) • "
+            f"[Privacy policy]({settings.privacy_policy})"
         )
 
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
@@ -128,7 +123,7 @@ class Info(commands.Cog):
         """
         assert self.bot.user
         embed = discord.Embed(
-            title="BallsDex Discord bot - help menu", color=discord.Colour.blurple()
+            title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple()
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 

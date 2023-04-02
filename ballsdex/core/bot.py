@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import discord
 import logging
+import yarl
 
 from rich import print
 from typing import cast
@@ -9,15 +10,17 @@ from datetime import datetime
 
 from discord import app_commands
 from discord.ext import commands
+from discord.gateway import DiscordWebSocket
 
+from ballsdex.settings import settings
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
-from ballsdex.core.models import BlacklistedID, Special
+from ballsdex.core.models import BlacklistedID, Special, Ball, balls
 from ballsdex.core.commands import Core
 
 log = logging.getLogger("ballsdex.core.bot")
 
-PACKAGES = ["config", "players", "countryballs", "info", "admin"]
+PACKAGES = ["config", "players", "countryballs", "info", "admin", "trade"]
 
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
@@ -47,9 +50,6 @@ class BallsDexBot(commands.AutoShardedBot):
         self,
         command_prefix: str,
         dev: bool = False,
-        prometheus: bool = False,
-        prometheus_host: str = "localhost",
-        prometheus_port: int = 15260,
         **options,
     ):
         # An explaination for the used intents
@@ -64,9 +64,6 @@ class BallsDexBot(commands.AutoShardedBot):
         super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
 
         self.dev = dev
-        self.prometheus_enable = prometheus
-        self.prometheus_host = prometheus_host
-        self.prometheus_port = prometheus_port
         self.prometheus_server: PrometheusServer | None = None
 
         self.tree.error(self.on_application_command_error)
@@ -77,7 +74,9 @@ class BallsDexBot(commands.AutoShardedBot):
         self.special_cache: list[Special] = []
 
     async def start_prometheus_server(self):
-        self.prometheus_server = PrometheusServer(self, self.prometheus_host, self.prometheus_port)
+        self.prometheus_server = PrometheusServer(
+            self, settings.prometheus_host, settings.prometheus_port
+        )
         await self.prometheus_server.run()
 
     def assign_ids_to_app_groups(
@@ -113,6 +112,36 @@ class BallsDexBot(commands.AutoShardedBot):
         now = datetime.now()
         self.special_cache = await Special.filter(start_date__lte=now, end_date__gt=now)
 
+    async def load_balls(self):
+        balls.clear()
+        for ball in await Ball.all():
+            balls.append(ball)
+        log.info(f"Loaded {len(balls)} balls")
+
+    async def launch_shards(self) -> None:
+        # override to add a log call on the number of shards that needs connecting
+        if self.is_closed():
+            return
+
+        if self.shard_count is None:
+            self.shard_count: int
+            self.shard_count, gateway_url = await self.http.get_bot_gateway()
+            log.info(
+                f"Logged in to Discord, initiating connection. {self.shard_count} shards needed"
+            )
+            gateway = yarl.URL(gateway_url)
+        else:
+            gateway = DiscordWebSocket.DEFAULT_GATEWAY
+
+        self._connection.shard_count = self.shard_count
+
+        shard_ids = self.shard_ids or range(self.shard_count)
+        self._connection.shard_ids = shard_ids
+
+        for shard_id in shard_ids:
+            initial = shard_id == shard_ids[0]
+            await self.launch_shard(gateway, shard_id, initial=initial)
+
     async def on_ready(self):
         assert self.user
         log.info(f"Successfully logged in as {self.user} ({self.user.id})!")
@@ -125,6 +154,7 @@ class BallsDexBot(commands.AutoShardedBot):
             self.owner_id = self.application.owner.id
         log.info(f"{self.owner_id} is set as the bot owner.")
 
+        await self.load_balls()
         await self.load_blacklist()
         await self.load_special_cache()
         if self.blacklist:
@@ -159,19 +189,23 @@ class BallsDexBot(commands.AutoShardedBot):
             log.info("No command to sync.")
 
         if "admin" in PACKAGES:
-            from ballsdex.packages.admin.cog import admin_guilds
-
-            for guild in admin_guilds:
+            for guild_id in settings.admin_guild_ids:
+                guild = self.get_guild(guild_id)
+                if not guild:
+                    continue
                 synced_commands = await self.tree.sync(guild=guild)
                 log.info(f"Synced {len(synced_commands)} admin commands for guild {guild.id}.")
 
-        if self.prometheus_enable:
+        if settings.prometheus_enabled:
             try:
                 await self.start_prometheus_server()
             except Exception:
                 log.exception("Failed to start Prometheus server, stats will be unavailable.")
 
-        print("\n    [bold][red]BallsDex bot[/red] [green]is now operational![/green][/bold]\n")
+        print(
+            f"\n    [bold][red]{settings.bot_name} bot[/red] [green]"
+            "is now operational![/green][/bold]\n"
+        )
 
     async def blacklist_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id in self.blacklist:
