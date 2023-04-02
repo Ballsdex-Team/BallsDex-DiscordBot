@@ -186,7 +186,7 @@ class BallInstance(models.Model):
                 return next(filter(lambda ball: ball.pk == self.ball_id, balls))
             except StopIteration:
                 pass
-        return self.countryball
+        return self.ball
 
     def __str__(self) -> str:
         emotes = ""
