@@ -94,6 +94,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         self.bot = bot
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
     @app_commands.describe(
         user="View someone else's collection",
         sort="Modify the default sorting of your countryballs",
@@ -154,6 +155,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             await paginator.start(content=f"Viewing {user.name}'s {settings.collectible_name}s")
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
     async def completion(self, interaction: discord.Interaction):
         """
         Show your current completion of the BallsDex.
@@ -232,6 +234,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         await pages.start()
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
     @app_commands.describe(countryball="The countryball you want to inspect")
     async def info(
         self,
@@ -249,6 +252,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         file.close()
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
     async def last(self, interaction: discord.Interaction):
         """
         Display info of your last caught countryball.
