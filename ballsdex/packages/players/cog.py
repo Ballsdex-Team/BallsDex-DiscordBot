@@ -337,7 +337,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         self, interaction: discord.Interaction, policy: app_commands.Choice[int]
     ):
         """
-        Chance how you want to receive donations from /balls give
+        Change how you want to receive donations from /balls give
 
         Parameters
         ----------
