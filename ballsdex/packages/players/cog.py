@@ -12,6 +12,7 @@ from discord.ext import commands
 
 from ballsdex.settings import settings
 from ballsdex.core.models import Player, BallInstance, DonationPolicy, balls
+from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.packages.players.countryballs_paginator import CountryballsViewer
 
@@ -168,14 +169,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             .values_list("ball_id")
         )
 
-        embed = discord.Embed(
-            description=f"{settings.bot_name} progression: "
-            f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 4)}%**",
-            colour=discord.Colour.blurple(),
-        )
-        embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
-        )
+        entries: list[tuple[str, str]] = []
 
         def fill_fields(title: str, emoji_ids: set[int]):
             # check if we need to add "(continued)" to the field name
@@ -191,18 +185,18 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                 if len(buffer) + len(text) > 1024:
                     # hitting embed limits, adding an intermediate field
                     if first_field_added:
-                        embed.add_field(name="\u200B", value=buffer, inline=False)
+                        entries.append(("\u200B", buffer))
                     else:
-                        embed.add_field(name=f"__**{title}**__", value=buffer, inline=False)
+                        entries.append((f"__**{title}**__", buffer))
                         first_field_added = True
                     buffer = ""
                 buffer += text
 
             if buffer:  # add what's remaining
                 if first_field_added:
-                    embed.add_field(name="\u200B", value=buffer, inline=False)
+                    entries.append(("\u200B", buffer))
                 else:
-                    embed.add_field(name=f"__**{title}**__", value=buffer, inline=False)
+                    entries.append((f"__**{title}**__", buffer))
 
         if owned_countryballs:
             # Getting the list of emoji IDs from the IDs of the owned countryballs
@@ -211,23 +205,31 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
-            embed.add_field(
-                name=f"__**Owned {settings.collectible_name}s**__",
-                value="Nothing yet.",
-                inline=False,
-            )
+            entries.append((f"__**Owned {settings.collectible_name}s**__", "Nothing yet."))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
             fill_fields(f"Missing {settings.collectible_name}s", missing)
         else:
-            embed.add_field(
-                name=f"__**:tada: No missing {settings.collectible_name}, "
-                "congratulations! :tada:**__",
-                value="\u200B",
-                inline=False,
+            entries.append(
+                (
+                    f"__**:tada: No missing {settings.collectible_name}, "
+                    "congratulations! :tada:**__",
+                    "\u200B",
+                )
             )  # force empty field value
 
-        await interaction.response.send_message(embed=embed)
+        source = FieldPageSource(entries, per_page=25, inline=False)
+        source.embed.description = (
+            f"{settings.bot_name} progression: "
+            f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 4)}%**"
+        )
+        source.embed.colour = discord.Colour.blurple()
+        source.embed.set_author(
+            name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
+        )
+
+        pages = Pages(source=source, interaction=interaction, compact=True)
+        await pages.start()
 
     @app_commands.command()
     @app_commands.describe(countryball="The countryball you want to inspect")
@@ -285,7 +287,6 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         if not countryball.favorite:
-
             player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
             if await player.balls.filter(favorite=True).count() > 20:
                 await interaction.response.send_message(
