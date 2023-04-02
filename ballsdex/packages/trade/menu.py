@@ -63,7 +63,7 @@ class TradeView(View):
         else:
             await interaction.response.send_message(
                 "Your proposal has been locked. "
-                "You can wait for the other user to lock his proposal.",
+                "You can wait for the other user to lock their proposal.",
                 ephemeral=True,
             )
 
