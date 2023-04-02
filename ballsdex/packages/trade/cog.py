@@ -156,7 +156,7 @@ class Trade(commands.GroupCog):
             return
         trader.proposal.append(countryball)
         await interaction.response.send_message(
-            f"{countryball.ball.country} added.", ephemeral=True
+            f"{countryball.countryball.country} added.", ephemeral=True
         )
 
     @app_commands.command()
@@ -192,5 +192,5 @@ class Trade(commands.GroupCog):
             return
         trader.proposal.remove(countryball)
         await interaction.response.send_message(
-            f"{countryball.ball.country} removed.", ephemeral=True
+            f"{countryball.countryball.country} removed.", ephemeral=True
         )

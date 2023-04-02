@@ -11,7 +11,7 @@ from discord.ui import View, Button, button
 from discord.ext import commands
 
 from ballsdex.settings import settings
-from ballsdex.core.models import Ball, Player, BallInstance, DonationPolicy
+from ballsdex.core.models import Player, BallInstance, DonationPolicy, balls
 from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.packages.players.countryballs_paginator import CountryballsViewer
 
@@ -125,19 +125,15 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         await player.fetch_related("balls")
         if sort:
             if sort == SortingChoices.duplicates:
-                countryballs = await player.balls.all().prefetch_related("ball")
+                countryballs = await player.balls.all()
                 count = defaultdict(int)
                 for countryball in countryballs:
-                    count[countryball.ball.pk] += 1
-                countryballs.sort(key=lambda m: (-count[m.ball.pk], m.ball.pk))
+                    count[countryball.countryball.pk] += 1
+                countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
             else:
-                countryballs = (
-                    await player.balls.all().prefetch_related("ball").order_by(sort.value)
-                )
+                countryballs = await player.balls.all().order_by(sort.value)
         else:
-            countryballs = (
-                await player.balls.all().prefetch_related("ball").order_by("-favorite", "-shiny")
-            )
+            countryballs = await player.balls.all().order_by("-favorite", "-shiny")
 
         if len(countryballs) < 1:
             if user == interaction.user:
@@ -163,9 +159,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         """
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
-        bot_countryballs = {
-            x.pk: x.emoji_id for x in await Ball.filter(enabled=True).only("id", "emoji_id")
-        }
+        bot_countryballs = {x.pk: x.emoji_id for x in balls if x.enabled}
         # Set of ball IDs owned by the player
         owned_countryballs = set(
             x[0]
@@ -302,9 +296,9 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
             countryball.favorite = True  # type: ignore
             await countryball.save()
-            emoji = self.bot.get_emoji(countryball.ball.emoji_id) or ""
+            emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
-                f"{emoji} `#{countryball.pk:0X}` {countryball.ball.country} "
+                f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
                 f"is now a favorite {settings.collectible_name}!",
                 ephemeral=True,
             )
@@ -312,9 +306,9 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         else:
             countryball.favorite = False  # type: ignore
             await countryball.save()
-            emoji = self.bot.get_emoji(countryball.ball.emoji_id) or ""
+            emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
-                f"{emoji} `#{countryball.pk:0X}` {countryball.ball.country} "
+                f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
                 f"isn't a favorite {settings.collectible_name} anymore.",
                 ephemeral=True,
             )

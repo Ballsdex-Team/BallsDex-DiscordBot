@@ -1,16 +1,16 @@
 import discord
 import sys
 import logging
+import random
 
 from typing import TYPE_CHECKING
-from tortoise.contrib.postgres.functions import Random
 
 from discord import app_commands
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
 from ballsdex.settings import settings
-from ballsdex.core.models import Ball, BallInstance, Player
+from ballsdex.core.models import Ball, BallInstance, Player, balls as countryballs
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -37,9 +37,7 @@ class Info(commands.Cog):
         self.bot = bot
 
     async def _get_10_balls_emojis(self) -> list[discord.Emoji]:
-        balls: list[Ball] = (
-            await Ball.annotate(order=Random()).order_by("order").limit(10).only("emoji_id")
-        )
+        balls: list[Ball] = random.choices(countryballs, k=min(10, len(countryballs)))
         emotes: list[discord.Emoji] = []
 
         for ball in balls:
@@ -65,7 +63,7 @@ class Info(commands.Cog):
 
         # TODO: find a better solution to get the count of all rows
         # possible track: https://stackoverflow.com/a/7945274
-        balls_count = await Ball.all().count()
+        balls_count = len(balls)
         players_count = await Player.all().count()
         balls_instances_count = await BallInstance.all().count()
 

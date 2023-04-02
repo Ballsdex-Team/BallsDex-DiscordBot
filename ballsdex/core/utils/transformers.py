@@ -10,7 +10,7 @@ from tortoise.exceptions import DoesNotExist
 from typing import TypeVar, Generic, AsyncIterator
 
 from ballsdex.settings import settings
-from ballsdex.core.models import Ball, BallInstance, Player, Special
+from ballsdex.core.models import Ball, BallInstance, Player, Special, balls
 
 log = logging.getLogger("ballsdex.core.utils.transformers")
 
@@ -30,9 +30,13 @@ class CachedBallInstance:
     def __post_init__(self):
         self.searchable = " ".join(
             (
-                self.model.ball.country.lower(),
+                self.model.countryball.country.lower(),
                 "{:0x}".format(self.model.pk),
-                *(self.model.ball.catch_names.split(";") if self.model.ball.catch_names else []),
+                *(
+                    self.model.countryball.catch_names.split(";")
+                    if self.model.countryball.catch_names
+                    else []
+                ),
             )
         )
 
@@ -124,7 +128,7 @@ class BallInstanceTransformer(app_commands.Transformer):
             except KeyError:
                 # maybe the cache didn't have time to build, let's try anyway to fetch the value
                 try:
-                    ball = await BallInstance.get(id=int(value)).prefetch_related("ball", "player")
+                    ball = await BallInstance.get(id=int(value)).prefetch_related("player")
                     return await self.validate(interaction, ball)
                 except DoesNotExist:
                     await interaction.response.send_message(
@@ -150,7 +154,6 @@ class BallTransformer(app_commands.Transformer):
         self.cache: ListCache[Ball] | None = None
 
     async def load_cache(self):
-        balls = await Ball.all()
         self.cache = ListCache(time.time(), balls)
 
     async def autocomplete(
@@ -173,8 +176,8 @@ class BallTransformer(app_commands.Transformer):
             )
             return None
         try:
-            return await Ball.get(pk=int(value))
-        except (ValueError, DoesNotExist):
+            return next(filter(lambda ball: ball.ball_id == int(value), balls))
+        except (StopIteration, ValueError):
             await interaction.response.send_message(
                 "The ball could not be found. Make sure to use the autocomplete "
                 "function on this command."

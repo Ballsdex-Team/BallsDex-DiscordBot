@@ -31,12 +31,12 @@ class CountryballsSelector(Pages):
     def set_options(self, balls: List[BallInstance]):
         options: List[discord.SelectOption] = []
         for ball in balls:
-            emoji = self.bot.get_emoji(int(ball.ball.emoji_id))
+            emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = "❤️ " if ball.favorite else ""
             shiny = "✨ " if ball.shiny else ""
             options.append(
                 discord.SelectOption(
-                    label=f"{favorite}{shiny}#{ball.pk:0X} {ball.ball.country}",
+                    label=f"{favorite}{shiny}#{ball.pk:0X} {ball.countryball.country}",
                     description=f"ATK: {ball.attack_bonus:+d}% • HP: {ball.health_bonus:+d}% • "
                     f"Caught on {ball.catch_date.strftime('%d/%m/%y %H:%M')}",
                     emoji=emoji,
@@ -48,9 +48,7 @@ class CountryballsSelector(Pages):
     @discord.ui.select()
     async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
         await interaction.response.defer(thinking=True)
-        ball_instance = await BallInstance.get(
-            id=int(interaction.data.get("values")[0])
-        ).prefetch_related("ball")
+        ball_instance = await BallInstance.get(id=int(interaction.data.get("values")[0]))
         await self.ball_selected(interaction, ball_instance)
 
     async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):

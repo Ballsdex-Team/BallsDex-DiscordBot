@@ -4,7 +4,7 @@ import random
 import string
 
 from ballsdex.settings import settings
-from ballsdex.core.models import Ball
+from ballsdex.core.models import Ball, balls
 from ballsdex.packages.countryballs.components import CatchView
 
 log = logging.getLogger("ballsdex.packages.countryballs")
@@ -19,13 +19,12 @@ class CountryBall:
 
     @classmethod
     async def get_random(cls):
-        partial_countryballs = await Ball.filter(enabled=True).only("id", "rarity")
-        if not partial_countryballs:
+        countryballs = list(filter(lambda m: m.enabled, balls))
+        if not countryballs:
             raise RuntimeError("No ball to spawn")
-        pks = [x.pk for x in partial_countryballs]
-        rarities = [x.rarity for x in partial_countryballs]
-        pk = random.choices(population=pks, weights=rarities, k=1)[0]
-        return cls(await Ball.get(pk=pk))
+        rarities = [x.rarity for x in countryballs]
+        cb = random.choices(population=countryballs, weights=rarities, k=1)[0]
+        return cls(cb)
 
     async def spawn(self, channel: discord.abc.Messageable):
         def generate_random_name():

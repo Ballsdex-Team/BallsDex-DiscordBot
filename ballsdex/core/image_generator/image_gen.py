@@ -27,7 +27,7 @@ credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 
 
 def draw_card(ball_instance: "BallInstance"):
-    ball = ball_instance.ball
+    ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
 
     if ball_instance.shiny:
