@@ -176,7 +176,7 @@ class BallTransformer(app_commands.Transformer):
             )
             return None
         try:
-            return next(filter(lambda ball: ball.ball_id == int(value), balls))
+            return next(filter(lambda ball: ball.pk == int(value), balls))
         except (StopIteration, ValueError):
             await interaction.response.send_message(
                 "The ball could not be found. Make sure to use the autocomplete "
