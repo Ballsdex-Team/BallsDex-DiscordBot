@@ -169,7 +169,9 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         # Set of ball IDs owned by the player
         owned_countryballs = set(
             x[0]
-            for x in await BallInstance.filter(player__discord_id=interaction.user.id)
+            for x in await BallInstance.filter(
+                player__discord_id=interaction.user.id, ball__enabled=True
+            )
             .distinct()  # Do not query everything
             .values_list("ball_id")
         )
