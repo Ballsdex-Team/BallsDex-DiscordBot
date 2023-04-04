@@ -3,6 +3,7 @@ from __future__ import annotations
 import discord
 import logging
 import yarl
+import math
 
 from rich import print
 from typing import cast
@@ -235,7 +236,6 @@ class BallsDexBot(commands.AutoShardedBot):
             return
 
         if isinstance(exception, commands.CommandInvokeError):
-
             if isinstance(exception.original, discord.Forbidden):
                 await context.send("The bot does not have the permission to do something.")
                 # log to know where permissions are lacking
@@ -266,6 +266,12 @@ class BallsDexBot(commands.AutoShardedBot):
                 await interaction.response.send_message(content, ephemeral=True)
 
         if isinstance(error, app_commands.CheckFailure):
+            if isinstance(error, app_commands.CommandOnCooldown):
+                await send(
+                    "This command is on cooldown. Please retry "
+                    f"in {math.ceil(error.retry_after)} seconds."
+                )
+                return
             await send("You are not allowed to use that command.")
             return
 
