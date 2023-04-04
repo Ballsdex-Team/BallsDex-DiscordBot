@@ -10,7 +10,8 @@ from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
 from ballsdex.settings import settings
-from ballsdex.core.models import Ball, BallInstance, Player, balls as countryballs
+from ballsdex.core.models import Ball, balls as countryballs
+from ballsdex.core.utils.tortoise import row_count_estimate
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -61,11 +62,9 @@ class Info(commands.Cog):
             log.error("Failed to fetch 10 balls emotes", exc_info=True)
             balls = []
 
-        # TODO: find a better solution to get the count of all rows
-        # possible track: https://stackoverflow.com/a/7945274
         balls_count = len(countryballs)
-        players_count = await Player.all().count()
-        balls_instances_count = await BallInstance.all().count()
+        players_count = await row_count_estimate("player")
+        balls_instances_count = await row_count_estimate("ballinstance")
 
         assert self.bot.user
         assert self.bot.application
