@@ -63,7 +63,7 @@ class Info(commands.Cog):
 
         # TODO: find a better solution to get the count of all rows
         # possible track: https://stackoverflow.com/a/7945274
-        balls_count = len(balls)
+        balls_count = len(countryballs)
         players_count = await Player.all().count()
         balls_instances_count = await BallInstance.all().count()
 
