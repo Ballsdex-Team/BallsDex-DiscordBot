@@ -33,6 +33,13 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         self.ball = ball
         self.button = button
 
+    async def on_error(self, interaction: discord.Interaction, error: Exception, /) -> None:
+        log.exception("An error occured in countryball catching prompt", exc_info=error)
+        if interaction.response.is_done():
+            await interaction.followup.send("An error occured with this countryball.")
+        else:
+            await interaction.response.send_message("An error occured with this countryball.")
+
     async def on_submit(self, interaction: discord.Interaction):
         # TODO: use lock
         if self.ball.catched:
