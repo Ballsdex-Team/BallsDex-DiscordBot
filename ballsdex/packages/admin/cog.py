@@ -5,6 +5,7 @@ import random
 from discord import app_commands
 from discord.ui import Button
 from discord.ext import commands
+from discord.utils import format_dt
 from tortoise.exceptions import IntegrityError, DoesNotExist
 from typing import TYPE_CHECKING
 
@@ -309,9 +310,9 @@ class Admin(commands.GroupCog):
         Parameters
         ----------
         user: discord.User | None
-            The user you want to blacklist, if available in the current server.
+            The user you want to unblacklist, if available in the current server.
         user_id: str | None
-            The ID of the user you want to blacklist, if it's not in the current server.
+            The ID of the user you want to unblacklist, if it's not in the current server.
         """
         if (user and user_id) or (not user and not user_id):
             await interaction.response.send_message(
@@ -342,3 +343,57 @@ class Admin(commands.GroupCog):
             self.bot.blacklist.remove(user.id)
             await interaction.response.send_message("User is now removed from blacklist.")
         log.info(f"{interaction.user} removed blacklist for user {user} ({user.id})")
+
+    @blacklist.command(name="info")
+    async def blacklist_info(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User | None = None,
+        user_id: str | None = None,
+    ):
+        """
+        Check if a user is blacklisted and show the corresponding reason.
+
+        Parameters
+        ----------
+        user: discord.User | None
+            The user you want to check, if available in the current server.
+        user_id: str | None
+            The ID of the user you want to check, if it's not in the current server.
+        """
+        if (user and user_id) or (not user and not user_id):
+            await interaction.response.send_message(
+                "You must provide either `user` or `user_id`.", ephemeral=True
+            )
+            return
+
+        if not user:
+            try:
+                user = await self.bot.fetch_user(int(user_id))  # type: ignore
+            except ValueError:
+                await interaction.response.send_message(
+                    "The user ID you gave is not valid.", ephemeral=True
+                )
+                return
+            except discord.NotFound:
+                await interaction.response.send_message(
+                    "The given user ID could not be found.", ephemeral=True
+                )
+                return
+
+        try:
+            blacklisted = await BlacklistedID.get(discord_id=user.id)
+        except DoesNotExist:
+            await interaction.response.send_message("That user isn't blacklisted.")
+        else:
+            if blacklisted.date:
+                await interaction.response.send_message(
+                    f"`{user}` was blacklisted on {format_dt(blacklisted.date)}"
+                    f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
+                    f"{blacklisted.reason}"
+                )
+            else:
+                await interaction.response.send_message(
+                    f"`{user}` is currently blacklisted (date unknown) for the following reason:\n"
+                    f"{blacklisted.reason}"
+                )
