@@ -55,7 +55,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 special += f"*{ball.special.catch_phrase}*\n"
 
             await interaction.response.send_message(
-                f"{interaction.user.mention} You caught **{self.ball.name}!**\n\n{special}",
+                f"{interaction.user.mention} You caught **{self.ball.name}!** "
+                f"(`#{ball.pk:0X}`)\n\n{special}",
             )
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
