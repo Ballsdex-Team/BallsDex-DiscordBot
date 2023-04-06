@@ -5,6 +5,8 @@ import functools
 import asyncio
 import logging
 import logging.handlers
+
+import yarl
 import discord
 import argparse
 
@@ -82,6 +84,61 @@ def print_welcome():
         )
     )
     print("")
+
+
+def patch_gateway(proxy_url: str):
+    """This monkeypatches discord.py in order to be able to use a custom gateway URL.
+    
+    Parameters
+    ----------
+    proxy_url : str
+        The URL of the gateway proxy to use.
+    """
+
+    class ProductionHTTPClient(discord.http.HTTPClient):
+        async def get_gateway(self, **_):
+            return f"{proxy_url}?encoding=json&v=10"
+
+        async def get_bot_gateway(self, **_):
+            try:
+                data = await self.request(discord.http.Route("GET", "/gateway/bot"))
+            except discord.HTTPException as exc:
+                raise discord.GatewayNotFound() from exc
+            return data["shards"], f"{proxy_url}?encoding=json&v=10"
+
+    class ProductionDiscordWebSocket(discord.gateway.DiscordWebSocket):
+        def is_ratelimited(self):
+            return False
+
+        async def debug_send(self, data, /):
+            self._dispatch("socket_raw_send", data)
+            await self.socket.send_str(data)
+
+        async def send(self, data, /):
+            await self.socket.send_str(data)
+
+    class ProductionReconnectWebSocket(Exception):
+        def __init__(self, shard_id: int | None, *, resume: bool = False):
+            self.shard_id: int | None = shard_id
+            self.resume: bool = False
+            self.op: str = "IDENTIFY"
+
+    def is_ws_ratelimited(self):
+        return False
+
+    async def before_identify_hook(self, shard_id: int, *, initial: bool = False):
+        pass
+
+    discord.http.HTTPClient.get_gateway = ProductionHTTPClient.get_gateway
+    discord.http.HTTPClient.get_bot_gateway = ProductionHTTPClient.get_bot_gateway
+    discord.gateway.DiscordWebSocket._keep_alive = None
+    discord.gateway.DiscordWebSocket.is_ratelimited = ProductionDiscordWebSocket.is_ratelimited
+    discord.gateway.DiscordWebSocket.debug_send = ProductionDiscordWebSocket.debug_send
+    discord.gateway.DiscordWebSocket.send = ProductionDiscordWebSocket.send
+    discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY = yarl.URL(proxy_url)
+    discord.gateway.ReconnectWebSocket.__init__ = ProductionReconnectWebSocket.__init__
+    BallsDexBot.is_ws_ratelimited = is_ws_ratelimited
+    BallsDexBot.before_identify_hook = before_identify_hook
 
 
 async def shutdown_handler(bot: BallsDexBot, signal_type: str | None = None):
@@ -213,6 +270,10 @@ def main():
             print("[red]You must provide a DB URL with the BALLSDEXBOT_DB_URL env var.[/red]")
             time.sleep(1)
             sys.exit(0)
+        
+        if settings.gateway_url is not None:
+            log.info("Using custom gateway URL: %s", settings.gateway_url)
+            patch_gateway(settings.gateway_url)
 
         prefix = settings.prefix
 

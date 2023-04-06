@@ -99,6 +99,14 @@ services:
     volumes: 
       - cache-data:/data
 
+  gateway-proxy:
+    image: docker.io/gelbpunkt/gateway-proxy:latest
+    restart: always
+    volumes:
+      - ./gatewayproxy/config.json:/config.json
+    networks:
+      - internal
+
 volumes:
   database-data:
   cache-data:
