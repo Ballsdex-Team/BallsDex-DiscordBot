@@ -62,7 +62,7 @@ class Info(commands.Cog):
             log.error("Failed to fetch 10 balls emotes", exc_info=True)
             balls = []
 
-        balls_count = len(countryballs)
+        balls_count = len([x for x in countryballs if x.enabled])
         players_count = await row_count_estimate("player")
         balls_instances_count = await row_count_estimate("ballinstance")
 
