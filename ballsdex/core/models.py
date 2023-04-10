@@ -114,6 +114,7 @@ class Ball(models.Model):
     attack = fields.IntField(description="Ball attack stat")
     rarity = fields.FloatField(description="Rarity of this ball")
     enabled = fields.BooleanField(default=True)
+    tradeable = fields.BooleanField(default=True)
     emoji_id = fields.BigIntField(
         description="Emoji ID for this ball", validators=[DiscordSnowflakeValidator()]
     )

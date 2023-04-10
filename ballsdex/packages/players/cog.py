@@ -384,6 +384,11 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         """
         if not countryball:
             return
+        if not countryball.ball.tradeable:
+            await interaction.response.send_message(
+                "You cannot donate this countryball.", ephemeral=True
+            )
+            return
         if user.bot:
             await interaction.response.send_message("You cannot donate to bots.")
             return

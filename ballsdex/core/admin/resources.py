@@ -151,6 +151,7 @@ class BallResource(Model):
         filters.Enum(enum=Regime, name="regime", label="Regime"),
         filters.Enum(enum=Economy, name="economy", label="Economy"),
         filters.Boolean(name="enabled", label="Enabled"),
+        filters.Boolean(name="tradeable", label="Tradeable"),
     ]
     fields = [
         "country",
@@ -162,6 +163,7 @@ class BallResource(Model):
         "attack",
         "rarity",
         "enabled",
+        "tradeable",
         Field(
             name="emoji_id",
             label="Emoji ID",

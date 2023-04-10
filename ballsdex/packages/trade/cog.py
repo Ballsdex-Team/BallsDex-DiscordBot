@@ -134,6 +134,11 @@ class Trade(commands.GroupCog):
         """
         if not countryball:
             return
+        if not countryball.ball.tradeable:
+            await interaction.response.send_message(
+                "You cannot trade this countryball.", ephemeral=True
+            )
+            return
 
         trade, trader = self.get_trade(interaction)
         if not trade or not trader:
