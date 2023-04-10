@@ -228,7 +228,23 @@ class BallInstanceResource(Model):
     icon = "fas fa-atlas"
     page_pre_title = "ball instances list"
     page_title = "Ball instances"
-    filters = []
+    filters = [
+        filters.Search(
+            name="id",
+            label="Ball Instance ID",
+            placeholder="Search for balls",
+        ),
+        filters.Search(
+            name="ball_id",
+            label="Ball ID",
+            placeholder="Search for balls",
+        ),
+        filters.Search(
+            name="player",
+            label="Player ID",
+            placeholder="Search for player",
+        )
+    ]
     fields = [
         "id",
         "ball",
