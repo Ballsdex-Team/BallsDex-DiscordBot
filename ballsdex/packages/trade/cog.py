@@ -9,6 +9,7 @@ from collections import defaultdict
 from ballsdex.settings import settings
 from ballsdex.core.models import Player
 from ballsdex.core.utils.transformers import BallInstanceTransform
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.packages.trade.menu import TradeMenu, TradingUser
 
 if TYPE_CHECKING:
@@ -139,28 +140,39 @@ class Trade(commands.GroupCog):
                 "You cannot trade this countryball.", ephemeral=True
             )
             return
-
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        if countryball.favorite:
+            view = ConfirmChoiceView(interaction)
+            await interaction.followup.send(
+                "This countryball is a favorite, are you sure you want to trade it?",
+                view=view,
+                ephemeral=True,
+            )
+            await view.wait()
+            if not view.value:
+                return
+        
         trade, trader = self.get_trade(interaction)
         if not trade or not trader:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You do not have an ongoing trade.", ephemeral=True
             )
             return
         if trader.locked:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You have locked your proposal, it cannot be edited! "
                 "You can click the cancel button to stop the trade instead.",
                 ephemeral=True,
             )
             return
         if countryball in trader.proposal:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"You already have this {settings.collectible_name} in your proposal.",
                 ephemeral=True,
             )
             return
         trader.proposal.append(countryball)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"{countryball.countryball.country} added.", ephemeral=True
         )
 
