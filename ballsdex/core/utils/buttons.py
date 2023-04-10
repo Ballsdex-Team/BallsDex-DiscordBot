@@ -1,0 +1,39 @@
+import discord
+
+from discord.ui import View, Button
+
+class ConfirmChoiceView(View):
+    def __init__(self, interaction: discord.Interaction):
+        super().__init__(timeout=90)
+        self.value = None
+        self.interaction = interaction
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user != self.interaction.user:
+            await interaction.response.send_message(
+                "Only the original author can use this.", ephemeral=True
+            )
+            return False
+        if self.value is not None:
+            await interaction.response.send_message(
+                "You've already made a choice.", ephemeral=True
+            )
+            return False
+        return True
+
+    @discord.ui.button(
+        style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
+    )
+    async def confirm_button(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.send_message('Confirming', ephemeral=True)
+        self.value = True
+        self.stop()
+
+    @discord.ui.button(
+        style=discord.ButtonStyle.danger,
+        emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
+    )
+    async def cancel_button(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.send_message('Cancelling', ephemeral=True)
+        self.value = False
+        self.stop()
