@@ -101,7 +101,7 @@ services:
 
   gateway-proxy:
     container_name: gateway_proxy
-    image: docker.io/gelbpunkt/gateway-proxy:latest
+    image: docker.io/gelbpunkt/gateway-proxy:znver2
     restart: always
     volumes:
       - ./gatewayproxy/config.json:/config.json
