@@ -1,9 +1,8 @@
 {
   "log_level": "info",
   "token": "",
-  "intents": 32770,
+  "intents": 33289,
   "port": 5421,
-  "activity": {},
   "status": "online",
   "backpressure": 250,
   "cache": {
