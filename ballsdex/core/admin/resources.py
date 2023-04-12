@@ -232,17 +232,13 @@ class BallInstanceResource(Model):
         filters.Search(
             name="id",
             label="Ball Instance ID",
-            placeholder="Search for balls",
+            placeholder="Search for ball IDs",
         ),
+        filters.ForeignKey(model=Ball, name="ball", label="Ball"),
         filters.Search(
-            name="ball_id",
-            label="Ball ID",
-            placeholder="Search for balls",
-        ),
-        filters.Search(
-            name="player",
-            label="Player ID",
-            placeholder="Search for player",
+            name="player__discord_id",
+            label="User ID",
+            placeholder="Search for Discord user ID",
         )
     ]
     fields = [
