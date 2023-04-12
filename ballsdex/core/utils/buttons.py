@@ -2,6 +2,7 @@ import discord
 
 from discord.ui import View, Button
 
+
 class ConfirmChoiceView(View):
     def __init__(self, interaction: discord.Interaction):
         super().__init__(timeout=90)
@@ -32,7 +33,9 @@ class ConfirmChoiceView(View):
     async def confirm_button(self, interaction: discord.Interaction, button: Button):
         for item in self.children:
             item.disabled = True
-        await interaction.response.edit_message(content=interaction.message.content + '\nConfirmed', view=self)
+        await interaction.response.edit_message(
+            content=interaction.message.content + "\nConfirmed", view=self
+        )
         self.value = True
         self.stop()
 
@@ -43,6 +46,8 @@ class ConfirmChoiceView(View):
     async def cancel_button(self, interaction: discord.Interaction, button: Button):
         for item in self.children:
             item.disabled = True
-        await interaction.response.edit_message(content=interaction.message.content + '\nCancelled', view=self)
+        await interaction.response.edit_message(
+            content=interaction.message.content + "\nCancelled", view=self
+        )
         self.value = False
         self.stop()

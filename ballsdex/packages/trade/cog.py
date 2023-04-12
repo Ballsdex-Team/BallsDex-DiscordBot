@@ -151,12 +151,10 @@ class Trade(commands.GroupCog):
             await view.wait()
             if not view.value:
                 return
-        
+
         trade, trader = self.get_trade(interaction)
         if not trade or not trader:
-            await interaction.followup.send(
-                "You do not have an ongoing trade.", ephemeral=True
-            )
+            await interaction.followup.send("You do not have an ongoing trade.", ephemeral=True)
             return
         if trader.locked:
             await interaction.followup.send(
