@@ -40,7 +40,7 @@ class Admin(commands.GroupCog):
     async def cooldown(
         self,
         interaction: discord.Interaction,
-        guild_id: int | None = None,
+        guild_id: str | None = None,
     ):
         """
         Show the details of the spawn cooldown system for the given server
@@ -51,7 +51,13 @@ class Admin(commands.GroupCog):
             ID of the server you want to inspect. If not given, inspect the current server.
         """
         if guild_id:
-            guild = self.bot.get_guild(guild_id)
+            try:
+                guild = self.bot.get_guild(int(guild_id))
+            except ValueError:
+                await interaction.response.send_message(
+                    "Invalid guild ID. Please make sure it's a number.", ephemeral=True
+                )
+                return
         else:
             guild = interaction.guild
         if not guild or not guild.member_count:
