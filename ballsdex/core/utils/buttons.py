@@ -21,11 +21,18 @@ class ConfirmChoiceView(View):
             return False
         return True
 
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+        await self.interaction.followup.edit_message("@original", view=self)
+
     @discord.ui.button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
     async def confirm_button(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.send_message('Confirming', ephemeral=True)
+        for item in self.children:
+            item.disabled = True
+        await interaction.response.edit_message(content=interaction.message.content + '\nConfirmed', view=self)
         self.value = True
         self.stop()
 
@@ -34,6 +41,8 @@ class ConfirmChoiceView(View):
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
     )
     async def cancel_button(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.send_message('Cancelling', ephemeral=True)
+        for item in self.children:
+            item.disabled = True
+        await interaction.response.edit_message(content=interaction.message.content + '\nCancelled', view=self)
         self.value = False
         self.stop()
