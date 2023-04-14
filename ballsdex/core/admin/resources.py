@@ -239,7 +239,7 @@ class BallInstanceResource(Model):
             name="player__discord_id",
             label="User ID",
             placeholder="Search for Discord user ID",
-        )
+        ),
     ]
     fields = [
         "id",
