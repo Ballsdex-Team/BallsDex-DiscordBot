@@ -5,6 +5,7 @@
   "port": 5421,
   "status": "online",
   "backpressure": 250,
+  "externally_accessible_url": "ws://localhost:5421",
   "cache": {
     "channels": false,
     "presences": false,
