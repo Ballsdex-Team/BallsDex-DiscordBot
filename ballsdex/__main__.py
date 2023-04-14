@@ -288,6 +288,8 @@ def main():
             command_prefix=when_mentioned_or(prefix), dev=cli_flags.dev  # type: ignore
         )
 
+        if settings.coowners:
+            bot.owner_ids = set(settings.coowners)
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
         loop.add_signal_handler(
