@@ -19,6 +19,8 @@ class Settings:
     ----------
     bot_token: str
         Discord token for the bot to connect
+    gateway_url: str | None
+        The URL of the Discord gateway that this instance of the bot should connect to and use.
     prefix: str
         Prefix for text commands, mostly unused. Defaults to "b."
     collectible_name: str
@@ -46,6 +48,7 @@ class Settings:
     """
 
     bot_token: str = ""
+    gateway_url: str | None = None
     prefix: str = "b."
 
     collectible_name: str = "countryball"
@@ -77,6 +80,7 @@ def read_settings(path: "Path"):
     content = yaml.load(path.read_text(), yaml.Loader)
 
     settings.bot_token = content["discord-token"]
+    settings.gateway_url = content.get("gateway-url")
     settings.prefix = content["text-prefix"]
 
     settings.collectible_name = content["collectible-name"]

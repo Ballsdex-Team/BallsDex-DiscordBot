@@ -99,6 +99,19 @@ services:
     volumes: 
       - cache-data:/data
 
+  # Uncomment to enable gateway proxy feature and
+  # add "gateway-url: ws://gateway_proxy:5421" to your config.yaml
+  # Also change tag corresponding to your platform if not x86-64
+  #
+  # gateway-proxy:
+  #   container_name: gateway_proxy
+  #   image: docker.io/gelbpunkt/gateway-proxy:x86-64
+  #   restart: always
+  #   volumes:
+  #     - ./gatewayproxy/config.json:/config.json
+  #   networks:
+  #     - internal
+
 volumes:
   database-data:
   cache-data:

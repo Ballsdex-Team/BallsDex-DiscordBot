@@ -1,0 +1,21 @@
+{
+  "log_level": "info",
+  "token": "",
+  "intents": 33289,
+  "port": 5421,
+  "status": "online",
+  "backpressure": 250,
+  "externally_accessible_url": "ws://localhost:5421",
+  "cache": {
+    "channels": false,
+    "presences": false,
+    "emojis": false,
+    "current_member": false,
+    "members": false,
+    "roles": false,
+    "stage_instances": false,
+    "stickers": false,
+    "users": false,
+    "voice_states": false
+  }
+}
