@@ -88,7 +88,7 @@ def print_welcome():
 
 def patch_gateway(proxy_url: str):
     """This monkeypatches discord.py in order to be able to use a custom gateway URL.
-    
+
     Parameters
     ----------
     proxy_url : str
@@ -270,7 +270,7 @@ def main():
             print("[red]You must provide a DB URL with the BALLSDEXBOT_DB_URL env var.[/red]")
             time.sleep(1)
             sys.exit(0)
-        
+
         if settings.gateway_url is not None:
             log.info("Using custom gateway URL: %s", settings.gateway_url)
             patch_gateway(settings.gateway_url)
