@@ -38,7 +38,7 @@ class Info(commands.Cog):
         self.bot = bot
 
     async def _get_10_balls_emojis(self) -> list[discord.Emoji]:
-        balls: list[Ball] = random.choices(countryballs, k=min(10, len(countryballs)))
+        balls: list[Ball] = random.choices([x for x in countryballs if x.enabled], k=min(10, len(countryballs)))
         emotes: list[discord.Emoji] = []
 
         for ball in balls:
