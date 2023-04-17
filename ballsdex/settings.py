@@ -67,6 +67,9 @@ class Settings:
     root_role_ids: list[int] = field(default_factory=list)
     admin_role_ids: list[int] = field(default_factory=list)
 
+    team_owners: bool = False
+    co_owners: list[int] = field(default_factory=list)
+
     # metrics and prometheus
     prometheus_enabled: bool = False
     prometheus_host: str = "0.0.0.0"
@@ -82,6 +85,8 @@ def read_settings(path: "Path"):
     settings.bot_token = content["discord-token"]
     settings.gateway_url = content.get("gateway-url")
     settings.prefix = content["text-prefix"]
+    settings.team_owners = content.get("owners", {}).get("team-members-are-owners", False)
+    settings.co_owners = content.get("owners", {}).get("co-owners", [])
 
     settings.collectible_name = content["collectible-name"]
     settings.bot_name = content["bot-name"]
@@ -158,6 +163,14 @@ admin-command:
   # list of role IDs having partial access to /admin
   admin-role-ids:
 
+# manage bot ownership
+owners:
+  # if enabled and the application is under a team, all team members will be considered as owners
+  team-members-are-owners: false
+
+  # a list of IDs that must be considered owners in addition to the application/team owner
+  co-owners:
+
 # prometheus metrics collection, leave disabled if you don't know what this is
 prometheus:
   enabled: false
@@ -165,3 +178,27 @@ prometheus:
   port: 15260
   """  # noqa: W291
     )
+
+
+def update_settings(path: "Path"):
+    content = path.read_text()
+
+    add_owners = True
+
+    for line in content.splitlines():
+        if line.startswith("owners:"):
+            add_owners = False
+
+    if add_owners:
+        content += """
+# manage bot ownership
+owners:
+  # if enabled and the application is under a team, all team members will be considered as owners
+  team-members-are-owners: false
+
+  # a list of IDs that must be considered owners in addition to the application/team owner
+  co-owners:
+"""
+
+    if any((add_owners,)):
+        path.write_text(content)

@@ -19,7 +19,7 @@ from discord.utils import setup_logging
 from discord.ext.commands import when_mentioned_or
 
 from ballsdex import __version__ as bot_version
-from ballsdex.settings import settings, read_settings, write_default_settings
+from ballsdex.settings import settings, read_settings, write_default_settings, update_settings
 from ballsdex.core.bot import BallsDexBot
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
@@ -248,6 +248,8 @@ def main():
     except FileNotFoundError:
         print("[yellow]The config file could not be found, generating a default one.[/yellow]")
         reset_settings(cli_flags.config_file)
+    else:
+        update_settings(cli_flags.config_file)
 
     print_welcome()
 
