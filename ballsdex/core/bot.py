@@ -156,8 +156,8 @@ class BallsDexBot(commands.AutoShardedBot):
                 self.owner_ids.add(self.application.team.owner_id)
         else:
             self.owner_ids.add(self.application.owner.id)
-        if settings.coowners:
-            self.owner_ids.update(settings.coowners)
+        if settings.co_owners:
+            self.owner_ids.update(settings.co_owners)
         log.info(
             f"{self.owner_ids} {'are' if len(self.owner_ids) > 1 else 'is'} set as the bot owner."
         )

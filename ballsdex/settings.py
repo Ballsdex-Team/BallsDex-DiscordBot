@@ -67,6 +67,9 @@ class Settings:
     root_role_ids: list[int] = field(default_factory=list)
     admin_role_ids: list[int] = field(default_factory=list)
 
+    team_owners: bool = False
+    co_owners: list[int] = field(default_factory=list)
+
     # metrics and prometheus
     prometheus_enabled: bool = False
     prometheus_host: str = "0.0.0.0"
@@ -83,7 +86,7 @@ def read_settings(path: "Path"):
     settings.gateway_url = content.get("gateway-url")
     settings.prefix = content["text-prefix"]
     settings.team_owners = content.get("team-owners", False)
-    settings.coowners = content.get("co-owners", [])
+    settings.co_owners = content.get("co-owners", [])
 
     settings.collectible_name = content["collectible-name"]
     settings.bot_name = content["bot-name"]
