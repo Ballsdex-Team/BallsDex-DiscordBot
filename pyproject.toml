@@ -20,14 +20,13 @@ fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "
 uvicorn = "^0.21.1"
 
 # database ORM
-tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
+piccolo = { extras = ["postgres"], version = "^0.109.0" }
 redis = "^4.5.3"
 
 # misc
 rich = "^12.6.0"
 python-dateutil = "^2.8.2"
 Pillow = "^9.4.0"
-aerich = "^0.6.3"
 pyyaml = "^6.0"
 cachetools = "^5.3.1"
 
@@ -38,11 +37,6 @@ black = {version = "^23.1.0", allow-prereleases = true}
 
 [tool.poetry.group.metrics.dependencies]
 prometheus-client = "^0.16.0"
-
-[tool.aerich]
-tortoise_orm = "ballsdex.__main__.TORTOISE_ORM"
-location = "./migrations"
-src_folder = "./ballsdex"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
