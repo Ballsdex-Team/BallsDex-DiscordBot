@@ -7,7 +7,6 @@ import math
 
 from rich import print
 from typing import cast
-from datetime import datetime
 
 from discord import app_commands
 from discord.ext import commands
@@ -72,7 +71,6 @@ class BallsDexBot(commands.AutoShardedBot):
 
         self._shutdown = 0
         self.blacklist: list[int] = []
-        self.special_cache: list[Special] = []
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(
@@ -104,15 +102,6 @@ class BallsDexBot(commands.AutoShardedBot):
                     bot_command, cast(list[app_commands.AppCommandGroup], synced_command.options)
                 )
 
-    async def load_blacklist(self):
-        self.blacklist = (
-            await BlacklistedID.all().only("discord_id").values_list("discord_id", flat=True)
-        )  # type: ignore
-
-    async def load_special_cache(self):
-        now = datetime.now()
-        self.special_cache = await Special.filter(start_date__lte=now, end_date__gt=now)
-
     async def load_cache(self):
         balls.clear()
         for ball in await Ball.all():
@@ -123,6 +112,10 @@ class BallsDexBot(commands.AutoShardedBot):
         for special in await Special.all():
             specials.append(special)
         log.info(f"Loaded {len(specials)} specials")
+
+        self.blacklist.clear()
+        for blacklisted_id in await BlacklistedID.all().only("discord_id"):
+            self.blacklist.append(blacklisted_id.discord_id)
 
     async def launch_shards(self) -> None:
         # override to add a log call on the number of shards that needs connecting
@@ -168,8 +161,6 @@ class BallsDexBot(commands.AutoShardedBot):
         )
 
         await self.load_cache()
-        await self.load_blacklist()
-        await self.load_special_cache()
         if self.blacklist:
             log.info(f"{len(self.blacklist)} blacklisted users.")
 
