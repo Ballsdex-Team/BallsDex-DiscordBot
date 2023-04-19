@@ -70,16 +70,17 @@ class Core(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def ballrarity(self, ctx: commands.Context, *, rarity: Literal["continous", "grouped"]):
+    async def ballrarity(self, ctx: commands.Context, *, rarity: Literal["continuous", "grouped"]):
         """
         Return a list of countryballs in rarity order.
 
         Parameters
         ----------
-        type: continous | rarity
-            The type of list you want to get. Continous will list 1-X, rarity will list by grouping those with the same rarity.
+        type: continuous  | rarity
+            The type of list you want to get. 
+            Continous will list 1-X, rarity will list by grouping those with the same rarity.
         """
-        if rarity not in ("continous", "grouped"):
+        if rarity not in ("continuous ", "grouped"):
             await ctx.send("Invalid rarity type. Must be grouped or continous.")
             return
         balls = await Ball.all().order_by("rarity")
@@ -88,7 +89,7 @@ class Core(commands.Cog):
             return
         i = 1
         msg = ""
-        if rarity == "continous":
+        if rarity == "continuous ":
             for ball in balls:
                 msg += f"{i}. {ball.country}\n"
                 i += 1
