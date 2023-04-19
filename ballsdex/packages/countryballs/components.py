@@ -91,9 +91,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             # and 0 only common, we get the remaining value by doing (1-rarity)
             # We the sum each value for each current event, and we should get an algorithm
             # that kinda makes sense.
-            common_weight = sum(1 - x.rarity for x in specials)
+            common_weight = sum(1 - x.rarity for x in population if x is not None)
 
-            weights = [x.rarity for x in specials] + [common_weight]
+            weights = [x.rarity for x in population if x is not None] + [common_weight]
             special = random.choices(population=population, weights=weights, k=1)[0]
 
         ball = await BallInstance.create(
