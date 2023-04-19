@@ -117,6 +117,7 @@ class SpecialResource(Model):
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
+        "emoji",
     ]
 
     async def get_actions(self, request: Request) -> List[Action]:
