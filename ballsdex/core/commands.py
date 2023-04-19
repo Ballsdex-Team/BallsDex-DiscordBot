@@ -1,6 +1,9 @@
+from collections import defaultdict
 import logging
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
+from ballsdex.core.dev import pagify
+from ballsdex.core.models import Ball
 from discord.ext import commands
 
 log = logging.getLogger("ballsdex.core.commands")
@@ -64,3 +67,38 @@ class Core(commands.Cog):
         """
         await self.bot.load_cache()
         await ctx.message.add_reaction("✅")
+
+    @commands.command()
+    @commands.is_owner()
+    async def ballrarity(self, ctx: commands.Context, *, rarity: Literal["continous", "grouped"]):
+        """
+        Return a list of countryballs in rarity order.
+
+        Parameters
+        ----------
+        type: continous | rarity
+            The type of list you want to get. Continous will list 1-X, rarity will list by grouping those with the same rarity.
+        """
+        if rarity not in ("continous", "grouped"):
+            await ctx.send("Invalid rarity type. Must be grouped or continous.")
+            return
+        balls = await Ball.all().order_by("rarity")
+        if not balls:
+            await ctx.send("No balls found.")
+            return
+        i = 1
+        msg = ""
+        if rarity == "continous":
+            for ball in balls:
+                msg += f"{i}. {ball.country}\n"
+                i += 1
+        else:
+            chunked = defaultdict(list)
+            for ball in balls:
+                chunked[ball.rarity].append(ball)
+            for chunk in chunked.values():
+                for ball in chunk:
+                    msg += f"{i}. {ball.country}\n"
+                i += len(chunk)
+        for page in pagify(msg):
+            await ctx.send(page)
