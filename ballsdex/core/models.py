@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 
 balls: list[Ball] = []
+specials: list[Special] = []
 
 
 async def lower_catch_names(
@@ -85,6 +86,7 @@ class Special(models.Model):
     democracy_card = fields.CharField(max_length=200)
     dictatorship_card = fields.CharField(max_length=200)
     union_card = fields.CharField(max_length=200)
+    emoji = fields.CharField(max_length=40)
 
     def __str__(self) -> str:
         return self.name
@@ -189,7 +191,19 @@ class BallInstance(models.Model):
                 pass
         return self.ball
 
+    @property
+    def specialcard(self) -> Ball:
+        if specials:
+            try:
+                return next(filter(lambda x: x.pk == self.special_id, specials))
+            except StopIteration:
+                pass
+        return self.special
+
     def __str__(self) -> str:
+        return self.to_string()
+
+    def to_string(self, bot: discord.Client | None = None) -> str:
         emotes = ""
         if self.favorite:
             emotes += "❤️"
@@ -197,12 +211,27 @@ class BallInstance(models.Model):
             emotes += "✨"
         if emotes:
             emotes += " "
+        if self.special:
+            emotes += self.special_emoji(bot)
         country = (
             self.countryball.country
             if isinstance(self.countryball, Ball)
             else f"<Ball {self.ball_id}>"
         )
         return f"{emotes}#{self.pk:0X} {country} "
+
+    def special_emoji(self, bot: discord.Client | None, use_custom_emoji: bool = True) -> str:
+        if self.special:
+            special_emoji = ""
+            try:
+                if not use_custom_emoji or not bot:
+                    return "⚡ "
+                special_emoji = bot.get_emoji(int(self.specialcard.emoji))
+            except ValueError:
+                special_emoji = self.specialcard.emoji
+            if special_emoji:
+                return f"{special_emoji} "
+        return ""
 
     def description(
         self,
@@ -211,7 +240,7 @@ class BallInstance(models.Model):
         include_emoji: bool = False,
         bot: discord.Client | None = None,
     ) -> str:
-        text = str(self)
+        text = self.to_string(bot)
         if not short:
             text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
         if include_emoji:

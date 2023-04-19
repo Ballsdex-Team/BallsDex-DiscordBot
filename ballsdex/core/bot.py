@@ -16,7 +16,7 @@ from discord.gateway import DiscordWebSocket
 from ballsdex.settings import settings
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
-from ballsdex.core.models import BlacklistedID, Special, Ball, balls
+from ballsdex.core.models import BlacklistedID, Special, Ball, balls, specials
 from ballsdex.core.commands import Core
 
 log = logging.getLogger("ballsdex.core.bot")
@@ -113,11 +113,16 @@ class BallsDexBot(commands.AutoShardedBot):
         now = datetime.now()
         self.special_cache = await Special.filter(start_date__lte=now, end_date__gt=now)
 
-    async def load_balls(self):
+    async def load_cache(self):
         balls.clear()
         for ball in await Ball.all():
             balls.append(ball)
         log.info(f"Loaded {len(balls)} balls")
+
+        specials.clear()
+        for special in await Special.all():
+            specials.append(special)
+        log.info(f"Loaded {len(specials)} specials")
 
     async def launch_shards(self) -> None:
         # override to add a log call on the number of shards that needs connecting
@@ -162,7 +167,7 @@ class BallsDexBot(commands.AutoShardedBot):
             f"{self.owner_ids} {'are' if len(self.owner_ids) > 1 else 'is'} set as the bot owner."
         )
 
-        await self.load_balls()
+        await self.load_cache()
         await self.load_blacklist()
         await self.load_special_cache()
         if self.blacklist:
