@@ -179,9 +179,9 @@ class BallInstance(models.Model):
 
     @property
     def special_card(self) -> str | None:
-        if self.special:
+        if self.specialcard:
             return (
-                self.special.get_background(self.countryball.regime)
+                self.specialcard.get_background(self.countryball.regime)
                 or self.countryball.collection_card
             )
 
@@ -214,7 +214,7 @@ class BallInstance(models.Model):
             emotes += "✨"
         if emotes:
             emotes += " "
-        if self.special:
+        if self.specialcard:
             emotes += self.special_emoji(bot)
         country = (
             self.countryball.country
@@ -224,7 +224,7 @@ class BallInstance(models.Model):
         return f"{emotes}#{self.pk:0X} {country} "
 
     def special_emoji(self, bot: discord.Client | None, use_custom_emoji: bool = True) -> str:
-        if self.special:
+        if self.specialcard:
             special_emoji = ""
             try:
                 emoji_id = int(self.specialcard.emoji)
