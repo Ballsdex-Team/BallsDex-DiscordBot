@@ -89,6 +89,7 @@ class Special(models.Model):
     emoji = fields.CharField(
         max_length=20,
         description="Either a unicode character or a discord emoji ID",
+        null=True,
     )
 
     def __str__(self) -> str:
@@ -275,7 +276,6 @@ class BallInstance(models.Model):
         trade_content = ""
         await self.fetch_related("trade_player", "special")
         if self.trade_player:
-
             original_player = None
             # we want to avoid calling fetch_user if possible (heavily rate-limited call)
             if interaction.guild:
