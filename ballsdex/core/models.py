@@ -86,7 +86,10 @@ class Special(models.Model):
     democracy_card = fields.CharField(max_length=200)
     dictatorship_card = fields.CharField(max_length=200)
     union_card = fields.CharField(max_length=200)
-    emoji = fields.CharField(max_length=40)
+    emoji = fields.CharField(
+        max_length=20,
+        description="Either a unicode character or a discord emoji ID",
+    )
 
     def __str__(self) -> str:
         return self.name
