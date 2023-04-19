@@ -224,9 +224,10 @@ class BallInstance(models.Model):
         if self.special:
             special_emoji = ""
             try:
-                if not use_custom_emoji or not bot:
+                emoji_id = int(self.specialcard.emoji)
+                special_emoji = bot.get_emoji(emoji_id) if bot else "⚡ "
+                if not use_custom_emoji:
                     return "⚡ "
-                special_emoji = bot.get_emoji(int(self.specialcard.emoji))
             except ValueError:
                 special_emoji = self.specialcard.emoji
             if special_emoji:
