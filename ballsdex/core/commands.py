@@ -86,5 +86,5 @@ class Core(commands.Cog):
         This is needed each time the database is updated, otherwise changes won't reflect until
         next start.
         """
-        await self.bot.load_caches()
+        await self.bot.load_cache()
         await ctx.message.add_reaction("✅")
