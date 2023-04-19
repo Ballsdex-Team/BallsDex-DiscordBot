@@ -195,7 +195,7 @@ class BallInstance(models.Model):
         return self.ball
 
     @property
-    def specialcard(self) -> Ball:
+    def specialcard(self) -> Special:
         if specials:
             try:
                 return next(filter(lambda x: x.pk == self.special_id, specials))
