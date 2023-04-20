@@ -506,6 +506,7 @@ class Admin(commands.GroupCog):
                     "The given user ID could not be found.", ephemeral=True
                 )
                 return
+        # We assume that we have a valid discord.User object at this point.
 
         try:
             blacklisted = await BlacklistedID.get(discord_id=user.id)
@@ -514,12 +515,14 @@ class Admin(commands.GroupCog):
         else:
             if blacklisted.date:
                 await interaction.response.send_message(
-                    f"`{user}` was blacklisted on {format_dt(blacklisted.date)}"
+                    f"`{user}` (`{user.id}`) was blacklisted on {format_dt(blacklisted.date)}"
                     f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
-                    f"{blacklisted.reason}"
+                    f"{blacklisted.reason}",
+                    ephemeral=True,
                 )
             else:
                 await interaction.response.send_message(
-                    f"`{user}` is currently blacklisted (date unknown) for the following reason:\n"
-                    f"{blacklisted.reason}"
+                    f"`{user}` (`{user.id}`) is currently blacklisted (date unknown) for the following reason:\n"
+                    f"{blacklisted.reason}",
+                    ephemeral=True,
                 )
