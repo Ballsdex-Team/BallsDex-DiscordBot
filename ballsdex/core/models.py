@@ -234,6 +234,8 @@ class BallInstance(models.Model):
                     return "⚡ "
             except ValueError:
                 special_emoji = self.specialcard.emoji
+            except TypeError:
+                return ""
             if special_emoji:
                 return f"{special_emoji} "
         return ""
