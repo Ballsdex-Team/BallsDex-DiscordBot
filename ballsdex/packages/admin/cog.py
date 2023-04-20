@@ -522,7 +522,8 @@ class Admin(commands.GroupCog):
                 )
             else:
                 await interaction.response.send_message(
-                    f"`{user}` (`{user.id}`) is currently blacklisted (date unknown) for the following reason:\n"
+                    f"`{user}` (`{user.id}`) is currently blacklisted (date unknown)"
+                    " for the following reason:\n"
                     f"{blacklisted.reason}",
                     ephemeral=True,
                 )
