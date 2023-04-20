@@ -133,7 +133,8 @@ class BallInstanceTransformer(app_commands.Transformer):
                 except DoesNotExist:
                     await interaction.response.send_message(
                         "The ball could not be found. Make sure to use the autocomplete "
-                        "function on this command."
+                        "function on this command.",
+                        ephemeral=True,
                     )
                     return None
 
@@ -141,7 +142,8 @@ class BallInstanceTransformer(app_commands.Transformer):
             # autocomplete didn't work and user tried to force a custom value
             await interaction.response.send_message(
                 "The ball could not be found. Make sure to use the autocomplete "
-                "function on this command."
+                "function on this command.",
+                ephemeral=True,
             )
             return None
 
@@ -180,7 +182,8 @@ class BallTransformer(app_commands.Transformer):
         except (StopIteration, ValueError):
             await interaction.response.send_message(
                 "The ball could not be found. Make sure to use the autocomplete "
-                "function on this command."
+                "function on this command.",
+                ephemeral=True,
             )
             return None
 
