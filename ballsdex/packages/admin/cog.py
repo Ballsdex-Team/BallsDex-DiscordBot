@@ -415,11 +415,11 @@ class Admin(commands.GroupCog):
             await BlacklistedID.create(discord_id=user.id, reason=final_reason)
         except IntegrityError:
             await interaction.response.send_message(
-                "That user was already blacklisted.", ephemeral=True)
+                "That user was already blacklisted.", ephemeral=True
+            )
         else:
             self.bot.blacklist.append(user.id)
-            await interaction.response.send_message(
-                "User is now blacklisted.", ephemeral=True)
+            await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
         log.info(
             f"{interaction.user} blacklisted {user} ({user.id}) for the following reason: {reason}"
         )
@@ -465,13 +465,13 @@ class Admin(commands.GroupCog):
         try:
             blacklisted = await BlacklistedID.get(discord_id=user.id)
         except DoesNotExist:
-            await interaction.response.send_message(
-                "That user isn't blacklisted.", ephemeral=True)
+            await interaction.response.send_message("That user isn't blacklisted.", ephemeral=True)
         else:
             await blacklisted.delete()
             self.bot.blacklist.remove(user.id)
             await interaction.response.send_message(
-                "User is now removed from blacklist.", ephemeral=True)
+                "User is now removed from blacklist.", ephemeral=True
+            )
         log.info(f"{interaction.user} removed blacklist for user {user} ({user.id})")
 
     @blacklist.command(name="info")
