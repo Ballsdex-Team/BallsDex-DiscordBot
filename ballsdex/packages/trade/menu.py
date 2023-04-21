@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.trade.menu")
 
 
+class InvalidTradeOperation(Exception):
+    pass
+
+
 @dataclass(slots=True)
 class TradingUser:
     user: discord.User | discord.Member
@@ -117,9 +121,14 @@ class ConfirmView(View):
             )
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
-        await self.trade.confirm(trader)
+        result = await self.trade.confirm(trader)
         if self.trade.trader1.accepted and self.trade.trader2.accepted:
-            await interaction.followup.send("The trade is now concluded.", ephemeral=True)
+            if result:
+                await interaction.followup.send("The trade is now concluded.", ephemeral=True)
+            else:
+                await interaction.followup.send(
+                    ":warning: An error occurred while concluding the trade.", ephemeral=True
+                )
         else:
             await interaction.followup.send(
                 "You have accepted the trade, waiting for the other user...", ephemeral=True
@@ -194,7 +203,6 @@ class TradeMenu:
         i = 0
 
         for countryball in trader.proposal:
-
             cb_text = countryball.description(short=short, include_emoji=True, bot=self.bot)
             if trader.locked:
                 text = f"- *{cb_text}*\n"
@@ -350,21 +358,37 @@ class TradeMenu:
         await self.cancel()
 
     async def perform_trade(self):
+        valid_transferable_countryballs: list[BallInstance] = []
+
         for countryball in self.trader1.proposal:
+            await countryball.refresh_from_db()
+            if countryball.player.discord_id != self.trader1.player.discord_id:
+                # This is a invalid mutation, the player is not the owner of the countryball
+                raise InvalidTradeOperation()
             countryball.player = self.trader2.player
             countryball.trade_player = self.trader1.player
             countryball.favorite = False
-            await countryball.save()
+            valid_transferable_countryballs.append(countryball)
+
         for countryball in self.trader2.proposal:
+            if countryball.player.discord_id != self.trader2.player.discord_id:
+                # This is a invalid mutation, the player is not the owner of the countryball
+                raise InvalidTradeOperation()
             countryball.player = self.trader1.player
             countryball.trade_player = self.trader2.player
             countryball.favorite = False
+            valid_transferable_countryballs.append(countryball)
+
+        for countryball in valid_transferable_countryballs:
             await countryball.save()
 
-    async def confirm(self, trader: TradingUser):
+    async def confirm(self, trader: TradingUser) -> bool:
         """
         Mark a user's proposal as accepted. If both user accept, end the trade now
+
+        If the trade is concluded, return True, otherwise if an error occurs, return False
         """
+        result = True
         trader.accepted = True
         self.update_proposals()
         if self.trader1.accepted and self.trader2.accepted:
@@ -380,8 +404,19 @@ class TradeMenu:
 
             try:
                 await self.perform_trade()
+            except InvalidTradeOperation:
+                log.warning(f"Illegal trade operation between {self.trader1=} and {self.trader2=}")
+                self.embed.description = (
+                    f":warning: An attempt to modify the {settings.collectible_name}s "
+                    "during the trade was detected and the trade was cancelled."
+                )
+                self.embed.colour = discord.Colour.red()
+                result = False
             except Exception:
                 log.exception(f"Failed to conclude trade {self.trader1=} {self.trader2=}")
-                await self.message.reply("An error occured when concluding the trade.")
+                self.embed.description = "An error occured when concluding the trade."
+                self.embed.colour = discord.Colour.red()
+                result = False
 
         await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+        return result
