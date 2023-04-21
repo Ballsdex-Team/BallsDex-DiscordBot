@@ -75,7 +75,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         else:
             await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
 
-    async def catch_ball(self, bot: "BallsDexBot", user: discord.Member) -> BallInstance | bool:
+    async def catch_ball(
+        self, bot: "BallsDexBot", user: discord.Member
+    ) -> tuple[BallInstance, bool]:
         player, created = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
