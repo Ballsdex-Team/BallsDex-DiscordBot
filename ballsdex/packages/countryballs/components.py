@@ -64,7 +64,10 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
             if has_caught_before:
-                special += f"You have added **{settings.collectible_name}** to your collection!"
+                special += (
+                    f"This is a **new {settings.collectible_name}** "
+                    "that has been added to your completion!"
+                )
 
             await interaction.response.send_message(
                 f"{interaction.user.mention} You caught **{self.ball.name}!** "
