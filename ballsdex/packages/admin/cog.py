@@ -414,10 +414,12 @@ class Admin(commands.GroupCog):
         try:
             await BlacklistedID.create(discord_id=user.id, reason=final_reason)
         except IntegrityError:
-            await interaction.response.send_message("That user was already blacklisted.")
+            await interaction.response.send_message(
+                "That user was already blacklisted.", ephemeral=True
+            )
         else:
             self.bot.blacklist.append(user.id)
-            await interaction.response.send_message("User is now blacklisted.")
+            await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
         log.info(
             f"{interaction.user} blacklisted {user} ({user.id}) for the following reason: {reason}"
         )
@@ -463,11 +465,13 @@ class Admin(commands.GroupCog):
         try:
             blacklisted = await BlacklistedID.get(discord_id=user.id)
         except DoesNotExist:
-            await interaction.response.send_message("That user isn't blacklisted.")
+            await interaction.response.send_message("That user isn't blacklisted.", ephemeral=True)
         else:
             await blacklisted.delete()
             self.bot.blacklist.remove(user.id)
-            await interaction.response.send_message("User is now removed from blacklist.")
+            await interaction.response.send_message(
+                "User is now removed from blacklist.", ephemeral=True
+            )
         log.info(f"{interaction.user} removed blacklist for user {user} ({user.id})")
 
     @blacklist.command(name="info")
@@ -506,6 +510,7 @@ class Admin(commands.GroupCog):
                     "The given user ID could not be found.", ephemeral=True
                 )
                 return
+        # We assume that we have a valid discord.User object at this point.
 
         try:
             blacklisted = await BlacklistedID.get(discord_id=user.id)
@@ -514,12 +519,15 @@ class Admin(commands.GroupCog):
         else:
             if blacklisted.date:
                 await interaction.response.send_message(
-                    f"`{user}` was blacklisted on {format_dt(blacklisted.date)}"
+                    f"`{user}` (`{user.id}`) was blacklisted on {format_dt(blacklisted.date)}"
                     f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
-                    f"{blacklisted.reason}"
+                    f"{blacklisted.reason}",
+                    ephemeral=True,
                 )
             else:
                 await interaction.response.send_message(
-                    f"`{user}` is currently blacklisted (date unknown) for the following reason:\n"
-                    f"{blacklisted.reason}"
+                    f"`{user}` (`{user.id}`) is currently blacklisted (date unknown)"
+                    " for the following reason:\n"
+                    f"{blacklisted.reason}",
+                    ephemeral=True,
                 )
