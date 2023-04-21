@@ -357,6 +357,7 @@ class TradeMenu:
         valid_transferable_countryballs: list[BallInstance] = []
 
         for countryball in self.trader1.proposal:
+            await countryball.refresh_from_db()
             if countryball.player.discord_id != self.trader1.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
