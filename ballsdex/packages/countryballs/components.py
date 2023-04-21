@@ -5,7 +5,7 @@ import discord
 import random
 import logging
 
-from typing import TYPE_CHECKING, cast, Tuple
+from typing import TYPE_CHECKING, cast
 from tortoise.timezone import now as datetime_now
 from prometheus_client import Counter
 from discord.ui import Modal, TextInput, Button, View
@@ -75,9 +75,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         else:
             await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
 
-    async def catch_ball(
-        self, bot: "BallsDexBot", user: discord.Member
-    ) -> Tuple[BallInstance, bool]:
+    async def catch_ball(self, bot: "BallsDexBot", user: discord.Member) -> BallInstance | bool:
         player, created = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
