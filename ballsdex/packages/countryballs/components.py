@@ -102,7 +102,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             weights = [x.rarity for x in specials] + [common_weight]
             special = random.choices(population=population, weights=weights, k=1)[0]
 
-        is_new = await BallInstance.filter(player=player, ball=self.ball.model).exists()
+        is_new = not await BallInstance.filter(player=player, ball=self.ball.model).exists()
         ball = await BallInstance.create(
             ball=self.ball.model,
             player=player,
