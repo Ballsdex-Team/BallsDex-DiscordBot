@@ -354,7 +354,7 @@ class TradeMenu:
         await self.cancel()
 
     async def perform_trade(self):
-        valid_transferable_countryballs = []
+        valid_transferable_countryballs: list[BallInstance] = []
 
         for countryball in self.trader1.proposal:
             if countryball.player.discord_id != self.trader1.player.discord_id:
