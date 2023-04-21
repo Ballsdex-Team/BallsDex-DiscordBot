@@ -82,19 +82,18 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         # check if we can spawn cards with a special background
         special: "Special" | None = None
         if not shiny and specials:
-            population = [x for x in specials if x.start_date <= datetime_now() <= x.end_date] + [
-                None
-            ]  # None for common card
+            population = [x for x in specials if x.start_date <= datetime_now() <= x.end_date]
 
             # Here we try to determine what should be the chance of having a common card
             # since the rarity field is a value between 0 and 1, 1 being no common
             # and 0 only common, we get the remaining value by doing (1-rarity)
             # We the sum each value for each current event, and we should get an algorithm
             # that kinda makes sense.
-            common_weight = sum(1 - x.rarity for x in population if x is not None)
+            common_weight = sum(1 - x.rarity for x in population)
 
-            weights = [x.rarity for x in population if x is not None] + [common_weight]
-            special = random.choices(population=population, weights=weights, k=1)[0]
+            weights = [x.rarity for x in population] + [common_weight]
+            # None is added representing the common countryball
+            special = random.choices(population=population + [None], weights=weights, k=1)[0]
 
         ball = await BallInstance.create(
             ball=self.ball.model,
