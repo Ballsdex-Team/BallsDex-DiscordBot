@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.trade.menu")
 
 
+class InvalidTradeOperation(Exception):
+    pass
+
+
 @dataclass(slots=True)
 class TradingUser:
     user: discord.User | discord.Member
@@ -350,16 +354,28 @@ class TradeMenu:
         await self.cancel()
 
     async def perform_trade(self):
+        valid_transferable_countryballs = []
+
         for countryball in self.trader1.proposal:
+            if countryball.player.discord_id != self.trader1.player.discord_id:
+                # This is a invalid mutation, the player is not the owner of the countryball
+                raise InvalidTradeOperation()
             countryball.player = self.trader2.player
             countryball.trade_player = self.trader1.player
             countryball.favorite = False
-            await countryball.save()
+            valid_transferable_countryballs.append(countryball)
+
         for countryball in self.trader2.proposal:
+            if countryball.player.discord_id != self.trader2.player.discord_id:
+                # This is a invalid mutation, the player is not the owner of the countryball
+                raise InvalidTradeOperation()
             countryball.player = self.trader1.player
             countryball.trade_player = self.trader2.player
             countryball.favorite = False
-            await countryball.save()
+            valid_transferable_countryballs.append(countryball)
+
+        for countryball in valid_transferable_countryballs:
+            countryball.save()
 
     async def confirm(self, trader: TradingUser):
         """
@@ -380,6 +396,9 @@ class TradeMenu:
 
             try:
                 await self.perform_trade()
+            except InvalidTradeOperation:
+                log.warning(f"Illegal trade operation between {self.trader1=} and {self.trader2=}")
+                await self.message.reply("An error occured when concluding the trade.")
             except Exception:
                 log.exception(f"Failed to conclude trade {self.trader1=} {self.trader2=}")
                 await self.message.reply("An error occured when concluding the trade.")
