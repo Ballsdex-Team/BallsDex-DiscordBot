@@ -375,7 +375,7 @@ class TradeMenu:
             valid_transferable_countryballs.append(countryball)
 
         for countryball in valid_transferable_countryballs:
-            countryball.save()
+            await countryball.save()
 
     async def confirm(self, trader: TradingUser):
         """
