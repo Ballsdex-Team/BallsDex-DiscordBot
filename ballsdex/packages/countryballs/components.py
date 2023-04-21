@@ -54,13 +54,20 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             possible_names = (self.ball.name.lower(),)
         if self.name.value.lower().strip() in possible_names:
             self.ball.catched = True
-            ball = await self.catch_ball(cast("BallsDexBot", interaction.client), interaction.user)
+            ball, has_caught_before = await self.catch_ball(
+                cast("BallsDexBot", interaction.client), interaction.user
+            )
 
             special = ""
             if ball.shiny:
                 special += f"✨ ***It's a shiny {settings.collectible_name} !*** ✨\n"
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
+            if has_caught_before:
+                special += (
+                    f"This is a **new {settings.collectible_name}** "
+                    "that has been added to your completion!"
+                )
 
             await interaction.response.send_message(
                 f"{interaction.user.mention} You caught **{self.ball.name}!** "
@@ -71,7 +78,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         else:
             await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
 
-    async def catch_ball(self, bot: "BallsDexBot", user: discord.Member) -> BallInstance:
+    async def catch_ball(
+        self, bot: "BallsDexBot", user: discord.Member
+    ) -> tuple[BallInstance, bool]:
         player, created = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
@@ -96,6 +105,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             weights = [x.rarity for x in specials] + [common_weight]
             special = random.choices(population=population, weights=weights, k=1)[0]
 
+        is_new = not await BallInstance.filter(player=player, ball=self.ball.model).exists()
         ball = await BallInstance.create(
             ball=self.ball.model,
             player=player,
@@ -114,7 +124,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             # observe the size of the server, rounded to the nearest power of 10
             guild_size=10 ** math.ceil(math.log(max(user.guild.member_count - 1, 1), 10)),
         ).inc()
-        return ball
+        return ball, is_new
 
 
 class CatchButton(Button):
