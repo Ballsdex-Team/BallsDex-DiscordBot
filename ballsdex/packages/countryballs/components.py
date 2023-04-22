@@ -90,9 +90,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         # check if we can spawn cards with a special background
         special: "Special" | None = None
-        if not shiny and specials:
-            population = [x for x in specials if x.start_date <= datetime_now() <= x.end_date]
-
+        population = [x for x in specials if x.start_date <= datetime_now() <= x.end_date]
+        if not shiny and population:
             # Here we try to determine what should be the chance of having a common card
             # since the rarity field is a value between 0 and 1, 1 being no common
             # and 0 only common, we get the remaining value by doing (1-rarity)
