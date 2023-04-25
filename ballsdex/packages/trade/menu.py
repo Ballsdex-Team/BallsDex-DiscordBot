@@ -266,10 +266,10 @@ class TradeMenu:
 
                 if i < len(trader2_proposal):
                     self.embed.add_field(name="\u200B", value=trader2_proposal[i], inline=True)
-                elif i + 1 < len(trader1_proposal):
-                    # only add an empty field on the right if we know there are more pages
-                    # to unfold on the left side
+                else:
                     self.embed.add_field(name="\u200B", value="\u200B", inline=True)
+                # always add an empty field at the end, otherwise the alignment is off
+                self.embed.add_field(name="\u200B", value="\u200B", inline=True)
                 i += 1
 
         if len(self.embed) > 6000 and not compact:
