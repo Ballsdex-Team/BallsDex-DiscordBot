@@ -14,6 +14,9 @@ import discord
 
 from discord.ext import commands
 
+from ballsdex.core import models
+from ballsdex.core.models import Ball, BallInstance, Special, Player, BlacklistedID, GuildConfig
+
 """
 Notice:
 
@@ -158,6 +161,13 @@ class Dev(commands.Cog):
             "aiohttp": aiohttp,
             "discord": discord,
             "commands": commands,
+            "models": models,
+            "Ball": Ball,
+            "BallInstance": BallInstance,
+            "Player": Player,
+            "GuildConfig": GuildConfig,
+            "BlacklistedID": BlacklistedID,
+            "Special": Special,
             "_": self._last_result,
             "__name__": "__main__",
         }
