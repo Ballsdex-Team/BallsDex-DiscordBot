@@ -166,6 +166,14 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
         bot_countryballs = {x.pk: x.emoji_id for x in balls if x.enabled}
+
+        if not bot_countryballs:
+            await interaction.response.send_message(
+                f"There are no {settings.collectible_name}s registered on this bot yet.",
+                ephemeral=True,
+            )
+            return
+
         # Set of ball IDs owned by the player
         owned_countryballs = set(
             x[0]
