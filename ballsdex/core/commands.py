@@ -1,6 +1,8 @@
 import logging
+import time
 
 from typing import TYPE_CHECKING
+from tortoise import Tortoise
 from discord.ext import commands
 
 log = logging.getLogger("ballsdex.core.commands")
@@ -64,3 +66,15 @@ class Core(commands.Cog):
         """
         await self.bot.load_cache()
         await ctx.message.add_reaction("✅")
+
+    @commands.command()
+    @commands.is_owner()
+    async def analyzedb(self, ctx: commands.Context):
+        """
+        Analyze the database. This refreshes the counts displayed by the `/about` command.
+        """
+        connection = Tortoise.get_connection("default")
+        t1 = time.time()
+        await connection.execute_query("ANALYZE")
+        t2 = time.time()
+        await ctx.send(f"Analyzed database in {round((t2 - t1) * 1000)}ms.")
