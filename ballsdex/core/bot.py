@@ -117,29 +117,8 @@ class BallsDexBot(commands.AutoShardedBot):
         for blacklisted_id in await BlacklistedID.all().only("discord_id"):
             self.blacklist.append(blacklisted_id.discord_id)
 
-    async def launch_shards(self) -> None:
-        # override to add a log call on the number of shards that needs connecting
-        if self.is_closed():
-            return
-
-        if self.shard_count is None:
-            self.shard_count: int
-            self.shard_count, gateway_url = await self.http.get_bot_gateway()
-            log.info(
-                f"Logged in to Discord, initiating connection. {self.shard_count} shards needed"
-            )
-            gateway = yarl.URL(gateway_url)
-        else:
-            gateway = DiscordWebSocket.DEFAULT_GATEWAY
-
-        self._connection.shard_count = self.shard_count
-
-        shard_ids = self.shard_ids or range(self.shard_count)
-        self._connection.shard_ids = shard_ids
-
-        for shard_id in shard_ids:
-            initial = shard_id == shard_ids[0]
-            await self.launch_shard(gateway, shard_id, initial=initial)
+    async def setup_hook(self) -> None:
+        log.info("Starting up with %s shards...", self.shard_count)
 
     async def on_ready(self):
         assert self.user
