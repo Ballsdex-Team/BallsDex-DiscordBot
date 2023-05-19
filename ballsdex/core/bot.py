@@ -46,12 +46,7 @@ class BallsDexBot(commands.AutoShardedBot):
     BallsDex Discord bot
     """
 
-    def __init__(
-        self,
-        command_prefix: str,
-        dev: bool = False,
-        **options,
-    ):
+    def __init__(self, command_prefix: str, dev: bool = False, **options):
         # An explaination for the used intents
         # guilds: needed for basically anything, the bot needs to know what guilds it has
         # and accordingly enable automatic spawning in the enabled ones

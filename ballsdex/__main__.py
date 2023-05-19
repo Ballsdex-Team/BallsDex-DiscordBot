@@ -301,7 +301,9 @@ def main():
         log.debug("Tortoise ORM and database ready.")
 
         bot = BallsDexBot(
-            command_prefix=when_mentioned_or(prefix), dev=cli_flags.dev  # type: ignore
+            command_prefix=when_mentioned_or(prefix),
+            dev=cli_flags.dev,  # type: ignore
+            shard_count=settings.shard_count,
         )
 
         exc_handler = functools.partial(global_exception_handler, bot)
