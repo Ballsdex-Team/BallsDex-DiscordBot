@@ -22,7 +22,8 @@ class Settings:
     gateway_url: str | None
         The URL of the Discord gateway that this instance of the bot should connect to and use.
     shard_count: int | None
-        The number of shards to use for this bot instance. Must be equal to the one set in the gateway proxy if used.
+        The number of shards to use for this bot instance.
+        Must be equal to the one set in the gateway proxy if used.
     prefix: str
         Prefix for text commands, mostly unused. Defaults to "b."
     collectible_name: str
