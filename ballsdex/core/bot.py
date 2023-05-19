@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-import discord
+import asyncio
 import logging
-import yarl
 import math
-
-from rich import print
 from typing import cast
 
+import aiohttp
+import discord
+import discord.gateway
 from discord import app_commands
 from discord.ext import commands
-from discord.gateway import DiscordWebSocket
+from rich import print
 
-from ballsdex.settings import settings
+from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
-from ballsdex.core.models import BlacklistedID, Special, Ball, balls, specials
-from ballsdex.core.commands import Core
+from ballsdex.core.models import Ball, BlacklistedID, Special, balls, specials
+from ballsdex.settings import settings
 
 log = logging.getLogger("ballsdex.core.bot")
 
@@ -112,8 +112,33 @@ class BallsDexBot(commands.AutoShardedBot):
         for blacklisted_id in await BlacklistedID.all().only("discord_id"):
             self.blacklist.append(blacklisted_id.discord_id)
 
+    async def gateway_healthy(self) -> bool:
+        """Check whether or not the gateway proxy is ready and healthy."""
+        if settings.gateway_url is None:
+            raise RuntimeError("This is only available on the production bot instance.")
+
+        try:
+            base_url = str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY).replace(
+                "ws://", "http://"
+            )
+            async with self.session.get(f"{base_url}/health", timeout=10) as resp:
+                return resp.status == 200
+        except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
+            return False
+
     async def setup_hook(self) -> None:
         log.info("Starting up with %s shards...", self.shard_count)
+        if settings.gateway_url is None:
+            return
+
+        while True:
+            response = await self.gateway_healthy()
+            if response is True:
+                log.info("Gateway proxy is ready!")
+                break
+
+            log.warning("Gateway proxy is not ready yet, waiting 5 more seconds...")
+            await asyncio.sleep(5)
 
     async def on_ready(self):
         assert self.user
