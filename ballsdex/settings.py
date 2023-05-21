@@ -102,6 +102,12 @@ def read_settings(path: "Path"):
     settings.root_role_ids = content["admin-command"]["root-role-ids"] or []
     settings.admin_role_ids = content["admin-command"]["admin-role-ids"] or []
 
+    settings.common = content["rarities"]["common"]
+    settings.uncommon = content["rarities"]["uncommon"]
+    settings.rare = content["rarities"]["rare"]
+    settings.epic = content["rarities"]["epic"]
+    settings.legendary = content["rarities"]["legendary"]
+    
     settings.prometheus_enabled = content["prometheus"]["enabled"]
     settings.prometheus_host = content["prometheus"]["host"]
     settings.prometheus_port = content["prometheus"]["port"]
@@ -170,6 +176,15 @@ owners:
 
   # a list of IDs that must be considered owners in addition to the application/team owner
   co-owners:
+
+# manage ball rarities
+rarities:
+  # These values are the spawn raritiy values which are set while creating a new ball.
+  common: 0.5
+  uncommon: 0.3
+  rare: 0.15
+  epic: 0.09
+  legendary: 0.08
 
 # prometheus metrics collection, leave disabled if you don't know what this is
 prometheus:
