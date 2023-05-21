@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from discord.ui import View, button, Button
 
 from ballsdex.settings import settings
-from ballsdex.core.models import Player, BallInstance
+from ballsdex.core.models import Player, BallInstance, Trade, TradeOffer
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -359,6 +359,7 @@ class TradeMenu:
 
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
+        trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
 
         for countryball in self.trader1.proposal:
             await countryball.refresh_from_db()
@@ -368,6 +369,9 @@ class TradeMenu:
             countryball.player = self.trader2.player
             countryball.trade_player = self.trader1.player
             countryball.favorite = False
+            await TradeOffer.create(
+                trade=trade, countryball=countryball, player=self.trader1.player
+            )
             valid_transferable_countryballs.append(countryball)
 
         for countryball in self.trader2.proposal:
@@ -377,6 +381,9 @@ class TradeMenu:
             countryball.player = self.trader1.player
             countryball.trade_player = self.trader2.player
             countryball.favorite = False
+            await TradeOffer.create(
+                trade=trade, countryball=countryball, player=self.trader2.player
+            )
             valid_transferable_countryballs.append(countryball)
 
         for countryball in valid_transferable_countryballs:
