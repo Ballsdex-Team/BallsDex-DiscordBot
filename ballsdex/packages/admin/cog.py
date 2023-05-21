@@ -551,7 +551,7 @@ class Admin(commands.GroupCog):
         reason: str | None
             Reason for this blacklist.
         """
-        
+
         try:
             guild = await self.bot.fetch_guild(int(guild_id))  # type: ignore
         except ValueError:
@@ -565,9 +565,7 @@ class Admin(commands.GroupCog):
             )
             return
 
-        final_reason = (
-            f"{reason}\nBy: {interaction.user} ({interaction.user.id})"
-        )
+        final_reason = f"{reason}\nBy: {interaction.user} ({interaction.user.id})"
 
         try:
             await BlacklistedGuild.create(discord_id=guild.id, reason=final_reason)
@@ -581,7 +579,6 @@ class Admin(commands.GroupCog):
         log.info(
             f"{interaction.user} blacklisted {guild} ({guild.id}) for the following reason: {reason}"
         )
-
 
     @blacklist_guild.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -612,11 +609,12 @@ class Admin(commands.GroupCog):
             )
             return
 
-
         try:
             blacklisted = await BlacklistedGuild.get(discord_id=guild.id)
         except DoesNotExist:
-            await interaction.response.send_message("That guild isn't blacklisted.", ephemeral=True)
+            await interaction.response.send_message(
+                "That guild isn't blacklisted.", ephemeral=True
+            )
         else:
             await blacklisted.delete()
             self.bot.blacklist.remove(guild.id)
