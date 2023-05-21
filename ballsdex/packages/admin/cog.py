@@ -623,8 +623,8 @@ class Admin(commands.GroupCog):
             )
         log.info(f"{interaction.user} removed blacklist for guild {guild} ({guild.id})")
 
-    @blacklist.command(name="info")
-    async def blacklist_info(
+    @blacklist_guild.command(name="info")
+    async def blacklist_info_guild(
         self,
         interaction: discord.Interaction,
         guild_id: str | None = None,

@@ -218,13 +218,19 @@ class BallsDexBot(commands.AutoShardedBot):
     async def blacklist_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id in self.blacklist:
             await interaction.response.send_message(
-                f"You are blacklisted from the bot.\nYou can appeal this blacklist in our support server: {settings.discord_invite}",
+                "You are blacklisted from the bot."
+                "\nYou can appeal this blacklist in our support server: {}".format(
+                    settings.discord_invite
+                ),
                 ephemeral=True,
             )
             return False
         if interaction.guild_id and interaction.guild_id in self.blacklist_guild:
             await interaction.response.send_message(
-                f"This server is blacklisted from the bot.\nYou can appeal this blacklist in our support server: {settings.discord_invite}",
+                "This server is blacklisted from the bot."
+                "\nYou can appeal this blacklist in our support server: {}".format(
+                    settings.discord_invite
+                ),
                 ephemeral=True,
             )
             return False
