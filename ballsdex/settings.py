@@ -107,7 +107,7 @@ def read_settings(path: "Path"):
     settings.rare = content["rarities"]["rare"]
     settings.epic = content["rarities"]["epic"]
     settings.legendary = content["rarities"]["legendary"]
-    
+
     settings.prometheus_enabled = content["prometheus"]["enabled"]
     settings.prometheus_host = content["prometheus"]["host"]
     settings.prometheus_port = content["prometheus"]["port"]
