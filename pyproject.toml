@@ -54,4 +54,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.flake8]
     ignore = "W503,E203"
-    max-line-length = 120
+    max-line-length = 99
