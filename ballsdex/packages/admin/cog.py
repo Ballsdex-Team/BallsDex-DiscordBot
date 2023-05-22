@@ -579,7 +579,8 @@ class Admin(commands.GroupCog):
             self.bot.blacklist_guild.add(guild.id)
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
         log.info(
-            f"{interaction.user} blacklisted {guild}({guild.id}) for the following reason: {reason}"
+            f"{interaction.user} blacklisted {guild}({guild.id}) "
+            f"for the following reason: {reason}"
         )
 
     @blacklist_guild.command(name="remove")
