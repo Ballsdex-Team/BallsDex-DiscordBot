@@ -34,7 +34,9 @@ class Admin(commands.GroupCog):
         self.blacklist.parent = self.__cog_app_commands_group__
 
     blacklist = app_commands.Group(name="blacklist", description="Bot blacklist management")
-    blacklist_guild = blacklist.Group(name="guild", description="Guild blacklist management")
+    blacklist_guild = app_commands.Group(
+        name="blacklistguild", description="Guild blacklist management"
+    )
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -538,17 +540,17 @@ class Admin(commands.GroupCog):
     async def blacklist_add_guild(
         self,
         interaction: discord.Interaction,
-        guild_id: str | None,
-        reason: str | None = None,
+        guild_id: str,
+        reason: str,
     ):
         """
         Add a guild to the blacklist. No reload is needed.
 
         Parameters
         ----------
-        guild_id: str | None
+        guild_id: str
             The ID of the user you want to blacklist, if it's not in the current server.
-        reason: str | None
+        reason: str
             Reason for this blacklist.
         """
 
@@ -577,7 +579,7 @@ class Admin(commands.GroupCog):
             self.bot.blacklist_guild.add(guild.id)
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
         log.info(
-            f"{interaction.user} blacklisted {guild} ({guild.id}) for the following reason: {reason}"
+            f"{interaction.user} blacklisted {guild}({guild.id}) for the following reason: {reason}"
         )
 
     @blacklist_guild.command(name="remove")
@@ -585,14 +587,14 @@ class Admin(commands.GroupCog):
     async def blacklist_remove_guild(
         self,
         interaction: discord.Interaction,
-        guild_id: str | None = None,
+        guild_id: str,
     ):
         """
         Remove a guild from the blacklist. No reload is needed.
 
         Parameters
         ----------
-        guild_id: str | None
+        guild_id: str
             The ID of the user you want to unblacklist, if it's not in the current server.
         """
 
@@ -627,14 +629,14 @@ class Admin(commands.GroupCog):
     async def blacklist_info_guild(
         self,
         interaction: discord.Interaction,
-        guild_id: str | None = None,
+        guild_id: str,
     ):
         """
         Check if a guild is blacklisted and show the corresponding reason.
 
         Parameters
         ----------
-        guild_id: str | None
+        guild_id: str
             The ID of the user you want to check, if it's not in the current server.
         """
 
