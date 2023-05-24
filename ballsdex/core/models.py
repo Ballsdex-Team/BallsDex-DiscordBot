@@ -349,10 +349,7 @@ class BlacklistedID(models.Model):
 
 
 class Trade(models.Model):
-    player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField("models.Player")
-    player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField("models.Player")
     time: fields.DatetimeField = fields.DatetimeField(auto_now_add=True)
-
 
 class TradeOffer(models.Model):
     trade: fields.ForeignKeyRelation[Trade] = fields.ForeignKeyField("models.Trade")
