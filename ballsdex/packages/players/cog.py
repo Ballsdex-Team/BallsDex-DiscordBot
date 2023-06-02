@@ -425,6 +425,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         countryball.player = new_player
         countryball.trade_player = old_player
+        countryball.favorite = False
         await countryball.save()
 
         await interaction.response.send_message(
