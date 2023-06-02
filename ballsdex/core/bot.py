@@ -121,8 +121,9 @@ class BallsDexBot(commands.AutoShardedBot):
             base_url = str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY).replace(
                 "ws://", "http://"
             )
-            async with self.session.get(f"{base_url}/health", timeout=10) as resp:
-                return resp.status == 200
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{base_url}/health", timeout=10) as resp:
+                    return resp.status == 200
         except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
             return False
 
