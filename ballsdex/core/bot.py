@@ -138,8 +138,8 @@ class BallsDexBot(commands.AutoShardedBot):
                 log.info("Gateway proxy is ready!")
                 break
 
-            log.warning("Gateway proxy is not ready yet, waiting 5 more seconds...")
-            await asyncio.sleep(5)
+            log.warning("Gateway proxy is not ready yet, waiting 30 more seconds...")
+            await asyncio.sleep(30)
 
     async def on_ready(self):
         assert self.user
