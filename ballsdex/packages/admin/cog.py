@@ -8,6 +8,7 @@ from discord.ext import commands
 from discord.utils import format_dt
 from tortoise.exceptions import IntegrityError, DoesNotExist
 from typing import TYPE_CHECKING, cast
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 
 from ballsdex.settings import settings
 from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID, BlacklistedGuild
@@ -37,6 +38,7 @@ class Admin(commands.GroupCog):
     blacklist_guild = app_commands.Group(
         name="blacklistguild", description="Guild blacklist management"
     )
+    balls = app_commands.Group(name="balls", description="Balls management")
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -673,3 +675,166 @@ class Admin(commands.GroupCog):
                     f"{blacklisted.reason}",
                     ephemeral=True,
                 )
+    @balls.command(name="info")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+    async def balls_info(self, interaction: discord.Interaction, ballId: int):
+        """
+        Show information about a ball.
+
+        Parameters
+        ----------
+        ballId: int
+            The ID of the ball you want to get information about.
+        """
+        try:
+            ballIdConverted = int(ballId, 16)
+        except ValueError:
+            await interaction.response.send_message(
+                "The ball ID you gave is not valid.", ephemeral=True
+            )
+            return
+        ball = await BallInstance.get(id=ballIdConverted)
+        if not ball:
+            await interaction.response.send_message(
+                "The ball ID you gave does not exist.", ephemeral=True
+            )
+            return
+        await interaction.response.send_message(
+            f"**Ball ID:** {ball.id}\n"
+            f"**Player:** {ball.player}\n"
+            f"**Country:** {ball.ball.country}\n"
+            f"**Attack bonus:** {ball.attack_bonus}\n"
+            f"**Health bonus:** {ball.health_bonus}\n"
+            f"**Shiny:** {ball.shiny}\n"
+            f"**Special:** {ball.special.name if ball.special else None}\n"
+            f"**Created at:** {format_dt(ball.created_at, style='R')}\n"
+            f"**Traded:** {ball.trade_player}\n"
+        )
+
+    @balls.command(name="delete")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def balls_delete(self, interaction: discord.Interaction, ballId: int):
+        """
+        Delete a ball.
+
+        Parameters
+        ----------
+        ballId: int
+            The ID of the ball you want to get information about.
+        """
+        try:
+            ballIdConverted = int(ballId, 16)
+        except ValueError:
+            await interaction.response.send_message(
+                "The ball ID you gave is not valid.", ephemeral=True
+            )
+            return
+        ball = await BallInstance.get(id=ballIdConverted)
+        if not ball:
+            await interaction.response.send_message(
+                "The ball ID you gave does not exist.", ephemeral=True
+            )
+            return
+        await ball.delete()
+        await interaction.response.send_message(f"Ball {ballId} deleted.", ephemeral=True)
+
+    @balls.command(name="transfer")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def balls_transfer(
+        self, interaction: discord.Interaction, ballId: int, user: discord.User
+    ):
+        """
+        Transfer a ball to another user.
+
+        Parameters
+        ----------
+        ballId: int
+            The ID of the ball you want to get information about.
+        user: discord.User
+            The user you want to transfer the ball to.
+        """
+        try:
+            ballIdConverted = int(ballId, 16)
+        except ValueError:
+            await interaction.response.send_message(
+                "The ball ID you gave is not valid.", ephemeral=True
+            )
+            return
+        ball = await BallInstance.get(id=ballIdConverted)
+        if not ball:
+            await interaction.response.send_message(
+                "The ball ID you gave does not exist.", ephemeral=True
+            )
+            return
+        player, _ = await Player.get_or_create(discord_id=user.id)
+        ball.player = player
+        await ball.save()
+        await interaction.response.send_message(
+            f"Ball {ball.ball.country} transferred to {user}.", ephemeral=True
+        )
+
+    @balls.command(name="reset")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def balls_reset(self, interaction: discord.Interaction, user: discord.User):
+        """
+        Reset a player's balls.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to reset the balls of.
+        """
+        player = await Player.get(discord_id=user.id)
+        if not player:
+            await interaction.response.send_message(
+                "The user you gave does not exist.", ephemeral=True
+            )
+            return
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        view = ConfirmChoiceView(interaction)
+        await interaction.followup.send(
+            f"Are you sure you want to delete {user}'s balls?",
+            view=view,
+            ephemeral=True,
+        )
+        await view.wait()
+        if not view.value:
+            return
+        await BallInstance.filter(player=player).delete()
+        await interaction.followup.send(f"{user}'s balls have been reset.", ephemeral=True)
+
+    @balls.command(name="count")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def balls_count(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User = None,
+        ball: BallTransform = None,
+        shiny: bool = None,
+        special: SpecialTransform = None,
+    ):
+        """
+        Count the number of balls a player has.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to count the balls of.
+        ball: Ball
+            The ball you want to count.
+        shiny: bool
+            Whether the ball is shiny or not.
+        special: Special
+            The special background of the ball.
+        """
+        balls = await BallInstance.filter(
+            player__discord_id=user.id if user else None, ball=ball, shiny=shiny, special=special
+        )
+        if user:
+            await interaction.response.send_message(
+                f"{user} has {len(balls)} balls.", ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(
+                f"There are {len(balls)} balls.", ephemeral=True
+            )
