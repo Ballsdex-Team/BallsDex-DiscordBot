@@ -620,11 +620,11 @@ class Admin(commands.GroupCog):
             )
         else:
             await blacklisted.delete()
-            self.bot.blacklist.remove(guild.id)
+            self.bot.blacklist_guild.remove(guild.id)
             await interaction.response.send_message(
                 "Guild is now removed from blacklist.", ephemeral=True
             )
-        log.info(f"{interaction.user} removed blacklist for guild {guild} ({guild.id})")
+            log.info(f"{interaction.user} removed blacklist for guild {guild} ({guild.id})")
 
     @blacklist_guild.command(name="info")
     async def blacklist_info_guild(
