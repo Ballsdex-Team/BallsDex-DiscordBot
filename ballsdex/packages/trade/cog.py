@@ -169,6 +169,15 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
+        if countryball.id in self.bot.locked_balls:
+            await interaction.followup.send(
+                "This countryball is currently in an active trade or donation, "
+                "please try again later.",
+                ephemeral=True,
+            )
+            return
+
+        self.bot.locked_balls.add(countryball.id)
         trader.proposal.append(countryball)
         await interaction.followup.send(
             f"{countryball.countryball.country} added.", ephemeral=True
@@ -209,3 +218,4 @@ class Trade(commands.GroupCog):
         await interaction.response.send_message(
             f"{countryball.countryball.country} removed.", ephemeral=True
         )
+        self.bot.locked_balls.remove(countryball.id)

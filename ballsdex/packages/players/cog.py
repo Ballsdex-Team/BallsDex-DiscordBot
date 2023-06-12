@@ -24,7 +24,11 @@ log = logging.getLogger("ballsdex.packages.countryballs")
 
 class DonationRequest(View):
     def __init__(
-        self, interaction: discord.Interaction, countryball: BallInstance, new_player: Player
+        self,
+        bot: "BallsDexBot",
+        interaction: discord.Interaction,
+        countryball: BallInstance,
+        new_player: Player,
     ):
         super().__init__(timeout=120)
         self.original_interaction = interaction
@@ -59,6 +63,7 @@ class DonationRequest(View):
             + "\n\N{WHITE HEAVY CHECK MARK} The donation was accepted!",
             view=self,
         )
+        self.bot.locked_balls.remove(self.countryball.id)
 
     @button(
         style=discord.ButtonStyle.danger,
@@ -400,7 +405,12 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         if user.bot:
             await interaction.response.send_message("You cannot donate to bots.")
             return
-
+        if countryball.id in self.bot.locked_balls:
+            await interaction.response.send_message(
+                "This countryball is currently locked for a trade. Please try again later."
+            )
+            return
+        self.bot.locked_balls.add(countryball.id)
         new_player, _ = await Player.get_or_create(discord_id=user.id)
         old_player = countryball.player
 
@@ -408,18 +418,20 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             await interaction.response.send_message(
                 f"You cannot give a {settings.collectible_name} to yourself."
             )
+            self.bot.locked_balls.remove(countryball.id)
             return
         if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
             await interaction.response.send_message(
                 "This player does not accept donations. You can use trades instead."
             )
+            self.bot.locked_balls.remove(countryball.id)
             return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             await interaction.response.send_message(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
                 f"{countryball.description(include_emoji=True, bot=interaction.client)}!\n"
                 "Do you accept this donation?",
-                view=DonationRequest(interaction, countryball, new_player),
+                view=DonationRequest(self.bot, interaction, countryball, new_player),
             )
             return
 
@@ -433,3 +445,4 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"{countryball.description(short=True, include_emoji=True, bot=self.bot)} to "
             f"{user.mention}!"
         )
+        self.bot.locked_balls.remove(countryball.id)

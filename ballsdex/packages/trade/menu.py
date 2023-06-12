@@ -381,6 +381,7 @@ class TradeMenu:
 
         for countryball in valid_transferable_countryballs:
             await countryball.save()
+            self.bot.locked_balls.remove(countryball.id)
 
     async def confirm(self, trader: TradingUser) -> bool:
         """
