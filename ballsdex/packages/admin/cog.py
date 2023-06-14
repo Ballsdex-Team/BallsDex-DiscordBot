@@ -10,7 +10,7 @@ from tortoise.exceptions import IntegrityError, DoesNotExist
 from typing import TYPE_CHECKING, cast
 
 from ballsdex.settings import settings
-from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID
+from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID, BlacklistedGuild
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.packages.countryballs.countryball import CountryBall
@@ -34,6 +34,9 @@ class Admin(commands.GroupCog):
         self.blacklist.parent = self.__cog_app_commands_group__
 
     blacklist = app_commands.Group(name="blacklist", description="Bot blacklist management")
+    blacklist_guild = app_commands.Group(
+        name="blacklistguild", description="Guild blacklist management"
+    )
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -418,7 +421,7 @@ class Admin(commands.GroupCog):
                 "That user was already blacklisted.", ephemeral=True
             )
         else:
-            self.bot.blacklist.append(user.id)
+            self.bot.blacklist.add(user.id)
             await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
         log.info(
             f"{interaction.user} blacklisted {user} ({user.id}) for the following reason: {reason}"
@@ -527,6 +530,145 @@ class Admin(commands.GroupCog):
             else:
                 await interaction.response.send_message(
                     f"`{user}` (`{user.id}`) is currently blacklisted (date unknown)"
+                    " for the following reason:\n"
+                    f"{blacklisted.reason}",
+                    ephemeral=True,
+                )
+
+    @blacklist_guild.command(name="add")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+    async def blacklist_add_guild(
+        self,
+        interaction: discord.Interaction,
+        guild_id: str,
+        reason: str,
+    ):
+        """
+        Add a guild to the blacklist. No reload is needed.
+
+        Parameters
+        ----------
+        guild_id: str
+            The ID of the user you want to blacklist, if it's not in the current server.
+        reason: str
+            Reason for this blacklist.
+        """
+
+        try:
+            guild = await self.bot.fetch_guild(int(guild_id))  # type: ignore
+        except ValueError:
+            await interaction.response.send_message(
+                "The guild ID you gave is not valid.", ephemeral=True
+            )
+            return
+        except discord.NotFound:
+            await interaction.response.send_message(
+                "The given guild ID could not be found.", ephemeral=True
+            )
+            return
+
+        final_reason = f"{reason}\nBy: {interaction.user} ({interaction.user.id})"
+
+        try:
+            await BlacklistedGuild.create(discord_id=guild.id, reason=final_reason)
+        except IntegrityError:
+            await interaction.response.send_message(
+                "That guild was already blacklisted.", ephemeral=True
+            )
+        else:
+            self.bot.blacklist_guild.add(guild.id)
+            await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
+        log.info(
+            f"{interaction.user} blacklisted {guild}({guild.id}) "
+            f"for the following reason: {reason}"
+        )
+
+    @blacklist_guild.command(name="remove")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+    async def blacklist_remove_guild(
+        self,
+        interaction: discord.Interaction,
+        guild_id: str,
+    ):
+        """
+        Remove a guild from the blacklist. No reload is needed.
+
+        Parameters
+        ----------
+        guild_id: str
+            The ID of the user you want to unblacklist, if it's not in the current server.
+        """
+
+        try:
+            guild = await self.bot.fetch_guild(int(guild_id))  # type: ignore
+        except ValueError:
+            await interaction.response.send_message(
+                "The user ID you gave is not valid.", ephemeral=True
+            )
+            return
+        except discord.NotFound:
+            await interaction.response.send_message(
+                "The given user ID could not be found.", ephemeral=True
+            )
+            return
+
+        try:
+            blacklisted = await BlacklistedGuild.get(discord_id=guild.id)
+        except DoesNotExist:
+            await interaction.response.send_message(
+                "That guild isn't blacklisted.", ephemeral=True
+            )
+        else:
+            await blacklisted.delete()
+            self.bot.blacklist_guild.remove(guild.id)
+            await interaction.response.send_message(
+                "Guild is now removed from blacklist.", ephemeral=True
+            )
+            log.info(f"{interaction.user} removed blacklist for guild {guild} ({guild.id})")
+
+    @blacklist_guild.command(name="info")
+    async def blacklist_info_guild(
+        self,
+        interaction: discord.Interaction,
+        guild_id: str,
+    ):
+        """
+        Check if a guild is blacklisted and show the corresponding reason.
+
+        Parameters
+        ----------
+        guild_id: str
+            The ID of the user you want to check, if it's not in the current server.
+        """
+
+        try:
+            guild = await self.bot.fetch_guild(int(guild_id))  # type: ignore
+        except ValueError:
+            await interaction.response.send_message(
+                "The guild ID you gave is not valid.", ephemeral=True
+            )
+            return
+        except discord.NotFound:
+            await interaction.response.send_message(
+                "The given guild ID could not be found.", ephemeral=True
+            )
+            return
+
+        try:
+            blacklisted = await BlacklistedGuild.get(discord_id=guild.id)
+        except DoesNotExist:
+            await interaction.response.send_message("That guild isn't blacklisted.")
+        else:
+            if blacklisted.date:
+                await interaction.response.send_message(
+                    f"`{guild}` (`{guild.id}`) was blacklisted on {format_dt(blacklisted.date)}"
+                    f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
+                    f"{blacklisted.reason}",
+                    ephemeral=True,
+                )
+            else:
+                await interaction.response.send_message(
+                    f"`{guild}` (`{guild.id}`) is currently blacklisted (date unknown)"
                     " for the following reason:\n"
                     f"{blacklisted.reason}",
                     ephemeral=True,

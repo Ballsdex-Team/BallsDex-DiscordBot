@@ -15,7 +15,8 @@ from rich import print
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
-from ballsdex.core.models import Ball, BlacklistedID, Special, balls, specials
+from ballsdex.core.models import BlacklistedGuild, BlacklistedID, Special, Ball, balls, specials
+from ballsdex.core.commands import Core
 from ballsdex.settings import settings
 
 log = logging.getLogger("ballsdex.core.bot")
@@ -65,7 +66,8 @@ class BallsDexBot(commands.AutoShardedBot):
         self.add_check(owner_check)  # Only owners are able to use text commands
 
         self._shutdown = 0
-        self.blacklist: list[int] = []
+        self.blacklist: set[int] = set()
+        self.blacklist_guild: set[int] = set()
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(
@@ -108,9 +110,12 @@ class BallsDexBot(commands.AutoShardedBot):
             specials.append(special)
         log.info(f"Loaded {len(specials)} specials")
 
-        self.blacklist.clear()
+        self.blacklist = set()
         for blacklisted_id in await BlacklistedID.all().only("discord_id"):
-            self.blacklist.append(blacklisted_id.discord_id)
+            self.blacklist.add(blacklisted_id.discord_id)
+        self.blacklist_guild = set()
+        for blacklisted_id in await BlacklistedGuild.all().only("discord_id"):
+            self.blacklist_guild.add(blacklisted_id.discord_id)
 
     async def gateway_healthy(self) -> bool:
         """Check whether or not the gateway proxy is ready and healthy."""
@@ -214,7 +219,20 @@ class BallsDexBot(commands.AutoShardedBot):
     async def blacklist_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id in self.blacklist:
             await interaction.response.send_message(
-                "You are blacklisted from the bot.", ephemeral=True
+                "You are blacklisted from the bot."
+                "\nYou can appeal this blacklist in our support server: {}".format(
+                    settings.discord_invite
+                ),
+                ephemeral=True,
+            )
+            return False
+        if interaction.guild_id and interaction.guild_id in self.blacklist_guild:
+            await interaction.response.send_message(
+                "This server is blacklisted from the bot."
+                "\nYou can appeal this blacklist in our support server: {}".format(
+                    settings.discord_invite
+                ),
+                ephemeral=True,
             )
             return False
         return True
