@@ -7,6 +7,6 @@ if TYPE_CHECKING:
 
 
 async def setup(bot: "BallsDexBot"):
-    cog = CountryBallsSpawner()
+    cog = CountryBallsSpawner(bot)
     await bot.add_cog(cog)
     await cog.load_cache()

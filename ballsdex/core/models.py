@@ -346,3 +346,14 @@ class BlacklistedID(models.Model):
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+
+class BlacklistedGuild(models.Model):
+    discord_id = fields.BigIntField(
+        description="Discord Guild ID", unique=True, validators=[DiscordSnowflakeValidator()]
+    )
+    reason = fields.TextField(null=True, default=None)
+    date = fields.DatetimeField(null=True, default=None, auto_now_add=True)
+
+    def __str__(self) -> str:
+        return str(self.discord_id)
