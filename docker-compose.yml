@@ -105,7 +105,7 @@ services:
   #
   # gateway-proxy:
   #   container_name: gateway_proxy
-  #   image: docker.io/gelbpunkt/gateway-proxy:x86-64
+  #   image: ghcr.io/martinebot/gateway-proxy:x86-64
   #   restart: always
   #   volumes:
   #     - ./gatewayproxy/config.json:/config.json

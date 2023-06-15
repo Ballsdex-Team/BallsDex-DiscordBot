@@ -21,6 +21,9 @@ class Settings:
         Discord token for the bot to connect
     gateway_url: str | None
         The URL of the Discord gateway that this instance of the bot should connect to and use.
+    shard_count: int | None
+        The number of shards to use for this bot instance.
+        Must be equal to the one set in the gateway proxy if used.
     prefix: str
         Prefix for text commands, mostly unused. Defaults to "b."
     collectible_name: str
@@ -49,6 +52,7 @@ class Settings:
 
     bot_token: str = ""
     gateway_url: str | None = None
+    shard_count: int | None = None
     prefix: str = "b."
 
     collectible_name: str = "countryball"
@@ -84,6 +88,7 @@ def read_settings(path: "Path"):
 
     settings.bot_token = content["discord-token"]
     settings.gateway_url = content.get("gateway-url")
+    settings.shard_count = content.get("shard-count")
     settings.prefix = content["text-prefix"]
     settings.team_owners = content.get("owners", {}).get("team-members-are-owners", False)
     settings.co_owners = content.get("owners", {}).get("co-owners", [])

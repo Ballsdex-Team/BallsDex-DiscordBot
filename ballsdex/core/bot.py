@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-import discord
+import asyncio
 import logging
-import yarl
 import math
-
-from rich import print
 from typing import cast
 
+import aiohttp
+import discord
+import discord.gateway
 from discord import app_commands
 from discord.ext import commands
-from discord.gateway import DiscordWebSocket
+from rich import print
 
-from ballsdex.settings import settings
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.models import BlacklistedGuild, BlacklistedID, Special, Ball, balls, specials
 from ballsdex.core.commands import Core
+from ballsdex.settings import settings
 
 log = logging.getLogger("ballsdex.core.bot")
 
@@ -46,12 +46,7 @@ class BallsDexBot(commands.AutoShardedBot):
     BallsDex Discord bot
     """
 
-    def __init__(
-        self,
-        command_prefix: str,
-        dev: bool = False,
-        **options,
-    ):
+    def __init__(self, command_prefix: str, dev: bool = False, **options):
         # An explaination for the used intents
         # guilds: needed for basically anything, the bot needs to know what guilds it has
         # and accordingly enable automatic spawning in the enabled ones
@@ -121,29 +116,34 @@ class BallsDexBot(commands.AutoShardedBot):
         for blacklisted_id in await BlacklistedGuild.all().only("discord_id"):
             self.blacklist_guild.add(blacklisted_id.discord_id)
 
-    async def launch_shards(self) -> None:
-        # override to add a log call on the number of shards that needs connecting
-        if self.is_closed():
+    async def gateway_healthy(self) -> bool:
+        """Check whether or not the gateway proxy is ready and healthy."""
+        if settings.gateway_url is None:
+            raise RuntimeError("This is only available on the production bot instance.")
+
+        try:
+            base_url = str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY).replace(
+                "ws://", "http://"
+            )
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{base_url}/health", timeout=10) as resp:
+                    return resp.status == 200
+        except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
+            return False
+
+    async def setup_hook(self) -> None:
+        log.info("Starting up with %s shards...", self.shard_count)
+        if settings.gateway_url is None:
             return
 
-        if self.shard_count is None:
-            self.shard_count: int
-            self.shard_count, gateway_url = await self.http.get_bot_gateway()
-            log.info(
-                f"Logged in to Discord, initiating connection. {self.shard_count} shards needed"
-            )
-            gateway = yarl.URL(gateway_url)
-        else:
-            gateway = DiscordWebSocket.DEFAULT_GATEWAY
+        while True:
+            response = await self.gateway_healthy()
+            if response is True:
+                log.info("Gateway proxy is ready!")
+                break
 
-        self._connection.shard_count = self.shard_count
-
-        shard_ids = self.shard_ids or range(self.shard_count)
-        self._connection.shard_ids = shard_ids
-
-        for shard_id in shard_ids:
-            initial = shard_id == shard_ids[0]
-            await self.launch_shard(gateway, shard_id, initial=initial)
+            log.warning("Gateway proxy is not ready yet, waiting 30 more seconds...")
+            await asyncio.sleep(30)
 
     async def on_ready(self):
         assert self.user

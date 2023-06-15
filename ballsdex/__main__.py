@@ -196,6 +196,19 @@ def bot_exception_handler(bot: BallsDexBot, bot_task: asyncio.Future):
         asyncio.create_task(shutdown_handler(bot))
 
 
+class RemoveWSBehindMsg(logging.Filter):
+    """Filter used when gateway proxy is set, the "behind" message is meaningless in this case."""
+
+    def __init__(self):
+        super().__init__(name="discord.gateway")
+
+    def filter(self, record):
+        if record.levelname == "WARNING" and "Can't keep up" in record.msg:
+            return False
+
+        return True
+
+
 def init_logger(disable_rich: bool = False, debug: bool = False):
     formatter = logging.Formatter(
         "[{asctime}] {levelname} {name}: {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{"
@@ -276,6 +289,7 @@ def main():
         if settings.gateway_url is not None:
             log.info("Using custom gateway URL: %s", settings.gateway_url)
             patch_gateway(settings.gateway_url)
+            logging.getLogger("discord.gateway").addFilter(RemoveWSBehindMsg())
 
         prefix = settings.prefix
 
@@ -287,7 +301,9 @@ def main():
         log.debug("Tortoise ORM and database ready.")
 
         bot = BallsDexBot(
-            command_prefix=when_mentioned_or(prefix), dev=cli_flags.dev  # type: ignore
+            command_prefix=when_mentioned_or(prefix),
+            dev=cli_flags.dev,  # type: ignore
+            shard_count=settings.shard_count,
         )
 
         exc_handler = functools.partial(global_exception_handler, bot)
