@@ -12,7 +12,6 @@ from discord import app_commands
 from discord.ext import commands
 from rich import print
 
-from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.models import BlacklistedGuild, BlacklistedID, Special, Ball, balls, specials
