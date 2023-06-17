@@ -12,7 +12,7 @@ python = "^3.11"
 uvloop = { version = "^0.17.0", markers = "sys_platform != 'win32'" }
 
 # discord
-"discord.py" = "^2.2.3"
+"discord.py" = "^2.3.0"
 
 # fastapi
 fastapi = "^0.95.0"
