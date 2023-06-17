@@ -31,6 +31,7 @@ class DonationRequest(View):
         new_player: Player,
     ):
         super().__init__(timeout=120)
+        self.bot = bot
         self.original_interaction = interaction
         self.countryball = countryball
         self.new_player = new_player
@@ -47,6 +48,7 @@ class DonationRequest(View):
         for item in self.children:
             item.disabled = True
         await self.original_interaction.followup.edit_message("@original", view=self)
+        self.bot.locked_balls.remove(self.countryball.id)
 
     @button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
@@ -77,6 +79,7 @@ class DonationRequest(View):
             content=interaction.message.content + "\n\N{CROSS MARK} The donation was denied.",
             view=self,
         )
+        self.bot.locked_balls.remove(self.countryball.id)
 
 
 class SortingChoices(enum.Enum):
