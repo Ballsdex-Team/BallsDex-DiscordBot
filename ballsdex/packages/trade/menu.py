@@ -323,6 +323,9 @@ class TradeMenu:
         if self.task:
             self.task.cancel()
 
+        for countryball in self.trader1.proposal + self.trader2.proposal:
+            self.bot.locked_balls.remove(countryball.id)
+
         self.current_view.stop()
         for item in self.current_view.children:
             item.disabled = True
