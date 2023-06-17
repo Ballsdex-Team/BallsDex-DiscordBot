@@ -67,6 +67,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self._shutdown = 0
         self.blacklist: set[int] = set()
         self.blacklist_guild: set[int] = set()
+        self.locked_balls: set[int] = set()
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(
