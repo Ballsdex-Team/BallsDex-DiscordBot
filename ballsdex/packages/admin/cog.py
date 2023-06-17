@@ -39,7 +39,9 @@ class Admin(commands.GroupCog):
     blacklist_guild = app_commands.Group(
         name="blacklistguild", description="Guild blacklist management"
     )
-    balls = app_commands.Group(name="balls", description="Balls management")
+    balls = app_commands.Group(
+        name=settings.players_group_cog_name, description="Balls management"
+    )
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -362,12 +364,12 @@ class Admin(commands.GroupCog):
             special=special,
         )
         await interaction.followup.send(
-            f"`{ball.country}` ball was successfully given to `{user}`.\n"
+            f"`{ball.country}` {settings.collectible_name} was successfully given to `{user}`.\n"
             f"Special: `{special.name if special else None}` • ATK:`{instance.attack_bonus:+d}` • "
             f"HP:`{instance.health_bonus:+d}` • Shiny: `{instance.shiny}`"
         )
         log.info(
-            f"{interaction.user} gave ball {ball.country} to {user}. "
+            f"{interaction.user} gave {settings.collectible_name} {ball.country} to {user}. "
             f"Special={special.name if special else None} ATK={instance.attack_bonus:+d} "
             f"HP={instance.health_bonus:+d} shiny={instance.shiny}"
         )
@@ -676,6 +678,7 @@ class Admin(commands.GroupCog):
                     f"{blacklisted.reason}",
                     ephemeral=True,
                 )
+
     @balls.command(name="info")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def balls_info(self, interaction: discord.Interaction, ball_id: str):
@@ -691,7 +694,7 @@ class Admin(commands.GroupCog):
             ballIdConverted = int(ball_id, 16)
         except ValueError:
             await interaction.response.send_message(
-                "" "The ball ID you gave is not valid.", ephemeral=True
+                f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
             )
             return
         try:
@@ -700,14 +703,14 @@ class Admin(commands.GroupCog):
             )
         except DoesNotExist:
             await interaction.response.send_message(
-                "The ball ID you gave does not exist.", ephemeral=True
+                f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
             )
             return
 
         await interaction.response.send_message(
-            f"**Ball ID:** {ball.id}\n"
+            f"**{settings.collectible_name.title()} ID:** {ball.id}\n"
             f"**Player:** {ball.player}\n"
-            f"**Country:** {ball.countryball}\n"
+            f"**Name:** {ball.countryball}\n"
             f"**Attack bonus:** {ball.attack_bonus}\n"
             f"**Health bonus:** {ball.health_bonus}\n"
             f"**Shiny:** {ball.shiny}\n"
@@ -731,18 +734,20 @@ class Admin(commands.GroupCog):
             ballIdConverted = int(ball_id, 16)
         except ValueError:
             await interaction.response.send_message(
-                "The ball ID you gave is not valid.", ephemeral=True
+                f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
             )
             return
         try:
             ball = await BallInstance.get(id=ballIdConverted)
         except DoesNotExist:
             await interaction.response.send_message(
-                "The ball ID you gave does not exist.", ephemeral=True
+                f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
             )
             return
         await ball.delete()
-        await interaction.response.send_message(f"Ball {ball_id} deleted.", ephemeral=True)
+        await interaction.response.send_message(
+            f"{settings.collectible_name.title()} {ball_id} deleted.", ephemeral=True
+        )
 
     @balls.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -763,21 +768,22 @@ class Admin(commands.GroupCog):
             ballIdConverted = int(ball_id, 16)
         except ValueError:
             await interaction.response.send_message(
-                "The ball ID you gave is not valid.", ephemeral=True
+                f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
             )
             return
         try:
             ball = await BallInstance.get(id=ballIdConverted)
         except DoesNotExist:
             await interaction.response.send_message(
-                "The ball ID you gave does not exist.", ephemeral=True
+                f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
             )
             return
         player, _ = await Player.get_or_create(discord_id=user.id)
         ball.player = player
         await ball.save()
         await interaction.response.send_message(
-            f"Ball {ball.countryball} transferred to {user}.", ephemeral=True
+            f"{settings.collectible_name.title()} {ball.countryball} transferred to {user}.",
+            ephemeral=True,
         )
 
     @balls.command(name="reset")
@@ -800,7 +806,7 @@ class Admin(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
         view = ConfirmChoiceView(interaction)
         await interaction.followup.send(
-            f"Are you sure you want to delete {user}'s balls?",
+            f"Are you sure you want to delete {user}'s {settings.collectible_name}s?",
             view=view,
             ephemeral=True,
         )
@@ -808,7 +814,9 @@ class Admin(commands.GroupCog):
         if not view.value:
             return
         await BallInstance.filter(player=player).delete()
-        await interaction.followup.send(f"{user}'s balls have been reset.", ephemeral=True)
+        await interaction.followup.send(
+            f"{user}'s {settings.collectible_name}s have been reset.", ephemeral=True
+        )
 
     @balls.command(name="count")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -848,11 +856,9 @@ class Admin(commands.GroupCog):
         plural = "s" if len(balls) > 1 else ""
         if user:
             await interaction.response.send_message(
-                f"{user} has {len(balls)} {country}ball{plural}.",
-                ephemeral=True,
+                f"{user} has {len(balls)} {country}{settings.collectible_name}{plural}."
             )
         else:
             await interaction.response.send_message(
-                f"There are {len(balls)} {country}balls{plural}.",
-                ephemeral=True,
+                f"There are {len(balls)} {country}{settings.collectible_name}{plural}."
             )
