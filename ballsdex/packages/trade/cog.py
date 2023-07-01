@@ -177,7 +177,7 @@ class Trade(commands.GroupCog):
             )
             return
 
-        self.bot.locked_balls.add(countryball.id)
+        self.bot.locked_balls[countryball.id] = None
         trader.proposal.append(countryball)
         await interaction.followup.send(
             f"{countryball.countryball.country} added.", ephemeral=True
@@ -218,4 +218,4 @@ class Trade(commands.GroupCog):
         await interaction.response.send_message(
             f"{countryball.countryball.country} removed.", ephemeral=True
         )
-        self.bot.locked_balls.remove(countryball.id)
+        del self.bot.locked_balls[countryball.id]

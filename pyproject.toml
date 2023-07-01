@@ -29,6 +29,7 @@ python-dateutil = "^2.8.2"
 Pillow = "^9.4.0"
 aerich = "^0.6.3"
 pyyaml = "^6.0"
+cachetools = "^5.3.1"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.2.1"
