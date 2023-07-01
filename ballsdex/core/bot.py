@@ -68,7 +68,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self._shutdown = 0
         self.blacklist: set[int] = set()
         self.blacklist_guild: set[int] = set()
-        self.locked_balls = TTLCache(ttl=60 * 30)
+        self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(
