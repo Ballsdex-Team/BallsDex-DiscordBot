@@ -851,14 +851,75 @@ class Admin(commands.GroupCog):
             filters["special"] = special
         if user:
             filters["player__discord_id"] = user.id
+        await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters)
-        country = ball.country + " " if ball else None
+        country = f"{ball.name} " if ball else ""
         plural = "s" if len(balls) > 1 else ""
+        special = f"{special.name} " if special else ""
         if user:
-            await interaction.response.send_message(
-                f"{user} has {len(balls)} {country}{settings.collectible_name}{plural}."
+            await interaction.followup.send(
+                f"{user} has {len(balls)} {special}{country}{settings.collectible_name}{plural}."
             )
         else:
-            await interaction.response.send_message(
-                f"There are {len(balls)} {country}{settings.collectible_name}{plural}."
+            await interaction.followup.send(
+                f"There are {len(balls)} {special}{country}{settings.collectible_name}{plural}."
             )
+
+    @balls.command(name="edit")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def balls_edit(
+        self,
+        interaction: discord.Interaction,
+        ball_id: str,
+        shiny: bool = None,
+        special: SpecialTransform = None,
+        ball: BallTransform = None,
+        attack_bonus: int = None,
+        health_bonus: int = None,
+    ):
+        """
+        Edit a ball.
+
+        Parameters
+        ----------
+        ball_id: str
+            The ID of the ball you want to edit.
+        shiny: bool
+            Whether the ball is shiny or not.
+        special: Special
+            The special background of the ball.
+        ball: Ball
+            The ball you want to edit to.
+        attack_bonus: int
+            The attack bonus you want to set.
+        health_bonus: int
+            The health bonus you want to set.
+        """
+        try:
+            ballIdConverted = int(ball_id, 16)
+        except ValueError:
+            await interaction.response.send_message(
+                f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
+            )
+            return
+        try:
+            ball = await BallInstance.get(id=ballIdConverted)
+        except DoesNotExist:
+            await interaction.response.send_message(
+                f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
+            )
+            return
+        if shiny is not None:
+            ball.shiny = shiny
+        if special:
+            ball.special = special
+        if ball:
+            ball.ball = ball
+        if attack_bonus:
+            ball.attack_bonus = attack_bonus
+        if health_bonus:
+            ball.health_bonus = health_bonus
+        await ball.save()
+        await interaction.response.send_message(
+            f"{settings.collectible_name.title()} {ball_id} edited.", ephemeral=True
+        )
