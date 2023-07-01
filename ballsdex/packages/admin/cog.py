@@ -851,14 +851,16 @@ class Admin(commands.GroupCog):
             filters["special"] = special
         if user:
             filters["player__discord_id"] = user.id
+        await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters)
-        country = ball.country + " " if ball else None
+        country = f"{ball.country} " if ball else ""
         plural = "s" if len(balls) > 1 else ""
+        special = f"{special.name} " if special else ""
         if user:
-            await interaction.response.send_message(
-                f"{user} has {len(balls)} {country}{settings.collectible_name}{plural}."
+            await interaction.followup.send(
+                f"{user} has {len(balls)} {special}{country}{settings.collectible_name}{plural}."
             )
         else:
-            await interaction.response.send_message(
-                f"There are {len(balls)} {country}{settings.collectible_name}{plural}."
+            await interaction.followup.send(
+                f"There are {len(balls)} {special}{country}{settings.collectible_name}{plural}."
             )
