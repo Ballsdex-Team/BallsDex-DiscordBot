@@ -853,7 +853,7 @@ class Admin(commands.GroupCog):
             filters["player__discord_id"] = user.id
         await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters)
-        country = f"{ball.name} " if ball else ""
+        country = f"{ball.country} " if ball else ""
         plural = "s" if len(balls) > 1 else ""
         special = f"{special.name} " if special else ""
         if user:
