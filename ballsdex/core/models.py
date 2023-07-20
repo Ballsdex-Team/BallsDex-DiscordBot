@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
 
 
-balls: list[Ball] = []
-specials: list[Special] = []
+balls: dict[int, Ball] = {}
+specials: dict[int, Special] = {}
 
 
 async def lower_catch_names(
@@ -188,21 +188,11 @@ class BallInstance(models.Model):
 
     @property
     def countryball(self) -> Ball:
-        if balls:
-            try:
-                return next(filter(lambda ball: ball.pk == self.ball_id, balls))
-            except StopIteration:
-                pass
-        return self.ball
+        return balls.get(self.ball_id, self.ball)
 
     @property
     def specialcard(self) -> Special:
-        if specials:
-            try:
-                return next(filter(lambda x: x.pk == self.special_id, specials))
-            except StopIteration:
-                pass
-        return self.special
+        return specials.get(self.special_id, self.special)
 
     def __str__(self) -> str:
         return self.to_string()

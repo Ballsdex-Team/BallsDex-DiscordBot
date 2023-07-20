@@ -103,12 +103,12 @@ class BallsDexBot(commands.AutoShardedBot):
     async def load_cache(self):
         balls.clear()
         for ball in await Ball.all():
-            balls.append(ball)
+            balls[ball.pk] = ball
         log.info(f"Loaded {len(balls)} balls")
 
         specials.clear()
         for special in await Special.all():
-            specials.append(special)
+            specials[special.pk] = special
         log.info(f"Loaded {len(specials)} specials")
 
         self.blacklist = set()

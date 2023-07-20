@@ -19,7 +19,7 @@ class CountryBall:
 
     @classmethod
     async def get_random(cls):
-        countryballs = list(filter(lambda m: m.enabled, balls))
+        countryballs = list(filter(lambda m: m.enabled, balls.values()))
         if not countryballs:
             raise RuntimeError("No ball to spawn")
         rarities = [x.rarity for x in countryballs]
