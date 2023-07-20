@@ -54,6 +54,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             possible_names = (self.ball.name.lower(),)
         if self.name.value.lower().strip() in possible_names:
             self.ball.catched = True
+            await interaction.response.defer(thinking=True)
             ball, has_caught_before = await self.catch_ball(
                 cast("BallsDexBot", interaction.client), interaction.user
             )
@@ -69,7 +70,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                     "that has been added to your completion!"
                 )
 
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{interaction.user.mention} You caught **{self.ball.name}!** "
                 f"(`#{ball.pk:0X}`)\n\n{special}",
             )
