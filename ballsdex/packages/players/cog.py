@@ -167,10 +167,16 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
-    async def completion(self, interaction: discord.Interaction):
+    async def completion(self, interaction: discord.Interaction, user: discord.User | None = None):
         """
         Show your current completion of the BallsDex.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user whose completion you want to view, if not yours.
         """
+        user = user or interaction.user
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
@@ -186,9 +192,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         # Set of ball IDs owned by the player
         owned_countryballs = set(
             x[0]
-            for x in await BallInstance.filter(
-                player__discord_id=interaction.user.id, ball__enabled=True
-            )
+            for x in await BallInstance.filter(player__discord_id=user.id, ball__enabled=True)
             .distinct()  # Do not query everything
             .values_list("ball_id")
         )
@@ -248,9 +252,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
-        source.embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
-        )
+        source.embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
 
         pages = Pages(source=source, interaction=interaction, compact=True)
         await pages.start()
