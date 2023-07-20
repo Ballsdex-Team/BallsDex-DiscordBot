@@ -181,6 +181,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
+        await interaction.response.defer(thinking=True)
 
         # Set of ball IDs owned by the player
         owned_countryballs = set(
