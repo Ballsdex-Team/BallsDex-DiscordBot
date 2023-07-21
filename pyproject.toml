@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "ballsdex"
+name = "miksidex"
 version = "1.0.0a1"
 description = ""
-authors = ["laggron42 <laggron42@gmail.com>"]
+authors = ["laggron42 <laggron42@gmail.com>","Käsemann <miksidex-discordbot@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]

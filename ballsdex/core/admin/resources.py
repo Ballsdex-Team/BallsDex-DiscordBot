@@ -7,7 +7,6 @@ from fastapi_admin.resources import Field, Link, Model, Action
 from fastapi_admin.widgets import displays, filters, inputs
 from starlette.requests import Request
 from ballsdex.core.models import (
-    Regime,
     Economy,
     Special,
     BallInstance,
@@ -87,33 +86,80 @@ class SpecialResource(Model):
         "name",
         "catch_phrase",
         Field(
-            name="start_date",
-            label="Start date of the event",
-            display=displays.DateDisplay(),
-            input_=inputs.Date(help_text="Date when special balls will start spawning"),
-        ),
-        Field(
-            name="end_date",
-            label="End date of the event",
-            display=displays.DateDisplay(),
-            input_=inputs.Date(help_text="Date when special balls will stop spawning"),
-        ),
-        "rarity",
-        Field(
-            name="democracy_card",
-            label="Democracy card",
+            name="perfect_card",
+            label="Perfect card",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
         Field(
-            name="dictatorship_card",
-            label="Dictatorship card",
+            name="unperfect_card",
+            label="Unperfect card",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
         Field(
-            name="union_card",
-            label="Union card",
+            name="zeros_card",
+            label="Zeros card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="twins_card",
+            label="Twins card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="veryverylow_card",
+            label="Veryverylow card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="verylow_card",
+            label="Verylow card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="low_card",
+            label="Low card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="lillow_card",
+            label="Lillow card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="veryveryhigh_card",
+            label="Veryveryhigh card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="veryhigh_card",
+            label="Veryhigh card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="high_card",
+            label="High card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="lilhigh_card",
+            label="Lilhigh card",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+        Field(
+            name="other_card",
+            label="Other card",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
@@ -149,7 +195,7 @@ class BallResource(Model):
             search_mode="icontains",
             placeholder="Search for balls",
         ),
-        filters.Enum(enum=Regime, name="regime", label="Regime"),
+        # filters.Enum(enum=Regime, name="regime", label="Regime"),
         filters.Enum(enum=Economy, name="economy", label="Economy"),
         filters.Boolean(name="enabled", label="Enabled"),
         filters.Boolean(name="tradeable", label="Tradeable"),
@@ -158,7 +204,7 @@ class BallResource(Model):
         "country",
         "short_name",
         "catch_names",
-        "regime",
+        # "regime",
         "economy",
         "health",
         "attack",
@@ -251,6 +297,7 @@ class BallInstanceResource(Model):
         "special",
         "health_bonus",
         "attack_bonus",
+        "statbg",
     ]
 
 

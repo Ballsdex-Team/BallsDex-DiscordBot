@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, cast
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 
 from ballsdex.settings import settings
-from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID, BlacklistedGuild
+from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID, BlacklistedGuild, StatBG
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.packages.countryballs.countryball import CountryBall
@@ -328,6 +328,7 @@ class Admin(commands.GroupCog):
         shiny: bool | None = None,
         health_bonus: int | None = None,
         attack_bonus: int | None = None,
+        
     ):
         """
         Give the specified countryball to a player.
@@ -362,6 +363,7 @@ class Admin(commands.GroupCog):
             attack_bonus=attack_bonus or random.randint(-20, 20),
             health_bonus=health_bonus or random.randint(-20, 20),
             special=special,
+            statbg=BallInstance.statbg,
         )
         await interaction.followup.send(
             f"`{ball.country}` {settings.collectible_name} was successfully given to `{user}`.\n"

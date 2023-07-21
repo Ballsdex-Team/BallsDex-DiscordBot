@@ -111,6 +111,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             special=special,
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
+            statbg=BallInstance.statbg,
         )
         log.debug(
             f"{user} caught {settings.collectible_name} {self.ball.model}, {shiny=} {special=}"

@@ -3,7 +3,7 @@ from pathlib import Path
 import textwrap
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from typing import TYPE_CHECKING
-from ballsdex.core.models import Economy, Regime
+from ballsdex.core.models import Economy, StatBG, BallInstance
 
 if TYPE_CHECKING:
     from ballsdex.core.models import BallInstance
@@ -35,20 +35,45 @@ def draw_card(ball_instance: "BallInstance"):
         ball_health = (255, 255, 255, 255)
     elif special_image := ball_instance.special_card:
         image = Image.open("." + special_image)
-    elif ball.regime == Regime.DEMOCRACY:
-        image = Image.open(str(SOURCES_PATH / "democracy.png"))
-    elif ball.regime == Regime.DICTATORSHIP:
-        image = Image.open(str(SOURCES_PATH / "dictatorship.png"))
-        ball_health = (131, 98, 240, 255)
-    elif ball.regime == Regime.UNION:
-        image = Image.open(str(SOURCES_PATH / "union.png"))
+    elif ball_instance.statbg == StatBG.PERFECT:
+        image = Image.open(str(SOURCES_PATH / "BG1.png"))
+    elif ball_instance.statbg == StatBG.UNPERFECT:
+        image = Image.open(str(SOURCES_PATH / "BG2.png"))
+    elif ball_instance.statbg == StatBG.ZEROS:
+        image = Image.open(str(SOURCES_PATH / "BG12.png"))
+    elif ball_instance.statbg == StatBG.TWINS:
+        image = Image.open(str(SOURCES_PATH / "BG3.png"))
+    elif ball_instance.statbg == StatBG.VERYVERYLOW:
+        image = Image.open(str(SOURCES_PATH / "BG4.png"))
+    elif ball_instance.statbg == StatBG.VERYLOW:
+        image = Image.open(str(SOURCES_PATH / "BG5.png"))
+    elif ball_instance.statbg == StatBG.LOW:
+        image = Image.open(str(SOURCES_PATH / "BG6.png"))
+    elif ball_instance.statbg == StatBG.LILLOW:
+        image = Image.open(str(SOURCES_PATH / "BG7.png"))
+    elif ball_instance.statbg == StatBG.VERYVERYHIGH:
+        image = Image.open(str(SOURCES_PATH / "BG8.png"))
+    elif ball_instance.statbg == StatBG.VERYHIGH:
+        image = Image.open(str(SOURCES_PATH / "BG9.png"))
+    elif ball_instance.statbg == StatBG.HIGH:
+        image = Image.open(str(SOURCES_PATH / "BG10.png"))
+    elif ball_instance.statbg == StatBG.LILHIGH:
+        image = Image.open(str(SOURCES_PATH / "BG11.png"))
+    elif ball_instance.statbg == StatBG.OTHER:
+        image = Image.open(str(SOURCES_PATH / "BG13.png"))
     else:
-        raise RuntimeError(f"Regime unknown: {ball.regime}")
+        raise RuntimeError(f"statbg unknown: {ball_instance.statbg}")
 
-    if ball.economy == Economy.CAPITALIST:
-        icon = Image.open(str(SOURCES_PATH / "capitalist.png"))
-    elif ball.economy == Economy.COMMUNIST or ball.economy == Economy.ANARCHY:
-        icon = Image.open(str(SOURCES_PATH / "communist.png"))
+    if ball.economy == Economy.AFOA:
+        icon = Image.open(str(SOURCES_PATH / "afoa.png"))
+    elif ball.economy == Economy.AFOE:
+        icon = Image.open(str(SOURCES_PATH / "afoe.png"))
+    elif ball.economy == Economy.AFOS:
+        icon = Image.open(str(SOURCES_PATH / "afos.png"))
+    elif ball.economy == Economy.AHOE:
+        icon = Image.open(str(SOURCES_PATH / "ahoe.png"))
+    elif ball.economy == Economy.LEGION:
+        icon = Image.open(str(SOURCES_PATH / "legion.png"))
     else:
         raise RuntimeError(f"Economy unknown: {ball.economy}")
 

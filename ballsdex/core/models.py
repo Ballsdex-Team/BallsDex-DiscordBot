@@ -58,16 +58,28 @@ class GuildConfig(models.Model):
     )
 
 
-class Regime(IntEnum):
-    DEMOCRACY = 1
-    DICTATORSHIP = 2
-    UNION = 3
+class StatBG(IntEnum):
+    PERFECT = 1
+    UNPERFECT = 2
+    ZEROS = 3
+    TWINS = 4
+    VERYVERYLOW = 5
+    VERYLOW = 6
+    LOW = 7
+    LILLOW = 8
+    VERYVERYHIGH = 9
+    VERYHIGH = 10
+    HIGH = 11
+    LILHIGH = 12
+    OTHER = 13
 
 
 class Economy(IntEnum):
-    CAPITALIST = 1
-    COMMUNIST = 2
-    ANARCHY = 3
+   AFOA = 1
+   AFOE = 2
+   AFOS = 3
+   AHOE = 4
+   LEGION = 5
 
 
 class Special(models.Model):
@@ -83,9 +95,19 @@ class Special(models.Model):
     rarity = fields.FloatField(
         description="Value between 0 and 1, chances of using this special background."
     )
-    democracy_card = fields.CharField(max_length=200)
-    dictatorship_card = fields.CharField(max_length=200)
-    union_card = fields.CharField(max_length=200)
+    perfect_card = fields.CharField(max_length=200)
+    unperfect_card = fields.CharField(max_length=200)
+    zeros_card = fields.CharField(max_length=200)
+    twins_card = fields.CharField(max_length=200)
+    veryverylow_card = fields.CharField(max_length=200)
+    verylow_card = fields.CharField(max_length=200)
+    low_card = fields.CharField(max_length=200)
+    lillow_card = fields.CharField(max_length=200)
+    veryveryhigh_card = fields.CharField(max_length=200)
+    veryhigh_card = fields.CharField(max_length=200)
+    high_card = fields.CharField(max_length=200)
+    lilhigh_card = fields.CharField(max_length=200)
+    other_card = fields.CharField(max_length=200)
     emoji = fields.CharField(
         max_length=20,
         description="Either a unicode character or a discord emoji ID",
@@ -95,13 +117,33 @@ class Special(models.Model):
     def __str__(self) -> str:
         return self.name
 
-    def get_background(self, regime: Regime) -> str | None:
-        if regime == Regime.DEMOCRACY:
-            return self.democracy_card
-        elif regime == Regime.DICTATORSHIP:
-            return self.dictatorship_card
-        elif regime == Regime.UNION:
-            return self.union_card
+    def get_background(self, statbg: StatBG) -> str | None:
+        if statbg == StatBG.PERFECT:
+            return self.perfect_card
+        elif statbg == StatBG.UNPERFECT:
+            return self.unperfect_card
+        elif statbg == StatBG.ZEROS:
+            return self.zeros_card
+        elif statbg == StatBG.TWINS:
+            return self.twins_card
+        elif statbg == StatBG.VERYVERYLOW:
+            return self.veryverylow_card
+        elif statbg == StatBG.VERYLOW:
+            return self.verylow_card
+        elif statbg == StatBG.LOW:
+            return self.low_card
+        elif statbg == StatBG.LILLOW:
+            return self.lillow_card
+        elif statbg == StatBG.VERYVERYHIGH:
+            return self.veryveryhigh_card
+        elif statbg == StatBG.VERYHIGH:
+            return self.veryhigh_card
+        elif statbg == StatBG.HIGH:
+            return self.high_card
+        elif statbg == StatBG.LILHIGH:
+            return self.lilhigh_card
+        elif statbg == StatBG.OTHER:
+            return self.other_card
         else:
             return None
 
@@ -114,7 +156,6 @@ class Ball(models.Model):
         default=None,
         description="Additional possible names for catching this ball, separated by semicolons",
     )
-    regime = fields.IntEnumField(Regime, description="Political regime of this country")
     economy = fields.IntEnumField(Economy, description="Economical regime of this country")
     health = fields.IntField(description="Ball health stat")
     attack = fields.IntField(description="Ball attack stat")
@@ -164,6 +205,7 @@ class BallInstance(models.Model):
         "models.Player", null=True, default=None, on_delete=fields.SET_NULL
     )
     favorite = fields.BooleanField(default=False)
+    statbg = fields.IntEnumField(StatBG, description="Background for a card based on stats")
 
     class Meta:
         unique_together = ("player", "id")
@@ -177,12 +219,46 @@ class BallInstance(models.Model):
     def health(self) -> int:
         bonus = int(self.countryball.health * self.health_bonus * 0.01)
         return self.countryball.health + bonus
+    
+    @property
+    def statbg(self) -> int:
+        if self.attack_bonus == self.health_bonus:
+            if self.attack_bonus == 20:
+                return StatBG.PERFECT
+            elif self.attack_bonus == -20:
+                return StatBG.UNPERFECT
+            elif self.attack_bonus == 0:
+                return StatBG.ZEROS
+            else:
+                return StatBG.TWINS
+        elif self.attack_bonus < 0 and self.health_bonus < 0:
+            statsum = self.attack_bonus + self.health_bonus
+            if statsum < -30:
+                return StatBG.VERYVERYLOW
+            elif statsum < -20:
+                return StatBG.VERYLOW
+            elif statsum < -10:
+                return StatBG.LOW
+            else:
+                return StatBG.LILLOW
+        elif self.attack_bonus > 0 and self.health_bonus > 0:
+            statsum = self.attack_bonus + self.health_bonus
+            if statsum > 30:
+                return StatBG.VERYVERYHIGH
+            elif statsum > 20:
+                return StatBG.VERYHIGH
+            elif statsum > 10:
+                return StatBG.HIGH
+            else:
+                return StatBG.LILHIGH
+        else:
+            return StatBG.OTHER
 
     @property
     def special_card(self) -> str | None:
         if self.specialcard:
             return (
-                self.specialcard.get_background(self.countryball.regime)
+                self.specialcard.get_background(self.statbg)
                 or self.countryball.collection_card
             )
 
