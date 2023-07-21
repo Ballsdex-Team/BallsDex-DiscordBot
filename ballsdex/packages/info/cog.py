@@ -39,7 +39,7 @@ class Info(commands.Cog):
 
     async def _get_10_balls_emojis(self) -> list[discord.Emoji]:
         balls: list[Ball] = random.choices(
-            [x for x in countryballs if x.enabled], k=min(10, len(countryballs))
+            [x for x in countryballs.values() if x.enabled], k=min(10, len(countryballs))
         )
         emotes: list[discord.Emoji] = []
 
@@ -64,7 +64,7 @@ class Info(commands.Cog):
             log.error("Failed to fetch 10 balls emotes", exc_info=True)
             balls = []
 
-        balls_count = len([x for x in countryballs if x.enabled])
+        balls_count = len([x for x in countryballs.values() if x.enabled])
         players_count = await row_count_estimate("player")
         balls_instances_count = await row_count_estimate("ballinstance")
 
