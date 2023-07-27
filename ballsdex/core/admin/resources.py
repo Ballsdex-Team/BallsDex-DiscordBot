@@ -1,5 +1,4 @@
 import os
-import json
 from fastapi_admin.app import app
 from fastapi_admin.enums import Method
 from fastapi_admin.file_upload import FileUpload
@@ -28,8 +27,6 @@ class Home(Link):
 
 
 upload = FileUpload(uploads_dir=os.path.join(".", "static", "uploads"))
-with open("ballsdex/core/admin/capacity-ref.json") as f:
-    ref = json.loads(f.read())
 
 
 @app.register
