@@ -100,20 +100,8 @@ class SpecialResource(Model):
         ),
         "rarity",
         Field(
-            name="democracy_card",
-            label="Democracy card",
-            display=displays.Image(width="40"),
-            input_=inputs.Image(upload=upload, null=True),
-        ),
-        Field(
-            name="dictatorship_card",
-            label="Dictatorship card",
-            display=displays.Image(width="40"),
-            input_=inputs.Image(upload=upload, null=True),
-        ),
-        Field(
-            name="union_card",
-            label="Union card",
+            name="background",
+            label="Special background",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
@@ -135,6 +123,42 @@ class SpecialResource(Model):
 
 
 @app.register
+class RegimeResource(Model):
+    label = "Regime"
+    model = Regime
+    icon = "fas fa-flag"
+    page_pre_title = "regime list"
+    page_title = "Regimes"
+    fields = [
+        "name",
+        Field(
+            name="background",
+            label="Background (1428x2000)",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+    ]
+
+
+@app.register
+class EconomyResource(Model):
+    label = "Economy"
+    model = Economy
+    icon = "fas fa-coins"
+    page_pre_title = "economy list"
+    page_title = "Economies"
+    fields = [
+        "name",
+        Field(
+            name="icon",
+            label="Icon (512x512)",
+            display=displays.Image(width="40"),
+            input_=inputs.Image(upload=upload, null=True),
+        ),
+    ]
+
+
+@app.register
 class BallResource(Model):
     label = "Ball"
     model = Ball
@@ -149,8 +173,8 @@ class BallResource(Model):
             search_mode="icontains",
             placeholder="Search for balls",
         ),
-        filters.Enum(enum=Regime, name="regime", label="Regime"),
-        filters.Enum(enum=Economy, name="economy", label="Economy"),
+        filters.ForeignKey(model=Regime, name="regime", label="Regime"),
+        filters.ForeignKey(model=Economy, name="economy", label="Economy"),
         filters.Boolean(name="enabled", label="Enabled"),
         filters.Boolean(name="tradeable", label="Tradeable"),
     ]
@@ -193,19 +217,6 @@ class BallResource(Model):
             name="capacity_description",
             label="Capacity description",
         ),
-        # Field(
-        #     name="capacity_logic",
-        #     label="Capacity logic",
-        #     input_=inputs.Json(
-        #         null=True,
-        #         options={
-        #             "schema": ref,
-        #             "allowSchemaSuggestions": "true",
-        #             "mode": "tree",
-        #             "modes": ["tree", "view", "form", "code", "text", "preview"],
-        #         },
-        #     ),
-        # ),
     ]
 
     async def get_actions(self, request: Request) -> List[Action]:

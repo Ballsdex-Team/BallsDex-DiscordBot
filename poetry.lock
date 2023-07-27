@@ -621,8 +621,8 @@ uvicorn = {version = "*", extras = ["standard"]}
 [package.source]
 type = "git"
 url = "https://github.com/fastapi-admin/fastapi-admin"
-reference = "5059133b8c68926f93ff78d585bed6ac2ee22e16"
-resolved_reference = "5059133b8c68926f93ff78d585bed6ac2ee22e16"
+reference = "0ed771026c776138aceb4ae98eeb5c976786a193"
+resolved_reference = "0ed771026c776138aceb4ae98eeb5c976786a193"
 
 [[package]]
 name = "filelock"
@@ -1852,4 +1852,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "1f9b29fe484be5dd7dc119676a402397ac96015d74bada84c10e34da6ca973d9"
+content-hash = "e09c985874220dac2263344860efb6f857775c1b081bb2941a9ec4fbb8f9401e"

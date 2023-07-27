@@ -16,7 +16,7 @@ uvloop = { version = "^0.17.0", markers = "sys_platform != 'win32'" }
 
 # fastapi
 fastapi = "^0.95.0"
-fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "5059133b8c68926f93ff78d585bed6ac2ee22e16"}
+fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "0ed771026c776138aceb4ae98eeb5c976786a193"}
 uvicorn = "^0.21.1"
 
 # database ORM

@@ -39,6 +39,11 @@ def init_fastapi_app() -> FastAPI:
         StaticFiles(directory=BASE_DIR / "static"),
         name="static",
     )
+    app.mount(
+        "/ballsdex/core/image_generator/src",
+        StaticFiles(directory=BASE_DIR / "ballsdex/core/image_generator/src"),
+        name="image_gen",
+    )
 
     @app.get("/")
     async def index():

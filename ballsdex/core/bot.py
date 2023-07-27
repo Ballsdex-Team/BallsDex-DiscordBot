@@ -15,7 +15,18 @@ from rich import print
 
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
-from ballsdex.core.models import BlacklistedGuild, BlacklistedID, Special, Ball, balls, specials
+from ballsdex.core.models import (
+    BlacklistedGuild,
+    BlacklistedID,
+    Special,
+    Ball,
+    Regime,
+    Economy,
+    balls,
+    regimes,
+    economies,
+    specials,
+)
 from ballsdex.core.commands import Core
 from ballsdex.settings import settings
 
@@ -105,6 +116,16 @@ class BallsDexBot(commands.AutoShardedBot):
         for ball in await Ball.all():
             balls[ball.pk] = ball
         log.info(f"Loaded {len(balls)} balls")
+
+        regimes.clear()
+        for regime in await Regime.all():
+            regimes[regime.pk] = regime
+        log.info(f"Loaded {len(regimes)} regimes")
+
+        economies.clear()
+        for economy in await Economy.all():
+            economies[economy.pk] = economy
+        log.info(f"Loaded {len(economies)} economies")
 
         specials.clear()
         for special in await Special.all():
