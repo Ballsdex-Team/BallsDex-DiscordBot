@@ -64,9 +64,9 @@ class BallInstanceCache:
             except DoesNotExist:
                 balls = []
             else:
-                balls = await BallInstance.filter(player_id=player.pk).all()
-                for ball in balls:
-                    ball.player = player
+                balls = (
+                    await BallInstance.filter(player=player).select_related("ball", "player").all()
+                )
             cache = ListCache(time, [CachedBallInstance(x) for x in balls])
             self.cache[user.id] = cache
 
@@ -113,9 +113,7 @@ class BallInstanceTransformer(app_commands.Transformer):
         async for ball in self.cache.get(interaction.user, value):
             choices.append(app_commands.Choice(name=ball.description(), value=str(ball.pk)))
         t2 = time.time()
-        log.debug(
-            f"BallInstance autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results"
-        )
+        log.debug(f"Autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
         return choices
 
     async def transform(self, interaction: discord.Interaction, value: str) -> BallInstance | None:
@@ -158,12 +156,11 @@ class BallTransformer(app_commands.Transformer):
         self.cache: ListCache[Ball] | None = None
 
     async def load_cache(self):
-        self.cache = ListCache(time.time(), list(balls.values()))
+        self.cache = ListCache(time.time(), balls)
 
     async def autocomplete(
         self, interaction: discord.Interaction, value: str
     ) -> list[app_commands.Choice[int | float | str]]:
-        t1 = time.time()
         if self.cache is None or time.time() - self.cache.time > 300:
             await self.load_cache()
         choices: list[app_commands.Choice] = []
@@ -172,8 +169,6 @@ class BallTransformer(app_commands.Transformer):
                 choices.append(app_commands.Choice(name=ball.country, value=str(ball.pk)))
                 if len(choices) == 25:
                     break
-        t2 = time.time()
-        log.debug(f"Ball autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
         return choices
 
     async def transform(self, interaction: discord.Interaction, value: str) -> Ball | None:
@@ -183,7 +178,7 @@ class BallTransformer(app_commands.Transformer):
             )
             return None
         try:
-            return balls[int(value)]
+            return next(filter(lambda ball: ball.pk == int(value), balls))
         except (StopIteration, ValueError):
             await interaction.response.send_message(
                 "The ball could not be found. Make sure to use the autocomplete "
@@ -207,7 +202,6 @@ class SpecialTransformer(app_commands.Transformer):
     async def autocomplete(
         self, interaction: discord.Interaction, value: str
     ) -> list[app_commands.Choice[int | float | str]]:
-        t1 = time.time()
         if self.cache is None or time.time() - self.cache.time > 300:
             await self.load_cache()
         choices: list[app_commands.Choice] = []
@@ -216,8 +210,6 @@ class SpecialTransformer(app_commands.Transformer):
                 choices.append(app_commands.Choice(name=event.name, value=str(event.pk)))
                 if len(choices) == 25:
                     break
-        t2 = time.time()
-        log.debug(f"Special autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
         return choices
 
     async def transform(self, interaction: discord.Interaction, value: str) -> Special | None:

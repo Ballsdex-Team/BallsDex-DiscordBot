@@ -1,0 +1,10 @@
+{
+    "title": "Capacity logic",
+    "description": "Describes what the capacity will do in a battle",
+    "type": "object",
+    "properties": {
+        "hello": {
+            "type": "string"
+        }
+    }
+  }

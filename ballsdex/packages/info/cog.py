@@ -39,7 +39,7 @@ class Info(commands.Cog):
 
     async def _get_10_balls_emojis(self) -> list[discord.Emoji]:
         balls: list[Ball] = random.choices(
-            [x for x in countryballs.values() if x.enabled], k=min(10, len(countryballs))
+            [x for x in countryballs if x.enabled], k=min(10, len(countryballs))
         )
         emotes: list[discord.Emoji] = []
 
@@ -64,7 +64,7 @@ class Info(commands.Cog):
             log.error("Failed to fetch 10 balls emotes", exc_info=True)
             balls = []
 
-        balls_count = len([x for x in countryballs.values() if x.enabled])
+        balls_count = len([x for x in countryballs if x.enabled])
         players_count = await row_count_estimate("player")
         balls_instances_count = await row_count_estimate("ballinstance")
 
@@ -101,12 +101,12 @@ class Info(commands.Cog):
             f"**{players_count}** players that caught "
             f"**{balls_instances_count}** {settings.collectible_name}s\n"
             f"**{len(self.bot.guilds)}** servers playing\n\n"
-            "This bot was made by **El Laggron**, consider supporting me on my "
-            "[Patreon](https://patreon.com/retke) :heart:\n\n"
-            f"[Discord server]({settings.discord_invite}) • [Invite me]({invite_link}) • "
-            f"[Source code and issues]({settings.github_link})\n"
-            f"[Terms of Service]({settings.terms_of_service}) • "
-            f"[Privacy policy]({settings.privacy_policy})"
+            "This bot is based on BallsDex  made by **El Laggron**, adoption for MicroNations by "
+            "**millipede3223**, **django07** & **coders of Pantonia** :heart:\n\n"
+            f"[Discord server] ({settings.discord_invite})\n" # • [Invite me]({invite_link}) • "
+            f"[Source code and issues] ({settings.github_link})\n"
+            f"[Terms of Service] ({settings.terms_of_service})\n"
+            f"[Privacy policy] ({settings.privacy_policy})\n"
         )
 
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)

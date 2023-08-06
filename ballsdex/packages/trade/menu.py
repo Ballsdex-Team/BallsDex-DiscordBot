@@ -323,9 +323,6 @@ class TradeMenu:
         if self.task:
             self.task.cancel()
 
-        for countryball in self.trader1.proposal + self.trader2.proposal:
-            del self.bot.locked_balls[countryball.id]
-
         self.current_view.stop()
         for item in self.current_view.children:
             item.disabled = True
@@ -384,7 +381,6 @@ class TradeMenu:
 
         for countryball in valid_transferable_countryballs:
             await countryball.save()
-            del self.bot.locked_balls[countryball.id]
 
     async def confirm(self, trader: TradingUser) -> bool:
         """

@@ -12,9 +12,8 @@ log = logging.getLogger("ballsdex.packages.countryballs")
 
 
 class CountryBallsSpawner(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self):
         self.spawn_manager = SpawnManager()
-        self.bot: commands.Bot = bot
 
     async def load_cache(self):
         i = 0
@@ -35,8 +34,6 @@ class CountryBallsSpawner(commands.Cog):
         if not guild:
             return
         if guild.id not in self.spawn_manager.cache:
-            return
-        if guild.id in self.bot.blacklist_guild:
             return
         await self.spawn_manager.handle_message(message)
 

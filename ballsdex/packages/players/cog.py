@@ -24,14 +24,9 @@ log = logging.getLogger("ballsdex.packages.countryballs")
 
 class DonationRequest(View):
     def __init__(
-        self,
-        bot: "BallsDexBot",
-        interaction: discord.Interaction,
-        countryball: BallInstance,
-        new_player: Player,
+        self, interaction: discord.Interaction, countryball: BallInstance, new_player: Player
     ):
         super().__init__(timeout=120)
-        self.bot = bot
         self.original_interaction = interaction
         self.countryball = countryball
         self.new_player = new_player
@@ -48,7 +43,6 @@ class DonationRequest(View):
         for item in self.children:
             item.disabled = True
         await self.original_interaction.followup.edit_message("@original", view=self)
-        del self.bot.locked_balls[self.countryball.id]
 
     @button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
@@ -65,7 +59,6 @@ class DonationRequest(View):
             + "\n\N{WHITE HEAVY CHECK MARK} The donation was accepted!",
             view=self,
         )
-        del self.bot.locked_balls[self.countryball.id]
 
     @button(
         style=discord.ButtonStyle.danger,
@@ -79,7 +72,6 @@ class DonationRequest(View):
             content=interaction.message.content + "\n\N{CROSS MARK} The donation was denied.",
             view=self,
         )
-        del self.bot.locked_balls[self.countryball.id]
 
 
 class SortingChoices(enum.Enum):
@@ -167,19 +159,13 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
-    async def completion(self, interaction: discord.Interaction, user: discord.User | None = None):
+    async def completion(self, interaction: discord.Interaction):
         """
         Show your current completion of the BallsDex.
-
-        Parameters
-        ----------
-        user: discord.User
-            The user whose completion you want to view, if not yours.
         """
-        user = user or interaction.user
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
-        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
+        bot_countryballs = {x.pk: x.emoji_id for x in balls if x.enabled}
 
         if not bot_countryballs:
             await interaction.response.send_message(
@@ -187,12 +173,13 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
-        await interaction.response.defer(thinking=True)
 
         # Set of ball IDs owned by the player
         owned_countryballs = set(
             x[0]
-            for x in await BallInstance.filter(player__discord_id=user.id, ball__enabled=True)
+            for x in await BallInstance.filter(
+                player__discord_id=interaction.user.id, ball__enabled=True
+            )
             .distinct()  # Do not query everything
             .values_list("ball_id")
         )
@@ -252,7 +239,9 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
-        source.embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
+        source.embed.set_author(
+            name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
+        )
 
         pages = Pages(source=source, interaction=interaction, compact=True)
         await pages.start()
@@ -411,12 +400,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         if user.bot:
             await interaction.response.send_message("You cannot donate to bots.")
             return
-        if countryball.id in self.bot.locked_balls:
-            await interaction.response.send_message(
-                "This countryball is currently locked for a trade. Please try again later."
-            )
-            return
-        self.bot.locked_balls[countryball.id] = None
+
         new_player, _ = await Player.get_or_create(discord_id=user.id)
         old_player = countryball.player
 
@@ -424,20 +408,18 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             await interaction.response.send_message(
                 f"You cannot give a {settings.collectible_name} to yourself."
             )
-            del self.bot.locked_balls[countryball.id]
             return
         if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
             await interaction.response.send_message(
                 "This player does not accept donations. You can use trades instead."
             )
-            del self.bot.locked_balls[countryball.id]
             return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             await interaction.response.send_message(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
                 f"{countryball.description(include_emoji=True, bot=interaction.client)}!\n"
                 "Do you accept this donation?",
-                view=DonationRequest(self.bot, interaction, countryball, new_player),
+                view=DonationRequest(interaction, countryball, new_player),
             )
             return
 
@@ -451,4 +433,3 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"{countryball.description(short=True, include_emoji=True, bot=self.bot)} to "
             f"{user.mention}!"
         )
-        del self.bot.locked_balls[countryball.id]

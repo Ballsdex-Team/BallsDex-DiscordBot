@@ -12,11 +12,11 @@ python = "^3.11"
 uvloop = { version = "^0.17.0", markers = "sys_platform != 'win32'" }
 
 # discord
-"discord.py" = "^2.3.0"
+"discord.py" = "^2.2.2"
 
 # fastapi
 fastapi = "^0.95.0"
-fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "0ed771026c776138aceb4ae98eeb5c976786a193"}
+fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "5f34bf0d7356afa4c6034a7ab3942ea843d3b8ce"}
 uvicorn = "^0.21.1"
 
 # database ORM
@@ -29,7 +29,6 @@ python-dateutil = "^2.8.2"
 Pillow = "^9.4.0"
 aerich = "^0.6.3"
 pyyaml = "^6.0"
-cachetools = "^5.3.1"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.2.1"
