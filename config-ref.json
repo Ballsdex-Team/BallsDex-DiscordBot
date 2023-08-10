@@ -1,0 +1,142 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Ballsdex configuration",
+    "description": "Core settings for the Ballsdex Discord bot",
+    "type": "object",
+    "required": ["discord-token", "text-prefix", "about", "collectible-name", "bot-name", "players-group-cog-name", "admin-command", "prometheus", "owners"],
+    "properties": {
+        "discord-token": {
+            "description": "The Discord bot token",
+            "type": "string",
+            "minLength": 72,
+            "maxLength": 72
+        },
+        "text-prefix": {
+            "description": "The prefix for old text commands",
+            "type": "string",
+            "minLength": 1,
+            "default": "b."
+        },
+        "about": {
+            "type": "object",
+            "description": "Information used in /about",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "description": "Defines the beginning of the description of /about. The other parts are automatically generated"
+                },
+                "github-link": {
+                    "type": "string",
+                    "description": "A GitHub repository for source code, if using a fork",
+                    "format": "uri"
+                },
+                "discord-invite": {
+                    "type": "string",
+                    "description": "A Discord server to link for support",
+                    "pattern": "^https?://(discord.gg|discord(app)?.com/invite)/[a-zA-Z0-9]+$"
+                },
+                "terms-of-service": {
+                    "type": "string",
+                    "description": "A link to the terms of service",
+                    "format": "uri"
+                },
+                "privacy-policy": {
+                    "type": "string",
+                    "description": "A link to the privacy policy",
+                    "format": "uri"
+                }
+            },
+            "required": ["description", "github-link", "discord-invite", "terms-of-service", "privacy-policy"]
+        },
+        "collectible-name": {
+            "type": "string",
+            "description": "The name of the collectible, used everywhere except command descriptions. An 's' is appended to the end of this string for pluralization",
+            "example": "ball"
+        },
+        "bot-name": {
+            "type": "string",
+            "description": "The name of the bot, used in places such as the /completion command",
+            "example": "BallsDex"
+        },
+        "players-group-cog-name": {
+            "type": "string",
+            "description": "Name of the slash command managing the collectibles (list, info, completion...). Do not add a leading slash!",
+            "example": "balls"
+        },
+        "admin-command": {
+            "type": "object",
+            "description": "Manages access to the admin command",
+            "properties": {
+                "guild-ids": {
+                    "type": ["array", "null"],
+                    "description": "IDs of guilds with the /admin command registered",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 10000000000000000,
+                        "maximum": 99999999999999999999
+                    }
+                },
+                "root-role-ids": {
+                    "type": ["array", "null"],
+                    "description": "IDs of roles with full access to /admin",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 10000000000000000,
+                        "maximum": 99999999999999999999
+                    }
+                },
+                "admin-role-ids": {
+                    "type": ["array", "null"],
+                    "description": "IDs of roles with partial access to /admin: blacklist control and guilds ownership inspection",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 10000000000000000,
+                        "maximum": 99999999999999999999
+                    }
+                }
+            },
+            "required": ["guild-ids", "root-role-ids", "admin-role-ids"]
+        },
+        "prometheus": {
+            "type": "object",
+            "description": "Prometheus metrics configuration",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Whether to enable Prometheus metrics server",
+                    "default": false
+                },
+                "host": {
+                    "type": "string",
+                    "description": "Host to bind to",
+                    "default": "0.0.0.0"
+                },
+                "port": {
+                    "type": "integer",
+                    "description": "Port to bind to",
+                    "default": 15260
+                }
+            }
+        },
+        "owners": {
+            "type": "object",
+            "description": "Manages ownership of the bot",
+            "properties": {
+                "team-members-are-owners": {
+                    "type": "boolean",
+                    "description": "Whether to consider Discord developer team members as owners",
+                    "default": false
+                },
+                "co-owners": {
+                    "type": ["array", "null"],
+                    "description": "IDs of users with ownership",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 10000000000000000,
+                        "maximum": 99999999999999999999
+                    }
+                }
+            }
+        }
+    }
+}
