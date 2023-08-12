@@ -25,7 +25,10 @@ class ConfirmChoiceView(View):
     async def on_timeout(self):
         for item in self.children:
             item.disabled = True
-        await self.interaction.followup.edit_message("@original", view=self)
+        try:
+            await self.interaction.followup.edit_message("@original", view=self)
+        except discord.NotFound:
+            pass
 
     @discord.ui.button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
