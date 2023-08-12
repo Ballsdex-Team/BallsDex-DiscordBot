@@ -262,11 +262,12 @@ class BallsDexBot(commands.AutoShardedBot):
                     ephemeral=True,
                 )
             return False
-        await log_action(
-            f"{interaction.user} ({interaction.user.id}) used {interaction.command} in "
-            f"{interaction.guild} ({interaction.guild_id})",
-            self,
-        )
+        if interaction.user.id in self.command_log:
+            await log_action(
+                f"{interaction.user} ({interaction.user.id}) used {interaction.command} in "
+                f"{interaction.guild} ({interaction.guild_id})",
+                self,
+            )
         return True
 
     async def on_command_error(
