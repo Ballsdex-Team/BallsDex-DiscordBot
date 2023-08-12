@@ -29,7 +29,6 @@ from ballsdex.core.models import (
 )
 from ballsdex.core.commands import Core
 from ballsdex.settings import settings
-from ballsdex.core.utils.utils import log_action
 
 log = logging.getLogger("ballsdex.core.bot")
 
