@@ -116,7 +116,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         )
         await log_action(
             f"{user} caught {settings.collectible_name} {self.ball.model}, {shiny=} {special=}",
-            bot
+            bot,
         )
         caught_balls.labels(
             country=self.ball.model.country,

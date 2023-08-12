@@ -265,7 +265,7 @@ class BallsDexBot(commands.AutoShardedBot):
         await log_action(
             f"{interaction.user} ({interaction.user.id}) used {interaction.command} in "
             f"{interaction.guild} ({interaction.guild_id})",
-            self
+            self,
         )
         return True
 
