@@ -29,6 +29,7 @@ from ballsdex.core.models import (
 )
 from ballsdex.core.commands import Core
 from ballsdex.settings import settings
+from ballsdex.core.utils.utils import log_action
 
 log = logging.getLogger("ballsdex.core.bot")
 
@@ -79,6 +80,8 @@ class BallsDexBot(commands.AutoShardedBot):
         self._shutdown = 0
         self.blacklist: set[int] = set()
         self.blacklist_guild: set[int] = set()
+        self.catch_log: set[int] = set()
+        self.command_log: set[int] = set()
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
 
     async def start_prometheus_server(self):
@@ -259,6 +262,11 @@ class BallsDexBot(commands.AutoShardedBot):
                     ephemeral=True,
                 )
             return False
+        await log_action(
+            f"{interaction.user} ({interaction.user.id}) used {interaction.command} in "
+            f"{interaction.guild} ({interaction.guild_id})",
+            self
+        )
         return True
 
     async def on_command_error(

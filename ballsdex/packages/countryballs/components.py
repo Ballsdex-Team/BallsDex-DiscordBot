@@ -12,6 +12,7 @@ from discord.ui import Modal, TextInput, Button, View
 
 from ballsdex.settings import settings
 from ballsdex.core.models import Player, BallInstance, specials
+from ballsdex.core.utils.utils import log_action
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -113,8 +114,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
         )
-        log.debug(
-            f"{user} caught {settings.collectible_name} {self.ball.model}, {shiny=} {special=}"
+        await log_action(
+            f"{user} caught {settings.collectible_name} {self.ball.model}, {shiny=} {special=}",
+            bot
         )
         caught_balls.labels(
             country=self.ball.model.country,

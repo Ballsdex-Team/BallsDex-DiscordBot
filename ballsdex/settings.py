@@ -107,6 +107,8 @@ def read_settings(path: "Path"):
     settings.root_role_ids = content["admin-command"]["root-role-ids"] or []
     settings.admin_role_ids = content["admin-command"]["admin-role-ids"] or []
 
+    settings.log_channel = content["log-channel"]
+
     settings.prometheus_enabled = content["prometheus"]["enabled"]
     settings.prometheus_host = content["prometheus"]["host"]
     settings.prometheus_port = content["prometheus"]["port"]
@@ -168,6 +170,9 @@ admin-command:
 
   # list of role IDs having partial access to /admin
   admin-role-ids:
+
+# log channel for moderation actions
+log-channel:
 
 # manage bot ownership
 owners:
