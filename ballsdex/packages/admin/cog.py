@@ -905,7 +905,7 @@ class Admin(commands.GroupCog):
                 f"{user} removed from catch logs.", ephemeral=True
             )
         else:
-            self.bot.catch_log.append(user.id)
+            self.bot.catch_log.add(user.id)
             await interaction.response.send_message(f"{user} added to catch logs.", ephemeral=True)
 
     @logs.command(name="commandlogs")
@@ -929,7 +929,7 @@ class Admin(commands.GroupCog):
                 f"{user} removed from command logs.", ephemeral=True
             )
         else:
-            self.bot.command_log.append(user.id)
+            self.bot.command_log.add(user.id)
             await interaction.response.send_message(
                 f"{user} added to command logs.", ephemeral=True
             )
