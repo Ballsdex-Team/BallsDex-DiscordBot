@@ -47,7 +47,10 @@ class DonationRequest(View):
     async def on_timeout(self):
         for item in self.children:
             item.disabled = True
-        await self.original_interaction.followup.edit_message("@original", view=self)
+        try:
+            await self.original_interaction.followup.edit_message("@original", view=self)
+        except discord.NotFound:
+            pass
         del self.bot.locked_balls[self.countryball.id]
 
     @button(
