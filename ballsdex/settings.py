@@ -71,6 +71,8 @@ class Settings:
     root_role_ids: list[int] = field(default_factory=list)
     admin_role_ids: list[int] = field(default_factory=list)
 
+    log_channel: int | None = None
+
     team_owners: bool = False
     co_owners: list[int] = field(default_factory=list)
 
