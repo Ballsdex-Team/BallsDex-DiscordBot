@@ -51,7 +51,7 @@ class DonationRequest(View):
             await self.original_interaction.followup.edit_message("@original", view=self)
         except discord.NotFound:
             pass
-        self.bot.locked_balls.remove(self.countryball.id)
+        del self.bot.locked_balls[self.countryball.id]
 
     @button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
