@@ -14,7 +14,7 @@ from ballsdex.settings import settings
 from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID, BlacklistedGuild
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
-from ballsdex.core.utils.utils import log_action
+from ballsdex.core.utils.logging import log_action
 from ballsdex.packages.countryballs.countryball import CountryBall
 
 if TYPE_CHECKING:
