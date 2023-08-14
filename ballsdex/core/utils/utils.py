@@ -6,10 +6,10 @@ import logging
 log = logging.getLogger("ballsdex.packages.admin.cog")
 
 
-async def log_action(message: str, bot: BallsDexBot, log: bool = False):
+async def log_action(message: str, bot: BallsDexBot, console_log: bool = False):
     if settings.log_channel:
         channel = bot.get_channel(settings.log_channel)
         if channel:
             await channel.send(message)
-    if log:
+    if console_log:
         log.info(message)
