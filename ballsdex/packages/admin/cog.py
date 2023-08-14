@@ -434,7 +434,7 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
         await log_action(
             f"{interaction.user} blacklisted {user} ({user.id})"
-            " for the following reason: {reason}",
+            f" for the following reason: {reason}",
             self.bot,
         )
 
