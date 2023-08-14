@@ -21,6 +21,7 @@ uvicorn = "^0.21.1"
 
 # database ORM
 tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
+tortoise-cli = "^0.1.2"
 redis = "^4.5.3"
 
 # misc
