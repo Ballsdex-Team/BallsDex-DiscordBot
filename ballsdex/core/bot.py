@@ -263,7 +263,7 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
         if interaction.user.id in self.command_log:
             log.info(
-                f"{interaction.user} ({interaction.user.id}) used {interaction.command} in "
+                f'{interaction.user} ({interaction.user.id}) used "{interaction.command.name}" in '
                 f"{interaction.guild} ({interaction.guild_id})"
             )
         return True
