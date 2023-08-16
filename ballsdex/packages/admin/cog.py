@@ -46,6 +46,55 @@ class Admin(commands.GroupCog):
     logs = app_commands.Group(name="logs", description="Bot logs management")
 
     @app_commands.command()
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def status(
+        self,
+        interaction: discord.Interaction,
+        status: discord.Status | None = None,
+        name: str | None = None,
+        state: str | None = None,
+        activity_type: discord.ActivityType | None = None,
+    ):
+        """
+        Change the status of the bot. Provide at least status or text.
+
+        Parameters
+        ----------
+        status: discord.Status
+            The status you want to set
+        name: str
+            Title of the activity, if not custom
+        state: str
+            Custom status or subtitle of the activity
+        activity_type: discord.ActivityType
+            The type of activity
+        """
+        if not status and not name and not state:
+            await interaction.response.send_message(
+                "You must provide at least `status`, `name` or `state`.", ephemeral=True
+            )
+            return
+
+        activity: discord.Activity | None = None
+        status = status or discord.Status.online
+        activity_type = activity_type or discord.ActivityType.custom
+
+        if activity_type == discord.ActivityType.custom and name and not state:
+            await interaction.response.send_message(
+                "You must provide `state` for custom activities. `name` is unused.", ephemeral=True
+            )
+            return
+        if activity_type != discord.ActivityType.custom and not name:
+            await interaction.response.send_message(
+                "You must provide `name` for pre-defined activities.", ephemeral=True
+            )
+            return
+        if name or state:
+            activity = discord.Activity(name=name or state, state=state, type=activity_type)
+        await self.bot.change_presence(status=status, activity=activity)
+        await interaction.response.send_message("Status updated.", ephemeral=True)
+
+    @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def cooldown(
         self,
