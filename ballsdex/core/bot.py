@@ -261,7 +261,7 @@ class BallsDexBot(commands.AutoShardedBot):
                     ephemeral=True,
                 )
             return False
-        if interaction.user.id in self.command_log:
+        if interaction.command and interaction.user.id in self.command_log:
             log.info(
                 f'{interaction.user} ({interaction.user.id}) used "{interaction.command.name}" in '
                 f"{interaction.guild} ({interaction.guild_id})"
