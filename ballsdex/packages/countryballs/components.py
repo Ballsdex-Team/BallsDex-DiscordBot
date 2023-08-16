@@ -113,9 +113,16 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
         )
-        log.debug(
-            f"{user} caught {settings.collectible_name} {self.ball.model}, {shiny=} {special=}"
-        )
+        if user.id in bot.catch_log:
+            log.info(
+                f"{user} caught {settings.collectible_name}"
+                f" {self.ball.model}, {shiny=} {special=}",
+            )
+        else:
+            log.debug(
+                f"{user} caught {settings.collectible_name}"
+                f" {self.ball.model}, {shiny=} {special=}",
+            )
         caught_balls.labels(
             country=self.ball.model.country,
             shiny=shiny,

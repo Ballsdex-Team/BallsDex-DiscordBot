@@ -71,6 +71,8 @@ class Settings:
     root_role_ids: list[int] = field(default_factory=list)
     admin_role_ids: list[int] = field(default_factory=list)
 
+    log_channel: int | None = None
+
     team_owners: bool = False
     co_owners: list[int] = field(default_factory=list)
 
@@ -106,6 +108,8 @@ def read_settings(path: "Path"):
     settings.admin_guild_ids = content["admin-command"]["guild-ids"] or []
     settings.root_role_ids = content["admin-command"]["root-role-ids"] or []
     settings.admin_role_ids = content["admin-command"]["admin-role-ids"] or []
+
+    settings.log_channel = content.get("log-channel", None)
 
     settings.prometheus_enabled = content["prometheus"]["enabled"]
     settings.prometheus_host = content["prometheus"]["host"]
@@ -168,6 +172,9 @@ admin-command:
 
   # list of role IDs having partial access to /admin
   admin-role-ids:
+
+# log channel for moderation actions
+log-channel:
 
 # manage bot ownership
 owners:

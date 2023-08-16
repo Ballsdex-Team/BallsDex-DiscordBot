@@ -14,6 +14,7 @@ from ballsdex.settings import settings
 from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID, BlacklistedGuild
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
+from ballsdex.core.utils.logging import log_action
 from ballsdex.packages.countryballs.countryball import CountryBall
 
 if TYPE_CHECKING:
@@ -42,6 +43,7 @@ class Admin(commands.GroupCog):
     balls = app_commands.Group(
         name=settings.players_group_cog_name, description="Balls management"
     )
+    logs = app_commands.Group(name="logs", description="Bot logs management")
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -282,7 +284,7 @@ class Admin(commands.GroupCog):
         )
         await pages.start(ephemeral=True)
 
-    @app_commands.command()
+    @balls.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def spawn(
         self,
@@ -312,9 +314,10 @@ class Admin(commands.GroupCog):
         await interaction.followup.send(
             f"{settings.collectible_name.title()} spawned.", ephemeral=True
         )
-        log.info(
+        await log_action(
             f"{interaction.user} spawned {settings.collectible_name} {countryball.name} "
-            f"in {channel or interaction.channel}."
+            f"in {channel or interaction.channel}.",
+            self.bot,
         )
 
     @balls.command()
@@ -368,10 +371,11 @@ class Admin(commands.GroupCog):
             f"Special: `{special.name if special else None}` • ATK:`{instance.attack_bonus:+d}` • "
             f"HP:`{instance.health_bonus:+d}` • Shiny: `{instance.shiny}`"
         )
-        log.info(
+        await log_action(
             f"{interaction.user} gave {settings.collectible_name} {ball.country} to {user}. "
             f"Special={special.name if special else None} ATK={instance.attack_bonus:+d} "
-            f"HP={instance.health_bonus:+d} shiny={instance.shiny}"
+            f"HP={instance.health_bonus:+d} shiny={instance.shiny}",
+            self.bot,
         )
 
     @blacklist.command(name="add")
@@ -428,8 +432,10 @@ class Admin(commands.GroupCog):
         else:
             self.bot.blacklist.add(user.id)
             await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
-        log.info(
-            f"{interaction.user} blacklisted {user} ({user.id}) for the following reason: {reason}"
+        await log_action(
+            f"{interaction.user} blacklisted {user} ({user.id})"
+            f" for the following reason: {reason}",
+            self.bot,
         )
 
     @blacklist.command(name="remove")
@@ -480,7 +486,9 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message(
                 "User is now removed from blacklist.", ephemeral=True
             )
-        log.info(f"{interaction.user} removed blacklist for user {user} ({user.id})")
+        await log_action(
+            f"{interaction.user} removed blacklist for user {user} ({user.id})", self.bot
+        )
 
     @blacklist.command(name="info")
     async def blacklist_info(
@@ -583,9 +591,10 @@ class Admin(commands.GroupCog):
         else:
             self.bot.blacklist_guild.add(guild.id)
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
-        log.info(
+        await log_action(
             f"{interaction.user} blacklisted {guild}({guild.id}) "
-            f"for the following reason: {reason}"
+            f"for the following reason: {reason}",
+            self.bot,
         )
 
     @blacklist_guild.command(name="remove")
@@ -629,7 +638,9 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message(
                 "Guild is now removed from blacklist.", ephemeral=True
             )
-            log.info(f"{interaction.user} removed blacklist for guild {guild} ({guild.id})")
+            await log_action(
+                f"{interaction.user} removed blacklist for guild {guild} ({guild.id})", self.bot
+            )
 
     @blacklist_guild.command(name="info")
     async def blacklist_info_guild(
@@ -718,6 +729,7 @@ class Admin(commands.GroupCog):
             f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
             f"**Traded:** {ball.trade_player}\n"
         )
+        await log_action(f"{interaction.user} got info for {ball} ({ball.id})", self.bot)
 
     @balls.command(name="delete")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -748,6 +760,7 @@ class Admin(commands.GroupCog):
         await interaction.response.send_message(
             f"{settings.collectible_name.title()} {ball_id} deleted.", ephemeral=True
         )
+        await log_action(f"{interaction.user} deleted {ball} ({ball.id})", self.bot)
 
     @balls.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -773,6 +786,7 @@ class Admin(commands.GroupCog):
             return
         try:
             ball = await BallInstance.get(id=ballIdConverted)
+            original_player = ball.player
         except DoesNotExist:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
@@ -784,6 +798,10 @@ class Admin(commands.GroupCog):
         await interaction.response.send_message(
             f"{settings.collectible_name.title()} {ball.countryball} transferred to {user}.",
             ephemeral=True,
+        )
+        await log_action(
+            f"{interaction.user} transferred {ball} ({ball.id}) from {original_player} to {user}",
+            self.bot,
         )
 
     @balls.command(name="reset")
@@ -817,6 +835,7 @@ class Admin(commands.GroupCog):
         await interaction.followup.send(
             f"{user}'s {settings.collectible_name}s have been reset.", ephemeral=True
         )
+        await log_action(f"{interaction.user} reset {player}'s balls", self.bot)
 
     @balls.command(name="count")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -863,4 +882,54 @@ class Admin(commands.GroupCog):
         else:
             await interaction.followup.send(
                 f"There are {len(balls)} {special}{country}{settings.collectible_name}{plural}."
+            )
+
+    @logs.command(name="catchlogs")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def logs_add(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User,
+    ):
+        """
+        Add or remove a user from catch logs.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to add or remove to the logs.
+        """
+        if user.id in self.bot.catch_log:
+            self.bot.catch_log.remove(user.id)
+            await interaction.response.send_message(
+                f"{user} removed from catch logs.", ephemeral=True
+            )
+        else:
+            self.bot.catch_log.add(user.id)
+            await interaction.response.send_message(f"{user} added to catch logs.", ephemeral=True)
+
+    @logs.command(name="commandlogs")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def commandlogs_add(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User,
+    ):
+        """
+        Add or remove a user from command logs.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to add or remove to the logs.
+        """
+        if user.id in self.bot.command_log:
+            self.bot.command_log.remove(user.id)
+            await interaction.response.send_message(
+                f"{user} removed from command logs.", ephemeral=True
+            )
+        else:
+            self.bot.command_log.add(user.id)
+            await interaction.response.send_message(
+                f"{user} added to command logs.", ephemeral=True
             )

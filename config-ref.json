@@ -118,6 +118,12 @@
                 }
             }
         },
+        "log-channel": {
+            "type": ["integer", "null"],
+            "description": "ID of the channel to log events to",
+            "minimum": 10000000000000000,
+            "maximum": 99999999999999999999
+        },
         "owners": {
             "type": "object",
             "description": "Manages ownership of the bot",
