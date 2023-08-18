@@ -123,10 +123,10 @@ class Admin(commands.GroupCog):
                 indexes[ball.rarity].append(ball)
             for i, chunk in enumerate(indexes.values(), start=1):
                 for ball in chunk:
-                    text += f"{i}. {ball.country}"
+                    text += f"{i}. {ball.country}\n"
         else:
             for i, ball in enumerate(sorted_balls, start=1):
-                text += f"{i}. {ball.country}"
+                text += f"{i}. {ball.country}\n"
 
         source = TextPageSource(text, prefix="```md\n", suffix="```")
         pages = Pages(source=source, interaction=interaction, compact=True)
