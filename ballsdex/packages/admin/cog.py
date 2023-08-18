@@ -7,13 +7,22 @@ from discord.ui import Button
 from discord.ext import commands
 from discord.utils import format_dt
 from tortoise.exceptions import IntegrityError, DoesNotExist
+from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 
 from ballsdex.settings import settings
-from ballsdex.core.models import GuildConfig, Player, BallInstance, BlacklistedID, BlacklistedGuild
+from ballsdex.core.models import (
+    GuildConfig,
+    Player,
+    Ball,
+    BallInstance,
+    BlacklistedID,
+    BlacklistedGuild,
+    balls,
+)
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
-from ballsdex.core.utils.paginator import FieldPageSource, Pages
+from ballsdex.core.utils.paginator import FieldPageSource, TextPageSource, Pages
 from ballsdex.core.utils.logging import log_action
 from ballsdex.packages.countryballs.countryball import CountryBall
 
@@ -93,6 +102,35 @@ class Admin(commands.GroupCog):
             activity = discord.Activity(name=name or state, state=state, type=activity_type)
         await self.bot.change_presence(status=status, activity=activity)
         await interaction.response.send_message("Status updated.", ephemeral=True)
+
+    @app_commands.command()
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+    async def rarity(self, interaction: discord.Interaction, chunked: bool = True):
+        """
+        Generate a list of countryballs ranked by rarity.
+
+        Parameters
+        ----------
+        chunked: bool
+            Group together countryballs with the same rarity.
+        """
+        text = ""
+        sorted_balls = sorted(balls.values(), key=lambda x: x.rarity, reverse=True)
+
+        if chunked:
+            indexes: dict[float, list[Ball]] = defaultdict(list)
+            for ball in sorted_balls:
+                indexes[ball.rarity].append(ball)
+            for i, chunk in enumerate(indexes.values(), start=1):
+                for ball in chunk:
+                    text += f"{i}. {ball.country}"
+        else:
+            for i, ball in enumerate(sorted_balls, start=1):
+                text += f"{i}. {ball.country}"
+
+        source = TextPageSource(text, prefix="```md\n", suffix="```")
+        pages = Pages(source=source, interaction=interaction, compact=True)
+        await pages.start(ephemeral=True)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
