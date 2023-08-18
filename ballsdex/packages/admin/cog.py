@@ -893,7 +893,9 @@ class Admin(commands.GroupCog):
 
     @balls.command(name="reset")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_reset(self, interaction: discord.Interaction, user: discord.User):
+    async def balls_reset(
+        self, interaction: discord.Interaction, user: discord.User, percentage: int | None = None
+    ):
         """
         Reset a player's balls.
 
@@ -901,6 +903,8 @@ class Admin(commands.GroupCog):
         ----------
         user: discord.User
             The user you want to reset the balls of.
+        percentage: int | None
+            The percentage of balls to delete, if not all. Used for sanctions.
         """
         player = await Player.get(discord_id=user.id)
         if not player:
@@ -908,21 +912,43 @@ class Admin(commands.GroupCog):
                 "The user you gave does not exist.", ephemeral=True
             )
             return
+        if percentage and not 0 < percentage < 100:
+            await interaction.response.send_message(
+                "The percentage must be between 1 and 99.", ephemeral=True
+            )
+            return
         await interaction.response.defer(ephemeral=True, thinking=True)
+
+        if not percentage:
+            text = f"Are you sure you want to delete {user}'s {settings.collectible_name}s?"
+        else:
+            text = (
+                f"Are you sure you want to delete {percentage}% of "
+                f"{user}'s {settings.collectible_name}s?"
+            )
         view = ConfirmChoiceView(interaction)
         await interaction.followup.send(
-            f"Are you sure you want to delete {user}'s {settings.collectible_name}s?",
+            text,
             view=view,
             ephemeral=True,
         )
         await view.wait()
         if not view.value:
             return
-        await BallInstance.filter(player=player).delete()
+        if percentage:
+            balls = await BallInstance.filter(player=player)
+            to_delete = random.sample(balls, int(len(balls) * (percentage / 100)))
+            for ball in to_delete:
+                await ball.delete()
+            count = len(to_delete)
+        else:
+            count = await BallInstance.filter(player=player).delete()
         await interaction.followup.send(
-            f"{user}'s {settings.collectible_name}s have been reset.", ephemeral=True
+            f"{count} {settings.collectible_name}s from {user} have been reset.", ephemeral=True
         )
-        await log_action(f"{interaction.user} reset {player}'s balls", self.bot)
+        await log_action(
+            f"{interaction.user} deleted {percentage or 100}% of {player}'s balls", self.bot
+        )
 
     @balls.command(name="count")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
