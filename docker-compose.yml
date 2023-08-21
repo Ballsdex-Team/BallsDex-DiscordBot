@@ -49,7 +49,7 @@ services:
     command: poetry run uvicorn ballsdex.core.admin:_app --host 0.0.0.0
 
   postgres-db:
-    image: postgres
+    image: postgres:alpine
     restart: always
     hostname: postgres
     environment:
@@ -86,7 +86,7 @@ services:
       - HEALTHCHECK_PORT=3928
 
   redis-cache:
-    image: redis:latest
+    image: redis:alpine
     restart: always
     hostname: redis
     # ports:
