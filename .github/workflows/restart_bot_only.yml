@@ -1,0 +1,18 @@
+name: Restart bot container only to make new balls live
+
+on:
+  workflow_dispatch:
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+    - name: multiple command
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: indigorealms.eu
+        username: ${{ secrets.MNBD_USERNAME }}
+        password: ${{ secrets.MNBD_PASSWORD }}
+        script: |
+          cd /opt/mnballsdex_live
+          sudo docker-compose restart bot
