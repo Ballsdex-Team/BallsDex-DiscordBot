@@ -1,10 +1,10 @@
-name: Restart bot container only to make new balls live
+name: Restart bot to make new balls live
 
 on:
   workflow_dispatch:
 
 jobs:
-  greet:
+  restart_mnballsdex_bot:
     runs-on: ubuntu-latest
     steps:
     - name: multiple command
