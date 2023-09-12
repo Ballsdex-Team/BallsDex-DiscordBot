@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import types
+import inspect
 from typing import cast
 
 import aiohttp
@@ -12,6 +14,7 @@ from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
 from rich import print
+from prometheus_client import Histogram
 
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
@@ -31,12 +34,45 @@ from ballsdex.core.commands import Core
 from ballsdex.settings import settings
 
 log = logging.getLogger("ballsdex.core.bot")
+http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
 
 PACKAGES = ["config", "players", "countryballs", "info", "admin", "trade"]
 
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
     return ctx.bot.is_owner(ctx.author)
+
+
+# observing the duration and status code of HTTP requests through aiohttp TraceConfig
+async def on_request_start(
+    session: aiohttp.ClientSession,
+    trace_ctx: types.SimpleNamespace,
+    params: aiohttp.TraceRequestStartParams,
+):
+    # register t1 before sending request
+    trace_ctx.start = session.loop.time()
+
+
+async def on_request_end(
+    session: aiohttp.ClientSession,
+    trace_ctx: types.SimpleNamespace,
+    params: aiohttp.TraceRequestEndParams,
+):
+    time = session.loop.time() - trace_ctx.start
+
+    # to categorize HTTP calls per path, we need to access the corresponding discord.http.Route
+    # object, which is not available in the context of an aiohttp TraceConfig, therefore it's
+    # obtained by accessing the locals() from the calling function HTTPConfig.request
+    # "params.url.path" is not usable as it contains raw IDs and tokens, breaking categories
+    frame = inspect.currentframe()
+    _locals = frame.f_back.f_back.f_back.f_back.f_back.f_locals
+    if route := _locals.get("route"):
+        route_key = route.key
+    else:
+        # calling function is HTTPConfig.static_login which has no Route object
+        route_key = f"{params.response.method} {params.url.path}"
+
+    http_counter.labels(route_key, params.response.status).observe(time)
 
 
 class CommandTree(app_commands.CommandTree):
@@ -67,6 +103,12 @@ class BallsDexBot(commands.AutoShardedBot):
         intents = discord.Intents(
             guilds=True, guild_messages=True, emojis_and_stickers=True, message_content=True
         )
+
+        if settings.prometheus_enabled:
+            trace = aiohttp.TraceConfig()
+            trace.on_request_start.append(on_request_start)
+            trace.on_request_end.append(on_request_end)
+            options["http_trace"] = trace
 
         super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
 
