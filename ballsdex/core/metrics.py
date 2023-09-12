@@ -1,6 +1,8 @@
 import logging
+import math
 
 from aiohttp import web
+from collections import defaultdict
 from prometheus_client import Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from typing import TYPE_CHECKING
 
@@ -27,13 +29,17 @@ class PrometheusServer:
 
         self.app.add_routes((web.get("/metrics", self.get),))
 
-        self.guild_count = Gauge("guilds", "Number of guilds the server is in")
+        self.guild_count = Gauge("guilds", "Number of guilds the server is in", ["size"])
         self.shards_latecy = Histogram(
             "gateway_latency", "Shard latency with the Discord gateway", ["shard_id"]
         )
 
     async def collect_metrics(self):
-        self.guild_count.set(len(self.bot.guilds))
+        guilds: dict[int, int] = defaultdict(int)
+        for guild in self.bot.guilds:
+            guilds[10 ** math.ceil(math.log(max(guild.member_count - 1, 1), 10))] += 1
+        for size, count in guilds.items():
+            self.guild_count.labels(size=size).set(count)
 
         for shard_id, latency in self.bot.latencies:
             self.shards_latecy.labels(shard_id=shard_id).observe(latency)
