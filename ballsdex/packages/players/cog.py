@@ -90,6 +90,9 @@ class SortingChoices(enum.Enum):
     catch_date = "-catch_date"
     rarity = "ball__rarity"
     special = "special__id"
+    health_bonus = "-health_bonus"
+    attack_bonus = "-attack_bonus"
+    stats = "stats"
 
     # manual sorts are not sorted by SQL queries but by our code
     # this may be do-able with SQL still, but I don't have much experience ngl
@@ -111,6 +114,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         user: discord.User | None = None,
         sort: SortingChoices | None = None,
+        reverse: bool = False,
     ):
         """
         List your countryballs.
@@ -119,8 +123,10 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         user: discord.User
             The user whose collection you want to view, if not yours.
-        sort: SortingCHoices
+        sort: SortingChoices
             Choose how countryballs are sorted. Can be used to show duplicates.
+        reverse: bool
+            Reverse the output of the list.
         """
         user: discord.User | discord.Member = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -146,6 +152,8 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                 for countryball in countryballs:
                     count[countryball.countryball.pk] += 1
                 countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
+            elif sort == SortingChoices.stats:
+                countryballs = await player.balls.all().order_by("-health_bonus", "-attack_bonus")
             else:
                 countryballs = await player.balls.all().order_by(sort.value)
         else:
@@ -161,6 +169,8 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                     f"{user.name} doesn't have any {settings.collectible_name} yet."
                 )
             return
+        if reverse:
+            countryballs.reverse()
 
         paginator = CountryballsViewer(interaction, countryballs)
         if user == interaction.user:
