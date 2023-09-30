@@ -280,23 +280,33 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
-    async def last(self, interaction: discord.Interaction):
+    async def last(self, interaction: discord.Interaction, user: discord.Member = None):
         """
-        Display info of your last caught countryball.
+        Display info of your or another users last caught countryball.
+
+        Parameters
+        ----------
+        user: discord.Member
+            The user you would like to see
         """
+        user_obj = user if user else interaction.user
         await interaction.response.defer(thinking=True)
         try:
-            player = await Player.get(discord_id=interaction.user.id)
+            player = await Player.get(discord_id=user_obj.id)
         except DoesNotExist:
+            msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"You do not have any {settings.collectible_name} yet.", ephemeral=True
+                f"{msg} not have any {settings.collectible_name} yet.",
+                ephemeral=True,
             )
             return
 
         countryball = await player.balls.all().order_by("-id").first().select_related("ball")
         if not countryball:
+            msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"You do not have any {settings.collectible_name} yet.", ephemeral=True
+                f"{msg} not have any {settings.collectible_name} yet.",
+                ephemeral=True,
             )
             return
 
