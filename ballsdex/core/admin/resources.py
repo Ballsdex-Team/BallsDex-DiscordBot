@@ -103,6 +103,7 @@ class SpecialResource(Model):
             input_=inputs.Image(upload=upload, null=True),
         ),
         "emoji",
+        "hidden"
     ]
 
     async def get_actions(self, request: Request) -> List[Action]:
