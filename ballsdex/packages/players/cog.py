@@ -13,7 +13,11 @@ from discord.ext import commands
 from ballsdex.settings import settings
 from ballsdex.core.models import Player, BallInstance, DonationPolicy, balls
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
-from ballsdex.core.utils.transformers import BallInstanceTransform
+from ballsdex.core.utils.transformers import (
+    BallEnabledTransform,
+    BallInstanceTransform,
+    SpecialEnabledTransform,
+)
 from ballsdex.packages.players.countryballs_paginator import CountryballsViewer
 
 if TYPE_CHECKING:
@@ -404,18 +408,17 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         countryball: BallInstance
             The countryball you're giving away
         """
+        await interaction.response.defer()
         if not countryball:
             return
         if not countryball.countryball.tradeable:
-            await interaction.response.send_message(
-                "You cannot donate this countryball.", ephemeral=True
-            )
+            await interaction.followup.send("You cannot donate this countryball.", ephemeral=True)
             return
         if user.bot:
-            await interaction.response.send_message("You cannot donate to bots.")
+            await interaction.followup.send("You cannot donate to bots.")
             return
         if countryball.id in self.bot.locked_balls:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "This countryball is currently locked for a trade. Please try again later."
             )
             return
@@ -424,19 +427,19 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         old_player = countryball.player
 
         if new_player == old_player:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"You cannot give a {settings.collectible_name} to yourself."
             )
             del self.bot.locked_balls[countryball.id]
             return
         if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "This player does not accept donations. You can use trades instead."
             )
             del self.bot.locked_balls[countryball.id]
             return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
                 f"{countryball.description(include_emoji=True, bot=interaction.client)}!\n"
                 "Do you accept this donation?",
@@ -449,9 +452,48 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         countryball.favorite = False
         await countryball.save()
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"You just gave the {settings.collectible_name} "
             f"{countryball.description(short=True, include_emoji=True, bot=self.bot)} to "
             f"{user.mention}!"
         )
         del self.bot.locked_balls[countryball.id]
+
+    @balls.command(name="count")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def balls_count(
+        self,
+        interaction: discord.Interaction,
+        ball: BallEnabledTransform = None,
+        shiny: bool = None,
+        special: SpecialEnabledTransform = None,
+    ):
+        """
+        Count the number of balls that you have.
+
+        Parameters
+        ----------
+
+        ball: Ball
+            The ball you want to count.
+        shiny: bool
+            Whether the ball is shiny or not.
+        special: Special
+            The special background of the ball.
+        """
+        filters = {}
+        if ball:
+            filters["ball"] = ball
+        if shiny is not None:
+            filters["shiny"] = shiny
+        if special:
+            filters["special"] = special
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        balls = await BallInstance.filter(**filters)
+        country = f"{ball.country} " if ball else ""
+        plural = "s" if len(balls) > 1 else ""
+        special = f"{special.name} " if special else ""
+        await interaction.followup.send(
+            f"You have {len(balls)} {special}{country}{settings.collectible_name}{plural}."
+        )

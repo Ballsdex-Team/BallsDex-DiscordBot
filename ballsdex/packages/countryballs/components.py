@@ -36,17 +36,13 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, /) -> None:
         log.exception("An error occured in countryball catching prompt", exc_info=error)
-        if interaction.response.is_done():
-            await interaction.followup.send("An error occured with this countryball.")
-        else:
-            await interaction.response.send_message("An error occured with this countryball.")
+        await interaction.followup.send("An error occured with this countryball.")
 
     async def on_submit(self, interaction: discord.Interaction):
         # TODO: use lock
+        await interaction.response.defer(thinking=True)
         if self.ball.catched:
-            await interaction.response.send_message(
-                f"{interaction.user.mention} I was caught already!"
-            )
+            await interaction.followup.send(f"{interaction.user.mention} I was caught already!")
             return
         if self.ball.model.catch_names:
             possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
@@ -54,7 +50,6 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             possible_names = (self.ball.name.lower(),)
         if self.name.value.lower().strip() in possible_names:
             self.ball.catched = True
-            await interaction.response.defer(thinking=True)
             ball, has_caught_before = await self.catch_ball(
                 cast("BallsDexBot", interaction.client), interaction.user
             )
@@ -77,7 +72,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
-            await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
+            await interaction.followup.send(f"{interaction.user.mention} Wrong name!")
 
     async def catch_ball(
         self, bot: "BallsDexBot", user: discord.Member

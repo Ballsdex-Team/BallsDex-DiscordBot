@@ -177,15 +177,16 @@ class BallTransformer(app_commands.Transformer):
         return choices
 
     async def transform(self, interaction: discord.Interaction, value: str) -> Ball | None:
+        await interaction.response.defer()
         if not value:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You need to use the autocomplete function for the ball selection."
             )
             return None
         try:
             return balls[int(value)]
-        except (StopIteration, ValueError):
-            await interaction.response.send_message(
+        except (StopIteration, ValueError, TypeError):
+            await interaction.followup.send(
                 "The ball could not be found. Make sure to use the autocomplete "
                 "function on this command.",
                 ephemeral=True,
@@ -194,6 +195,48 @@ class BallTransformer(app_commands.Transformer):
 
 
 BallTransform = app_commands.Transform[Ball, BallTransformer]
+
+class BallEnabledTransformer(app_commands.Transformer):
+    def __init__(self):
+        self.cache: ListCache[Ball] | None = None
+
+    async def load_cache(self):
+        self.cache = ListCache(time.time(), [x for x in balls.values() if x.tradeable])
+
+    async def autocomplete(
+        self, interaction: discord.Interaction, value: str
+    ) -> list[app_commands.Choice[int | float | str]]:
+        t1 = time.time()
+        if self.cache is None or time.time() - self.cache.time > 300:
+            await self.load_cache()
+        choices: list[app_commands.Choice] = []
+        for ball in self.cache.balls:
+            if value.lower() in ball.country.lower():
+                choices.append(app_commands.Choice(name=ball.country, value=str(ball.pk)))
+                if len(choices) == 25:
+                    break
+        t2 = time.time()
+        log.debug(f"Ball autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
+        return choices
+
+    async def transform(self, interaction: discord.Interaction, value: str) -> Ball | None:
+        await interaction.response.defer()
+        if not value:
+            await interaction.followup.send(
+                "You need to use the autocomplete function for the ball selection."
+            )
+            return None
+        try:
+            return balls[int(value)]
+        except (StopIteration, ValueError, TypeError):
+            await interaction.followup.send(
+                "The ball could not be found. Make sure to use the autocomplete "
+                "function on this command.",
+                ephemeral=True,
+            )
+            return None
+        
+BallEnabledTransform = app_commands.Transform[Ball, BallEnabledTransformer]
 
 
 class SpecialTransformer(app_commands.Transformer):
@@ -221,15 +264,60 @@ class SpecialTransformer(app_commands.Transformer):
         return choices
 
     async def transform(self, interaction: discord.Interaction, value: str) -> Special | None:
+        await interaction.response.defer()
         if not value:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You need to use the autocomplete function for the special background selection."
             )
             return None
         try:
             return await Special.get(pk=int(value))
-        except (ValueError, DoesNotExist):
-            await interaction.response.send_message(
+        except (ValueError, DoesNotExist, TypeError):
+            await interaction.followup.send(
+                "The special event could not be found. Make sure to use the autocomplete "
+                "function on this command."
+            )
+            return None
+
+
+SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
+
+
+class SpecialEnTransformer(app_commands.Transformer):
+    def __init__(self):
+        self.cache: ListCache[Special] | None = None
+
+    async def load_cache(self):
+        events = await Special.filter(hidden=False)
+        self.cache = ListCache(time.time(), events)
+
+    async def autocomplete(
+        self, interaction: discord.Interaction, value: str
+    ) -> list[app_commands.Choice[int | float | str]]:
+        t1 = time.time()
+        if self.cache is None or time.time() - self.cache.time > 300:
+            await self.load_cache()
+        choices: list[app_commands.Choice] = []
+        for event in self.cache.balls:
+            if value.lower() in event.name.lower():
+                choices.append(app_commands.Choice(name=event.name, value=str(event.pk)))
+                if len(choices) == 25:
+                    break
+        t2 = time.time()
+        log.debug(f"Special autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
+        return choices
+
+    async def transform(self, interaction: discord.Interaction, value: str) -> Special | None:
+        await interaction.response.defer()
+        if not value:
+            await interaction.followup.send(
+                "You need to use the autocomplete function for the special background selection."
+            )
+            return None
+        try:
+            return await Special.get(pk=int(value))
+        except (ValueError, DoesNotExist, TypeError):
+            await interaction.followup.send(
                 "The special event could not be found. Make sure to use the autocomplete "
                 "function on this command."
             )

@@ -95,6 +95,7 @@ class Special(models.Model):
         description="Either a unicode character or a discord emoji ID",
         null=True,
     )
+    hidden = fields.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.name
