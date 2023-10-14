@@ -196,6 +196,7 @@ class BallTransformer(app_commands.Transformer):
 
 BallTransform = app_commands.Transform[Ball, BallTransformer]
 
+
 class BallEnabledTransformer(app_commands.Transformer):
     def __init__(self):
         self.cache: ListCache[Ball] | None = None
@@ -235,7 +236,8 @@ class BallEnabledTransformer(app_commands.Transformer):
                 ephemeral=True,
             )
             return None
-        
+
+
 BallEnabledTransform = app_commands.Transform[Ball, BallEnabledTransformer]
 
 
