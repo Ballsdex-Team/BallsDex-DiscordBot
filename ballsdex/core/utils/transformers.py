@@ -285,7 +285,7 @@ class SpecialTransformer(app_commands.Transformer):
 SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
 
 
-class SpecialEnTransformer(app_commands.Transformer):
+class SpecialEnabledTransformer(app_commands.Transformer):
     def __init__(self):
         self.cache: ListCache[Special] | None = None
 
@@ -326,4 +326,4 @@ class SpecialEnTransformer(app_commands.Transformer):
             return None
 
 
-SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
+SpecialEnabledTransform = app_commands.Transform[Special, SpecialEnabledTransformer]
