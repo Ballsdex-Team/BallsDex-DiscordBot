@@ -15,6 +15,7 @@ from ballsdex.core.models import (
     Player,
     GuildConfig,
     BlacklistedID,
+    BlacklistedGuild,
 )
 from typing import List
 
@@ -244,6 +245,9 @@ class BallInstanceResource(Model):
             placeholder="Search for ball IDs",
         ),
         filters.ForeignKey(model=Ball, name="ball", label="Ball"),
+        filters.ForeignKey(model=Special, name="special", label="Special"),
+        filters.Date(name="catch_date", label="Catch date"),
+        filters.Boolean(name="shiny", label="Shiny"),
         filters.Search(
             name="player__discord_id",
             label="User ID",
@@ -312,6 +316,31 @@ class BlacklistedIDResource(Model):
             label="ID",
             search_mode="icontains",
             placeholder="Filter by ID",
+        ),
+        filters.Search(
+            name="reason",
+            label="Reason",
+            search_mode="search",
+            placeholder="Search by reason",
+        ),
+    ]
+    fields = [
+        "discord_id",
+        "reason",
+    ]
+
+@app.register
+class BlacklistedGuildIDResource(Model):
+    label = "Blacklisted Guild ID"
+    model = BlacklistedGuild
+    icon = "fas fa-lock"
+    page_title = "Blacklisted Guild IDs"
+    filters = [
+        filters.Search(
+            name="guild_id",
+            label="ID",
+            search_mode="icontains",
+            placeholder="Filter by Guild ID",
         ),
         filters.Search(
             name="reason",
