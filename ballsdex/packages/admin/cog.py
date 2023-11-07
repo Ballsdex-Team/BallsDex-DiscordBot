@@ -21,12 +21,7 @@ from ballsdex.core.models import (
     BlacklistedGuild,
     balls,
 )
-from ballsdex.core.utils.transformers import (
-    BallEnabledTransform,
-    BallTransform,
-    SpecialEnabledTransform,
-    SpecialTransform,
-)
+from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
 from ballsdex.core.utils.paginator import FieldPageSource, TextPageSource, Pages
 from ballsdex.core.utils.logging import log_action
 from ballsdex.packages.countryballs.countryball import CountryBall
@@ -961,9 +956,9 @@ class Admin(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         user: discord.User = None,
-        ball: BallEnabledTransform = None,
+        ball: BallTransform = None,
         shiny: bool = None,
-        special: SpecialEnabledTransform = None,
+        special: SpecialTransform = None,
     ):
         """
         Count the number of balls that a player has or how many exist in total.
