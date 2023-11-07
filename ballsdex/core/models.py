@@ -8,6 +8,7 @@ from enum import IntEnum
 from datetime import datetime
 from typing import TYPE_CHECKING, Tuple, Type, Iterable
 from concurrent.futures import ThreadPoolExecutor
+from ballsdex.core.image_generator.image_gen import draw_card
 
 from tortoise import models, fields, validators, exceptions, signals
 from fastapi_admin.models import AbstractAdmin
@@ -29,7 +30,8 @@ async def lower_catch_names(
     using_db: "BaseDBAsyncClient" | None = None,
     update_fields: Iterable[str] | None = None,
 ):
-    instance.catch_names = instance.catch_names.lower()
+    if instance.catch_names:
+        instance.catch_names = instance.catch_names.lower()
 
 
 class DiscordSnowflakeValidator(validators.Validator):
@@ -259,8 +261,6 @@ class BallInstance(models.Model):
         return text
 
     def draw_card(self) -> BytesIO:
-        from ballsdex.core.image_generator.image_gen import draw_card
-
         image = draw_card(self)
         buffer = BytesIO()
         image.save(buffer, format="png")

@@ -144,7 +144,6 @@ def patch_gateway(proxy_url: str):
 async def shutdown_handler(bot: BallsDexBot, signal_type: str | None = None):
     if signal_type:
         log.info(f"Received {signal_type}, stopping the bot...")
-        sys.exit(signal_type)
     else:
         log.info("Shutting down the bot...")
     try:
@@ -159,6 +158,7 @@ async def shutdown_handler(bot: BallsDexBot, signal_type: str | None = None):
                 f"Timed out cancelling tasks. {len([t for t in pending if not t.cancelled])}/"
                 f"{len(pending)} tasks are still pending!"
             )
+        sys.exit(0 if signal_type else 1)
 
 
 def global_exception_handler(bot: BallsDexBot, loop: asyncio.AbstractEventLoop, context: dict):
@@ -321,9 +321,6 @@ def main():
     except KeyboardInterrupt:
         if bot is not None:
             loop.run_until_complete(shutdown_handler(bot, "Ctrl+C"))
-    except SystemExit:
-        if bot is not None:
-            loop.run_until_complete(shutdown_handler(bot))
     except Exception:
         log.critical("Unhandled exception.", exc_info=True)
         if bot is not None:

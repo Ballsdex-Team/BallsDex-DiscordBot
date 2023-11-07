@@ -94,6 +94,12 @@ class SortingChoices(enum.Enum):
     catch_date = "-catch_date"
     rarity = "ball__rarity"
     special = "special__id"
+    health = "health"
+    attack = "attack"
+    health_bonus = "-health_bonus"
+    attack_bonus = "-attack_bonus"
+    stats_bonus = "stats"
+    total_stats = "total_stats"
 
     # manual sorts are not sorted by SQL queries but by our code
     # this may be do-able with SQL still, but I don't have much experience ngl
@@ -115,6 +121,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         user: discord.User | None = None,
         sort: SortingChoices | None = None,
+        reverse: bool = False,
     ):
         """
         List your countryballs.
@@ -123,8 +130,10 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         user: discord.User
             The user whose collection you want to view, if not yours.
-        sort: SortingCHoices
+        sort: SortingChoices
             Choose how countryballs are sorted. Can be used to show duplicates.
+        reverse: bool
+            Reverse the output of the list.
         """
         user: discord.User | discord.Member = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -150,6 +159,15 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                 for countryball in countryballs:
                     count[countryball.countryball.pk] += 1
                 countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
+            elif sort == SortingChoices.stats_bonus:
+                countryballs = await player.balls.all()
+                countryballs.sort(key=lambda x: (x.health_bonus, x.attack_bonus), reverse=True)
+            elif sort == SortingChoices.health or sort == SortingChoices.attack:
+                countryballs = await player.balls.all()
+                countryballs.sort(key=lambda x: getattr(x, sort.value), reverse=True)
+            elif sort == SortingChoices.total_stats:
+                countryballs = await player.balls.all()
+                countryballs.sort(key=lambda x: (x.health, x.attack), reverse=True)
             else:
                 countryballs = await player.balls.all().order_by(sort.value)
         else:
@@ -165,6 +183,8 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                     f"{user.name} doesn't have any {settings.collectible_name} yet."
                 )
             return
+        if reverse:
+            countryballs.reverse()
 
         paginator = CountryballsViewer(interaction, countryballs)
         if user == interaction.user:
@@ -284,23 +304,33 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
-    async def last(self, interaction: discord.Interaction):
+    async def last(self, interaction: discord.Interaction, user: discord.Member = None):
         """
-        Display info of your last caught countryball.
+        Display info of your or another users last caught countryball.
+
+        Parameters
+        ----------
+        user: discord.Member
+            The user you would like to see
         """
+        user_obj = user if user else interaction.user
         await interaction.response.defer(thinking=True)
         try:
-            player = await Player.get(discord_id=interaction.user.id)
+            player = await Player.get(discord_id=user_obj.id)
         except DoesNotExist:
+            msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"You do not have any {settings.collectible_name} yet.", ephemeral=True
+                f"{msg} not have any {settings.collectible_name} yet.",
+                ephemeral=True,
             )
             return
 
         countryball = await player.balls.all().order_by("-id").first().select_related("ball")
         if not countryball:
+            msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"You do not have any {settings.collectible_name} yet.", ephemeral=True
+                f"{msg} not have any {settings.collectible_name} yet.",
+                ephemeral=True,
             )
             return
 

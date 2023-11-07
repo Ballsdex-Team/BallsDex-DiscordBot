@@ -119,7 +119,7 @@ def read_settings(path: "Path"):
 
 def write_default_settings(path: "Path"):
     path.write_text(
-        """# yaml-language-server: $schema=config-ref.json
+        """# yaml-language-server: $schema=json-config-ref.json
 
 # paste the bot token after regenerating it here
 discord-token: 
@@ -197,6 +197,7 @@ def update_settings(path: "Path"):
     content = path.read_text()
 
     add_owners = True
+    add_config_ref = "# yaml-language-server: $schema=json-config-ref.json" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -212,6 +213,12 @@ owners:
   # a list of IDs that must be considered owners in addition to the application/team owner
   co-owners:
 """
+    if add_config_ref:
+        if "# yaml-language-server: $schema=config-ref.json" in content:
+            # old file name replacement
+            content = content.replace("$schema=config-ref.json", "$schema=json-config-ref.json")
+        else:
+            content = "# yaml-language-server: $schema=json-config-ref.json\n" + content
 
-    if any((add_owners,)):
+    if any((add_owners, add_config_ref)):
         path.write_text(content)

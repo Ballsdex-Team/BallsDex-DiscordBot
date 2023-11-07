@@ -12,22 +12,21 @@ python = "^3.11"
 uvloop = { version = "^0.17.0", markers = "sys_platform != 'win32'" }
 
 # discord
-"discord.py" = "^2.3.0"
+"discord.py" = "^2.3.2"
 
 # fastapi
-fastapi = "^0.95.0"
+fastapi = "^0.104.1"
 fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "0ed771026c776138aceb4ae98eeb5c976786a193"}
-uvicorn = "^0.21.1"
+uvicorn = "^0.24.0"
 
 # database ORM
-tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
+tortoise-orm = {extras = ["asyncpg"], version = "^0.20.0"}
 tortoise-cli = "^0.1.2"
-redis = "^4.5.3"
 
 # misc
-rich = "^12.6.0"
+rich = "^13.6.0"
 python-dateutil = "^2.8.2"
-Pillow = "^9.4.0"
+Pillow = "^10.1.0"
 aerich = "^0.6.3"
 pyyaml = "^6.0"
 cachetools = "^5.3.1"

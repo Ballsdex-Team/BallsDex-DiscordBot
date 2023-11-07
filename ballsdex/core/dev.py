@@ -1,21 +1,26 @@
 import ast
 import asyncio
-from typing import Iterable, Iterator, Optional, Sequence
 import aiohttp
 import inspect
+import contextlib
 import io
 import textwrap
 import traceback
 import re
+
+from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
 from contextlib import redirect_stdout
 from copy import copy
+from io import BytesIO
 
 import discord
-
 from discord.ext import commands
 
 from ballsdex.core import models
 from ballsdex.core.models import Ball, BallInstance, Special, Player, BlacklistedID, GuildConfig
+
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
 
 """
 Notice:
@@ -79,16 +84,107 @@ def box(text: str, lang: str = "") -> str:
     return f"```{lang}\n{text}\n```"
 
 
-async def send_interactive(
-    ctx: commands.Context, messages: Iterable[str], box_lang: Optional[str] = None
-):
-    messages = tuple(messages)
+def text_to_file(
+    text: str, filename: str = "file.txt", *, spoiler: bool = False, encoding: str = "utf-8"
+) -> discord.File:
+    file = BytesIO(text.encode(encoding))
+    return discord.File(file, filename, spoiler=spoiler)
 
-    for page in messages:
-        if box_lang is None:
-            await ctx.send(page)
+
+async def send_interactive(
+    ctx: commands.Context["BallsDexBot"],
+    messages: Iterable[str],
+    *,
+    timeout: int = 15,
+) -> list[discord.Message]:
+    """
+    Send multiple messages interactively.
+
+    The user will be prompted for whether or not they would like to view
+    the next message, one at a time. They will also be notified of how
+    many messages are remaining on each prompt.
+
+    Parameters
+    ----------
+    channel : discord.abc.Messageable
+        The channel to send the messages to.
+    messages : `iterable` of `str`
+        The messages to send.
+    user : discord.User
+        The user that can respond to the prompt.
+        When this is ``None``, any user can respond.
+    box_lang : Optional[str]
+        If specified, each message will be contained within a code block of
+        this language.
+    timeout : int
+        How long the user has to respond to the prompt before it times out.
+        After timing out, the bot deletes its prompt message.
+    join_character : str
+        The character used to join all the messages when the file output
+        is selected.
+
+    Returns
+    -------
+    list[discord.Message]
+        A list of sent messages.
+    """
+    result = 0
+
+    def predicate(m: discord.Message):
+        nonlocal result
+        if (ctx.author.id != m.author.id) or ctx.channel.id != m.channel.id:
+            return False
+        try:
+            result = ("more", "file").index(m.content.lower())
+        except ValueError:
+            return False
         else:
-            await ctx.send(box(page, lang=box_lang))
+            return True
+
+    messages = tuple(messages)
+    ret = []
+
+    for idx, page in enumerate(messages, 1):
+        msg = await ctx.channel.send(box(page, lang="py"))
+        ret.append(msg)
+        n_remaining = len(messages) - idx
+        if n_remaining > 0:
+            if n_remaining == 1:
+                prompt_text = (
+                    "There is still one message remaining. Type {command_1} to continue"
+                    " or {command_2} to upload all contents as a file."
+                )
+            else:
+                prompt_text = (
+                    "There are still {count} messages remaining. Type {command_1} to continue"
+                    " or {command_2} to upload all contents as a file."
+                )
+            query = await ctx.channel.send(
+                prompt_text.format(count=n_remaining, command_1="`more`", command_2="`file`")
+            )
+            try:
+                resp = await ctx.bot.wait_for(
+                    "message",
+                    check=predicate,
+                    timeout=15,
+                )
+            except asyncio.TimeoutError:
+                with contextlib.suppress(discord.HTTPException):
+                    await query.delete()
+                break
+            else:
+                try:
+                    await ctx.channel.delete_messages((query, resp))
+                except (discord.HTTPException, AttributeError):
+                    # In case the bot can't delete other users' messages,
+                    # or is not a bot account
+                    # or channel is a DM
+                    with contextlib.suppress(discord.HTTPException):
+                        await query.delete()
+                if result == 1:
+                    ret.append(await ctx.channel.send(file=text_to_file("".join(messages))))
+                    break
+    return ret
 
 
 START_CODE_BLOCK_RE = re.compile(r"^((```py(thon)?)(?=\s)|(```))")
@@ -168,6 +264,7 @@ class Dev(commands.Cog):
             "GuildConfig": GuildConfig,
             "BlacklistedID": BlacklistedID,
             "Special": Special,
+            "text_to_file": text_to_file,
             "_": self._last_result,
             "__name__": "__main__",
         }
@@ -209,19 +306,17 @@ class Dev(commands.Cog):
             compiled = self.async_compile(code, "<string>", "eval")
             result = await self.maybe_await(eval(compiled, env))
         except SyntaxError as e:
-            await send_interactive(ctx, self.get_syntax_error(e), box_lang="py")
+            await send_interactive(ctx, self.get_syntax_error(e))
             return
         except Exception as e:
-            await send_interactive(
-                ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), box_lang="py"
-            )
+            await send_interactive(ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)))
             return
 
         self._last_result = result
         result = self.sanitize_output(ctx, str(result))
 
         await ctx.message.add_reaction("✅")
-        await send_interactive(ctx, self.get_pages(result), box_lang="py")
+        await send_interactive(ctx, self.get_pages(result))
 
     @commands.command(name="eval")
     @commands.is_owner()
@@ -255,7 +350,7 @@ class Dev(commands.Cog):
             compiled = self.async_compile(to_compile, "<string>", "exec")
             exec(compiled, env)
         except SyntaxError as e:
-            return await send_interactive(ctx, self.get_syntax_error(e), box_lang="py")
+            return await send_interactive(ctx, self.get_syntax_error(e))
 
         func = env["func"]
         result = None
@@ -275,7 +370,7 @@ class Dev(commands.Cog):
             msg = printed
         msg = self.sanitize_output(ctx, msg)
 
-        await send_interactive(ctx, self.get_pages(msg), box_lang="py")
+        await send_interactive(ctx, self.get_pages(msg))
 
     @commands.command()
     @commands.is_owner()

@@ -333,7 +333,6 @@ class SpecialEnabledTransformer(app_commands.Transformer):
 
 SpecialEnabledTransform = app_commands.Transform[Special, SpecialEnabledTransformer]
 
-
 class RegimeTransformer(app_commands.Transformer):
     def __init__(self):
         self.cache: ListCache[Regime] | None = None
