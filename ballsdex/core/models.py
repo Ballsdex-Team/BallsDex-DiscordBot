@@ -8,6 +8,7 @@ from enum import IntEnum
 from datetime import datetime
 from typing import TYPE_CHECKING, Tuple, Type, Iterable
 from concurrent.futures import ThreadPoolExecutor
+from ballsdex.core.image_generator.image_gen import draw_card
 
 from tortoise import models, fields, validators, exceptions, signals
 from fastapi_admin.models import AbstractAdmin
@@ -258,8 +259,6 @@ class BallInstance(models.Model):
         return text
 
     def draw_card(self) -> BytesIO:
-        from ballsdex.core.image_generator.image_gen import draw_card
-
         image = draw_card(self)
         buffer = BytesIO()
         image.save(buffer, format="png")
