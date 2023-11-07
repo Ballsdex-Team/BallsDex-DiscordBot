@@ -90,9 +90,12 @@ class SortingChoices(enum.Enum):
     catch_date = "-catch_date"
     rarity = "ball__rarity"
     special = "special__id"
+    health = "health"
+    attack = "attack"
     health_bonus = "-health_bonus"
     attack_bonus = "-attack_bonus"
-    stats = "stats"
+    stats_bonus = "stats"
+    total_stats = "total_stats"
 
     # manual sorts are not sorted by SQL queries but by our code
     # this may be do-able with SQL still, but I don't have much experience ngl
@@ -152,8 +155,15 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                 for countryball in countryballs:
                     count[countryball.countryball.pk] += 1
                 countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
-            elif sort == SortingChoices.stats:
-                countryballs = await player.balls.all().order_by("-health_bonus", "-attack_bonus")
+            elif sort == SortingChoices.stats_bonus:
+                countryballs = await player.balls.all()
+                countryballs.sort(key=lambda x: (x.health_bonus, x.attack_bonus), reverse=True)
+            elif sort == SortingChoices.health or sort == SortingChoices.attack:
+                countryballs = await player.balls.all()
+                countryballs.sort(key=lambda x: getattr(x, sort.value), reverse=True)
+            elif sort == SortingChoices.total_stats:
+                countryballs = await player.balls.all()
+                countryballs.sort(key=lambda x: (x.health, x.attack), reverse=True)
             else:
                 countryballs = await player.balls.all().order_by(sort.value)
         else:
