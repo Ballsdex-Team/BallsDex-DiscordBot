@@ -308,7 +308,7 @@ class GuildConfigResource(Model):
 class BlacklistedIDResource(Model):
     label = "Blacklisted user ID"
     model = BlacklistedID
-    icon = "fas fa-lock"
+    icon = "fas fa-user-lock"
     page_title = "Blacklisted user IDs"
     filters = [
         filters.Search(
@@ -328,6 +328,7 @@ class BlacklistedIDResource(Model):
         "discord_id",
         "reason",
     ]
+
 
 @app.register
 class BlacklistedGuildIDResource(Model):
