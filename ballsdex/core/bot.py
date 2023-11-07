@@ -12,6 +12,12 @@ import discord
 import discord.gateway
 from cachetools import TTLCache
 from discord import app_commands
+from discord.app_commands.translator import (
+    TranslationContextTypes,
+    locale_str,
+    TranslationContextLocation,
+)
+from discord.enums import Locale
 from discord.ext import commands
 from rich import print
 from prometheus_client import Histogram
@@ -41,6 +47,20 @@ PACKAGES = ["config", "players", "countryballs", "info", "admin", "trade"]
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
     return ctx.bot.is_owner(ctx.author)
+
+
+class Translator(app_commands.Translator):
+    async def translate(
+        self, string: locale_str, locale: Locale, context: TranslationContextTypes
+    ) -> str | None:
+        if context.location in (
+            TranslationContextLocation.choice_name,
+            TranslationContextLocation.other,
+        ):
+            return None
+        return string.message.replace("countryball", settings.collectible_name).replace(
+            "BallsDex", settings.bot_name
+        )
 
 
 # observing the duration and status code of HTTP requests through aiohttp TraceConfig
@@ -199,6 +219,7 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
 
     async def setup_hook(self) -> None:
+        await self.tree.set_translator(Translator())
         log.info("Starting up with %s shards...", self.shard_count)
         if settings.gateway_url is None:
             return
