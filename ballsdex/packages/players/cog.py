@@ -490,10 +490,10 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["special"] = special
 
         await interaction.response.defer(ephemeral=True, thinking=True)
-        balls = await BallInstance.filter(**filters)
+        balls = await BallInstance.filter(**filters).count()
         country = f"{ball.country} " if ball else ""
-        plural = "s" if len(balls) > 1 else ""
+        plural = "s" if balls > 1 else ""
         special = f"{special.name} " if special else ""
         await interaction.followup.send(
-            f"You have {len(balls)} {special}{country}{settings.collectible_name}{plural}."
+            f"You have {balls} {special}{country}{settings.collectible_name}{plural}."
         )
