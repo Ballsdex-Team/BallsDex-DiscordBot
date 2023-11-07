@@ -1007,7 +1007,7 @@ class Admin(commands.GroupCog):
             )
         else:
             await interaction.followup.send(
-                f"There are {len(balls)} {special}{country}{settings.collectible_name}{plural}."
+                f"There are {balls} {special}{country}{settings.collectible_name}{plural}."
             )
 
     @balls.command(name="create")
