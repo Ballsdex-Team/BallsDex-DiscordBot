@@ -481,7 +481,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         special: Special
             The special background of the ball.
         """
-        filters = {}
+        filters = {"player__discord_id": interaction.user.id}
         if ball:
             filters["ball"] = ball
         if shiny is not None:
