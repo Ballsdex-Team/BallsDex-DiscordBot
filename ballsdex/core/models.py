@@ -30,7 +30,8 @@ async def lower_catch_names(
     using_db: "BaseDBAsyncClient" | None = None,
     update_fields: Iterable[str] | None = None,
 ):
-    instance.catch_names = instance.catch_names.lower()
+    if instance.catch_names:
+        instance.catch_names = instance.catch_names.lower()
 
 
 class DiscordSnowflakeValidator(validators.Validator):

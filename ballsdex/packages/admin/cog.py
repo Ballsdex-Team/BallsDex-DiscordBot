@@ -1,15 +1,17 @@
 import discord
 import logging
 import random
+import re
 
 from discord import app_commands
 from discord.ui import Button
 from discord.ext import commands
 from discord.utils import format_dt
+from pathlib import Path
 from tortoise.exceptions import IntegrityError, DoesNotExist
 from collections import defaultdict
+from tortoise.exceptions import BaseORMException
 from typing import TYPE_CHECKING, cast
-from ballsdex.core.utils.buttons import ConfirmChoiceView
 
 from ballsdex.settings import settings
 from ballsdex.core.models import (
@@ -21,7 +23,13 @@ from ballsdex.core.models import (
     BlacklistedGuild,
     balls,
 )
-from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
+from ballsdex.core.utils.transformers import (
+    BallTransform,
+    SpecialTransform,
+    RegimeTransform,
+    EconomyTransform,
+)
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, TextPageSource, Pages
 from ballsdex.core.utils.logging import log_action
 from ballsdex.packages.countryballs.countryball import CountryBall
@@ -31,6 +39,19 @@ if TYPE_CHECKING:
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
 
 log = logging.getLogger("ballsdex.packages.admin.cog")
+FILENAME_RE = re.compile(r"(.+)(\.\S+)?")
+
+
+async def save_file(attachment: discord.Attachment) -> Path:
+    path = Path(f"./static/uploads/{attachment.filename}")
+    match = FILENAME_RE.match(attachment.filename)
+    assert match
+    i = 1
+    while path.exists():
+        path = Path(f"./static/uploads/{match.group(0)}-{i}{match.group(1)}")
+        i = i + 1
+    await attachment.save(path)
+    return path
 
 
 @app_commands.guilds(*settings.admin_guild_ids)
@@ -425,19 +446,14 @@ class Admin(commands.GroupCog):
         Parameters
         ----------
         ball: Ball
-            The countryball you want to give.
         user: discord.User
-            The user you want to give a countryball to.
         special: Special | None
-            A special background to set.
         shiny: bool
-            Whether the ball will be shiny or not. Omit this to make it random.
+            Omit this to make it random.
         health_bonus: int | None
-            The health bonus in percentage, positive or negative. Omit this to make it random \
-(-20/+20%).
+            Omit this to make it random (-20/+20%).
         attack_bonus: int | None
-            The attack bonus in percentage, positive or negative. Omit this to make it random \
-(-20/+20%).
+            Omit this to make it random (-20/+20%).
         """
         # the transformers triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
@@ -484,7 +500,6 @@ class Admin(commands.GroupCog):
         user_id: str | None
             The ID of the user you want to blacklist, if it's not in the current server.
         reason: str | None
-            Reason for this blacklist.
         """
         if (user and user_id) or (not user and not user_id):
             await interaction.response.send_message(
@@ -651,7 +666,6 @@ class Admin(commands.GroupCog):
         guild_id: str
             The ID of the user you want to blacklist, if it's not in the current server.
         reason: str
-            Reason for this blacklist.
         """
 
         try:
@@ -955,10 +969,10 @@ class Admin(commands.GroupCog):
     async def balls_count(
         self,
         interaction: discord.Interaction,
-        user: discord.User = None,
-        ball: BallTransform = None,
-        shiny: bool = None,
-        special: SpecialTransform = None,
+        user: discord.User | None = None,
+        ball: BallTransform | None = None,
+        shiny: bool | None = None,
+        special: SpecialTransform | None = None,
     ):
         """
         Count the number of balls that a player has or how many exist in total.
@@ -968,12 +982,11 @@ class Admin(commands.GroupCog):
         user: discord.User
             The user you want to count the balls of.
         ball: Ball
-            The ball you want to count.
         shiny: bool
-            Whether the ball is shiny or not.
         special: Special
-            The special background of the ball.
         """
+        if interaction.response.is_done():
+            return
         filters = {}
         if ball:
             filters["ball"] = ball
@@ -986,7 +999,7 @@ class Admin(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters).count()
         country = f"{ball.country} " if ball else ""
-        plural = "s" if alls > 1 else ""
+        plural = "s" if balls > 1 else ""
         special = f"{special.name} " if special else ""
         if user:
             await interaction.followup.send(
@@ -995,6 +1008,136 @@ class Admin(commands.GroupCog):
         else:
             await interaction.followup.send(
                 f"There are {len(balls)} {special}{country}{settings.collectible_name}{plural}."
+            )
+
+    @balls.command(name="create")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def balls_create(
+        self,
+        interaction: discord.Interaction,
+        *,
+        name: app_commands.Range[str, None, 48],
+        regime: RegimeTransform,
+        health: int,
+        attack: int,
+        emoji_id: app_commands.Range[str, 17, 21],
+        capacity_name: app_commands.Range[str, None, 64],
+        capacity_description: app_commands.Range[str, None, 256],
+        collection_card: discord.Attachment,
+        image_credits: str,
+        economy: EconomyTransform | None = None,
+        rarity: float = 0.0,
+        enabled: bool = False,
+        tradeable: bool = False,
+        wild_card: discord.Attachment | None = None,
+    ):
+        """
+        Shortcut command for creating countryballs. They are disabled by default.
+
+        Parameters
+        ----------
+        name: str
+        regime: Regime
+        economy: Economy | None
+        health: int
+        attack: int
+        emoji_id: str
+            An emoji ID, the bot will check if it can access the custom emote
+        capacity_name: str
+        capacity_description: str
+        collection_card: discord.Attachment
+        image_credits: str
+        rarity: float
+            Value defining the rarity of this countryball, if enabled
+        enabled: bool
+            If true, the countryball can spawn and will show up in global completion
+        tradeable: bool
+            If false, all instances are untradeable
+        wild_card: discord.Attachment
+            Artwork used to spawn the countryball, with a default
+        """
+        if regime is None or interaction.response.is_done():  # economy autocomplete failed
+            return
+
+        if not emoji_id.isnumeric():
+            await interaction.response.send_message(
+                "`emoji_id` is not a valid number.", ephemeral=True
+            )
+            return
+        emoji = self.bot.get_emoji(int(emoji_id))
+        if not emoji:
+            await interaction.response.send_message(
+                "The bot does not have access to the given emoji.", ephemeral=True
+            )
+            return
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        default_path = Path("./ballsdex/core/image_generator/src/default.png")
+        missing_default = ""
+        if not default_path.exists():
+            missing_default = (
+                "**Warning:** The default spawn image is not set. This will result in errors when "
+                f"attempting to spawn this {settings.collectible_name}. You can edit this on the "
+                "web panel or add an image at `./ballsdex/core/image_generator/src/default.png`.\n"
+            )
+
+        try:
+            collection_card_path = await save_file(collection_card)
+        except Exception as e:
+            log.exception("Failed saving file when creating countryball", exc_info=True)
+            await interaction.followup.send(
+                f"Failed saving the attached file: {collection_card.url}.\n"
+                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
+                "The full error is in the bot logs."
+            )
+            return
+        try:
+            wild_card_path = await save_file(wild_card) if wild_card else default_path
+        except Exception as e:
+            log.exception("Failed saving file when creating countryball", exc_info=True)
+            await interaction.followup.send(
+                f"Failed saving the attached file: {collection_card.url}.\n"
+                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
+                "The full error is in the bot logs."
+            )
+            return
+
+        try:
+            ball = await Ball.create(
+                country=name,
+                regime=regime,
+                economy=economy,
+                health=health,
+                attack=attack,
+                rarity=rarity,
+                enabled=enabled,
+                tradeable=tradeable,
+                emoji_id=emoji_id,
+                wild_card=str(wild_card_path),
+                collection_card=str(collection_card_path),
+                credits=image_credits,
+                capacity_name=capacity_name,
+                capacity_description=capacity_description,
+            )
+        except BaseORMException as e:
+            log.exception("Failed creating countryball with admin command", exc_info=True)
+            await interaction.followup.send(
+                f"Failed creating the {settings.collectible_name}.\n"
+                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
+                "The full error is in the bot logs."
+            )
+        else:
+            files = [await collection_card.to_file()]
+            if wild_card:
+                files.append(await wild_card.to_file())
+            await self.bot.load_cache()
+            await interaction.followup.send(
+                f"Successfully created a {settings.collectible_name} with ID {ball.pk}! "
+                "The internal cache was reloaded.\n"
+                f"{missing_default}\n"
+                f"{name=} regime={regime.name} economy={economy.name if economy else None} "
+                f"{health=} {attack=} {rarity=} {enabled=} {tradeable=} emoji={emoji}",
+                files=files,
             )
 
     @logs.command(name="catchlogs")

@@ -10,7 +10,17 @@ from tortoise.exceptions import DoesNotExist
 from typing import TypeVar, Generic, AsyncIterator
 
 from ballsdex.settings import settings
-from ballsdex.core.models import Ball, BallInstance, Player, Special, balls
+from ballsdex.core.models import (
+    Ball,
+    BallInstance,
+    Regime,
+    Economy,
+    Player,
+    Special,
+    balls,
+    regimes,
+    economies,
+)
 
 log = logging.getLogger("ballsdex.core.utils.transformers")
 
@@ -237,3 +247,89 @@ class SpecialTransformer(app_commands.Transformer):
 
 
 SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
+
+
+class RegimeTransformer(app_commands.Transformer):
+    def __init__(self):
+        self.cache: ListCache[Regime] | None = None
+
+    async def load_cache(self):
+        self.cache = ListCache(time.time(), list(regimes.values()))
+
+    async def autocomplete(
+        self, interaction: discord.Interaction, value: str
+    ) -> list[app_commands.Choice[int | float | str]]:
+        t1 = time.time()
+        if self.cache is None or time.time() - self.cache.time > 300:
+            await self.load_cache()
+        choices: list[app_commands.Choice] = []
+        for regime in self.cache.balls:
+            if value.lower() in regime.name.lower():
+                choices.append(app_commands.Choice(name=regime.name, value=str(regime.pk)))
+                if len(choices) == 25:
+                    break
+        t2 = time.time()
+        log.debug(f"Regime autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
+        return choices
+
+    async def transform(self, interaction: discord.Interaction, value: str) -> Regime | None:
+        if not value:
+            await interaction.response.send_message(
+                "You need to use the autocomplete function for the regime selection."
+            )
+            return None
+        try:
+            return regimes[int(value)]
+        except (StopIteration, ValueError):
+            await interaction.response.send_message(
+                "The regime could not be found. Make sure to use the autocomplete "
+                "function on this command.",
+                ephemeral=True,
+            )
+            return None
+
+
+RegimeTransform = app_commands.Transform[Regime, RegimeTransformer]
+
+
+class EconomyTransformer(app_commands.Transformer):
+    def __init__(self):
+        self.cache: ListCache[Economy] | None = None
+
+    async def load_cache(self):
+        self.cache = ListCache(time.time(), list(economies.values()))
+
+    async def autocomplete(
+        self, interaction: discord.Interaction, value: str
+    ) -> list[app_commands.Choice[int | float | str]]:
+        t1 = time.time()
+        if self.cache is None or time.time() - self.cache.time > 300:
+            await self.load_cache()
+        choices: list[app_commands.Choice] = []
+        for economy in self.cache.balls:
+            if value.lower() in economy.name.lower():
+                choices.append(app_commands.Choice(name=economy.name, value=str(economy.pk)))
+                if len(choices) == 25:
+                    break
+        t2 = time.time()
+        log.debug(f"Economy autocomplete took {round((t2-t1)*1000)}ms, {len(choices)} results")
+        return choices
+
+    async def transform(self, interaction: discord.Interaction, value: str) -> Economy | None:
+        if not value:
+            await interaction.response.send_message(
+                "You need to use the autocomplete function for the economy selection."
+            )
+            return None
+        try:
+            return economies[int(value)]
+        except (StopIteration, ValueError):
+            await interaction.response.send_message(
+                "The economy could not be found. Make sure to use the autocomplete "
+                "function on this command.",
+                ephemeral=True,
+            )
+            return None
+
+
+EconomyTransform = app_commands.Transform[Economy, EconomyTransformer]
