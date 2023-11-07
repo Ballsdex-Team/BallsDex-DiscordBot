@@ -202,7 +202,6 @@ class BallTransformer(app_commands.Transformer):
             )
             return None
 
-
 BallTransform = app_commands.Transform[Ball, BallTransformer]
 
 class BallEnabledTransformer(app_commands.Transformer):
@@ -245,7 +244,6 @@ class BallEnabledTransformer(app_commands.Transformer):
             )
             return None
 
-
 BallEnabledTransform = app_commands.Transform[Ball, BallEnabledTransformer]
 
 class SpecialTransformer(app_commands.Transformer):
@@ -286,7 +284,6 @@ class SpecialTransformer(app_commands.Transformer):
                 "function on this command."
             )
             return None
-
 
 SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
 
@@ -330,7 +327,6 @@ class SpecialEnabledTransformer(app_commands.Transformer):
             )
             return None
 
-
 SpecialEnabledTransform = app_commands.Transform[Special, SpecialEnabledTransformer]
 
 class RegimeTransformer(app_commands.Transformer):
@@ -372,9 +368,7 @@ class RegimeTransformer(app_commands.Transformer):
             )
             return None
 
-
 RegimeTransform = app_commands.Transform[Regime, RegimeTransformer]
-
 
 class EconomyTransformer(app_commands.Transformer):
     def __init__(self):
