@@ -1,8 +1,9 @@
 import os
-from pathlib import Path
 import textwrap
-from PIL import Image, ImageFont, ImageDraw, ImageOps
+from pathlib import Path
 from typing import TYPE_CHECKING
+
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 if TYPE_CHECKING:
     from ballsdex.core.models import BallInstance
@@ -86,7 +87,7 @@ def draw_card(ball_instance: "BallInstance"):
     )
 
     artwork = Image.open("." + ball.collection_card)
-    image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])
+    image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
 
     if icon:
         icon = ImageOps.fit(icon, (192, 192))

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import math
-import discord
-import random
 import logging
-
+import math
+import random
 from typing import TYPE_CHECKING, cast
-from tortoise.timezone import now as datetime_now
-from prometheus_client import Counter
-from discord.ui import Modal, TextInput, Button, View
 
+import discord
+from discord.ui import Button, Modal, TextInput, View
+from prometheus_client import Counter
+from tortoise.timezone import now as datetime_now
+
+from ballsdex.core.models import BallInstance, Player, specials
 from ballsdex.settings import settings
-from ballsdex.core.models import Player, BallInstance, specials
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -41,7 +41,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         else:
             await interaction.response.send_message("An error occured with this countryball.")
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         # TODO: use lock
         if self.ball.catched:
             await interaction.response.send_message(
@@ -56,7 +56,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             self.ball.catched = True
             await interaction.response.defer(thinking=True)
             ball, has_caught_before = await self.catch_ball(
-                cast("BallsDexBot", interaction.client), interaction.user
+                interaction.client, cast(discord.Member, interaction.user)
             )
 
             special = ""
@@ -90,7 +90,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         shiny = random.randint(1, 2048) == 1
 
         # check if we can spawn cards with a special background
-        special: "Special" | None = None
+        special: "Special | None" = None
         population = [x for x in specials.values() if x.start_date <= datetime_now() <= x.end_date]
         if not shiny and population:
             # Here we try to determine what should be the chance of having a common card
@@ -123,13 +123,14 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 f"{user} caught {settings.collectible_name}"
                 f" {self.ball.model}, {shiny=} {special=}",
             )
-        caught_balls.labels(
-            country=self.ball.model.country,
-            shiny=shiny,
-            special=special,
-            # observe the size of the server, rounded to the nearest power of 10
-            guild_size=10 ** math.ceil(math.log(max(user.guild.member_count - 1, 1), 10)),
-        ).inc()
+        if user.guild.member_count:
+            caught_balls.labels(
+                country=self.ball.model.country,
+                shiny=shiny,
+                special=special,
+                # observe the size of the server, rounded to the nearest power of 10
+                guild_size=10 ** math.ceil(math.log(max(user.guild.member_count - 1, 1), 10)),
+            ).inc()
         return ball, is_new
 
 
@@ -152,9 +153,8 @@ class CatchView(View):
         self.button = CatchButton(ball)
         self.add_item(self.button)
 
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
-        bot = cast("BallsDexBot", interaction.client)
-        return await bot.blacklist_check(interaction)
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
+        return await interaction.client.blacklist_check(interaction)
 
     async def on_timeout(self):
         self.button.disabled = True

@@ -1,9 +1,9 @@
 import logging
 import time
-
 from typing import TYPE_CHECKING
-from tortoise import Tortoise
+
 from discord.ext import commands
+from tortoise import Tortoise
 
 log = logging.getLogger("ballsdex.core.commands")
 

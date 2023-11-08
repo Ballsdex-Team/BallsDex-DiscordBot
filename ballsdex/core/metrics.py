@@ -1,10 +1,10 @@
 import logging
 import math
+from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from aiohttp import web
-from collections import defaultdict
-from prometheus_client import Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST
-from typing import TYPE_CHECKING
+from prometheus_client import CONTENT_TYPE_LATEST, Gauge, Histogram, generate_latest
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -37,6 +37,8 @@ class PrometheusServer:
     async def collect_metrics(self):
         guilds: dict[int, int] = defaultdict(int)
         for guild in self.bot.guilds:
+            if not guild.member_count:
+                continue
             guilds[10 ** math.ceil(math.log(max(guild.member_count - 1, 1), 10))] += 1
         for size, count in guilds.items():
             self.guild_count.labels(size=size).set(count)

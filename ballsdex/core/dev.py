@@ -1,23 +1,22 @@
 import ast
 import asyncio
-import aiohttp
-import inspect
 import contextlib
+import inspect
 import io
+import re
 import textwrap
 import traceback
-import re
-
-from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
 from contextlib import redirect_stdout
 from copy import copy
 from io import BytesIO
+from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
 
+import aiohttp
 import discord
 from discord.ext import commands
 
 from ballsdex.core import models
-from ballsdex.core.models import Ball, BallInstance, Special, Player, BlacklistedID, GuildConfig
+from ballsdex.core.models import Ball, BallInstance, BlacklistedID, GuildConfig, Player, Special
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -174,7 +173,7 @@ async def send_interactive(
                 break
             else:
                 try:
-                    await ctx.channel.delete_messages((query, resp))
+                    await ctx.channel.delete_messages((query, resp))  # type: ignore
                 except (discord.HTTPException, AttributeError):
                     # In case the bot can't delete other users' messages,
                     # or is not a bot account

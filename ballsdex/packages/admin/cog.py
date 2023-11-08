@@ -1,38 +1,37 @@
-import discord
 import logging
 import random
 import re
-
-from discord import app_commands
-from discord.ui import Button
-from discord.ext import commands
-from discord.utils import format_dt
-from pathlib import Path
-from tortoise.exceptions import IntegrityError, DoesNotExist
 from collections import defaultdict
-from tortoise.exceptions import BaseORMException
+from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from ballsdex.settings import settings
+import discord
+from discord import app_commands
+from discord.ext import commands
+from discord.ui import Button
+from discord.utils import format_dt
+from tortoise.exceptions import BaseORMException, DoesNotExist, IntegrityError
+
 from ballsdex.core.models import (
-    GuildConfig,
-    Player,
     Ball,
     BallInstance,
-    BlacklistedID,
     BlacklistedGuild,
+    BlacklistedID,
+    GuildConfig,
+    Player,
     balls,
 )
+from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.logging import log_action
+from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.core.utils.transformers import (
     BallTransform,
-    SpecialTransform,
-    RegimeTransform,
     EconomyTransform,
+    RegimeTransform,
+    SpecialTransform,
 )
-from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.paginator import FieldPageSource, TextPageSource, Pages
-from ballsdex.core.utils.logging import log_action
 from ballsdex.packages.countryballs.countryball import CountryBall
+from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -126,7 +125,7 @@ class Admin(commands.GroupCog):
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def rarity(self, interaction: discord.Interaction, chunked: bool = True):
+    async def rarity(self, interaction: discord.Interaction["BallsDexBot"], chunked: bool = True):
         """
         Generate a list of countryballs ranked by rarity.
 
@@ -196,7 +195,7 @@ class Admin(commands.GroupCog):
             return
 
         embed = discord.Embed()
-        embed.set_author(name=guild.name, icon_url=guild.icon.url)
+        embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else None)
         embed.colour = discord.Colour.orange()
 
         delta = (interaction.created_at - cooldown.time).total_seconds()
@@ -283,7 +282,7 @@ class Admin(commands.GroupCog):
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def guilds(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         user_id: str | None = None,
     ):
@@ -820,7 +819,7 @@ class Admin(commands.GroupCog):
             return
 
         await interaction.response.send_message(
-            f"**{settings.collectible_name.title()} ID:** {ball.id}\n"
+            f"**{settings.collectible_name.title()} ID:** {ball.pk}\n"
             f"**Player:** {ball.player}\n"
             f"**Name:** {ball.countryball}\n"
             f"**Attack bonus:** {ball.attack_bonus}\n"
@@ -830,7 +829,7 @@ class Admin(commands.GroupCog):
             f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
             f"**Traded:** {ball.trade_player}\n"
         )
-        await log_action(f"{interaction.user} got info for {ball} ({ball.id})", self.bot)
+        await log_action(f"{interaction.user} got info for {ball} ({ball.pk})", self.bot)
 
     @balls.command(name="delete")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -861,7 +860,7 @@ class Admin(commands.GroupCog):
         await interaction.response.send_message(
             f"{settings.collectible_name.title()} {ball_id} deleted.", ephemeral=True
         )
-        await log_action(f"{interaction.user} deleted {ball} ({ball.id})", self.bot)
+        await log_action(f"{interaction.user} deleted {ball} ({ball.pk})", self.bot)
 
     @balls.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -901,7 +900,7 @@ class Admin(commands.GroupCog):
             ephemeral=True,
         )
         await log_action(
-            f"{interaction.user} transferred {ball} ({ball.id}) from {original_player} to {user}",
+            f"{interaction.user} transferred {ball} ({ball.pk}) from {original_player} to {user}",
             self.bot,
         )
 
@@ -1000,14 +999,14 @@ class Admin(commands.GroupCog):
         balls = await BallInstance.filter(**filters).count()
         country = f"{ball.country} " if ball else ""
         plural = "s" if balls > 1 else ""
-        special = f"{special.name} " if special else ""
+        special_str = f"{special.name} " if special else ""
         if user:
             await interaction.followup.send(
-                f"{user} has {balls} {special}{country}{settings.collectible_name}{plural}."
+                f"{user} has {balls} {special_str}{country}{settings.collectible_name}{plural}."
             )
         else:
             await interaction.followup.send(
-                f"There are {balls} {special}{country}{settings.collectible_name}{plural}."
+                f"There are {balls} {special_str}{country}{settings.collectible_name}{plural}."
             )
 
     @balls.command(name="create")

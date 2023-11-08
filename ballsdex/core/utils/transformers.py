@@ -1,26 +1,26 @@
-import discord
-import time
 import logging
+import time
+from dataclasses import dataclass
+from datetime import datetime
+from typing import AsyncIterator, Generic, TypeVar
 
+import discord
 from discord import app_commands
 from discord.ext import tasks
-from datetime import datetime
-from dataclasses import dataclass
 from tortoise.exceptions import DoesNotExist
-from typing import TypeVar, Generic, AsyncIterator
 
-from ballsdex.settings import settings
 from ballsdex.core.models import (
     Ball,
     BallInstance,
-    Regime,
     Economy,
     Player,
+    Regime,
     Special,
     balls,
-    regimes,
     economies,
+    regimes,
 )
+from ballsdex.settings import settings
 
 log = logging.getLogger("ballsdex.core.utils.transformers")
 
@@ -167,15 +167,15 @@ class BallTransformer(app_commands.Transformer):
     def __init__(self):
         self.cache: ListCache[Ball] | None = None
 
-    async def load_cache(self):
-        self.cache = ListCache(time.time(), list(balls.values()))
+    async def load_cache(self) -> ListCache[Ball]:
+        return ListCache(time.time(), list(balls.values()))
 
     async def autocomplete(
         self, interaction: discord.Interaction, value: str
     ) -> list[app_commands.Choice[int | float | str]]:
         t1 = time.time()
         if self.cache is None or time.time() - self.cache.time > 300:
-            await self.load_cache()
+            self.cache = await self.load_cache()
         choices: list[app_commands.Choice] = []
         for ball in self.cache.balls:
             if value.lower() in ball.country.lower():
@@ -210,16 +210,16 @@ class SpecialTransformer(app_commands.Transformer):
     def __init__(self):
         self.cache: ListCache[Special] | None = None
 
-    async def load_cache(self):
+    async def load_cache(self) -> ListCache[Special]:
         events = await Special.all()
-        self.cache = ListCache(time.time(), events)
+        return ListCache(time.time(), events)
 
     async def autocomplete(
         self, interaction: discord.Interaction, value: str
     ) -> list[app_commands.Choice[int | float | str]]:
         t1 = time.time()
         if self.cache is None or time.time() - self.cache.time > 300:
-            await self.load_cache()
+            self.cache = await self.load_cache()
         choices: list[app_commands.Choice] = []
         for event in self.cache.balls:
             if value.lower() in event.name.lower():
@@ -253,15 +253,15 @@ class RegimeTransformer(app_commands.Transformer):
     def __init__(self):
         self.cache: ListCache[Regime] | None = None
 
-    async def load_cache(self):
-        self.cache = ListCache(time.time(), list(regimes.values()))
+    async def load_cache(self) -> ListCache[Regime]:
+        return ListCache(time.time(), list(regimes.values()))
 
     async def autocomplete(
         self, interaction: discord.Interaction, value: str
     ) -> list[app_commands.Choice[int | float | str]]:
         t1 = time.time()
         if self.cache is None or time.time() - self.cache.time > 300:
-            await self.load_cache()
+            self.cache = await self.load_cache()
         choices: list[app_commands.Choice] = []
         for regime in self.cache.balls:
             if value.lower() in regime.name.lower():
@@ -296,15 +296,15 @@ class EconomyTransformer(app_commands.Transformer):
     def __init__(self):
         self.cache: ListCache[Economy] | None = None
 
-    async def load_cache(self):
-        self.cache = ListCache(time.time(), list(economies.values()))
+    async def load_cache(self) -> ListCache[Economy]:
+        return ListCache(time.time(), list(economies.values()))
 
     async def autocomplete(
         self, interaction: discord.Interaction, value: str
     ) -> list[app_commands.Choice[int | float | str]]:
         t1 = time.time()
         if self.cache is None or time.time() - self.cache.time > 300:
-            await self.load_cache()
+            self.cache = await self.load_cache()
         choices: list[app_commands.Choice] = []
         for economy in self.cache.balls:
             if value.lower() in economy.name.lower():

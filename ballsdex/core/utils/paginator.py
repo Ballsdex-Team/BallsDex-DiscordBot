@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
-import discord
 import logging
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
+import discord
 from discord.ext.commands import Paginator as CommandPaginator
 
 from ballsdex.core.utils import menus
@@ -35,15 +36,15 @@ class Pages(discord.ui.View):
         self,
         source: menus.PageSource,
         *,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         check_embeds: bool = False,
         compact: bool = False,
     ):
         super().__init__()
         self.source: menus.PageSource = source
         self.check_embeds: bool = check_embeds
-        self.original_interaction: discord.Interaction = interaction
-        self.bot = cast("BallsDexBot", self.original_interaction.client)
+        self.original_interaction = interaction
+        self.bot = self.original_interaction.client
         self.current_page: int = 0
         self.compact: bool = compact
         self.clear_items()
@@ -75,7 +76,7 @@ class Pages(discord.ui.View):
                 self.add_item(self.numbered_page)
             self.add_item(self.stop_pages)
 
-    async def _get_kwargs_from_page(self, page: int) -> Dict[str, Any] | None:
+    async def _get_kwargs_from_page(self, page: int) -> Dict[str, Any]:
         value = await discord.utils.maybe_coroutine(self.source.format_page, self, page)
         if isinstance(value, dict):
             return value
@@ -86,7 +87,7 @@ class Pages(discord.ui.View):
         elif value is True:
             return {}
         else:
-            return None
+            raise TypeError("Wrong page type returned")
 
     async def show_page(self, interaction: discord.Interaction, page_number: int) -> None:
         page = await self.source.get_page(page_number)
@@ -96,7 +97,9 @@ class Pages(discord.ui.View):
         self._update_labels(page_number)
         if kwargs is not None:
             if interaction.response.is_done():
-                await interaction.followup.edit_message("@original", **kwargs, view=self)
+                await interaction.followup.edit_message(
+                    "@original", **kwargs, view=self  # type: ignore
+                )
             else:
                 await interaction.response.edit_message(**kwargs, view=self)
 
@@ -141,9 +144,8 @@ class Pages(discord.ui.View):
             # An error happened that can be handled, so ignore it.
             pass
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        bot = cast("BallsDexBot", interaction.client)
-        if not await bot.blacklist_check(interaction):
+    async def interaction_check(self, interaction: discord.Interaction[BallsDexBot]) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
             return False
         if interaction.user and interaction.user.id in (
             self.bot.owner_id,
@@ -160,7 +162,9 @@ class Pages(discord.ui.View):
         for item in self.children:
             item.disabled = True  # type: ignore
         try:
-            await self.original_interaction.followup.edit_message("@original", view=self)
+            await self.original_interaction.followup.edit_message(
+                "@original", view=self  # type: ignore
+            )
         except discord.HTTPException:
             pass
 
@@ -178,8 +182,8 @@ class Pages(discord.ui.View):
     async def start(self, *, content: Optional[str] = None, ephemeral: bool = False) -> None:
         if (
             self.check_embeds
-            and not self.original_interaction.channel.permissions_for(
-                self.original_interaction.guild.me
+            and not self.original_interaction.channel.permissions_for(  # type: ignore
+                self.original_interaction.guild.me  # type: ignore
             ).embed_links
         ):
             await self.send(
@@ -250,14 +254,14 @@ class Pages(discord.ui.View):
         value = int(value)
         await self.show_checked_page(modal.interaction, value - 1)
         if not modal.interaction.response.is_done():
-            error = modal.page.placeholder.replace("Enter", "Expected")
+            error = modal.page.placeholder.replace("Enter", "Expected")  # type: ignore
             await modal.interaction.response.send_message(error, ephemeral=True)
 
     @discord.ui.button(label="Quit", style=discord.ButtonStyle.red)
     async def stop_pages(self, interaction: discord.Interaction, button: discord.ui.Button):
         """stops the pagination session."""
         for item in self.children:
-            item.disabled = True
+            item.disabled = True  # type: ignore
         await interaction.response.edit_message(view=self)
         self.stop()
 
@@ -330,6 +334,8 @@ class SimplePages(Pages):
     Basically an embed with some normal formatting.
     """
 
-    def __init__(self, entries, *, interaction: discord.Interaction, per_page: int = 12):
+    def __init__(
+        self, entries, *, interaction: discord.Interaction["BallsDexBot"], per_page: int = 12
+    ):
         super().__init__(SimplePageSource(entries, per_page=per_page), interaction=interaction)
         self.embed = discord.Embed(colour=discord.Colour.blurple())

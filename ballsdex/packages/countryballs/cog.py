@@ -1,20 +1,23 @@
-import discord
 import logging
+from typing import TYPE_CHECKING, Optional
 
-from typing import Optional
-from tortoise.exceptions import DoesNotExist
+import discord
 from discord.ext import commands
+from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.models import GuildConfig
 from ballsdex.packages.countryballs.spawn import SpawnManager
+
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
 
 class CountryBallsSpawner(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: "BallsDexBot"):
         self.spawn_manager = SpawnManager()
-        self.bot: commands.Bot = bot
+        self.bot = bot
 
     async def load_cache(self):
         i = 0

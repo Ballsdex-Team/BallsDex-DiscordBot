@@ -25,13 +25,20 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-import discord
-
-import itertools
 import inspect
+import itertools
 import logging
 import re
 from collections import OrderedDict, namedtuple
+from typing import TYPE_CHECKING, Any
+
+import discord
+from discord.utils import MISSING
+
+if TYPE_CHECKING:
+    from discord.ext import commands
+
+    from ballsdex.core.bot import BallsDexBot
 
 # Needed for the setup.py script
 __version__ = "1.0.0-a"
@@ -299,12 +306,12 @@ class _MenuMeta(type):
                 else:
                     buttons.append(value)
 
-        new_cls.__menu_buttons__ = buttons
+        new_cls.__menu_buttons__ = buttons  # type: ignore
         return new_cls
 
     def get_buttons(cls):
         buttons = OrderedDict()
-        for func in cls.__menu_buttons__:
+        for func in cls.__menu_buttons__:  # type: ignore
             emoji = func.__menu_button__
             buttons[emoji] = Button(emoji, func, **func.__menu_button_kwargs__)
         return buttons
@@ -350,9 +357,8 @@ class Menu(metaclass=_MenuMeta):
         delete_message_after=False,
         clear_reactions_after=False,
         check_embeds=False,
-        message=None,
+        message: discord.Message = MISSING,
     ):
-
         self.timeout = timeout
         self.delete_message_after = delete_message_after
         self.clear_reactions_after = clear_reactions_after
@@ -362,7 +368,7 @@ class Menu(metaclass=_MenuMeta):
         self._running = True
         self.message = message
         self.ctx = None
-        self.bot = None
+        self.bot: "BallsDexBot" = MISSING
         self._author_id = None
         self._buttons = self.__class__.get_buttons()
         self._lock = asyncio.Lock()
@@ -585,11 +591,11 @@ class Menu(metaclass=_MenuMeta):
         return payload.emoji in self.buttons
 
     async def _internal_loop(self):
+        self.__timed_out = False
+        loop = self.bot.loop
+        tasks = []
         try:
-            self.__timed_out = False
-            loop = self.bot.loop
             # Ensure the name exists for the cancellation handling
-            tasks = []
             while self._running:
                 tasks = [
                     asyncio.ensure_future(
@@ -702,7 +708,13 @@ class Menu(metaclass=_MenuMeta):
         # which would require awaiting, such as stopping an erroring menu.
         log.exception("Unhandled exception during menu update.", exc_info=exc)
 
-    async def start(self, ctx, *, channel=None, wait=False):
+    async def start(
+        self,
+        ctx: "commands.Context[BallsDexBot]",
+        *,
+        channel: discord.TextChannel = MISSING,
+        wait=False,
+    ):
         """|coro|
 
         Starts the interactive menu session.
@@ -737,7 +749,8 @@ class Menu(metaclass=_MenuMeta):
         self._author_id = ctx.author.id
         channel = channel or ctx.channel
         me = channel.guild.me if getattr(channel, "guild", None) else ctx.bot.user
-        permissions = channel.permissions_for(me)
+        assert me
+        permissions = channel.permissions_for(me)  # type: ignore
         self.__me = discord.Object(id=me.id)
         self._verify_permissions(ctx, channel, permissions)
         self._event.clear()
@@ -897,7 +910,7 @@ class PageSource:
         """
         raise NotImplementedError
 
-    async def format_page(self, menu, page):
+    async def format_page(self, menu, page) -> str | discord.Embed | dict[str, Any]:
         """|maybecoro|
 
         An abstract method to format the page.
@@ -987,6 +1000,7 @@ class MenuPages(Menu):
             return {"content": value, "embed": None}
         elif isinstance(value, discord.Embed):
             return {"embed": value, "content": None}
+        raise TypeError("Wrong type from page")
 
     async def show_page(self, page_number):
         page = await self._source.get_page(page_number)
@@ -1059,7 +1073,9 @@ class MenuPages(Menu):
     async def go_to_last_page(self, payload):
         """go to the last page"""
         # The call here is safe because it's guarded by skip_if
-        await self.show_page(self._source.get_max_pages() - 1)
+        max_page = self._source.get_max_pages()
+        assert max_page
+        await self.show_page(max_page - 1)
 
     @button("\N{BLACK SQUARE FOR STOP}\ufe0f", position=Last(2))
     async def stop_pages(self, payload):

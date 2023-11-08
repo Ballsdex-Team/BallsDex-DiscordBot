@@ -1,26 +1,25 @@
+import argparse
+import asyncio
+import functools
+import logging
+import logging.handlers
 import os
 import sys
 import time
-import functools
-import asyncio
-import logging
-import logging.handlers
-
-import yarl
-import discord
-import argparse
-
 from pathlib import Path
+from signal import SIGTERM
+
+import discord
+import yarl
+from aerich import Command
+from discord.ext.commands import when_mentioned_or
+from discord.utils import setup_logging
 from rich import print
 from tortoise import Tortoise
-from aerich import Command
-from signal import SIGTERM
-from discord.utils import setup_logging
-from discord.ext.commands import when_mentioned_or
 
 from ballsdex import __version__ as bot_version
-from ballsdex.settings import settings, read_settings, write_default_settings, update_settings
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.settings import read_settings, settings, update_settings, write_default_settings
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
 log = logging.getLogger("ballsdex")
@@ -95,18 +94,20 @@ def patch_gateway(proxy_url: str):
         The URL of the gateway proxy to use.
     """
 
-    class ProductionHTTPClient(discord.http.HTTPClient):
+    class ProductionHTTPClient(discord.http.HTTPClient):  # type: ignore
         async def get_gateway(self, **_):
             return f"{proxy_url}?encoding=json&v=10"
 
         async def get_bot_gateway(self, **_):
             try:
-                data = await self.request(discord.http.Route("GET", "/gateway/bot"))
+                data = await self.request(
+                    discord.http.Route("GET", "/gateway/bot")  # type: ignore
+                )
             except discord.HTTPException as exc:
                 raise discord.GatewayNotFound() from exc
             return data["shards"], f"{proxy_url}?encoding=json&v=10"
 
-    class ProductionDiscordWebSocket(discord.gateway.DiscordWebSocket):
+    class ProductionDiscordWebSocket(discord.gateway.DiscordWebSocket):  # type: ignore
         def is_ratelimited(self):
             return False
 
@@ -126,17 +127,23 @@ def patch_gateway(proxy_url: str):
     def is_ws_ratelimited(self):
         return False
 
-    async def before_identify_hook(self, shard_id: int, *, initial: bool = False):
+    async def before_identify_hook(self, shard_id: int | None, *, initial: bool = False):
         pass
 
-    discord.http.HTTPClient.get_gateway = ProductionHTTPClient.get_gateway
-    discord.http.HTTPClient.get_bot_gateway = ProductionHTTPClient.get_bot_gateway
-    discord.gateway.DiscordWebSocket._keep_alive = None
-    discord.gateway.DiscordWebSocket.is_ratelimited = ProductionDiscordWebSocket.is_ratelimited
-    discord.gateway.DiscordWebSocket.debug_send = ProductionDiscordWebSocket.debug_send
-    discord.gateway.DiscordWebSocket.send = ProductionDiscordWebSocket.send
-    discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY = yarl.URL(proxy_url)
-    discord.gateway.ReconnectWebSocket.__init__ = ProductionReconnectWebSocket.__init__
+    discord.http.HTTPClient.get_gateway = ProductionHTTPClient.get_gateway  # type: ignore
+    discord.http.HTTPClient.get_bot_gateway = ProductionHTTPClient.get_bot_gateway  # type: ignore
+    discord.gateway.DiscordWebSocket._keep_alive = None  # type: ignore
+    discord.gateway.DiscordWebSocket.is_ratelimited = (  # type: ignore
+        ProductionDiscordWebSocket.is_ratelimited
+    )
+    discord.gateway.DiscordWebSocket.debug_send = (  # type: ignore
+        ProductionDiscordWebSocket.debug_send
+    )
+    discord.gateway.DiscordWebSocket.send = ProductionDiscordWebSocket.send  # type: ignore
+    discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY = yarl.URL(proxy_url)  # type: ignore
+    discord.gateway.ReconnectWebSocket.__init__ = (  # type: ignore
+        ProductionReconnectWebSocket.__init__
+    )
     BallsDexBot.is_ws_ratelimited = is_ws_ratelimited
     BallsDexBot.before_identify_hook = before_identify_hook
 

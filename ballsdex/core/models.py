@@ -1,17 +1,17 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from enum import IntEnum
+from io import BytesIO
+from typing import TYPE_CHECKING, Iterable, Tuple, Type
+
 import discord
 from discord.utils import format_dt
-
-from io import BytesIO
-from enum import IntEnum
-from datetime import datetime
-from typing import TYPE_CHECKING, Tuple, Type, Iterable
-from concurrent.futures import ThreadPoolExecutor
-from ballsdex.core.image_generator.image_gen import draw_card
-
-from tortoise import models, fields, validators, exceptions, signals
 from fastapi_admin.models import AbstractAdmin
+from tortoise import exceptions, fields, models, signals, validators
+
+from ballsdex.core.image_generator.image_gen import draw_card
 
 if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
@@ -27,7 +27,7 @@ async def lower_catch_names(
     model: Type[Ball],
     instance: Ball,
     created: bool,
-    using_db: "BaseDBAsyncClient" | None = None,
+    using_db: "BaseDBAsyncClient | None" = None,
     update_fields: Iterable[str] | None = None,
 ):
     if instance.catch_names:
@@ -103,6 +103,9 @@ class Special(models.Model):
 
 
 class Ball(models.Model):
+    regime_id: int
+    economy_id: int
+
     country = fields.CharField(max_length=48, unique=True)
     short_name = fields.CharField(max_length=12, null=True, default=None)
     catch_names = fields.TextField(
@@ -113,7 +116,7 @@ class Ball(models.Model):
     regime: fields.ForeignKeyRelation[Regime] = fields.ForeignKeyField(
         "models.Regime", description="Political regime of this country", on_delete=fields.CASCADE
     )
-    economy: fields.ForeignKeyRelation[Economy] = fields.ForeignKeyField(
+    economy: fields.ForeignKeyRelation[Economy] | None = fields.ForeignKeyField(
         "models.Economy",
         description="Economical regime of this country",
         on_delete=fields.SET_NULL,
@@ -152,7 +155,7 @@ class Ball(models.Model):
         return regimes.get(self.regime_id, self.regime)
 
     @property
-    def cached_economy(self) -> Economy:
+    def cached_economy(self) -> Economy | None:
         return economies.get(self.economy_id, self.economy)
 
 
@@ -160,18 +163,22 @@ Ball.register_listener(signals.Signals.pre_save, lower_catch_names)
 
 
 class BallInstance(models.Model):
+    ball_id: int
+    special_id: int
+    trade_player_id: int
+
     ball: fields.ForeignKeyRelation[Ball] = fields.ForeignKeyField("models.Ball")
     player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyRelation(
         "models.Player", related_name="balls"
     )  # type: ignore
     catch_date = fields.DatetimeField(auto_now_add=True)
     shiny = fields.BooleanField(default=False)
-    special: fields.ForeignKeyRelation[Special] = fields.ForeignKeyField(
+    special: fields.ForeignKeyRelation[Special] | None = fields.ForeignKeyField(
         "models.Special", null=True, default=None, on_delete=fields.SET_NULL
     )
     health_bonus = fields.IntField(default=0)
     attack_bonus = fields.IntField(default=0)
-    trade_player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+    trade_player: fields.ForeignKeyRelation[Player] | None = fields.ForeignKeyField(
         "models.Player", null=True, default=None, on_delete=fields.SET_NULL
     )
     favorite = fields.BooleanField(default=False)
@@ -199,7 +206,7 @@ class BallInstance(models.Model):
         return balls.get(self.ball_id, self.ball)
 
     @property
-    def specialcard(self) -> Special:
+    def specialcard(self) -> Special | None:
         return specials.get(self.special_id, self.special)
 
     def __str__(self) -> str:

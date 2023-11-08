@@ -1,6 +1,5 @@
 import discord
-
-from discord.ui import View, Button, button
+from discord.ui import Button, View, button
 
 from ballsdex.core.models import GuildConfig
 
@@ -49,7 +48,9 @@ class AcceptTOSView(View):
 
         self.accept_button.disabled = True
         try:
-            await self.original_interaction.followup.edit_message("@original", view=self)
+            await self.original_interaction.followup.edit_message(
+                "@original", view=self  # type: ignore
+            )
         except discord.HTTPException:
             pass
 
@@ -58,6 +59,8 @@ class AcceptTOSView(View):
         for item in self.children:
             item.disabled = True  # type: ignore
         try:
-            await self.original_interaction.followup.edit_message("@original", view=self)
+            await self.original_interaction.followup.edit_message(
+                "@original", view=self  # type: ignore
+            )
         except discord.HTTPException:
             pass

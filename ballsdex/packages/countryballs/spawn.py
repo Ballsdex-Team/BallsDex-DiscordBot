@@ -1,12 +1,12 @@
-import discord
-import random
-import logging
 import asyncio
-
-from typing import cast
-from datetime import datetime
+import logging
+import random
 from collections import deque, namedtuple
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import cast
+
+import discord
 
 from ballsdex.packages.countryballs.countryball import CountryBall
 
@@ -101,7 +101,9 @@ class SpawnManager:
 
         delta = (message.created_at - cooldown.time).total_seconds()
         # change how the threshold varies according to the member count, while nuking farm servers
-        if guild.member_count < 5:
+        if not guild.member_count:
+            return
+        elif guild.member_count < 5:
             multiplier = 0.1
         elif guild.member_count < 100:
             multiplier = 0.8
