@@ -32,4 +32,4 @@ jobs:
       - name: Run black
         run: poetry run black --check --diff $(git ls-files "*.py")
       - name: Run pre-commit checks
-        run: pre-commit run -a
+        run: poetry run pre-commit run -a
