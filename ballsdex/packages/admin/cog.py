@@ -38,13 +38,14 @@ if TYPE_CHECKING:
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
 
 log = logging.getLogger("ballsdex.packages.admin.cog")
-FILENAME_RE = re.compile(r"(.+)(\.\S+)?")
+FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
 
 
 async def save_file(attachment: discord.Attachment) -> Path:
     path = Path(f"./static/uploads/{attachment.filename}")
     match = FILENAME_RE.match(attachment.filename)
-    assert match
+    if not match:
+        raise TypeError("The file you uploaded lacks an extension.")
     i = 1
     while path.exists():
         path = Path(f"./static/uploads/{match.group(0)}-{i}{match.group(1)}")
@@ -1073,7 +1074,7 @@ class Admin(commands.GroupCog):
 
         default_path = Path("./ballsdex/core/image_generator/src/default.png")
         missing_default = ""
-        if not default_path.exists():
+        if not wild_card and not default_path.exists():
             missing_default = (
                 "**Warning:** The default spawn image is not set. This will result in errors when "
                 f"attempting to spawn this {settings.collectible_name}. You can edit this on the "
@@ -1112,8 +1113,8 @@ class Admin(commands.GroupCog):
                 enabled=enabled,
                 tradeable=tradeable,
                 emoji_id=emoji_id,
-                wild_card=str(wild_card_path),
-                collection_card=str(collection_card_path),
+                wild_card="/" + str(wild_card_path),
+                collection_card="/" + str(collection_card_path),
                 credits=image_credits,
                 capacity_name=capacity_name,
                 capacity_description=capacity_description,
