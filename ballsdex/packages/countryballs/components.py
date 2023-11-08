@@ -33,6 +33,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         super().__init__()
         self.ball = ball
         self.button = button
+        self.spawn_time = datetime_now()
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, /) -> None:
         log.exception("An error occured in countryball catching prompt", exc_info=error)
@@ -112,6 +113,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             special=special,
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
+            spawn_time=self.spawn_time,
+            server_id=user.guild.id,
         )
         if user.id in bot.catch_log:
             log.info(
