@@ -30,6 +30,6 @@ jobs:
       - name: Install dependencies
         run: poetry install --with=dev --no-interaction
       - name: Run black
-        run: poetry run black --check --diff
+        run: poetry run black --check --diff $(git ls-files "*.py")
       - name: Run pre-commit checks
         run: pre-commit run -a
