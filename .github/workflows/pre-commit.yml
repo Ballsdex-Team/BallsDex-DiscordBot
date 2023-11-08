@@ -25,8 +25,7 @@ jobs:
           key: poetry-${{ hashFiles('poetry.lock') }}
       - name: Install Poetry
         run: |
-          curl -fsS -o get-poetry.py https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py
-          python get-poetry.py -y
+          curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.poetry/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: poetry install --with=dev --no-interaction
