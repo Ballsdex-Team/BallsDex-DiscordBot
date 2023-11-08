@@ -2,8 +2,6 @@
 
 [![Discord server](https://discordapp.com/api/guilds/1049118743101452329/embed.png)](https://discord.gg/Qn2Rkdkxwc)
 [![Pre-commit](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/pre-commit.yml)
-[![Docker build](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/docker.yml/badge.svg)](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/docker.yml)
-[![CodeQL](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/codeql-analysis.yml)
 [![Issues](https://img.shields.io/github/issues/laggron42/BallsDex-DiscordBot)](https://github.com/laggron42/BallsDex-DiscordBot/issues)
 [![discord.py](https://img.shields.io/badge/discord-py-blue.svg)](https://github.com/Rapptz/discord.py)
 [![Black coding style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
