@@ -48,7 +48,7 @@ async def save_file(attachment: discord.Attachment) -> Path:
         raise TypeError("The file you uploaded lacks an extension.")
     i = 1
     while path.exists():
-        path = Path(f"./static/uploads/{match.group(0)}-{i}{match.group(1)}")
+        path = Path(f"./static/uploads/{match.group(1)}-{i}{match.group(2)}")
         i = i + 1
     await attachment.save(path)
     return path
