@@ -1,16 +1,16 @@
-import discord
+from collections import defaultdict
+from typing import TYPE_CHECKING, cast
 
+import discord
 from discord import app_commands
 from discord.ext import commands
+from discord.utils import MISSING
 
-from typing import TYPE_CHECKING
-from collections import defaultdict
-
-from ballsdex.settings import settings
 from ballsdex.core.models import Player
-from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.packages.trade.menu import TradeMenu, TradingUser
+from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -30,7 +30,7 @@ class Trade(commands.GroupCog):
         interaction: discord.Interaction | None = None,
         *,
         channel: discord.TextChannel | None = None,
-        user: discord.User | discord.Member | None = None,
+        user: discord.User | discord.Member = MISSING,
     ) -> tuple[TradeMenu, TradingUser] | tuple[None, None]:
         """
         Find an ongoing trade for the given interaction.
@@ -47,11 +47,13 @@ class Trade(commands.GroupCog):
         """
         guild: discord.Guild
         if interaction:
-            guild = interaction.guild
-            channel = interaction.channel
+            guild = cast(discord.Guild, interaction.guild)
+            channel = cast(discord.TextChannel, interaction.channel)
             user = interaction.user
-        else:
+        elif channel:
             guild = channel.guild
+        else:
+            raise TypeError("Missing interaction or channel")
 
         if guild.id not in self.trades:
             return (None, None)
@@ -83,7 +85,7 @@ class Trade(commands.GroupCog):
         return (trade, trader)
 
     @app_commands.command()
-    async def begin(self, interaction: discord.Interaction, user: discord.User):
+    async def begin(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
         """
         Begin a trade with the chosen user.
 
@@ -102,7 +104,7 @@ class Trade(commands.GroupCog):
             return
 
         trade1, trader1 = self.get_trade(interaction)
-        trade2, trader2 = self.get_trade(channel=interaction.channel, user=user)
+        trade2, trader2 = self.get_trade(channel=interaction.channel, user=user)  # type: ignore
         if trade1 or trader1:
             await interaction.response.send_message(
                 "You already have an ongoing trade.", ephemeral=True
@@ -119,7 +121,7 @@ class Trade(commands.GroupCog):
         menu = TradeMenu(
             self, interaction, TradingUser(interaction.user, player1), TradingUser(user, player2)
         )
-        self.trades[interaction.guild.id][interaction.channel.id].append(menu)
+        self.trades[interaction.guild.id][interaction.channel.id].append(menu)  # type: ignore
         await menu.start()
         await interaction.response.send_message("Trade started!", ephemeral=True)
 
@@ -169,7 +171,7 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        if countryball.id in self.bot.locked_balls:
+        if countryball.pk in self.bot.locked_balls:
             await interaction.followup.send(
                 "This countryball is currently in an active trade or donation, "
                 "please try again later.",
@@ -177,7 +179,7 @@ class Trade(commands.GroupCog):
             )
             return
 
-        self.bot.locked_balls[countryball.id] = None
+        self.bot.locked_balls[countryball.pk] = None
         trader.proposal.append(countryball)
         await interaction.followup.send(
             f"{countryball.countryball.country} added.", ephemeral=True
@@ -218,4 +220,4 @@ class Trade(commands.GroupCog):
         await interaction.response.send_message(
             f"{countryball.countryball.country} removed.", ephemeral=True
         )
-        del self.bot.locked_balls[countryball.id]
+        del self.bot.locked_balls[countryball.pk]

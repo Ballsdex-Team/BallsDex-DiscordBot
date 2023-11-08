@@ -1,10 +1,5 @@
-from ballsdex.core.admin import resources, routes  # noqa: F401
-
 import os
 import pathlib
-from redis import asyncio as aioredis
-
-from tortoise.contrib.fastapi import register_tortoise
 
 from fastapi import FastAPI
 from fastapi_admin.app import app as admin_app
@@ -15,7 +10,7 @@ from fastapi_admin.exceptions import (
     unauthorized_error_exception,
 )
 from fastapi_admin.providers.login import UsernamePasswordProvider
-
+from redis import asyncio as aioredis
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
@@ -25,8 +20,10 @@ from starlette.status import (
     HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
+from tortoise.contrib.fastapi import register_tortoise
 
 from ballsdex.__main__ import TORTOISE_ORM
+from ballsdex.core.admin import resources, routes  # noqa: F401
 from ballsdex.core.admin.resources import User
 
 BASE_DIR = pathlib.Path(".")
@@ -57,12 +54,12 @@ def init_fastapi_app() -> FastAPI:
     @app.on_event("startup")
     async def startup():
         redis = aioredis.from_url(
-            os.environ.get("BALLSDEXBOT_REDIS_URL"), decode_responses=True, encoding="utf8"
+            os.environ["BALLSDEXBOT_REDIS_URL"], decode_responses=True, encoding="utf8"
         )
         await admin_app.configure(
             logo_url="https://i.imgur.com/HwNKi5a.png",
             template_folders=[os.path.join(BASE_DIR, "ballsdex", "templates")],
-            favicon_url="https://raw.githubusercontent.com/fastapi-admin/"
+            favicon_url="https://raw.githubusercontent.com/fastapi-admin/"  # type: ignore
             "fastapi-admin/dev/images/favicon.png",
             providers=[
                 UsernamePasswordProvider(

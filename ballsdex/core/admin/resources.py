@@ -1,23 +1,25 @@
 import os
+from typing import List
+
 from fastapi_admin.app import app
 from fastapi_admin.enums import Method
 from fastapi_admin.file_upload import FileUpload
-from fastapi_admin.resources import Field, Link, Model, Action
+from fastapi_admin.resources import Action, Field, Link, Model
 from fastapi_admin.widgets import displays, filters, inputs
 from starlette.requests import Request
+
 from ballsdex.core.models import (
-    Regime,
-    Economy,
-    Special,
-    BallInstance,
-    User,
     Ball,
-    Player,
-    GuildConfig,
-    BlacklistedID,
+    BallInstance,
     BlacklistedGuild,
+    BlacklistedID,
+    Economy,
+    GuildConfig,
+    Player,
+    Regime,
+    Special,
+    User,
 )
-from typing import List
 
 
 @app.register

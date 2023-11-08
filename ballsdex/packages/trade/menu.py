@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import discord
 import asyncio
 import logging
-
-from typing import TYPE_CHECKING, cast
-from datetime import datetime, timedelta
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, cast
 
-from discord.ui import View, button, Button
+import discord
+from discord.ui import Button, View, button
 
+from ballsdex.core.models import BallInstance, Player
 from ballsdex.settings import settings
-from ballsdex.core.models import Player, BallInstance
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -147,13 +146,13 @@ class TradeMenu:
     def __init__(
         self,
         cog: TradeCog,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         trader1: TradingUser,
         trader2: TradingUser,
     ):
         self.cog = cog
-        self.bot = cast("BallsDexBot", interaction.client)
-        self.channel: discord.TextChannel = interaction.channel
+        self.bot = interaction.client
+        self.channel: discord.TextChannel = cast(discord.TextChannel, interaction.channel)
         self.trader1 = trader1
         self.trader2 = trader2
         self.embed = discord.Embed()
@@ -295,7 +294,8 @@ class TradeMenu:
                 await self.message.edit(embed=self.embed)
             except Exception:
                 log.exception(
-                    f"Failed to refresh the trade menu guild={self.message.guild.id} "
+                    "Failed to refresh the trade menu "
+                    f"guild={self.message.guild.id} "  # type: ignore
                     f"trader1={self.trader1.user.id} trader2={self.trader2.user.id}"
                 )
                 self.embed.colour = discord.Colour.dark_red()
@@ -324,11 +324,11 @@ class TradeMenu:
             self.task.cancel()
 
         for countryball in self.trader1.proposal + self.trader2.proposal:
-            del self.bot.locked_balls[countryball.id]
+            del self.bot.locked_balls[countryball.pk]
 
         self.current_view.stop()
         for item in self.current_view.children:
-            item.disabled = True
+            item.disabled = True  # type: ignore
 
         self.update_proposals()
         self.embed.description = f"**{reason}**"
@@ -384,7 +384,7 @@ class TradeMenu:
 
         for countryball in valid_transferable_countryballs:
             await countryball.save()
-            del self.bot.locked_balls[countryball.id]
+            del self.bot.locked_balls[countryball.pk]
 
     async def confirm(self, trader: TradingUser) -> bool:
         """
@@ -404,7 +404,7 @@ class TradeMenu:
             self.embed.colour = discord.Colour.green()
             self.current_view.stop()
             for item in self.current_view.children:
-                item.disabled = True
+                item.disabled = True  # type: ignore
 
             try:
                 await self.perform_trade()

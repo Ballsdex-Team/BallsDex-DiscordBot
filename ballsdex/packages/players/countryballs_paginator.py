@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, List
+
 import discord
 
-from typing import TYPE_CHECKING, List, cast
-
 from ballsdex.core.models import BallInstance
-from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils import menus
+from ballsdex.core.utils.paginator import Pages
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -22,8 +22,8 @@ class CountryballsSource(menus.ListPageSource):
 
 
 class CountryballsSelector(Pages):
-    def __init__(self, interaction: discord.Interaction, balls: List[BallInstance]):
-        self.bot = cast("BallsDexBot", interaction.client)
+    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[BallInstance]):
+        self.bot = interaction.client
         source = CountryballsSource(balls)
         super().__init__(source, interaction=interaction)
         self.add_item(self.select_ball_menu)
@@ -49,7 +49,9 @@ class CountryballsSelector(Pages):
     @discord.ui.select()
     async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
         await interaction.response.defer(thinking=True)
-        ball_instance = await BallInstance.get(id=int(interaction.data.get("values")[0]))
+        ball_instance = await BallInstance.get(
+            id=int(interaction.data.get("values")[0])  # type: ignore
+        )
         await self.ball_selected(interaction, ball_instance)
 
     async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):

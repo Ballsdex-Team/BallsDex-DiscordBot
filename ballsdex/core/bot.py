@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import math
 import types
-import inspect
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import aiohttp
 import discord
@@ -13,31 +13,34 @@ import discord.gateway
 from cachetools import TTLCache
 from discord import app_commands
 from discord.app_commands.translator import (
+    TranslationContextLocation,
     TranslationContextTypes,
     locale_str,
-    TranslationContextLocation,
 )
 from discord.enums import Locale
 from discord.ext import commands
-from rich import print
 from prometheus_client import Histogram
+from rich import print
 
+from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.models import (
+    Ball,
     BlacklistedGuild,
     BlacklistedID,
-    Special,
-    Ball,
-    Regime,
     Economy,
+    Regime,
+    Special,
     balls,
-    regimes,
     economies,
+    regimes,
     specials,
 )
-from ballsdex.core.commands import Core
 from ballsdex.settings import settings
+
+if TYPE_CHECKING:
+    from discord.ext.commands.bot import PrefixType
 
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
@@ -85,7 +88,7 @@ async def on_request_end(
     # obtained by accessing the locals() from the calling function HTTPConfig.request
     # "params.url.path" is not usable as it contains raw IDs and tokens, breaking categories
     frame = inspect.currentframe()
-    _locals = frame.f_back.f_back.f_back.f_back.f_back.f_locals
+    _locals = frame.f_back.f_back.f_back.f_back.f_back.f_locals  # type: ignore
     if route := _locals.get("route"):
         route_key = route.key
     else:
@@ -96,8 +99,8 @@ async def on_request_end(
 
 
 class CommandTree(app_commands.CommandTree):
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
-        bot = cast(BallsDexBot, interaction.client)
+    async def interaction_check(self, interaction: discord.Interaction[BallsDexBot], /) -> bool:
+        bot = interaction.client
         if not bot.is_ready():
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
@@ -114,7 +117,7 @@ class BallsDexBot(commands.AutoShardedBot):
     BallsDex Discord bot
     """
 
-    def __init__(self, command_prefix: str, dev: bool = False, **options):
+    def __init__(self, command_prefix: PrefixType[BallsDexBot], dev: bool = False, **options):
         # An explaination for the used intents
         # guilds: needed for basically anything, the bot needs to know what guilds it has
         # and accordingly enable automatic spawning in the enabled ones
@@ -144,6 +147,8 @@ class BallsDexBot(commands.AutoShardedBot):
         self.catch_log: set[int] = set()
         self.command_log: set[int] = set()
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
+
+        self.owner_ids: set
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(

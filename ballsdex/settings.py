@@ -1,8 +1,8 @@
-import yaml
 import logging
-
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
+
+import yaml
 
 if TYPE_CHECKING:
     from pathlib import Path
