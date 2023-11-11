@@ -465,8 +465,8 @@ class Admin(commands.GroupCog):
             ball=ball,
             player=player,
             shiny=(shiny if shiny is not None else random.randint(1, 2048) == 1),
-            attack_bonus=attack_bonus or random.randint(-20, 20),
-            health_bonus=health_bonus or random.randint(-20, 20),
+            attack_bonus=(attack_bonus if attack_bonus is not None else random.randint(-20, 20)),
+            health_bonus=(health_bonus if health_bonus is not None else random.randint(-20, 20)),
             special=special,
         )
         await interaction.followup.send(
