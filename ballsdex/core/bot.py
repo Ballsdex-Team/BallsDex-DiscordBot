@@ -417,6 +417,10 @@ class BallsDexBot(commands.AutoShardedBot):
                 )
                 # still including traceback because it may be a programming error
 
+            if isinstance(error, app_commands.TransformerError):
+                await send("One of the arguments provided cannot be parsed.")
+                return
+
             log.error(
                 f"Error in slash command {interaction.command.name}", exc_info=error.original
             )
