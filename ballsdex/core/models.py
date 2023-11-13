@@ -231,12 +231,12 @@ class BallInstance(models.Model):
 
     def special_emoji(self, bot: discord.Client | None, use_custom_emoji: bool = True) -> str:
         if self.specialcard:
+            if not use_custom_emoji:
+                return "⚡ "
             special_emoji = ""
             try:
                 emoji_id = int(self.specialcard.emoji)
                 special_emoji = bot.get_emoji(emoji_id) if bot else "⚡ "
-                if not use_custom_emoji:
-                    return "⚡ "
             except ValueError:
                 special_emoji = self.specialcard.emoji
             except TypeError:
