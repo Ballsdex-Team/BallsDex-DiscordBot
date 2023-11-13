@@ -117,7 +117,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
     async def list(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        user: discord.User | None = None,
+        user: discord.Member | None = None,
         sort: SortingChoices | None = None,
         reverse: bool = False,
     ):
