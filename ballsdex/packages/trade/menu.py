@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord.ui import Button, View, button
 
-from ballsdex.core.models import BallInstance, Player
+from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -363,6 +363,8 @@ class TradeMenu:
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
 
+        trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
+
         for countryball in self.trader1.proposal:
             await countryball.refresh_from_db()
             if countryball.player.discord_id != self.trader1.player.discord_id:
@@ -372,6 +374,9 @@ class TradeMenu:
             countryball.trade_player = self.trader1.player
             countryball.favorite = False
             valid_transferable_countryballs.append(countryball)
+            await TradeObject.create(
+                trade=trade, ballinstance=countryball, player=self.trader1.player
+            )
 
         for countryball in self.trader2.proposal:
             if countryball.player.discord_id != self.trader2.player.discord_id:
@@ -381,6 +386,9 @@ class TradeMenu:
             countryball.trade_player = self.trader2.player
             countryball.favorite = False
             valid_transferable_countryballs.append(countryball)
+            await TradeObject.create(
+                trade=trade, ballinstance=countryball, player=self.trader2.player
+            )
 
         for countryball in valid_transferable_countryballs:
             await countryball.save()
