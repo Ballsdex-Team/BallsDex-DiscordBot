@@ -277,7 +277,7 @@ class Admin(commands.GroupCog):
                 value="- " + "\n- ".join(informations),
             )
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -633,7 +633,7 @@ class Admin(commands.GroupCog):
         try:
             blacklisted = await BlacklistedID.get(discord_id=user.id)
         except DoesNotExist:
-            await interaction.response.send_message("That user isn't blacklisted.")
+            await interaction.response.send_message("That user isn't blacklisted.", ephemeral=True)
         else:
             if blacklisted.date:
                 await interaction.response.send_message(
@@ -693,7 +693,7 @@ class Admin(commands.GroupCog):
             self.bot.blacklist_guild.add(guild.id)
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
         await log_action(
-            f"{interaction.user} blacklisted {guild}({guild.id}) "
+            f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
             f"for the following reason: {reason}",
             self.bot,
         )
@@ -828,7 +828,8 @@ class Admin(commands.GroupCog):
             f"**Shiny:** {ball.shiny}\n"
             f"**Special:** {ball.special.name if ball.special else None}\n"
             f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
-            f"**Traded:** {ball.trade_player}\n"
+            f"**Traded:** {ball.trade_player}\n",
+            ephemeral=True,
         )
         await log_action(f"{interaction.user} got info for {ball} ({ball.pk})", self.bot)
 
@@ -886,7 +887,7 @@ class Admin(commands.GroupCog):
             )
             return
         try:
-            ball = await BallInstance.get(id=ballIdConverted)
+            ball = await BallInstance.get(id=ballIdConverted).prefetch_related("player")
             original_player = ball.player
         except DoesNotExist:
             await interaction.response.send_message(
@@ -897,7 +898,7 @@ class Admin(commands.GroupCog):
         ball.player = player
         await ball.save()
         await interaction.response.send_message(
-            f"{settings.collectible_name.title()} {ball.countryball} transferred to {user}.",
+            f"Transfered {ball} ({ball.pk}) from {original_player} to {user}.",
             ephemeral=True,
         )
         await log_action(
