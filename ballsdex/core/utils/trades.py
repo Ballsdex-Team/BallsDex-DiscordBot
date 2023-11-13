@@ -2,6 +2,7 @@ from typing import Iterable, List
 
 import discord
 
+from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.models import Trade, TradeObject
 from ballsdex.core.utils import menus
 
@@ -32,8 +33,13 @@ class TradeViewFormat(menus.ListPageSource):
 
 
 async def get_embed(
-    embed: discord.Embed, trade: Trade, player1balls, player2balls, bot, compact: bool = False
-):
+    embed: discord.Embed,
+    trade: Trade,
+    player1balls: List[TradeObject],
+    player2balls: List[TradeObject],
+    bot: "BallsDexBot",
+    compact: bool = False,
+) -> discord.Embed:
     """
     Update the fields in the embed according to their current proposals.
 
@@ -86,13 +92,13 @@ async def get_embed(
             i += 1
 
     if len(embed) > 6000 and not compact:
-        get_embed(compact=True)
+        await get_embed(embed, trade, player1balls, player2balls, bot, compact=True)
     return embed
 
 
 def _build_list_of_strings(
     balls: List[TradeObject],
-    bot,
+    bot: "BallsDexBot",
     short: bool = False,
 ) -> list[str]:
     # this builds a list of strings always lower than 1024 characters

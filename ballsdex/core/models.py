@@ -366,6 +366,7 @@ class BlacklistedGuild(models.Model):
 
 
 class Trade(models.Model):
+    id: int
     player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
         "models.Player", related_name="trades"
     )
