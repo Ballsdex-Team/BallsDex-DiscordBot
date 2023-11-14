@@ -396,9 +396,9 @@ class BallsDexBot(commands.AutoShardedBot):
             return
         
         if isinstance(error, app_commands.TransformerError):
-                await send("One of the arguments provided cannot be parsed.")
-                log.debug("Failed running converter", exc_info=error.original)
-                return
+            await send("One of the arguments provided cannot be parsed.")
+            log.debug("Failed running converter", exc_info=error.original)
+            return
 
         if isinstance(error, app_commands.CommandInvokeError):
             assert interaction.command
