@@ -394,7 +394,7 @@ class BallsDexBot(commands.AutoShardedBot):
                 return
             await send("You are not allowed to use that command.")
             return
-        
+
         if isinstance(error, app_commands.TransformerError):
             await send("One of the arguments provided cannot be parsed.")
             log.debug("Failed running converter", exc_info=error.original)
