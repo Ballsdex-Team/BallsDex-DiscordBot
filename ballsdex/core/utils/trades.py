@@ -16,7 +16,7 @@ class TradeViewFormat(menus.ListPageSource):
     async def format_page(self, menu, trade: Trade) -> discord.Embed:
         embed = discord.Embed(
             title=f"Trade History for {self.header}",
-            description=f"Trade ID: {trade.id}",
+            description=f"Trade ID: {trade.pk:0X}",
             timestamp=trade.date,
         )
         player1balls = await trade.tradeobjects.filter(player=trade.player2).prefetch_related(
