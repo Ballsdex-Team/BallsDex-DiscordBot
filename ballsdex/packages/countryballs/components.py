@@ -112,6 +112,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             special=special,
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
+            server_id=user.guild.id,
         )
         if user.id in bot.catch_log:
             log.info(
