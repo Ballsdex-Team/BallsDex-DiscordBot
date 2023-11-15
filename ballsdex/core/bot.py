@@ -395,6 +395,11 @@ class BallsDexBot(commands.AutoShardedBot):
             await send("You are not allowed to use that command.")
             return
 
+        if isinstance(error, app_commands.TransformerError):
+            await send("One of the arguments provided cannot be parsed.")
+            log.debug("Failed running converter", exc_info=error)
+            return
+
         if isinstance(error, app_commands.CommandInvokeError):
             assert interaction.command
 
@@ -416,11 +421,6 @@ class BallsDexBot(commands.AutoShardedBot):
                     exc_info=error.original,
                 )
                 # still including traceback because it may be a programming error
-
-            if isinstance(error, app_commands.TransformerError):
-                await send("One of the arguments provided cannot be parsed.")
-                log.debug("Failed running converter", exc_info=error.original)
-                return
 
             log.error(
                 f"Error in slash command {interaction.command.name}", exc_info=error.original
