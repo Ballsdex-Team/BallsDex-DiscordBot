@@ -829,7 +829,6 @@ class Admin(commands.GroupCog):
             f"**Special:** {ball.special.name if ball.special else None}\n"
             f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
             f"**Caught in:** {ball.server_id if ball.server_id else 'N/A'}\n"
-            f"**Spawned at:** {format_dt(ball.spawn_time, style='R') if ball.spawn_time else ''}\n"
             f"**Traded:** {ball.trade_player}\n",
             ephemeral=True,
         )

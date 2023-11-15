@@ -175,9 +175,6 @@ class BallInstance(models.Model):
     server_id = fields.BigIntField(
         description="Discord server ID where this ball was caught", null=True
     )
-    spawn_time = fields.DatetimeField(
-        description="Time when this ball was spawned", null=True, default=None
-    )
     shiny = fields.BooleanField(default=False)
     special: fields.ForeignKeyRelation[Special] | None = fields.ForeignKeyField(
         "models.Special", null=True, default=None, on_delete=fields.SET_NULL
