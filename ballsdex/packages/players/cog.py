@@ -9,7 +9,7 @@ from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
 
-from ballsdex.core.models import BallInstance, DonationPolicy, Player, balls
+from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.packages.players.countryballs_paginator import CountryballsViewer
@@ -484,6 +484,9 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         countryball.trade_player = old_player
         countryball.favorite = False
         await countryball.save()
+
+        trade = await Trade.create(player1=old_player, player2=new_player)
+        await TradeObject.create(trade=trade, ballinstance=countryball, player=old_player)
 
         await interaction.response.send_message(
             f"You just gave the {settings.collectible_name} "

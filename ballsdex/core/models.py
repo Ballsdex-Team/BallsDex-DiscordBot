@@ -363,3 +363,35 @@ class BlacklistedGuild(models.Model):
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+
+class Trade(models.Model):
+    id: int
+    player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="trades"
+    )
+    player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="trades2"
+    )
+    date = fields.DatetimeField(auto_now_add=True)
+    tradeobjects: fields.ReverseRelation[TradeObject]
+
+    def __str__(self) -> str:
+        return str(self.pk)
+
+
+class TradeObject(models.Model):
+    trade_id: int
+
+    trade: fields.ForeignKeyRelation[Trade] = fields.ForeignKeyField(
+        "models.Trade", related_name="tradeobjects"
+    )
+    ballinstance: fields.ForeignKeyRelation[BallInstance] = fields.ForeignKeyField(
+        "models.BallInstance", related_name="tradeobjects"
+    )
+    player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="tradeobjects"
+    )
+
+    def __str__(self) -> str:
+        return str(self.pk)

@@ -11,6 +11,7 @@ from discord.ext import commands
 from discord.ui import Button
 from discord.utils import format_dt
 from tortoise.exceptions import BaseORMException, DoesNotExist, IntegrityError
+from tortoise.expressions import Q
 
 from ballsdex.core.models import (
     Ball,
@@ -19,11 +20,14 @@ from ballsdex.core.models import (
     BlacklistedID,
     GuildConfig,
     Player,
+    Trade,
+    TradeObject,
     balls,
 )
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
+from ballsdex.core.utils.trades import TradeViewFormat
 from ballsdex.core.utils.transformers import (
     BallTransform,
     EconomyTransform,
@@ -74,6 +78,7 @@ class Admin(commands.GroupCog):
         name=settings.players_group_cog_name, description="Balls management"
     )
     logs = app_commands.Group(name="logs", description="Bot logs management")
+    history = app_commands.Group(name="history", description="Trade history management")
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -803,14 +808,14 @@ class Admin(commands.GroupCog):
             The ID of the ball you want to get information about.
         """
         try:
-            ballIdConverted = int(ball_id, 16)
+            pk = int(ball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
             )
             return
         try:
-            ball = await BallInstance.get(id=ballIdConverted).prefetch_related(
+            ball = await BallInstance.get(id=pk).prefetch_related(
                 "player", "trade_player", "special"
             )
         except DoesNotExist:
@@ -898,6 +903,9 @@ class Admin(commands.GroupCog):
         player, _ = await Player.get_or_create(discord_id=user.id)
         ball.player = player
         await ball.save()
+
+        trade = await Trade.create(player1=original_player, player2=player)
+        await TradeObject.create(trade=trade, ballinstance=ball, player=original_player)
         await interaction.response.send_message(
             f"Transfered {ball} ({ball.pk}) from {original_player} to {user}.",
             ephemeral=True,
@@ -1191,3 +1199,82 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message(
                 f"{user} added to command logs.", ephemeral=True
             )
+
+    @history.command(name="user")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+    @app_commands.choices(
+        sorting=[
+            app_commands.Choice(name="Most Recent", value="-date"),
+            app_commands.Choice(name="Oldest", value="date"),
+        ]
+    )
+    async def history_user(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User,
+        sorting: app_commands.Choice[str],
+    ):
+        """
+        Show the history of a user.
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        history = (
+            await Trade.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
+            .order_by(sorting.value)
+            .prefetch_related("player1", "player2")
+        )
+        if not history:
+            await interaction.followup.send("No history found.", ephemeral=True)
+            return
+        source = TradeViewFormat(history, interaction.user.name, self.bot)
+        pages = Pages(source=source, interaction=interaction)
+        await pages.start(ephemeral=True)
+
+    @history.command(name="ball")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    @app_commands.choices(
+        sorting=[
+            app_commands.Choice(name="Most Recent", value="-date"),
+            app_commands.Choice(name="Oldest", value="date"),
+        ]
+    )
+    async def history_ball(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        ballid: str,
+        sorting: app_commands.Choice[str],
+    ):
+        """
+        Show the history of a ball.
+        """
+
+        try:
+            pk = int(ballid, 16)
+        except ValueError:
+            await interaction.response.send_message(
+                f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
+            )
+            return
+
+        ball = await BallInstance.get(id=pk)
+        if not ball:
+            await interaction.response.send_message(
+                f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        history = await TradeObject.filter(ballinstance__id=pk).prefetch_related(
+            "trade", "ballinstance__player"
+        )
+        if not history:
+            await interaction.followup.send("No history found.", ephemeral=True)
+            return
+        trades = (
+            await Trade.filter(id__in=[x.trade_id for x in history])
+            .order_by(sorting.value)
+            .prefetch_related("player1", "player2")
+        )
+        source = TradeViewFormat(trades, f"{settings.collectible_name} {ball}", self.bot)
+        pages = Pages(source=source, interaction=interaction)
+        await pages.start(ephemeral=True)

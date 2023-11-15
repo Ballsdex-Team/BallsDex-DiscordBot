@@ -5,9 +5,13 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
+from tortoise.expressions import Q
 
 from ballsdex.core.models import Player
+from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.trades import TradeViewFormat
 from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.packages.trade.menu import TradeMenu, TradingUser
 from ballsdex.settings import settings
@@ -221,3 +225,34 @@ class Trade(commands.GroupCog):
             f"{countryball.countryball.country} removed.", ephemeral=True
         )
         del self.bot.locked_balls[countryball.pk]
+
+    @app_commands.command()
+    @app_commands.choices(
+        sorting=[
+            app_commands.Choice(name="Most Recent", value="-date"),
+            app_commands.Choice(name="Oldest", value="date"),
+        ]
+    )
+    async def history(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        sorting: app_commands.Choice[str],
+    ):
+        """
+        Show the history of your trades.
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        user = interaction.user
+        history = (
+            await TradeModel.filter(
+                Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
+            )
+            .order_by(sorting.value)
+            .prefetch_related("player1", "player2")
+        )
+        if not history:
+            await interaction.followup.send("No history found.", ephemeral=True)
+            return
+        source = TradeViewFormat(history, interaction.user.name, self.bot)
+        pages = Pages(source=source, interaction=interaction)
+        await pages.start()
