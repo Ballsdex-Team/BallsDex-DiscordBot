@@ -397,7 +397,7 @@ class BallsDexBot(commands.AutoShardedBot):
 
         if isinstance(error, app_commands.TransformerError):
             await send("One of the arguments provided cannot be parsed.")
-            log.debug("Failed running converter", exc_info=error.original)
+            log.debug("Failed running converter", exc_info=error)
             return
 
         if isinstance(error, app_commands.CommandInvokeError):
