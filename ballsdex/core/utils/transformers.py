@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import TYPE_CHECKING, AsyncIterator, Generic, Iterable, NamedTuple, TypeVar
+from typing import TYPE_CHECKING, Generic, Iterable, NamedTuple, TypeVar
 
 import discord
 from cachetools import TTLCache
@@ -190,7 +190,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
             self.cache[interaction.user.id] = cached
 
         choices: list[app_commands.Choice] = []
-        for ball in cached[:25]:
+        for ball in cached:
             if value.lower() in ball.searchable:
                 choices.append(app_commands.Choice(name=ball.description, value=str(ball.pk)))
                 if len(choices) >= 25:
@@ -234,16 +234,18 @@ class TTLModelTransformer(ModelTransformer[T]):
 
     async def get_options(
         self, interaction: Interaction["BallsDexBot"], value: str
-    ) -> AsyncIterator[app_commands.Choice[str]]:
+    ) -> list[app_commands.Choice[str]]:
         await self.maybe_refresh()
 
         i = 0
+        choices: list[app_commands.Choice] = []
         for item in self.items.values():
             if value.lower() in self.search_map[item]:
-                yield app_commands.Choice(name=self.key(item), value=str(item.pk))
+                choices.append(app_commands.Choice(name=self.key(item), value=str(item.pk)))
                 i += 1
                 if i == 25:
                     break
+        return choices
 
 
 class BallTransformer(TTLModelTransformer[Ball]):
