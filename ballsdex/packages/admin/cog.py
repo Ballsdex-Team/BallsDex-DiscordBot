@@ -808,14 +808,14 @@ class Admin(commands.GroupCog):
             The ID of the ball you want to get information about.
         """
         try:
-            ballIdConverted = int(ball_id, 16)
+            pk = int(ball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
             )
             return
         try:
-            ball = await BallInstance.get(id=ballIdConverted).prefetch_related(
+            ball = await BallInstance.get(id=pk).prefetch_related(
                 "player", "trade_player", "special"
             )
         except DoesNotExist:
@@ -1249,14 +1249,14 @@ class Admin(commands.GroupCog):
         """
 
         try:
-            ballIdConverted = int(ballid, 16)
+            pk = int(ballid, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
             )
             return
 
-        ball = await BallInstance.get(id=ballid)
+        ball = await BallInstance.get(id=pk)
         if not ball:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
@@ -1264,7 +1264,7 @@ class Admin(commands.GroupCog):
             return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
-        history = await TradeObject.filter(ballinstance__ball_id=ballIdConverted).prefetch_related(
+        history = await TradeObject.filter(ballinstance__id=pk).prefetch_related(
             "trade", "ballinstance__player"
         )
         if not history:
