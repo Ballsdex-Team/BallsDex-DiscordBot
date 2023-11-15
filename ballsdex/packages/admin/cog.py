@@ -1297,6 +1297,11 @@ class Admin(commands.GroupCog):
             )
             return
         trade = await Trade.get(id=pk)
+        if not trade:
+            await interaction.response.send_message(
+                "The trade ID you gave does not exist.", ephemeral=True
+            )
+            return
         embed = discord.Embed(
             title=f"Trade {trade.pk:0X}",
             description=f"Trade ID: {trade.pk:0X}",
