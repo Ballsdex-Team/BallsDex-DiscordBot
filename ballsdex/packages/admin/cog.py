@@ -81,6 +81,10 @@ class Admin(commands.GroupCog):
     history = app_commands.Group(name="history", description="Trade history management")
 
     @app_commands.command()
+    @app_commands.describe(status="The status you want to set")
+    @app_commands.describe(name="Title of the activity, if not custom")
+    @app_commands.describe(state="Custom status or subtitle of the activity")
+    @app_commands.describe(activity_type="The type of activity")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def status(
         self,
@@ -92,17 +96,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Change the status of the bot. Provide at least status or text.
-
-        Parameters
-        ----------
-        status: discord.Status
-            The status you want to set
-        name: str
-            Title of the activity, if not custom
-        state: str
-            Custom status or subtitle of the activity
-        activity_type: discord.ActivityType
-            The type of activity
         """
         if not status and not name and not state:
             await interaction.response.send_message(
@@ -130,15 +123,11 @@ class Admin(commands.GroupCog):
         await interaction.response.send_message("Status updated.", ephemeral=True)
 
     @app_commands.command()
+    @app_commands.describe(chunked="Group together countryballs with the same rarity")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def rarity(self, interaction: discord.Interaction["BallsDexBot"], chunked: bool = True):
         """
         Generate a list of countryballs ranked by rarity.
-
-        Parameters
-        ----------
-        chunked: bool
-            Group together countryballs with the same rarity.
         """
         text = ""
         sorted_balls = sorted(balls.values(), key=lambda x: x.rarity, reverse=True)
@@ -159,6 +148,7 @@ class Admin(commands.GroupCog):
         await pages.start(ephemeral=True)
 
     @app_commands.command()
+    @app_commands.describe(guild_id="The ID of the guild you want to inspect")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def cooldown(
         self,
@@ -167,11 +157,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Show the details of the spawn cooldown system for the given server
-
-        Parameters
-        ----------
-        guild_id: int | None
-            ID of the server you want to inspect. If not given, inspect the current server.
         """
         if guild_id:
             try:
@@ -285,6 +270,8 @@ class Admin(commands.GroupCog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command()
+    @app_commands.describe(user="The user you want to check, if available in the current server")
+    @app_commands.describe(user_id="The ID of the user you want to check, if it's not in the current server")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def guilds(
         self,
@@ -294,13 +281,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Shows the guilds shared with the specified user. Provide either user or user_id
-
-        Parameters
-        ----------
-        user: discord.User | None
-            The user you want to check, if available in the current server.
-        user_id: str | None
-            The ID of the user you want to check, if it's not in the current server.
         """
         if (user and user_id) or (not user and not user_id):
             await interaction.response.send_message(
@@ -398,6 +378,8 @@ class Admin(commands.GroupCog):
         await pages.start(ephemeral=True)
 
     @balls.command()
+    @app_commands.describe(ball="The countryball you want to spawn. Random according to rarities if not specified.")
+    @app_commands.describe(channel="The channel you want to spawn the countryball in. Current channel if not specified.")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def spawn(
         self,
@@ -407,13 +389,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Force spawn a random or specified ball.
-
-        Parameters
-        ----------
-        ball: Ball | None
-            The countryball you want to spawn. Random according to rarities if not specified.
-        channel: discord.TextChannel | None
-            The channel you want to spawn the countryball in. Current channel if not specified.
         """
         # the transformer triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
@@ -434,6 +409,9 @@ class Admin(commands.GroupCog):
         )
 
     @balls.command()
+    @app_commands.describe(shiny="Omit this to make it random.")
+    @app_commands.describe(health_bonus="Omit this to make it random (+20/-20%).")
+    @app_commands.describe(attack_bonus="Omit this to make it random (+20/-20%).")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def give(
         self,
@@ -447,18 +425,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Give the specified countryball to a player.
-
-        Parameters
-        ----------
-        ball: Ball
-        user: discord.User
-        special: Special | None
-        shiny: bool
-            Omit this to make it random.
-        health_bonus: int | None
-            Omit this to make it random (-20/+20%).
-        attack_bonus: int | None
-            Omit this to make it random (-20/+20%).
         """
         # the transformers triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
@@ -487,6 +453,9 @@ class Admin(commands.GroupCog):
         )
 
     @blacklist.command(name="add")
+    @app_commands.describe(user="The user you want to blacklist, if available in the current server")
+    @app_commands.describe(user_id="The ID of the user you want to blacklist, if it's not in the current server")
+    @app_commands.describe(reason="The reason for the blacklist")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_add(
         self,
@@ -497,14 +466,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Add a user to the blacklist. No reload is needed.
-
-        Parameters
-        ----------
-        user: discord.User | None
-            The user you want to blacklist, if available in the current server.
-        user_id: str | None
-            The ID of the user you want to blacklist, if it's not in the current server.
-        reason: str | None
         """
         if (user and user_id) or (not user and not user_id):
             await interaction.response.send_message(
@@ -546,6 +507,8 @@ class Admin(commands.GroupCog):
         )
 
     @blacklist.command(name="remove")
+    @app_commands.describe(user="The user you want to unblacklist, if available in the current server")
+    @app_commands.describe(user_id="The ID of the user you want to unblacklist, if it's not in the current server")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_remove(
         self,
@@ -555,13 +518,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Remove a user from the blacklist. No reload is needed.
-
-        Parameters
-        ----------
-        user: discord.User | None
-            The user you want to unblacklist, if available in the current server.
-        user_id: str | None
-            The ID of the user you want to unblacklist, if it's not in the current server.
         """
         if (user and user_id) or (not user and not user_id):
             await interaction.response.send_message(
@@ -598,6 +554,9 @@ class Admin(commands.GroupCog):
         )
 
     @blacklist.command(name="info")
+    @app_commands.describe(user="The user you want to check, if available in the current server")
+    @app_commands.describe(user_id="The ID of the user you want to check, if it's not in the current server")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_info(
         self,
         interaction: discord.Interaction,
@@ -606,13 +565,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Check if a user is blacklisted and show the corresponding reason.
-
-        Parameters
-        ----------
-        user: discord.User | None
-            The user you want to check, if available in the current server.
-        user_id: str | None
-            The ID of the user you want to check, if it's not in the current server.
         """
         if (user and user_id) or (not user and not user_id):
             await interaction.response.send_message(
@@ -656,6 +608,8 @@ class Admin(commands.GroupCog):
                 )
 
     @blacklist_guild.command(name="add")
+    @app_commands.describe(guild_id="The ID of the user you want to blacklist, if it's not in the current server")
+    @app_commands.describe(reason="The reason for the blacklist")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_add_guild(
         self,
@@ -665,12 +619,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Add a guild to the blacklist. No reload is needed.
-
-        Parameters
-        ----------
-        guild_id: str
-            The ID of the user you want to blacklist, if it's not in the current server.
-        reason: str
         """
 
         try:
@@ -704,6 +652,7 @@ class Admin(commands.GroupCog):
         )
 
     @blacklist_guild.command(name="remove")
+    @app_commands.describe(guild_id="The ID of the user you want to unblacklist, if it's not in the current server")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_remove_guild(
         self,
@@ -712,11 +661,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Remove a guild from the blacklist. No reload is needed.
-
-        Parameters
-        ----------
-        guild_id: str
-            The ID of the user you want to unblacklist, if it's not in the current server.
         """
 
         try:
@@ -749,6 +693,8 @@ class Admin(commands.GroupCog):
             )
 
     @blacklist_guild.command(name="info")
+    @app_commands.describe(guild_id="The ID of the user you want to check, if it's not in the current server")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_info_guild(
         self,
         interaction: discord.Interaction,
@@ -756,11 +702,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Check if a guild is blacklisted and show the corresponding reason.
-
-        Parameters
-        ----------
-        guild_id: str
-            The ID of the user you want to check, if it's not in the current server.
         """
 
         try:
@@ -797,15 +738,11 @@ class Admin(commands.GroupCog):
                 )
 
     @balls.command(name="info")
+    @app_commands.describe(ball_id="The ID of the ball you want to get information about")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def balls_info(self, interaction: discord.Interaction, ball_id: str):
         """
         Show information about a ball.
-
-        Parameters
-        ----------
-        ball_id: str
-            The ID of the ball you want to get information about.
         """
         try:
             pk = int(ball_id, 16)
@@ -840,25 +777,21 @@ class Admin(commands.GroupCog):
         await log_action(f"{interaction.user} got info for {ball} ({ball.pk})", self.bot)
 
     @balls.command(name="delete")
+    @app_commands.describe(ball_id="The ID of the ball you want to get information about")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_delete(self, interaction: discord.Interaction, ball_id: str):
         """
         Delete a ball.
-
-        Parameters
-        ----------
-        ball_id: str
-            The ID of the ball you want to get information about.
         """
         try:
-            ballIdConverted = int(ball_id, 16)
+            pk = int(ball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
             )
             return
         try:
-            ball = await BallInstance.get(id=ballIdConverted)
+            ball = await BallInstance.get(id=pk)
         except DoesNotExist:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
@@ -871,29 +804,24 @@ class Admin(commands.GroupCog):
         await log_action(f"{interaction.user} deleted {ball} ({ball.pk})", self.bot)
 
     @balls.command(name="transfer")
+    @app_commands.describe(ball_id="The ID of the ball you want to transfer.")
+    @app_commands.describe(user="The user you want to transfer the ball to.")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_transfer(
         self, interaction: discord.Interaction, ball_id: str, user: discord.User
     ):
         """
         Transfer a ball to another user.
-
-        Parameters
-        ----------
-        ball_id: str
-            The ID of the ball you want to get information about.
-        user: discord.User
-            The user you want to transfer the ball to.
         """
         try:
-            ballIdConverted = int(ball_id, 16)
+            pk = int(ball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
             )
             return
         try:
-            ball = await BallInstance.get(id=ballIdConverted).prefetch_related("player")
+            ball = await BallInstance.get(id=pk).prefetch_related("player")
             original_player = ball.player
         except DoesNotExist:
             await interaction.response.send_message(
@@ -916,19 +844,14 @@ class Admin(commands.GroupCog):
         )
 
     @balls.command(name="reset")
+    @app_commands.describe(user="The user you want to reset the balls of.")
+    @app_commands.describe(percentage="The percentage of balls to delete, if not all. Used for sanctions.")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_reset(
         self, interaction: discord.Interaction, user: discord.User, percentage: int | None = None
     ):
         """
         Reset a player's balls.
-
-        Parameters
-        ----------
-        user: discord.User
-            The user you want to reset the balls of.
-        percentage: int | None
-            The percentage of balls to delete, if not all. Used for sanctions.
         """
         player = await Player.get(discord_id=user.id)
         if not player:
@@ -975,6 +898,8 @@ class Admin(commands.GroupCog):
         )
 
     @balls.command(name="count")
+    @app_commands.describe(user="The user you want to count the balls of.")
+    @app_commands.describe(ball="The ball you want to count the balls of.")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_count(
         self,
@@ -986,14 +911,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Count the number of balls that a player has or how many exist in total.
-
-        Parameters
-        ----------
-        user: discord.User
-            The user you want to count the balls of.
-        ball: Ball
-        shiny: bool
-        special: Special
         """
         if interaction.response.is_done():
             return
@@ -1151,6 +1068,7 @@ class Admin(commands.GroupCog):
             )
 
     @logs.command(name="catchlogs")
+    @app_commands.describe(user="The user you want to add or remove to the logs.")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def logs_add(
         self,
@@ -1159,11 +1077,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Add or remove a user from catch logs.
-
-        Parameters
-        ----------
-        user: discord.User
-            The user you want to add or remove to the logs.
         """
         if user.id in self.bot.catch_log:
             self.bot.catch_log.remove(user.id)
@@ -1175,6 +1088,7 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message(f"{user} added to catch logs.", ephemeral=True)
 
     @logs.command(name="commandlogs")
+    @app_commands.describe(user="The user you want to add or remove to the logs.")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def commandlogs_add(
         self,
@@ -1183,11 +1097,6 @@ class Admin(commands.GroupCog):
     ):
         """
         Add or remove a user from command logs.
-
-        Parameters
-        ----------
-        user: discord.User
-            The user you want to add or remove to the logs.
         """
         if user.id in self.bot.command_log:
             self.bot.command_log.remove(user.id)
@@ -1201,6 +1110,8 @@ class Admin(commands.GroupCog):
             )
 
     @history.command(name="user")
+    @app_commands.describe(user="The user you want to check the history of.")
+    @app_commands.describe(sorting="The sorting to use.")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     @app_commands.choices(
         sorting=[
@@ -1231,6 +1142,8 @@ class Admin(commands.GroupCog):
         await pages.start(ephemeral=True)
 
     @history.command(name="ball")
+    @app_commands.describe(ballid="The ID of the ball you want to check the history of.")
+    @app_commands.describe(sorting="The sorting to use.")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     @app_commands.choices(
         sorting=[
