@@ -1226,7 +1226,7 @@ class Admin(commands.GroupCog):
         if not history:
             await interaction.followup.send("No history found.", ephemeral=True)
             return
-        source = TradeViewFormat(history, interaction.user.name, self.bot)
+        source = TradeViewFormat(history, user.display_name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
