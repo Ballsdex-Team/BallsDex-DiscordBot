@@ -1296,7 +1296,7 @@ class Admin(commands.GroupCog):
                 "The trade ID you gave is not valid.", ephemeral=True
             )
             return
-        trade = await Trade.get(id=pk)
+        trade = await Trade.get(id=pk).prefetch_related("player1", "player2")
         if not trade:
             await interaction.response.send_message(
                 "The trade ID you gave does not exist.", ephemeral=True
