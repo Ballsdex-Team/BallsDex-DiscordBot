@@ -27,7 +27,7 @@ from ballsdex.core.models import (
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
-from ballsdex.core.utils.trades import TradeViewFormat
+from ballsdex.core.utils.trades import TradeViewFormat, get_embed
 from ballsdex.core.utils.transformers import (
     BallTransform,
     EconomyTransform,
@@ -1226,7 +1226,7 @@ class Admin(commands.GroupCog):
         if not history:
             await interaction.followup.send("No history found.", ephemeral=True)
             return
-        source = TradeViewFormat(history, interaction.user.name, self.bot)
+        source = TradeViewFormat(history, user.display_name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
@@ -1278,3 +1278,41 @@ class Admin(commands.GroupCog):
         source = TradeViewFormat(trades, f"{settings.collectible_name} {ball}", self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
+
+    @history.command(name="trade")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def trade_info(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        tradeid: str,
+    ):
+        """
+        Show the contents of a certain trade.
+        """
+        try:
+            pk = int(tradeid, 16)
+        except ValueError:
+            await interaction.response.send_message(
+                "The trade ID you gave is not valid.", ephemeral=True
+            )
+            return
+        trade = await Trade.get(id=pk).prefetch_related("player1", "player2")
+        if not trade:
+            await interaction.response.send_message(
+                "The trade ID you gave does not exist.", ephemeral=True
+            )
+            return
+        embed = discord.Embed(
+            title=f"Trade {trade.pk:0X}",
+            description=f"Trade ID: {trade.pk:0X}",
+            timestamp=trade.date,
+        )
+        player1balls = await trade.tradeobjects.filter(player=trade.player2).prefetch_related(
+            "ballinstance"
+        )
+        player2balls = await trade.tradeobjects.filter(player=trade.player1).prefetch_related(
+            "ballinstance"
+        )
+        embed.set_footer(text="Trade date: ")
+        embed = await get_embed(embed, trade, player1balls, player2balls, self.bot)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
