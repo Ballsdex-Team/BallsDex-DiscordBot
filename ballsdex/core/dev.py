@@ -16,7 +16,17 @@ import discord
 from discord.ext import commands
 
 from ballsdex.core import models
-from ballsdex.core.models import Ball, BallInstance, BlacklistedID, GuildConfig, Player, Special
+from ballsdex.core.models import (
+    Ball,
+    BallInstance,
+    BlacklistedGuild,
+    BlacklistedID,
+    GuildConfig,
+    Player,
+    Special,
+    Trade,
+    TradeObject,
+)
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -262,7 +272,10 @@ class Dev(commands.Cog):
             "Player": Player,
             "GuildConfig": GuildConfig,
             "BlacklistedID": BlacklistedID,
+            "BlacklistedGuild": BlacklistedGuild,
             "Special": Special,
+            "Trade": Trade,
+            "TradeObject": TradeObject,
             "text_to_file": text_to_file,
             "_": self._last_result,
             "__name__": "__main__",
