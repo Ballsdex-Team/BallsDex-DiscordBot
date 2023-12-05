@@ -141,7 +141,7 @@ class Trade(commands.GroupCog):
         """
         if not countryball:
             return
-        if not countryball.countryball.tradeable:
+        if not countryball.is_tradeable:
             await interaction.response.send_message(
                 "You cannot trade this countryball.", ephemeral=True
             )
