@@ -193,7 +193,7 @@ class BallInstance(models.Model):
 
     @property
     def is_tradeable(self) -> bool:
-        return self.tradeable and self.ball.tradeable and self.special.tradeable
+        return self.tradeable and self.ball.tradeable and getattr(self.special, "tradeable", True)
 
     @property
     def attack(self) -> int:
