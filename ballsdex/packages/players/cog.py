@@ -9,7 +9,7 @@ from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
 
-from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
+from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls, BlacklistedID
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import BallInstanceTransform
 from ballsdex.packages.players.countryballs_paginator import CountryballsViewer
@@ -458,7 +458,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         self.bot.locked_balls[countryball.pk] = None
         new_player, _ = await Player.get_or_create(discord_id=user.id)
         old_player = countryball.player
-
+        
         if new_player == old_player:
             await interaction.response.send_message(
                 f"You cannot give a {settings.collectible_name} to yourself."
@@ -469,6 +469,10 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             await interaction.response.send_message(
                 "This player does not accept donations. You can use trades instead."
             )
+            del self.bot.locked_balls[countryball.pk]
+            return
+        if new_player.discord_id in self.bot.blacklist :
+            await interaction.response.send_message( "You cannot donate to blacklisted user.", ephemeral=True)
             del self.bot.locked_balls[countryball.pk]
             return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
