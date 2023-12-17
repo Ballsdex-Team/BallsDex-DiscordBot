@@ -11,15 +11,11 @@ BallsDex is a bot for collecting countryballs on Discord and exchange them with 
 
 You can invite the bot [here](https://discord.com/api/oauth2/authorize?client_id=999736048596816014&permissions=537193536&scope=bot%20applications.commands).
 
-[![Discord server](https://discordapp.com/api/guilds/1049118743101452329/embed.png?style=banner3)](https://discord.gg/Qn2Rkdkxwc) [![Self-host server](https://discordapp.com/api/guilds/1078701108500897923/embed.png?style=banner3)](https://discord.gg/M4gVaRrRDe)
+[![Discord server](https://discordapp.com/api/guilds/1049118743101452329/embed.png?style=banner3)](https://discord.gg/Qn2Rkdkxwc)
 
 ## Suggestions, questions and bug reports
 
-Feel free to ask any question on the Discord server above, we'll be here for discussing about your
-issue. If we estimate that your issue is important, you may be invited to post here instead (or
-we'll do it for you).
-
-You can directly post an issue in this repo, be sure to use the template!
+Our self host support has ended and we no longer maintain a support server. Any bugs or issues can be raised by creating an issue on this repo, support issues will be closed.
 
 ## Documentation
 
