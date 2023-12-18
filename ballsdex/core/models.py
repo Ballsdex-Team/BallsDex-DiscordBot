@@ -98,6 +98,7 @@ class Special(models.Model):
         null=True,
     )
     tradeable = fields.BooleanField(default=True)
+    enabled = fields.BooleanField(default=True)
 
     def __str__(self) -> str:
         return self.name
