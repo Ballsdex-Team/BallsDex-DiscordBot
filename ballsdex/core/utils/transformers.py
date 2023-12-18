@@ -286,7 +286,8 @@ class SpecialEnabledTransformer(TTLModelTransformer[Special]):
         return model.name
 
     async def load_items(self) -> Iterable[Special]:
-        return Special.filter(enabled=True).all()
+        specials = await Special.filter(enabled=True).all()
+        return {x.pk: x for x in specials}.values()
 
 
 class RegimeTransformer(TTLModelTransformer[Regime]):
