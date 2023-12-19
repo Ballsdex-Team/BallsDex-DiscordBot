@@ -259,13 +259,7 @@ class BallTransformer(TTLModelTransformer[Ball]):
         return balls.values()
 
 
-class BallEnabledTransformer(TTLModelTransformer[Ball]):
-    name = settings.collectible_name
-    model = Ball()
-
-    def key(self, model: Ball) -> str:
-        return model.country
-
+class BallEnabledTransformer(BallTransformer):
     async def load_items(self) -> Iterable[Ball]:
         return {k: v for k, v in balls.items() if v.enabled}.values()
 
@@ -278,16 +272,9 @@ class SpecialTransformer(TTLModelTransformer[Special]):
         return model.name
 
 
-class SpecialEnabledTransformer(TTLModelTransformer[Special]):
-    name = "special event"
-    model = Special()
-
-    def key(self, model: Special) -> str:
-        return model.name
-
+class SpecialEnabledTransformer(SpecialTransformer):
     async def load_items(self) -> Iterable[Special]:
-        specials = await Special.filter(enabled=True).all()
-        return {x.pk: x for x in specials}.values()
+        return await Special.filter(hidden=False).all()
 
 
 class RegimeTransformer(TTLModelTransformer[Regime]):
