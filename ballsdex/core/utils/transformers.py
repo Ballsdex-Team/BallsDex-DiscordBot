@@ -259,12 +259,22 @@ class BallTransformer(TTLModelTransformer[Ball]):
         return balls.values()
 
 
+class BallEnabledTransformer(BallTransformer):
+    async def load_items(self) -> Iterable[Ball]:
+        return {k: v for k, v in balls.items() if v.enabled}.values()
+
+
 class SpecialTransformer(TTLModelTransformer[Special]):
     name = "special event"
     model = Special()
 
     def key(self, model: Special) -> str:
         return model.name
+
+
+class SpecialEnabledTransformer(SpecialTransformer):
+    async def load_items(self) -> Iterable[Special]:
+        return await Special.filter(hidden=False).all()
 
 
 class RegimeTransformer(TTLModelTransformer[Regime]):
@@ -294,3 +304,5 @@ BallInstanceTransform = app_commands.Transform[BallInstance, BallInstanceTransfo
 SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
 RegimeTransform = app_commands.Transform[Regime, RegimeTransformer]
 EconomyTransform = app_commands.Transform[Economy, EconomyTransformer]
+SpecialEnabledTransform = app_commands.Transform[Special, SpecialEnabledTransformer]
+BallEnabledTransform = app_commands.Transform[Ball, BallEnabledTransformer]

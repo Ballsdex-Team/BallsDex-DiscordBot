@@ -11,7 +11,11 @@ from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
-from ballsdex.core.utils.transformers import BallInstanceTransform
+from ballsdex.core.utils.transformers import (
+    BallEnabledTransform,
+    BallInstanceTransform,
+    SpecialEnabledTransform,
+)
 from ballsdex.packages.players.countryballs_paginator import CountryballsViewer
 from ballsdex.settings import settings
 
@@ -494,3 +498,49 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"{user.mention}!"
         )
         del self.bot.locked_balls[countryball.pk]
+
+    @app_commands.command()
+    async def count(
+        self,
+        interaction: discord.Interaction,
+        countryball: BallEnabledTransform | None = None,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
+        current_server: bool = False,
+    ):
+        """
+        Count how many countryballs you have.
+
+        Parameters
+        ----------
+        countryball: Ball
+            The countryball you want to count
+        special: Special
+            The special you want to count
+        shiny: bool
+            Whether you want to count shiny countryballs
+        current_server: bool
+            Only count countryballs caught in the current server
+        """
+        if interaction.response.is_done():
+            return
+        assert interaction.guild
+        filters = {}
+        if countryball:
+            filters["ball"] = countryball
+        if shiny is not None:
+            filters["shiny"] = shiny
+        if special:
+            filters["special"] = special
+        if current_server:
+            filters["server_id"] = interaction.guild.id
+        filters["player__discord_id"] = interaction.user.id
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        balls = await BallInstance.filter(**filters).count()
+        country = f"{countryball.country} " if countryball else ""
+        plural = "s" if balls > 1 else ""
+        special_str = f"{special.name} " if special else ""
+        guild = f" caught in {interaction.guild.name}" if current_server else ""
+        await interaction.followup.send(
+            f"You have {balls} {special_str}{country}{settings.collectible_name}{plural}{guild}."
+        )
