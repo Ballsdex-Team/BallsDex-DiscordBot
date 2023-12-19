@@ -106,6 +106,7 @@ class SpecialResource(Model):
             input_=inputs.Image(upload=upload, null=True),
         ),
         "emoji",
+        "tradeable",
     ]
 
     async def get_actions(self, request: Request) -> List[Action]:
@@ -250,21 +251,31 @@ class BallInstanceResource(Model):
         filters.ForeignKey(model=Special, name="special", label="Special"),
         filters.Date(name="catch_date", label="Catch date"),
         filters.Boolean(name="shiny", label="Shiny"),
+        filters.Boolean(name="favorite", label="Favorite"),
         filters.Search(
             name="player__discord_id",
             label="User ID",
             placeholder="Search for Discord user ID",
         ),
+        filters.Search(
+            name="server_id",
+            label="Server ID",
+            placeholder="Search for Discord server ID",
+        ),
+        filters.Boolean(name="tradeable", label="Tradeable"),
     ]
     fields = [
         "id",
         "ball",
         "player",
         "catch_date",
+        "server_id",
         "shiny",
         "special",
+        "favorite",
         "health_bonus",
         "attack_bonus",
+        "tradeable",
     ]
 
 

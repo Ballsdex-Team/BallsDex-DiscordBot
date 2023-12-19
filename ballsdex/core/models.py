@@ -97,6 +97,7 @@ class Special(models.Model):
         description="Either a unicode character or a discord emoji ID",
         null=True,
     )
+    tradeable = fields.BooleanField(default=True)
 
     def __str__(self) -> str:
         return self.name
@@ -185,9 +186,18 @@ class BallInstance(models.Model):
         "models.Player", null=True, default=None, on_delete=fields.SET_NULL
     )
     favorite = fields.BooleanField(default=False)
+    tradeable = fields.BooleanField(default=True)
 
     class Meta:
         unique_together = ("player", "id")
+
+    @property
+    def is_tradeable(self) -> bool:
+        return (
+            self.tradeable
+            and self.countryball.tradeable
+            and getattr(self.specialcard, "tradeable", True)
+        )
 
     @property
     def attack(self) -> int:
