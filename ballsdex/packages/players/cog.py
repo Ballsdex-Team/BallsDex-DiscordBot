@@ -529,7 +529,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         if special:
             filters["special"] = special
         filters["player__discord_id"] = interaction.user.id
-        await interaction.response.defer(ephemeral=True, thinking=True)
+        await interaction.response.defer()
         balls = await BallInstance.filter(**filters).count()
         country = f"{ball.country} " if ball else ""
         plural = "s" if balls > 1 else ""
