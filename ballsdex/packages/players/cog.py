@@ -505,7 +505,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         ball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool = False,
+        shiny: bool = None,
     ):
         """
         Count how many countryballs you have.
