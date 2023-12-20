@@ -475,6 +475,12 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             del self.bot.locked_balls[countryball.pk]
             return
+        if new_player.discord_id in self.bot.blacklist:
+            await interaction.response.send_message(
+                "You cannot donate to a blacklisted user", ephemeral=True
+            )
+            del self.bot.locked_balls[countryball.pk]
+            return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             await interaction.response.send_message(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
