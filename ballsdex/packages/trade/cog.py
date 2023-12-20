@@ -127,7 +127,7 @@ class Trade(commands.GroupCog):
                 "You cannot trade with a blacklisted user.", ephemeral=True
             )
             return
-        
+
         menu = TradeMenu(
             self, interaction, TradingUser(interaction.user, player1), TradingUser(user, player2)
         )
