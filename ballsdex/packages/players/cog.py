@@ -543,5 +543,6 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         special_str = f"{special.name} " if special else ""
         guild = f" caught in {interaction.guild.name}" if current_server else ""
         await interaction.followup.send(
-            f"You have {balls} {special_str}{shiny}{country}{settings.collectible_name}{plural}{guild}."
+            f"You have {balls} {special_str}{shiny}"
+            f"{country}{settings.collectible_name}{plural}{guild}."
         )
