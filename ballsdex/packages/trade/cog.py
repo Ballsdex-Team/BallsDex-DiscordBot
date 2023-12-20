@@ -124,7 +124,7 @@ class Trade(commands.GroupCog):
         player2, _ = await Player.get_or_create(discord_id=user.id)
         if player2.discord_id in self.bot.blacklist:
             await interaction.response.send_message(
-                "You cannot trade with blacklisted users.", ephemeral=True
+                "You cannot trade with a blacklisted user.", ephemeral=True
             )
             return
         
