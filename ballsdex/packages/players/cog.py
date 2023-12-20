@@ -538,9 +538,11 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters).count()
         country = f"{countryball.country} " if countryball else ""
-        plural = "s" if balls > 1 else ""
+        plural = "s" if balls > 1 or balls == 0 else ""
+        shiny_str = "shiny" if shiny else ""
         special_str = f"{special.name} " if special else ""
         guild = f" caught in {interaction.guild.name}" if current_server else ""
         await interaction.followup.send(
-            f"You have {balls} {special_str}{country}{settings.collectible_name}{plural}{guild}."
+            f"You have {balls} {special_str}{shiny_str}"
+            f"{country}{settings.collectible_name}{plural}{guild}."
         )
