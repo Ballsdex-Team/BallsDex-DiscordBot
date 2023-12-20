@@ -1011,15 +1011,15 @@ class Admin(commands.GroupCog):
         country = f"{ball.country} " if ball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
-        shiny = "shiny" if shiny else ""
+        shiny_str = "shiny" if shiny else ""
         if user:
             await interaction.followup.send(
-                f"{user} has {balls} {special_str}{shiny}"
+                f"{user} has {balls} {special_str}{shiny_str}"
                 f"{country}{settings.collectible_name}{plural}."
             )
         else:
             await interaction.followup.send(
-                f"There are {balls} {special_str}{shiny}"
+                f"There are {balls} {special_str}{shiny_str}"
                 f"{country}{settings.collectible_name}{plural}."
             )
 
