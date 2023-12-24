@@ -1247,6 +1247,14 @@ class Admin(commands.GroupCog):
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
+    @history.command(name="ball")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    @app_commands.choices(
+        sorting=[
+            app_commands.Choice(name="Most Recent", value="-date"),
+            app_commands.Choice(name="Oldest", value="date"),
+        ]
+    )
     async def history_ball(
         self,
         interaction: discord.Interaction["BallsDexBot"],
