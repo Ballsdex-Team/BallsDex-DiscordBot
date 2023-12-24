@@ -3,7 +3,7 @@ import random
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, cast, Option
+from typing import TYPE_CHECKING, cast, Optional
 
 import discord
 from discord import app_commands
