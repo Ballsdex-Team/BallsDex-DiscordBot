@@ -1223,20 +1223,28 @@ class Admin(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         if user2:
-            history = await Trade.filter(
-                (Q(player1__discord_id=user.id) & Q(player2__discord_id=user2.id)) |
-                (Q(player1__discord_id=user2.id) & Q(player2__discord_id=user.id))
-            ).order_by(sorting.value).prefetch_related("player1", "player2")
+            history = (
+                await Trade.filter(
+                    (Q(player1__discord_id=user.id) & Q(player2__discord_id=user2.id))
+                    | (Q(player1__discord_id=user2.id) & Q(player2__discord_id=user.id))
+                )
+                .order_by(sorting.value)
+                .prefetch_related("player1", "player2")
+            )
 
             if not history:
                 await interaction.followup.send("No history found.", ephemeral=True)
                 return
 
-            source = TradeViewFormat(history, f"{user.display_name} and {user2.display_name}", self.bot)
+            source = TradeViewFormat(
+                history, f"{user.display_name} and {user2.display_name}", self.bot
+            )
         else:
-            history = await Trade.filter(
-                Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
-            ).order_by(sorting.value).prefetch_related("player1", "player2")
+            history = (
+                await Trade.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
+                .order_by(sorting.value)
+                .prefetch_related("player1", "player2")
+            )
 
             if not history:
                 await interaction.followup.send("No history found.", ephemeral=True)
