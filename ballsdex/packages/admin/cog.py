@@ -1221,26 +1221,32 @@ class Admin(commands.GroupCog):
         Show the history of a user.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
-        history = (
-            await Trade.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
-            .order_by(sorting.value)
-            .prefetch_related("player1", "player2")
-        )
-        if not history:
-            await interaction.followup.send("No history found.", ephemeral=True)
-            return
-        source = TradeViewFormat(history, user.display_name, self.bot)
+
+        if user2:
+            history = await Trade.filter(
+                (Q(player1__discord_id=user.id) & Q(player2__discord_id=user2.id)) |
+                (Q(player1__discord_id=user2.id) & Q(player2__discord_id=user.id))
+            ).order_by(sorting.value).prefetch_related("player1", "player2")
+
+            if not history:
+                await interaction.followup.send("No history found.", ephemeral=True)
+                return
+
+            source = TradeViewFormat(history, f"{user.display_name} and {user2.display_name}", self.bot)
+        else:
+            history = await Trade.filter(
+                Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
+            ).order_by(sorting.value).prefetch_related("player1", "player2")
+
+            if not history:
+                await interaction.followup.send("No history found.", ephemeral=True)
+                return
+
+            source = TradeViewFormat(history, user.display_name, self.bot)
+
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
-    @history.command(name="ball")
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    @app_commands.choices(
-        sorting=[
-            app_commands.Choice(name="Most Recent", value="-date"),
-            app_commands.Choice(name="Oldest", value="date"),
-        ]
-    )
     async def history_ball(
         self,
         interaction: discord.Interaction["BallsDexBot"],
