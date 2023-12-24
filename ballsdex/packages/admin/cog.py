@@ -1216,6 +1216,7 @@ class Admin(commands.GroupCog):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User,
         sorting: app_commands.Choice[str],
+        user2: Optional[discord.User] = None,
     ):
         """
         Show the history of a user.
