@@ -26,6 +26,18 @@ class Settings:
         Must be equal to the one set in the gateway proxy if used.
     prefix: str
         Prefix for text commands, mostly unused. Defaults to "b."
+        vote_link: str
+        Link to the top.gg vote page.
+    vote_reward_info_channel: int
+        The Channel where vote reward infos are sent.
+    vote_hook_channel: int
+        The channel where you send your vote notifications.
+    fusion_levels: int
+        How many fusion levels there are.
+    fusion_ball_need: list[int]
+        how many cards you need to fuse
+    fusion_result_event: list[int]
+        The event ID which the result card should have.
     collectible_name: str
         Usually "countryball", can be replaced when possible
     bot_name: str
@@ -55,9 +67,19 @@ class Settings:
     shard_count: int | None = None
     prefix: str = "b."
 
+    # vote
+    vote_link: str = "https://top.gg/bot/1073275888466145370"
+    vote_reward_info_channel: int = 1126956245891432599
+    vote_hook_channel: int = 1124417376809656330
+
     collectible_name: str = "countryball"
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
+
+    # /fusion
+    fusion_levels: int = 0
+    fusion_ball_need: list[int] = field(default_factory=list)
+    fusion_result_event: list[int] = field(default_factory=list)
 
     # /about
     about_description: str = ""
@@ -94,7 +116,15 @@ def read_settings(path: "Path"):
     settings.prefix = content["text-prefix"]
     settings.team_owners = content.get("owners", {}).get("team-members-are-owners", False)
     settings.co_owners = content.get("owners", {}).get("co-owners", [])
+        
+    settings.vote_link = content["voting"]["vote-link"]
+    settings.vote_reward_info_channel = content["voting"]["vote-reward-info-channel"]
+    settings.vote_hook_channel = content["voting"]["vote-hook-channel"]
 
+    settings.fusion_levels = len(content["fusion"]["fusion-ball-need"] or [])
+    settings.fusion_ball_need = content["fusion"]["fusion-ball-need"] or []
+    settings.fusion_result_event = content["fusion"]["fusion-result-event"] or []
+    
     settings.collectible_name = content["collectible-name"]
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
@@ -125,7 +155,30 @@ def write_default_settings(path: "Path"):
 discord-token: 
 
 # prefix for old-style text commands, mostly unused
-text-prefix: b.
+text-prefix: r.
+
+# settings for voting
+voting:
+
+  # link to the top.gg vote page
+  vote-link: https://top.gg/bot/1073275888466145370
+
+  # The Channel where infos users will be informed about theyr vote-rewards.
+  vote-reward-info-channel: 1126956245891432599
+
+  # the channel where your vote webhook sends vote notifications.
+  vote-hook-channel: 1124417376809656330
+
+    
+# define the recurces need for fusing
+fusion:
+
+  # How many balls you need to fuse (in level order)
+  fusion-ball-need: 
+
+  # The ID if the event the result card got (in leveld order).
+  fusion-result-event: 
+
 
 # define the elements given with the /about command
 about:
@@ -136,13 +189,13 @@ about:
     Collect countryballs on Discord, exchange them and battle with friends!
 
   # override this if you have a fork
-  github-link: https://github.com/laggron42/BallsDex-DiscordBot
+  github-link: https://github.com/GamingadlerHD/WorldDex
 
   # valid invite for a Discord server
-  discord-invite: https://discord.gg/ballsdex  # BallsDex official server
+  discord-invite: https://discord.gg/9Ge2RwQ3m6  # BallsDex official server
 
-  terms-of-service: https://gist.github.com/laggron42/52ae099c55c6ee1320a260b0a3ecac4e
-  privacy-policy: https://gist.github.com/laggron42/1eaa122013120cdfcc6d27f9485fe0bf
+  terms-of-service: https://gist.github.com/GamingadlerHD/ab167753d4a479fbf0535750891d4412
+  privacy-policy: https://gist.github.com/GamingadlerHD/31d6601feef544b3f3a35560b42e5496
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "countryballs" in the bot
@@ -150,7 +203,7 @@ collectible-name: countryball
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "BallsDex" in the bot
-bot-name: BallsDex
+bot-name: WorldDex
 
 # players group cog command name
 # this is /balls by default, but you can change it for /animals or /rocks for example
@@ -166,15 +219,21 @@ admin-command:
 
   # list of guild IDs where /admin should be registered
   guild-ids:
+      - 1108817636105666600
+      - 659025574940901407
 
   # list of role IDs having full access to /admin
   root-role-ids:
+      - 1109158375964553230
+      - 659028509041229825
 
   # list of role IDs having partial access to /admin
   admin-role-ids:
+      - 1109158605443305503
+      - 659028509041229825
 
 # log channel for moderation actions
-log-channel:
+log-channel: 1108817637896618048
 
 # manage bot ownership
 owners:
