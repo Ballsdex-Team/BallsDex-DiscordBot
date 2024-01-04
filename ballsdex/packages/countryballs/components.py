@@ -61,7 +61,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
             special = ""
             if ball.shiny:
-                special += f"✨ ***It's a shiny {settings.collectible_name} !*** ✨\n"
+                special += f"✨ ***It's a shiny {settings.collectible_name}!*** ✨\n"
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
             if has_caught_before:
@@ -96,7 +96,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             # Here we try to determine what should be the chance of having a common card
             # since the rarity field is a value between 0 and 1, 1 being no common
             # and 0 only common, we get the remaining value by doing (1-rarity)
-            # We the sum each value for each current event, and we should get an algorithm
+            # We then sum each value for each current event, and we should get an algorithm
             # that kinda makes sense.
             common_weight = sum(1 - x.rarity for x in population)
 
