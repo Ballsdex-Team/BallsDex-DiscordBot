@@ -1220,6 +1220,15 @@ class Admin(commands.GroupCog):
     ):
         """
         Show the history of a user.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to check the history of.
+        sorting: str
+            The sorting method you want to use.
+        user2: discord.User | None
+            The second user you want to check the history of.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -1272,6 +1281,13 @@ class Admin(commands.GroupCog):
     ):
         """
         Show the history of a ball.
+
+        Parameters
+        ----------
+        ballid: str
+            The ID of the ball you want to check the history of.
+        sorting: str
+            The sorting method you want to use.
         """
 
         try:
@@ -1314,6 +1330,11 @@ class Admin(commands.GroupCog):
     ):
         """
         Show the contents of a certain trade.
+
+        Parameters
+        ----------
+        tradeid: str
+            The ID of the trade you want to check the history of.
         """
         try:
             pk = int(tradeid, 16)
