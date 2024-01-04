@@ -3,7 +3,7 @@ import random
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import discord
 from discord import app_commands
@@ -1216,20 +1216,43 @@ class Admin(commands.GroupCog):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User,
         sorting: app_commands.Choice[str],
+        user2: Optional[discord.User] = None,
     ):
         """
         Show the history of a user.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
-        history = (
-            await Trade.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
-            .order_by(sorting.value)
-            .prefetch_related("player1", "player2")
-        )
-        if not history:
-            await interaction.followup.send("No history found.", ephemeral=True)
-            return
-        source = TradeViewFormat(history, user.display_name, self.bot)
+
+        if user2:
+            history = (
+                await Trade.filter(
+                    (Q(player1__discord_id=user.id) & Q(player2__discord_id=user2.id))
+                    | (Q(player1__discord_id=user2.id) & Q(player2__discord_id=user.id))
+                )
+                .order_by(sorting.value)
+                .prefetch_related("player1", "player2")
+            )
+
+            if not history:
+                await interaction.followup.send("No history found.", ephemeral=True)
+                return
+
+            source = TradeViewFormat(
+                history, f"{user.display_name} and {user2.display_name}", self.bot
+            )
+        else:
+            history = (
+                await Trade.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
+                .order_by(sorting.value)
+                .prefetch_related("player1", "player2")
+            )
+
+            if not history:
+                await interaction.followup.send("No history found.", ephemeral=True)
+                return
+
+            source = TradeViewFormat(history, user.display_name, self.bot)
+
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
