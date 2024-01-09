@@ -203,6 +203,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
     ):
         """
         Show your current completion of the BallsDex.
@@ -213,6 +214,8 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user whose completion you want to view, if not yours.
         special: Special
             The special you want to see the completion of
+        shiny: bool
+            Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
         # Filter disabled balls, they do not count towards progression
@@ -231,6 +234,8 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
         if special:
             filters["special"] = special
+        if shiny is not None:
+            filters["shiny"] = shiny
         owned_countryballs = set(
             x[0]
             for x in await BallInstance.filter(**filters)
@@ -289,8 +294,9 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
         special_str = f" ({special.name})" if special else ""
+        shiny_str = " shiny" if shiny else ""
         source.embed.description = (
-            f"{settings.bot_name}{special_str} progression: "
+            f"{settings.bot_name}{special_str}{shiny_str} progression: "
             f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
