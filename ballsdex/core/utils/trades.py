@@ -1,11 +1,11 @@
 from typing import Iterable, List
 
 import discord
-from ballsdex import settings
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.models import Trade, TradeObject
 from ballsdex.core.utils import menus
+from ballsdex.settings import settings
 
 
 class TradeViewFormat(menus.ListPageSource):
@@ -96,7 +96,8 @@ async def get_embed(
         await get_embed(embed, trade, player1balls, player2balls, bot, compact=True)
     if (len(embed) > 6000 or len(embed.fields) > 25) and compact:
         embed.clear_fields()
-        embed.description += "\n\nThis trade is too big to be displayed."
+        if embed.description:
+            embed.description += "\n\nThis trade is too big to be displayed."
         embed.add_field(
             name=f"{user1name if user1name else trade.player1.discord_id} received",
             value=f"{len(player1balls)} {settings.collectible_name}",
