@@ -183,7 +183,6 @@ class BallResource(Model):
         "country",
         "short_name",
         "catch_names",
-        "created_at",
         "regime",
         "economy",
         "health",
