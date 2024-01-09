@@ -234,6 +234,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
         if special:
             filters["special"] = special
+            bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled and x.created_at < special.end_date}
         if shiny is not None:
             filters["shiny"] = shiny
         owned_countryballs = set(
