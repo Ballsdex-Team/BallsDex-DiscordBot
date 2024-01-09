@@ -1350,8 +1350,8 @@ class Admin(commands.GroupCog):
             )
             return
         embed = discord.Embed(
-            title=f"Trade {trade.pk:0X}",
-            description=f"Trade ID: {trade.pk:0X}",
+            title=f"Trade `#{trade.pk:0X}`",
+            description=f"Trade ID: `#{trade.pk:0X}`",
             timestamp=trade.date,
         )
         player1balls = await trade.tradeobjects.filter(player=trade.player2).prefetch_related(

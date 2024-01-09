@@ -1,6 +1,7 @@
 from typing import Iterable, List
 
 import discord
+from ballsdex import settings
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.models import Trade, TradeObject
@@ -16,7 +17,7 @@ class TradeViewFormat(menus.ListPageSource):
     async def format_page(self, menu, trade: Trade) -> discord.Embed:
         embed = discord.Embed(
             title=f"Trade History for {self.header}",
-            description=f"Trade ID: {trade.pk:0X}",
+            description=f"Trade ID: `#{trade.pk:0X}`",
             timestamp=trade.date,
         )
         player1balls = await trade.tradeobjects.filter(player=trade.player2).prefetch_related(
@@ -91,8 +92,21 @@ async def get_embed(
             embed.add_field(name="\u200B", value="\u200B", inline=True)
             i += 1
 
-    if len(embed) > 6000 and not compact:
+    if (len(embed) > 6000 or len(embed.fields) > 25) and not compact:
         await get_embed(embed, trade, player1balls, player2balls, bot, compact=True)
+    if (len(embed) > 6000 or len(embed.fields) > 25) and compact:
+        embed.clear_fields()
+        embed.description += "\n\nThis trade is too big to be displayed."
+        embed.add_field(
+            name=f"{user1name if user1name else trade.player1.discord_id} received",
+            value=f"{len(player1balls)} {settings.collectible_name}",
+            inline=True,
+        )
+        embed.add_field(
+            name=f"{user2name if user2name else trade.player2.discord_id} received",
+            value=f"{len(player2balls)} {settings.collectible_name}",
+            inline=True,
+        )
     return embed
 
 
