@@ -347,7 +347,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
-    async def last(self, interaction: discord.Interaction, user: discord.Member | None = None):
+    async def last(self, interaction: discord.Interaction, user: discord.User | None = None):
         """
         Display info of your or another users last caught countryball.
 
@@ -367,6 +367,36 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
+
+        if user is not None:
+            privacy_policy = player.privacy_policy
+            if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
+                roles = settings.admin_role_ids + settings.root_role_ids
+                if any(role.id in roles for role in interaction.user.roles):  # type: ignore
+                    privacy_policy = PrivacyPolicy.ALLOW
+            elif privacy_policy == PrivacyPolicy.DENY:
+                await interaction.followup.send(
+                    "This user has set their inventory to private.", ephemeral=True
+                )
+                return
+            elif privacy_policy == PrivacyPolicy.SAME_SERVER:
+                if not self.bot.intents.members:
+                    await interaction.followup.send(
+                        "This user has their policy set to `Same Server`, "
+                        "however I do not have the `members` intent to check this.",
+                        ephemeral=True,
+                    )
+                    return
+                if interaction.guild is None:
+                    await interaction.followup.send(
+                        "This user has set their inventory to private.", ephemeral=True
+                    )
+                    return
+                elif interaction.guild.get_member(user_obj.id) is None:
+                    await interaction.followup.send(
+                        "This user is not in the server.", ephemeral=True
+                    )
+                    return
 
         countryball = await player.balls.all().order_by("-id").first().select_related("ball")
         if not countryball:
