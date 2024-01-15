@@ -339,6 +339,10 @@ class DonationPolicy(IntEnum):
     REQUEST_APPROVAL = 2
     ALWAYS_DENY = 3
 
+class PrivacyPolicy(IntEnum):
+    ALLOW = 1
+    DENY = 2
+    SAME_SERVER = 3
 
 class Player(models.Model):
     discord_id = fields.BigIntField(
@@ -348,6 +352,11 @@ class Player(models.Model):
         DonationPolicy,
         description="How you want to handle donations",
         default=DonationPolicy.ALWAYS_ACCEPT,
+    )
+    privacy_policy = fields.IntEnumField(
+        PrivacyPolicy,
+        description="How you want to handle privacy",
+        default=PrivacyPolicy.DENY,
     )
     balls: fields.BackwardFKRelation[BallInstance]
 
