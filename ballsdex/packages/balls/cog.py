@@ -1,7 +1,7 @@
 import enum
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import discord
 from discord import app_commands
@@ -161,34 +161,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
             return
         if user is not None:
-            privacy_policy = player.privacy_policy
-            if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
-                roles = settings.admin_role_ids + settings.root_role_ids
-                if any(role.id in roles for role in interaction.user.roles):  # type: ignore
-                    privacy_policy = PrivacyPolicy.ALLOW
-            elif privacy_policy == PrivacyPolicy.DENY:
-                await interaction.followup.send(
-                    "This user has set their inventory to private.", ephemeral=True
-                )
+            if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
-            elif privacy_policy == PrivacyPolicy.SAME_SERVER:
-                if not self.bot.intents.members:
-                    await interaction.followup.send(
-                        "This user has their policy set to `Same Server`, "
-                        "however I do not have the `members` intent to check this.",
-                        ephemeral=True,
-                    )
-                    return
-                if interaction.guild is None:
-                    await interaction.followup.send(
-                        "This user has set their inventory to private.", ephemeral=True
-                    )
-                    return
-                elif interaction.guild.get_member(user_obj.id) is None:
-                    await interaction.followup.send(
-                        "This user is not in the server.", ephemeral=True
-                    )
-                    return
 
         await player.fetch_related("balls")
         if sort:
@@ -255,6 +229,16 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
+        if user is not None:
+            try:
+                player = await Player.get(discord_id=user_obj.id)
+            except DoesNotExist:
+                await interaction.response.send_message(
+                    f"{user_obj.name} doesn't have any {settings.collectible_name} yet."
+                )
+                return
+            if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
+                return
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
@@ -389,34 +373,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         if user is not None:
-            privacy_policy = player.privacy_policy
-            if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
-                roles = settings.admin_role_ids + settings.root_role_ids
-                if any(role.id in roles for role in interaction.user.roles):  # type: ignore
-                    privacy_policy = PrivacyPolicy.ALLOW
-            elif privacy_policy == PrivacyPolicy.DENY:
-                await interaction.followup.send(
-                    "This user has set their inventory to private.", ephemeral=True
-                )
+            if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
-            elif privacy_policy == PrivacyPolicy.SAME_SERVER:
-                if not self.bot.intents.members:
-                    await interaction.followup.send(
-                        "This user has their policy set to `Same Server`, "
-                        "however I do not have the `members` intent to check this.",
-                        ephemeral=True,
-                    )
-                    return
-                if interaction.guild is None:
-                    await interaction.followup.send(
-                        "This user has set their inventory to private.", ephemeral=True
-                    )
-                    return
-                elif interaction.guild.get_member(user_obj.id) is None:
-                    await interaction.followup.send(
-                        "This user is not in the server.", ephemeral=True
-                    )
-                    return
 
         countryball = await player.balls.all().order_by("-id").first().select_related("ball")
         if not countryball:
@@ -639,3 +597,38 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"You have {balls} {special_str}{shiny_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
         )
+
+
+async def inventory_privacy(
+    bot: "BallsDexBot",
+    interaction: discord.Interaction,
+    player: Player,
+    user_obj: Union[discord.User, discord.Member],
+):
+    privacy_policy = player.privacy_policy
+    if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
+        roles = settings.admin_role_ids + settings.root_role_ids
+        if any(role.id in roles for role in interaction.user.roles):  # type: ignore
+            return True
+    elif privacy_policy == PrivacyPolicy.DENY:
+        await interaction.followup.send(
+            "This user has set their inventory to private.", ephemeral=True
+        )
+        return False
+    elif privacy_policy == PrivacyPolicy.SAME_SERVER:
+        if not bot.intents.members:
+            await interaction.followup.send(
+                "This user has their policy set to `Same Server`, "
+                "however I do not have the `members` intent to check this.",
+                ephemeral=True,
+            )
+            return False
+        if interaction.guild is None:
+            await interaction.followup.send(
+                "This user has set their inventory to private.", ephemeral=True
+            )
+            return False
+        elif interaction.guild.get_member(user_obj.id) is None:
+            await interaction.followup.send("This user is not in the server.", ephemeral=True)
+            return False
+    return True
