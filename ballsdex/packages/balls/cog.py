@@ -9,14 +9,22 @@ from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
 
-from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
+from ballsdex.core.models import (
+    BallInstance,
+    DonationPolicy,
+    Player,
+    PrivacyPolicy,
+    Trade,
+    TradeObject,
+    balls,
+)
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
     SpecialEnabledTransform,
 )
-from ballsdex.packages.players.countryballs_paginator import CountryballsViewer
+from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -108,7 +116,7 @@ class SortingChoices(enum.Enum):
     duplicates = "manualsort-duplicates"
 
 
-class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
+class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     """
     View and manage your countryballs collection.
     """
@@ -121,7 +129,7 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
     async def list(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        user: discord.Member | None = None,
+        user: discord.User | None = None,
         sort: SortingChoices | None = None,
         reverse: bool = False,
     ):
@@ -152,6 +160,35 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
                     f"{user_obj.name} doesn't have any {settings.collectible_name} yet."
                 )
             return
+        if user is not None:
+            privacy_policy = player.privacy_policy
+            if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
+                roles = settings.admin_role_ids + settings.root_role_ids
+                if any(role.id in roles for role in interaction.user.roles):  # type: ignore
+                    privacy_policy = PrivacyPolicy.ALLOW
+            elif privacy_policy == PrivacyPolicy.DENY:
+                await interaction.followup.send(
+                    "This user has set their inventory to private.", ephemeral=True
+                )
+                return
+            elif privacy_policy == PrivacyPolicy.SAME_SERVER:
+                if not self.bot.intents.members:
+                    await interaction.followup.send(
+                        "This user has their policy set to `Same Server`, "
+                        "however I do not have the `members` intent to check this.",
+                        ephemeral=True,
+                    )
+                    return
+                if interaction.guild is None:
+                    await interaction.followup.send(
+                        "This user has set their inventory to private.", ephemeral=True
+                    )
+                    return
+                elif interaction.guild.get_member(user_obj.id) is None:
+                    await interaction.followup.send(
+                        "This user is not in the server.", ephemeral=True
+                    )
+                    return
 
         await player.fetch_related("balls")
         if sort:
