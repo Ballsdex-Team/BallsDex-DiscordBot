@@ -161,7 +161,7 @@ class EconomyResource(Model):
 
 @app.register
 class BallResource(Model):
-    label = "Ball"
+    label = "Nation"
     model = Ball
     page_size = 50
     icon = "fas fa-globe"
@@ -236,7 +236,7 @@ class BallResource(Model):
 
 @app.register
 class BallInstanceResource(Model):
-    label = "Ball instance"
+    label = "Nation instance"
     model = BallInstance
     icon = "fas fa-atlas"
     page_pre_title = "ball instances list"
