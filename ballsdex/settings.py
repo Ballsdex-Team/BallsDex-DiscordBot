@@ -72,9 +72,9 @@ class Settings:
     vote_reward_info_channel: int = 1126956245891432599
     vote_hook_channel: int = 1124417376809656330
 
-    collectible_name: str = "countryball"
-    bot_name: str = "BallsDex"
-    players_group_cog_name: str = "balls"
+    collectible_name: str = "nation"
+    bot_name: str = "NationDex"
+    players_group_cog_name: str = "nations"
 
     # /fusion
     fusion_levels: int = 0
@@ -84,7 +84,7 @@ class Settings:
     # /about
     about_description: str = ""
     github_link: str = ""
-    discord_invite: str = ""
+    discord_invite: str = "https://discord.gg/CHv5TZNwKd"
     terms_of_service: str = ""
     privacy_policy: str = ""
 
