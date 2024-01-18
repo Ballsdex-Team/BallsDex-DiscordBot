@@ -1,17 +1,21 @@
-# NationDex Discord Bot
+# Nationdex.bot - Ballsdex Alternative Experience
 
-[![Discord server](https://discordapp.com/api/guilds/1118965941221466194/embed.png)](https://discord.gg/CHv5TZNwKd)
+[![Discord server](https://discordapp.com/api/guilds/1049118743101452329/embed.png)](https://discord.gg/Qn2Rkdkxwc)
 [![Pre-commit](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/pre-commit.yml)
 [![Issues](https://img.shields.io/github/issues/laggron42/BallsDex-DiscordBot)](https://github.com/laggron42/BallsDex-DiscordBot/issues)
 [![discord.py](https://img.shields.io/badge/discord-py-blue.svg)](https://github.com/Rapptz/discord.py)
 [![Black coding style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![Patreon](https://img.shields.io/badge/Patreon-donate-orange.svg)](https://patreon.com/retke)
 
-NationDex is a bot for collecting countryballs on Discord and exchange them with your friends!
+Nationdex is a bot inspired by Ballsdex, where you can collect countryballs on Discord and exchange them with your friends!
 
-You can invite the bot [here](https://discord.com/api/oauth2/authorize?client_id=1195823407644807279&permissions=517544466432&scope=bot%20applications.commands).
+You can invite the bot [here](https://discord.com/oauth2/authorize?client_id=1048041508160421888&permissions=3288539856577&redirect_uri=https%3A%2F%2Fwww.nationdexbot.com%2Fbot-invite%2Fbot-auth&scope=bot+applications.commands).
 
-[![Discord server](https://discordapp.com/api/guilds/1118965941221466194/embed.png?style=banner3)](https://discord.gg/Qn2Rkdkxwc)
+### Nationdex Server
+[![Nationdex server](https://discordapp.com/api/guilds/1118965941221466194/embed.png?style=banner3)](https://discord.gg/TfJErqFSmD)
+
+### Ballsdex Server
+[![Discord server](https://discordapp.com/api/guilds/1049118743101452329/embed.png?style=banner3)](https://discord.gg/Qn2Rkdkxwc)
 
 ## Suggestions, questions and bug reports
 

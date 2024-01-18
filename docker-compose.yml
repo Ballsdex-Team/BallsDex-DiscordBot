@@ -32,7 +32,7 @@ services:
   admin-panel:
     image: ballsdex
     ports:
-      - "8000:8000"
+      - "8007:8000"
     networks:
       - internal
     environment:

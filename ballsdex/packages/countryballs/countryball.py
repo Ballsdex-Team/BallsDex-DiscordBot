@@ -36,20 +36,10 @@ class CountryBall:
         file_location = "." + self.model.wild_card
         file_name = f"nt_{generate_random_name()}.{extension}"
         try:
-            spawn_tag_role = discord.utils.get(channel.guild.roles, name='SpawnPing')
             permissions = channel.permissions_for(channel.guild.me)
-
             if permissions.attach_files and permissions.send_messages:
-                if spawn_tag_role is not None:
-                    self.message = await channel.send(
-                    f"A wild {settings.collectible_name} appeared! <@&{spawn_tag_role.id}>",
-                    view=CatchView(self),
-                    file=discord.File(file_location, filename=file_name),
-                )
-
-                else:
-                    self.message = await channel.send(
-                    f"A wild {settings.collectible_name} appeared!",
+                self.message = await channel.send(
+                    f"A wild {settings.collectible_name} has appeared! If you don't know the name, ask on our [server]({settings.discord_invite})",
                     view=CatchView(self),
                     file=discord.File(file_location, filename=file_name),
                 )

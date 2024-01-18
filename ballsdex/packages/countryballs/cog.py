@@ -5,8 +5,10 @@ import discord
 from discord.ext import commands
 from tortoise.exceptions import DoesNotExist
 
-from ballsdex.core.models import GuildConfig
+from ballsdex.core.models import GuildConfig, Ball
 from ballsdex.packages.countryballs.spawn import SpawnManager
+from ballsdex.packages.countryballs.countryball import CountryBall
+from ballsdex.packages.countryballs.components import CountryballNamePrompt
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -67,3 +69,26 @@ class CountryBallsSpawner(commands.Cog):
                 del self.spawn_manager.cache[guild.id]
             elif channel:
                 self.spawn_manager.cache[guild.id] = channel.id
+
+    @commands.command()
+    @commands.is_owner()
+    async def spawnball(
+        self,
+        ctx: commands.Context,
+        channel: discord.TextChannel | None = None,
+        *,
+        ball: str | None = None,
+    ):
+        """
+        Force spawn a countryball.
+        """
+        if not ball:
+            countryball = await CountryBall.get_random()
+        else:
+            try:
+                ball_model = await Ball.get(country__iexact=ball.lower())
+            except DoesNotExist:
+                await ctx.send("No such countryball exists.")
+                return
+            countryball = CountryBall(ball_model)
+        await countryball.spawn(channel or ctx.channel)
