@@ -46,10 +46,14 @@ def init_fastapi_app() -> FastAPI:
     async def index():
         return RedirectResponse(url="/admin")
 
-    admin_app.add_exception_handler(HTTP_500_INTERNAL_SERVER_ERROR, server_error_exception)
-    admin_app.add_exception_handler(HTTP_404_NOT_FOUND, not_found_error_exception)
-    admin_app.add_exception_handler(HTTP_403_FORBIDDEN, forbidden_error_exception)
-    admin_app.add_exception_handler(HTTP_401_UNAUTHORIZED, unauthorized_error_exception)
+    admin_app.add_exception_handler(
+        HTTP_500_INTERNAL_SERVER_ERROR, server_error_exception
+    )  # type: ignore
+    admin_app.add_exception_handler(HTTP_404_NOT_FOUND, not_found_error_exception)  # type: ignore
+    admin_app.add_exception_handler(HTTP_403_FORBIDDEN, forbidden_error_exception)  # type: ignore
+    admin_app.add_exception_handler(
+        HTTP_401_UNAUTHORIZED, unauthorized_error_exception
+    )  # type: ignore
 
     @app.on_event("startup")
     async def startup():
