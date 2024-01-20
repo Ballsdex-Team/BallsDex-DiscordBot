@@ -222,6 +222,15 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         # Only ID and emoji is interesting for us
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
 
+        # Set of ball IDs owned by the player
+        filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
+        if special:
+            filters["special"] = special
+            bot_countryballs = {
+                x: y.emoji_id
+                for x, y in balls.items()
+                if y.enabled and y.created_at < special.end_date
+            }
         if not bot_countryballs:
             await interaction.response.send_message(
                 f"There are no {settings.collectible_name}s registered on this bot yet.",
@@ -230,15 +239,6 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         await interaction.response.defer(thinking=True)
 
-        # Set of ball IDs owned by the player
-        filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
-        if special:
-            filters["special"] = special
-            bot_countryballs = {
-                x: y.emoji_id
-                for x, y in balls.items()
-                if y.enabled and x.created_at < special.end_date
-            }
         if shiny is not None:
             filters["shiny"] = shiny
         owned_countryballs = set(
