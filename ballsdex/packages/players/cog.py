@@ -18,6 +18,10 @@ class Player(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
+        if not self.bot.intents.members:
+            self.__cog_app_commands_group__.get_command("privacy").parameters[  # type: ignore
+                0
+            ]._Parameter__parent.choices.pop()  # type: ignore
 
     @app_commands.command()
     @app_commands.choices(
