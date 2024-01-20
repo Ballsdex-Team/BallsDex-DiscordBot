@@ -146,6 +146,7 @@ class Ball(models.Model):
         max_length=256, description="Description of the countryball's capacity"
     )
     capacity_logic = fields.JSONField(description="Effect of this capacity", default={})
+    created_at = fields.DatetimeField(auto_now_add=True, null=True)
 
     instances: fields.BackwardFKRelation[BallInstance]
 

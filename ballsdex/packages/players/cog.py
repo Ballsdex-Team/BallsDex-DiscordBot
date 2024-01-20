@@ -199,7 +199,11 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
     async def completion(
-        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User | None = None
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User | None = None,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
     ):
         """
         Show your current completion of the BallsDex.
@@ -208,12 +212,25 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         user: discord.User
             The user whose completion you want to view, if not yours.
+        special: Special
+            The special you want to see the completion of
+        shiny: bool
+            Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
 
+        # Set of ball IDs owned by the player
+        filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
+        if special:
+            filters["special"] = special
+            bot_countryballs = {
+                x: y.emoji_id
+                for x, y in balls.items()
+                if y.enabled and y.created_at < special.end_date
+            }
         if not bot_countryballs:
             await interaction.response.send_message(
                 f"There are no {settings.collectible_name}s registered on this bot yet.",
@@ -222,10 +239,11 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         await interaction.response.defer(thinking=True)
 
-        # Set of ball IDs owned by the player
+        if shiny is not None:
+            filters["shiny"] = shiny
         owned_countryballs = set(
             x[0]
-            for x in await BallInstance.filter(player__discord_id=user_obj.id, ball__enabled=True)
+            for x in await BallInstance.filter(**filters)
             .distinct()  # Do not query everything
             .values_list("ball_id")
         )
@@ -280,8 +298,10 @@ class Players(commands.GroupCog, group_name=settings.players_group_cog_name):
             )  # force empty field value
 
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
+        special_str = f" ({special.name})" if special else ""
+        shiny_str = " shiny" if shiny else ""
         source.embed.description = (
-            f"{settings.bot_name} progression: "
+            f"{settings.bot_name}{special_str}{shiny_str} progression: "
             f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
