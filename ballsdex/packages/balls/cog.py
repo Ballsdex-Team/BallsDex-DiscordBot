@@ -431,48 +431,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
 
     @app_commands.command()
-    @app_commands.choices(
-        policy=[
-            app_commands.Choice(name="Accept all donations", value=DonationPolicy.ALWAYS_ACCEPT),
-            app_commands.Choice(
-                name="Request your approval first", value=DonationPolicy.REQUEST_APPROVAL
-            ),
-            app_commands.Choice(name="Deny all donations", value=DonationPolicy.ALWAYS_DENY),
-        ]
-    )
-    async def donation_policy(
-        self, interaction: discord.Interaction, policy: app_commands.Choice[int]
-    ):
-        """
-        Change how you want to receive donations from /balls give
-
-        Parameters
-        ----------
-        policy: DonationPolicy
-            The new policy for accepting donations
-        """
-        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
-        player.donation_policy = DonationPolicy(policy.value)
-        if policy.value == DonationPolicy.ALWAYS_ACCEPT:
-            await interaction.response.send_message(
-                f"Setting updated, you will now receive all donated {settings.collectible_name}s "
-                "immediately."
-            )
-        elif policy.value == DonationPolicy.REQUEST_APPROVAL:
-            await interaction.response.send_message(
-                "Setting updated, you will now have to approve donation requests manually."
-            )
-        elif policy.value == DonationPolicy.ALWAYS_DENY:
-            await interaction.response.send_message(
-                f"Setting updated, it is now impossible to use {self.give.extras['mention']} with "
-                "you. It is still possible to perform donations using the trade system."
-            )
-        else:
-            await interaction.response.send_message("Invalid input!")
-            return
-        await player.save()  # do not save if the input is invalid
-
-    @app_commands.command()
     async def give(
         self,
         interaction: discord.Interaction,
