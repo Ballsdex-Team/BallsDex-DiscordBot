@@ -610,7 +610,7 @@ async def inventory_privacy(
         roles = settings.admin_role_ids + settings.root_role_ids
         if any(role.id in roles for role in interaction.user.roles):  # type: ignore
             return True
-    elif privacy_policy == PrivacyPolicy.DENY:
+    if privacy_policy == PrivacyPolicy.DENY:
         await interaction.followup.send(
             "This user has set their inventory to private.", ephemeral=True
         )
