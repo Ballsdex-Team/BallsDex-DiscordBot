@@ -72,9 +72,9 @@ class Settings:
     vote_reward_info_channel: int = 1126956245891432599
     vote_hook_channel: int = 1124417376809656330
 
-    collectible_name: str = "nation"
-    bot_name: str = "NationDex"
-    players_group_cog_name: str = "nations"
+    collectible_name: str = "countryball"
+    bot_name: str = "BallsDex"
+    players_group_cog_name: str = "balls"
 
     # /fusion
     fusion_levels: int = 0
@@ -84,9 +84,9 @@ class Settings:
     # /about
     about_description: str = ""
     github_link: str = ""
-    discord_invite:  "https://discord.gg/vDbEk3jjJf"
-    terms_of_service: str = "https://www.nationdexbot.com/nationdex-tos"
-    privacy_policy: str = "https://www.nationdexbot.com/privacy-policy"
+    discord_invite: str = "https://discord.gg/CHv5TZNwKd"
+    terms_of_service: str = ""
+    privacy_policy: str = ""
 
     # /admin
     admin_guild_ids: list[int] = field(default_factory=list)
@@ -192,22 +192,22 @@ about:
   github-link: https://github.com/GamingadlerHD/WorldDex
 
   # valid invite for a Discord server
-  discord-invite:   # BallsDex official server
+  discord-invite: https://discord.gg/9Ge2RwQ3m6  # BallsDex official server
 
   terms-of-service: https://gist.github.com/GamingadlerHD/ab167753d4a479fbf0535750891d4412
   privacy-policy: https://gist.github.com/GamingadlerHD/31d6601feef544b3f3a35560b42e5496
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "countryballs" in the bot
-collectible-name: countryball
+collectible-name: nation
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "BallsDex" in the bot
-bot-name: WorldDex
+bot-name: NationDex
 
 # players group cog command name
 # this is /balls by default, but you can change it for /animals or /rocks for example
-players-group-cog-name: balls
+players-group-cog-name: nations
 
 # enables the /admin command
 admin-command:

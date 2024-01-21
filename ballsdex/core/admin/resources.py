@@ -196,13 +196,13 @@ class BallResource(Model):
         ),
         Field(
             name="wild_card",
-            label="Wild card",
+            label="Spawn art",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
         Field(
             name="collection_card",
-            label="Collection card",
+            label="Card art",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
@@ -212,11 +212,11 @@ class BallResource(Model):
         ),
         Field(
             name="capacity_name",
-            label="Capacity name",
+            label="Ability name",
         ),
         Field(
             name="capacity_description",
-            label="Capacity description",
+            label="Ability description",
         ),
     ]
 
