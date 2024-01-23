@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import math
 import random
+from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -64,6 +65,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 special += f"✨ ***It's a shiny {settings.collectible_name}!*** ✨\n"
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
+            if datetime.now().strftime("%m-%d") in self.ball.model.capacity_logic:
+                special += f"{self.ball.model.capacity_logic[datetime.now().strftime('%m-%d')]['catch']}\n"
             if has_caught_before:
                 special += (
                     f"This is a **new {settings.collectible_name}** "
@@ -105,6 +108,10 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             special = random.choices(population=population + [None], weights=weights, k=1)[0]
 
         is_new = not await BallInstance.filter(player=player, ball=self.ball.model).exists()
+        if datetime.now().strftime("%m-%d") in self.ball.model.capacity_logic:
+            extra_data = self.ball.model.capacity_logic[datetime.now().strftime("%m-%d")]
+        else:
+            extra_data = {}
         ball = await BallInstance.create(
             ball=self.ball.model,
             player=player,
@@ -113,6 +120,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
             server_id=user.guild.id,
+            extra_data=extra_data,
         )
         if user.id in bot.catch_log:
             log.info(

@@ -75,18 +75,21 @@ def draw_card(ball_instance: "BallInstance"):
         stroke_fill=(0, 0, 0, 255),
         anchor="ra",
     )
+    credits = ball_instance.extra_data["credits"] if ball_instance.extra_data else ball.credits
     draw.text(
         (30, 1870),
         # Modifying the line below is breaking the licence as you are removing credits
         # If you don't want to receive a DMCA, just don't
-        "Created by El Laggron\n" f"Artwork author: {ball.credits}",
+        "Created by El Laggron\n" f"Artwork author: {credits}",
         font=credits_font,
         fill=(0, 0, 0, 255),
         stroke_width=0,
         stroke_fill=(255, 255, 255, 255),
     )
-
-    artwork = Image.open("." + ball.collection_card)
+    if ball_instance.extra_data:
+        artwork = Image.open("." + ball_instance.extra_data["card"])
+    else:
+        artwork = Image.open("." + ball.collection_card)
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
 
     if icon:
