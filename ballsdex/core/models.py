@@ -189,6 +189,7 @@ class BallInstance(models.Model):
     )
     favorite = fields.BooleanField(default=False)
     tradeable = fields.BooleanField(default=True)
+    extra_data = fields.JSONField(default={})
 
     class Meta:
         unique_together = ("player", "id")
