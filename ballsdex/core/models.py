@@ -230,7 +230,7 @@ class BallInstance(models.Model):
 
     def to_string(self, bot: discord.Client | None = None, is_trade: bool = False) -> str:
         emotes = ""
-        if bot and self.pk in bot.locked_balls and not is_trade:
+        if bot and self.pk in bot.locked_balls and not is_trade: # type: ignore
             emotes += "🔒"
         if self.favorite:
             emotes += "❤️"
