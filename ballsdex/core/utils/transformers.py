@@ -186,7 +186,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
                         ),
                     )
                 )
-                cached.append(CachedBallInstance(ball.pk, searchable, ball.description()))
+                cached.append(CachedBallInstance(ball.pk, searchable, ball.description(bot=interaction.client)))
             self.cache[interaction.user.id] = cached
 
         choices: list[app_commands.Choice] = []
