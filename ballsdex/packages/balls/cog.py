@@ -196,13 +196,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             countryballs = await player.balls.filter(**filters).order_by("-favorite", "-shiny")
 
         if len(countryballs) < 1:
+            ball_txt = ball.country if ball else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {ball.country if ball else ''} {settings.collectible_name} yet."
+                    f"You don't have any {ball_txt} {settings.collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any {ball.country if ball else ''} {settings.collectible_name} yet."
+                    f"{user_obj.name} doesn't have any {ball_txt} {settings.collectible_name} yet."
                 )
             return
         if reverse:
