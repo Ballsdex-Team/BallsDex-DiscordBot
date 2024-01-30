@@ -173,7 +173,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 return
 
         await player.fetch_related("balls")
-        filters = {"ball__id": ball.id} if ball else {}
+        filters = {"ball__id": ball.pk} if ball else {}
         if sort:
             if sort == SortingChoices.duplicates:
                 countryballs = await player.balls.filter(**filters)
