@@ -263,7 +263,7 @@ class BallsDexBot(commands.AutoShardedBot):
             await asyncio.sleep(30)
 
     async def on_ready(self):
-        if self.cogs == {}:
+        if self.cogs != {}:
             return  # bot is reconnecting, no need to setup again
 
         assert self.user
