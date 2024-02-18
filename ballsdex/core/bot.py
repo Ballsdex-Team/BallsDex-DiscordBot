@@ -21,7 +21,9 @@ from discord.app_commands.translator import (
 from discord.enums import Locale
 from discord.ext import commands
 from prometheus_client import Histogram
-from rich import print
+from rich import box, print
+from rich.console import Console
+from rich.table import Table
 
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
@@ -192,32 +194,43 @@ class BallsDexBot(commands.AutoShardedBot):
                 )
 
     async def load_cache(self):
+        table = Table(box=box.SIMPLE)
+        table.add_column("Model", style="cyan")
+        table.add_column("Count", justify="right", style="green")
+
         balls.clear()
         for ball in await Ball.all():
             balls[ball.pk] = ball
-        log.info(f"Loaded {len(balls)} balls")
+        table.add_row(settings.collectible_name.title() + "s", str(len(balls)))
 
         regimes.clear()
         for regime in await Regime.all():
             regimes[regime.pk] = regime
-        log.info(f"Loaded {len(regimes)} regimes")
+        table.add_row("Regimes", str(len(regimes)))
 
         economies.clear()
         for economy in await Economy.all():
             economies[economy.pk] = economy
-        log.info(f"Loaded {len(economies)} economies")
+        table.add_row("Economies", str(len(economies)))
 
         specials.clear()
         for special in await Special.all():
             specials[special.pk] = special
-        log.info(f"Loaded {len(specials)} specials")
+        table.add_row("Special events", str(len(specials)))
 
         self.blacklist = set()
         for blacklisted_id in await BlacklistedID.all().only("discord_id"):
             self.blacklist.add(blacklisted_id.discord_id)
+        table.add_row("Blacklisted users", str(len(self.blacklist)))
+
         self.blacklist_guild = set()
         for blacklisted_id in await BlacklistedGuild.all().only("discord_id"):
             self.blacklist_guild.add(blacklisted_id.discord_id)
+        table.add_row("Blacklisted guilds", str(len(self.blacklist_guild)))
+
+        log.info("Cache loaded, summary displayed below")
+        console = Console()
+        console.print(table)
 
     async def gateway_healthy(self) -> bool:
         """Check whether or not the gateway proxy is ready and healthy."""
@@ -250,6 +263,9 @@ class BallsDexBot(commands.AutoShardedBot):
             await asyncio.sleep(30)
 
     async def on_ready(self):
+        if self.cogs == {}:
+            return  # bot is reconnecting, no need to setup again
+
         assert self.user
         log.info(f"Successfully logged in as {self.user} ({self.user.id})!")
 
@@ -264,9 +280,12 @@ class BallsDexBot(commands.AutoShardedBot):
             self.owner_ids.add(self.application.owner.id)
         if settings.co_owners:
             self.owner_ids.update(settings.co_owners)
-        log.info(
-            f"{self.owner_ids} {'are' if len(self.owner_ids) > 1 else 'is'} set as the bot owner."
-        )
+        if len(self.owner_ids) > 1:
+            log.info(f"{len(self.owner_ids)} users are set as bot owner.")
+        else:
+            log.info(
+                f"{await self.fetch_user(next(iter(self.owner_ids)))} is the owner of this bot."
+            )
 
         await self.load_cache()
         if self.blacklist:
