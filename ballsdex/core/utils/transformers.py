@@ -179,7 +179,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         )
 
         choices: list[app_commands.Choice] = [
-            app_commands.Choice(name=x.description(), value=str(x.pk))
+            app_commands.Choice(name=x.description(bot=interaction.client), value=str(x.pk))
             for x in await balls_queryset
         ]
         return choices

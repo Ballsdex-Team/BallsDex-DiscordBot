@@ -228,8 +228,10 @@ class BallInstance(models.Model):
     def __str__(self) -> str:
         return self.to_string()
 
-    def to_string(self, bot: discord.Client | None = None) -> str:
+    def to_string(self, bot: discord.Client | None = None, is_trade: bool = False) -> str:
         emotes = ""
+        if bot and self.pk in bot.locked_balls and not is_trade:  # type: ignore
+            emotes += "🔒"
         if self.favorite:
             emotes += "❤️"
         if self.shiny:
@@ -267,8 +269,9 @@ class BallInstance(models.Model):
         short: bool = False,
         include_emoji: bool = False,
         bot: discord.Client | None = None,
+        is_trade: bool = False,
     ) -> str:
-        text = self.to_string(bot)
+        text = self.to_string(bot, is_trade=is_trade)
         if not short:
             text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
         if include_emoji:
