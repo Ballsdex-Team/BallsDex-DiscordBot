@@ -1,12 +1,12 @@
 import logging
 import time
-from typing import TYPE_CHECKING, Generic, Iterable, NamedTuple, TypeVar
+from typing import TYPE_CHECKING, Generic, Iterable, TypeVar
 
 import discord
-from cachetools import TTLCache
 from discord import app_commands
 from discord.interactions import Interaction
 from tortoise.exceptions import DoesNotExist
+from tortoise.expressions import RawSQL
 from tortoise.models import Model
 
 from ballsdex.core.models import (
@@ -34,12 +34,6 @@ __all__ = (
     "RegimeTransform",
     "EconomyTransform",
 )
-
-
-class CachedBallInstance(NamedTuple):
-    pk: int
-    searchable: str
-    description: str
 
 
 class ValidationError(Exception):
@@ -143,9 +137,6 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
     name = settings.collectible_name
     model = BallInstance  # type: ignore
 
-    def __init__(self):
-        self.cache: TTLCache[int, list[CachedBallInstance]] = TTLCache(maxsize=999, ttl=30)
-
     async def get_from_pk(self, value: int) -> BallInstance:
         return await self.model.get(pk=value).prefetch_related("player")
 
@@ -157,44 +148,31 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
     async def get_options(
         self, interaction: Interaction["BallsDexBot"], value: str
     ) -> list[app_commands.Choice[int]]:
-        try:
-            cached = self.cache[interaction.user.id]
-        except KeyError:
-            balls = (
-                await BallInstance.filter(player__discord_id=interaction.user.id)
-                .only(
-                    "id",
-                    "ball_id",
-                    "special_id",
-                    "attack_bonus",
-                    "health_bonus",
-                    "favorite",
-                    "shiny",
-                )
-                .all()
+        balls = (
+            await BallInstance.filter(player__discord_id=interaction.user.id, ball__enabled=True)
+            .only(
+                "id",
+                "ball_id",
+                "special_id",
+                "attack_bonus",
+                "health_bonus",
+                "favorite",
+                "shiny",
             )
-            cached = []
-            for ball in balls:
-                searchable = " ".join(
-                    (
-                        ball.countryball.country.lower(),
-                        "{:0x}".format(ball.pk),
-                        *(
-                            ball.countryball.catch_names.split(";")
-                            if ball.countryball.catch_names
-                            else []
-                        ),
-                    )
+            .select_related("ball")
+            .annotate(
+                searchable=RawSQL(
+                    "to_hex(ballinstance.ball_id) || ballinstance__ball.country || "
+                    "ballinstance__ball.catch_names"
                 )
-                cached.append(CachedBallInstance(ball.pk, searchable, ball.description()))
-            self.cache[interaction.user.id] = cached
+            )
+            .filter(searchable__icontains=value)
+            .limit(25)
+        )
 
-        choices: list[app_commands.Choice] = []
-        for ball in cached:
-            if value.lower() in ball.searchable:
-                choices.append(app_commands.Choice(name=ball.description, value=str(ball.pk)))
-                if len(choices) >= 25:
-                    return choices
+        choices: list[app_commands.Choice] = [
+            app_commands.Choice(name=x.description(), value=str(x.pk)) for x in balls
+        ]
         return choices
 
 
