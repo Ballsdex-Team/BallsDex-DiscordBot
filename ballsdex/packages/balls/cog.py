@@ -137,6 +137,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user: discord.User | None = None,
         sort: SortingChoices | None = None,
         reverse: bool = False,
+        ball: BallEnabledTransform | None = None,
     ):
         """
         List your countryballs.
@@ -149,6 +150,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Choose how countryballs are sorted. Can be used to show duplicates.
         reverse: bool
             Reverse the output of the list.
+        ball: Ball
+            Filter the list by a specific countryball.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -170,35 +173,37 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 return
 
         await player.fetch_related("balls")
+        filters = {"ball__id": ball.pk} if ball else {}
         if sort:
             if sort == SortingChoices.duplicates:
-                countryballs = await player.balls.all()
+                countryballs = await player.balls.filter(**filters)
                 count = defaultdict(int)
                 for countryball in countryballs:
                     count[countryball.countryball.pk] += 1
                 countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
             elif sort == SortingChoices.stats_bonus:
-                countryballs = await player.balls.all()
+                countryballs = await player.balls.filter(**filters)
                 countryballs.sort(key=lambda x: (x.health_bonus, x.attack_bonus), reverse=True)
             elif sort == SortingChoices.health or sort == SortingChoices.attack:
-                countryballs = await player.balls.all()
+                countryballs = await player.balls.filter(**filters)
                 countryballs.sort(key=lambda x: getattr(x, sort.value), reverse=True)
             elif sort == SortingChoices.total_stats:
-                countryballs = await player.balls.all()
+                countryballs = await player.balls.filter(**filters)
                 countryballs.sort(key=lambda x: (x.health, x.attack), reverse=True)
             else:
-                countryballs = await player.balls.all().order_by(sort.value)
+                countryballs = await player.balls.filter(**filters).order_by(sort.value)
         else:
-            countryballs = await player.balls.all().order_by("-favorite", "-shiny")
+            countryballs = await player.balls.filter(**filters).order_by("-favorite", "-shiny")
 
         if len(countryballs) < 1:
+            ball_txt = ball.country if ball else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {settings.collectible_name} yet."
+                    f"You don't have any {ball_txt} {settings.collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any {settings.collectible_name} yet."
+                    f"{user_obj.name} doesn't have any {ball_txt} {settings.collectible_name} yet."
                 )
             return
         if reverse:
