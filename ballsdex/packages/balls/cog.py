@@ -23,6 +23,7 @@ from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
     SpecialEnabledTransform,
+    TradeCommandType,
 )
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.settings import settings
@@ -434,7 +435,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
 
-    @app_commands.command()
+    @app_commands.command(extras={"trade": TradeCommandType.PICK})
     async def give(
         self,
         interaction: discord.Interaction,

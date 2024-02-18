@@ -12,7 +12,7 @@ from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils.trades import TradeViewFormat
-from ballsdex.core.utils.transformers import BallInstanceTransform
+from ballsdex.core.utils.transformers import BallInstanceTransform, TradeCommandType
 from ballsdex.packages.trade.menu import TradeMenu, TradingUser
 from ballsdex.settings import settings
 
@@ -135,7 +135,7 @@ class Trade(commands.GroupCog):
         await menu.start()
         await interaction.response.send_message("Trade started!", ephemeral=True)
 
-    @app_commands.command()
+    @app_commands.command(extras={"trade": TradeCommandType.PICK})
     async def add(self, interaction: discord.Interaction, countryball: BallInstanceTransform):
         """
         Add a countryball to the ongoing trade.
@@ -195,7 +195,7 @@ class Trade(commands.GroupCog):
             f"{countryball.countryball.country} added.", ephemeral=True
         )
 
-    @app_commands.command()
+    @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
     async def remove(self, interaction: discord.Interaction, countryball: BallInstanceTransform):
         """
         Remove a countryball from what you proposed in the ongoing trade.

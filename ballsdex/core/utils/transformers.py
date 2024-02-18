@@ -1,5 +1,6 @@
 import logging
 import time
+from enum import Enum
 from typing import TYPE_CHECKING, Generic, Iterable, TypeVar
 
 import discord
@@ -34,6 +35,16 @@ __all__ = (
     "RegimeTransform",
     "EconomyTransform",
 )
+
+
+class TradeCommandType(Enum):
+    """
+    If a command is using `BallInstanceTransformer` for trading purposes, it should define this
+    enum to filter out values.
+    """
+
+    PICK = 0
+    REMOVE = 1
 
 
 class ValidationError(Exception):
@@ -148,18 +159,15 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
     async def get_options(
         self, interaction: Interaction["BallsDexBot"], value: str
     ) -> list[app_commands.Choice[int]]:
-        balls = (
-            await BallInstance.filter(player__discord_id=interaction.user.id, ball__enabled=True)
-            .only(
-                "id",
-                "ball_id",
-                "special_id",
-                "attack_bonus",
-                "health_bonus",
-                "favorite",
-                "shiny",
-            )
-            .select_related("ball")
+        balls_queryset = BallInstance.filter(player__discord_id=interaction.user.id)
+
+        if interaction.command and (trade_type := interaction.command.extras.get("trade", None)):
+            if trade_type == TradeCommandType.PICK:
+                balls_queryset = balls_queryset.exclude(id__in=interaction.client.locked_balls)
+            else:
+                balls_queryset = balls_queryset.filter(id__in=interaction.client.locked_balls)
+        balls_queryset = (
+            balls_queryset.select_related("ball")
             .annotate(
                 searchable=RawSQL(
                     "to_hex(ballinstance.ball_id) || ballinstance__ball.country || "
@@ -171,7 +179,8 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         )
 
         choices: list[app_commands.Choice] = [
-            app_commands.Choice(name=x.description(), value=str(x.pk)) for x in balls
+            app_commands.Choice(name=x.description(), value=str(x.pk))
+            for x in await balls_queryset
         ]
         return choices
 
