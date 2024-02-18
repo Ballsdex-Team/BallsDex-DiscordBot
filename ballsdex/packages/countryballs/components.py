@@ -66,7 +66,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
             if datetime.now().strftime("%m-%d") in self.ball.model.capacity_logic:
-                special += f"{self.ball.model.capacity_logic[datetime.now().strftime('%m-%d')]['catch']}\n"
+                capacity = self.ball.model.capacity_logic[
+                    datetime.now().strftime("%m-%d")
+                ]  # type: ignore
+                catch = capacity["catch"]  # type: ignore
+                special += f"{catch}\n"
             if has_caught_before:
                 special += (
                     f"This is a **new {settings.collectible_name}** "
@@ -109,7 +113,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         is_new = not await BallInstance.filter(player=player, ball=self.ball.model).exists()
         if datetime.now().strftime("%m-%d") in self.ball.model.capacity_logic:
-            extra_data = self.ball.model.capacity_logic[datetime.now().strftime("%m-%d")]
+            extra_data = self.ball.model.capacity_logic[
+                datetime.now().strftime("%m-%d")
+            ]  # type: ignore
         else:
             extra_data = {}
         ball = await BallInstance.create(

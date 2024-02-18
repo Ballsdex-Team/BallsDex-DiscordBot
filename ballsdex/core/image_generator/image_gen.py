@@ -30,6 +30,8 @@ def draw_card(ball_instance: "BallInstance"):
     ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
 
+    extra_data = ball_instance.extra_data or {}
+
     if ball_instance.shiny:
         image = Image.open(str(SOURCES_PATH / "shiny.png"))
         ball_health = (255, 255, 255, 255)
@@ -75,19 +77,19 @@ def draw_card(ball_instance: "BallInstance"):
         stroke_fill=(0, 0, 0, 255),
         anchor="ra",
     )
-    credits = ball_instance.extra_data["credits"] if ball_instance.extra_data else ball.credits
+    ball_credits = extra_data.get("credits", ball.credits)  # type: ignore
     draw.text(
         (30, 1870),
         # Modifying the line below is breaking the licence as you are removing credits
         # If you don't want to receive a DMCA, just don't
-        "Created by El Laggron\n" f"Artwork author: {credits}",
+        "Created by El Laggron\n" f"Artwork author: {ball_credits}",
         font=credits_font,
         fill=(0, 0, 0, 255),
         stroke_width=0,
         stroke_fill=(255, 255, 255, 255),
     )
-    if ball_instance.extra_data:
-        artwork = Image.open("." + ball_instance.extra_data["card"])
+    if extra_data.get("card"):  # type: ignore
+        artwork = Image.open("." + extra_data["card"])  # type: ignore
     else:
         artwork = Image.open("." + ball.collection_card)
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
