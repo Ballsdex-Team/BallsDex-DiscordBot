@@ -13,12 +13,12 @@ import discord
 import yarl
 from aerich import Command
 from discord.ext.commands import when_mentioned_or
-from discord.utils import setup_logging
 from rich import print
 from tortoise import Tortoise
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.logging import init_logger
 from ballsdex.settings import read_settings, settings, update_settings, write_default_settings
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
@@ -216,30 +216,6 @@ class RemoveWSBehindMsg(logging.Filter):
         return True
 
 
-def init_logger(disable_rich: bool = False, debug: bool = False):
-    formatter = logging.Formatter(
-        "[{asctime}] {levelname} {name}: {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{"
-    )
-
-    if disable_rich:
-        setup_logging(formatter=formatter, level=logging.INFO)
-    else:
-        setup_logging(level=logging.INFO)
-
-    if debug:
-        log.setLevel(logging.DEBUG)
-
-    # file handler
-    file_handler = logging.handlers.RotatingFileHandler(
-        "ballsdex.log", maxBytes=8**7, backupCount=8
-    )
-    file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(formatter)
-    logging.getLogger().addHandler(file_handler)
-
-    logging.getLogger("aiohttp").setLevel(logging.WARNING)  # don't log each prometheus call
-
-
 async def init_tortoise(db_url: str):
     log.debug(f"Database URL: {db_url}")
     await Tortoise.init(config=TORTOISE_ORM)
@@ -272,12 +248,13 @@ def main():
         update_settings(cli_flags.config_file)
 
     print_welcome()
+    queue_listener: logging.handlers.QueueListener | None = None
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
     try:
-        init_logger(cli_flags.disable_rich, cli_flags.debug)
+        queue_listener = init_logger(cli_flags.disable_rich, cli_flags.debug)
 
         token = settings.bot_token
         if not token:
@@ -305,7 +282,7 @@ def main():
         except Exception:
             log.exception("Failed to connect to database.")
             return  # will exit with code 1
-        log.debug("Tortoise ORM and database ready.")
+        log.info("Tortoise ORM and database ready.")
 
         bot = BallsDexBot(
             command_prefix=when_mentioned_or(prefix),
@@ -333,6 +310,8 @@ def main():
         if bot is not None:
             loop.run_until_complete(shutdown_handler(bot))
     finally:
+        if queue_listener:
+            queue_listener.stop()
         loop.run_until_complete(loop.shutdown_asyncgens())
         if server is not None:
             loop.run_until_complete(server.stop())

@@ -202,7 +202,9 @@ class TradeMenu:
         i = 0
 
         for countryball in trader.proposal:
-            cb_text = countryball.description(short=short, include_emoji=True, bot=self.bot)
+            cb_text = countryball.description(
+                short=short, include_emoji=True, bot=self.bot, is_trade=True
+            )
             if trader.locked:
                 text = f"- *{cb_text}*\n"
             else:

@@ -97,7 +97,6 @@ class SpawnManager:
         if not cooldown:
             cooldown = SpawnCooldown(message.created_at)
             self.cooldowns[guild.id] = cooldown
-            log.debug(f"Created cooldown manager for guild {guild.id}")
 
         delta = (message.created_at - cooldown.time).total_seconds()
         # change how the threshold varies according to the member count, while nuking farm servers
@@ -115,23 +114,19 @@ class SpawnManager:
 
         # manager cannot be increased more than once per 5 seconds
         if not await cooldown.increase(message):
-            log.debug(f"Handled message {message.id}, skipping due to spam control")
             return
 
         # normal increase, need to reach goal
         if cooldown.amount <= chance:
-            log.debug(f"Handled message {message.id}, count: {cooldown.amount}/{chance}")
             return
 
         # at this point, the goal is reached
         if delta < 600:
             # wait for at least 10 minutes before spawning
-            log.debug(f"Handled message {message.id}, waiting for manager to be 10 mins old")
             return
 
         # spawn countryball
         cooldown.reset(message.created_at)
-        log.debug(f"Handled message {message.id}, spawning ball")
         await self.spawn_countryball(guild)
 
     async def spawn_countryball(self, guild: discord.Guild):
