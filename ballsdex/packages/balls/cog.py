@@ -137,7 +137,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user: discord.User | None = None,
         sort: SortingChoices | None = None,
         reverse: bool = False,
-        ball: BallEnabledTransform | None = None,
+        countryball: BallEnabledTransform | None = None,
     ):
         """
         List your countryballs.
@@ -150,7 +150,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Choose how countryballs are sorted. Can be used to show duplicates.
         reverse: bool
             Reverse the output of the list.
-        ball: Ball
+        countryball: Ball
             Filter the list by a specific countryball.
         """
         user_obj = user or interaction.user
@@ -173,13 +173,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 return
 
         await player.fetch_related("balls")
-        filters = {"ball__id": ball.pk} if ball else {}
+        filters = {"ball__id": countryball.pk} if countryball else {}
         if sort:
             if sort == SortingChoices.duplicates:
                 countryballs = await player.balls.filter(**filters)
                 count = defaultdict(int)
-                for countryball in countryballs:
-                    count[countryball.countryball.pk] += 1
+                for ball in countryballs:
+                    count[ball.countryball.pk] += 1
                 countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
             elif sort == SortingChoices.stats_bonus:
                 countryballs = await player.balls.filter(**filters)
@@ -196,7 +196,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             countryballs = await player.balls.filter(**filters).order_by("-favorite", "-shiny")
 
         if len(countryballs) < 1:
-            ball_txt = ball.country if ball else ""
+            ball_txt = countryball.country if countryball else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
                     f"You don't have any {ball_txt} {settings.collectible_name} yet."
