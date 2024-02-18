@@ -2,6 +2,7 @@ import discord
 from discord.ui import Button, View, button
 
 from ballsdex.core.models import GuildConfig
+from ballsdex.settings import settings
 
 
 class AcceptTOSView(View):
@@ -43,7 +44,8 @@ class AcceptTOSView(View):
         self.stop()
         await interaction.response.send_message(
             f"The new spawn channel was successfully set to {self.channel.mention}.\n"
-            "Balls will start spawning as users talk unless the bot is disabled."
+            f"{settings.collectible_name.title()} will start spawning as"
+            " users talk unless the bot is disabled."
         )
 
         self.accept_button.disabled = True

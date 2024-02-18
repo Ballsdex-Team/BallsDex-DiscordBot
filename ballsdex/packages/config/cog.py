@@ -17,7 +17,7 @@ activation_embed = discord.Embed(
     description=f"To enable {settings.bot_name} in your server, you must "
     f"read and accept the [Terms of Service]({settings.terms_of_service}).\n\n"
     "As a summary, these are the rules of the bot:\n"
-    "- No farming (spamming or creating servers for balls)\n"
+    f"- No farming (spamming or creating servers for {settings.collectible_name})\n"
     "- Selling or exchanging balls against money or other goods is forbidden\n"
     "- Do not attempt to abuse the bot's internals\n"
     "**Not respecting these rules will lead to a blacklist**",

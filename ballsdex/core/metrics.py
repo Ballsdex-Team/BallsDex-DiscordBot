@@ -1,6 +1,8 @@
+import asyncio
 import logging
 import math
 from collections import defaultdict
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from aiohttp import web
@@ -33,6 +35,30 @@ class PrometheusServer:
         self.shards_latecy = Histogram(
             "gateway_latency", "Shard latency with the Discord gateway", ["shard_id"]
         )
+        self.asyncio_delay = Histogram(
+            "asyncio_delay",
+            "How much time asyncio takes to give back control",
+            buckets=(
+                0.001,
+                0.0025,
+                0.005,
+                0.0075,
+                0.01,
+                0.025,
+                0.05,
+                0.075,
+                0.1,
+                0.25,
+                0.5,
+                0.75,
+                1.0,
+                2.5,
+                5.0,
+                7.5,
+                10.0,
+                float("inf"),
+            ),
+        )
 
     async def collect_metrics(self):
         guilds: dict[int, int] = defaultdict(int)
@@ -45,6 +71,11 @@ class PrometheusServer:
 
         for shard_id, latency in self.bot.latencies:
             self.shards_latecy.labels(shard_id=shard_id).observe(latency)
+
+        t1 = datetime.now()
+        await asyncio.sleep(1)
+        t2 = datetime.now()
+        self.asyncio_delay.observe((t2 - t1).total_seconds() - 1)
 
     async def get(self, request: web.Request) -> web.Response:
         log.debug("Request received")

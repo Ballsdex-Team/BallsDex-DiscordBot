@@ -23,6 +23,7 @@ from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
     SpecialEnabledTransform,
+    TradeCommandType,
 )
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.settings import settings
@@ -76,6 +77,10 @@ class DonationRequest(View):
         self.countryball.trade_player = self.countryball.player
         self.countryball.player = self.new_player
         await self.countryball.save()
+        trade = await Trade.create(player1=self.countryball.trade_player, player2=self.new_player)
+        await TradeObject.create(
+            trade=trade, ballinstance=self.countryball, player=self.countryball.trade_player
+        )
         await interaction.response.edit_message(
             content=interaction.message.content  # type: ignore
             + "\n\N{WHITE HEAVY CHECK MARK} The donation was accepted!",
@@ -430,7 +435,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
 
-    @app_commands.command()
+    @app_commands.command(extras={"trade": TradeCommandType.PICK})
     async def give(
         self,
         interaction: discord.Interaction,
