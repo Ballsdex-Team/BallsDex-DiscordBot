@@ -18,7 +18,6 @@ from tortoise import Tortoise
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.logging import init_logger
 from ballsdex.settings import read_settings, settings, update_settings, write_default_settings
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
@@ -228,24 +227,18 @@ async def init_tortoise(db_url: str):
         log.info(f"Ran {len(migrations)} migrations: {', '.join(migrations)}")
 
 
-def main():
+async def main(shard_ids: list[int], shard_count: int, cluster_id: int, cluster_count: int, cluster_name: str):
     bot = None
     server = None
-    cli_flags = parse_cli_flags(sys.argv[1:])
-    if cli_flags.version:
-        print(f"BallsDex Discord bot - {bot_version}")
-        sys.exit(0)
-    if cli_flags.reset_settings:
-        print("[yellow]Resetting configuration file.[/yellow]")
-        reset_settings(cli_flags.config_file)
+    # cli_flags = parse_cli_flags(sys.argv[1:])
+    # if cli_flags.version:
+    #     print(f"BallsDex Discord bot - {bot_version}")
+    #     sys.exit(0)
+    # if cli_flags.reset_settings:
+    #     print("[yellow]Resetting configuration file.[/yellow]")
+    #     reset_settings(cli_flags.config_file)
 
-    try:
-        read_settings(cli_flags.config_file)
-    except FileNotFoundError:
-        print("[yellow]The config file could not be found, generating a default one.[/yellow]")
-        reset_settings(cli_flags.config_file)
-    else:
-        update_settings(cli_flags.config_file)
+    read_settings(Path("./config.yml"))
 
     print_welcome()
     queue_listener: logging.handlers.QueueListener | None = None
@@ -254,7 +247,7 @@ def main():
     asyncio.set_event_loop(loop)
 
     try:
-        queue_listener = init_logger(cli_flags.disable_rich, cli_flags.debug)
+        # queue_listener = init_logger(False, True)
 
         token = settings.bot_token
         if not token:
@@ -278,7 +271,7 @@ def main():
         prefix = settings.prefix
 
         try:
-            loop.run_until_complete(init_tortoise(db_url))
+            await init_tortoise(db_url)
         except Exception:
             log.exception("Failed to connect to database.")
             return  # will exit with code 1
@@ -286,22 +279,27 @@ def main():
 
         bot = BallsDexBot(
             command_prefix=when_mentioned_or(prefix),
-            dev=cli_flags.dev,  # type: ignore
-            shard_count=settings.shard_count,
+            dev=True,  # type: ignore
+            shard_ids=shard_ids,
+            shard_count=shard_count,
+            cluster_id=cluster_id,
+            cluster_count=cluster_count,
+            cluster_name=cluster_name,
         )
 
         exc_handler = functools.partial(global_exception_handler, bot)
-        loop.set_exception_handler(exc_handler)
-        loop.add_signal_handler(
-            SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))
-        )
+        # loop.set_exception_handler(exc_handler)
+        # loop.add_signal_handler(
+        #     SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))
+        # )
 
         log.info("Initialized bot, connecting to Discord...")
-        future = loop.create_task(bot.start(token))
-        bot_exc_handler = functools.partial(bot_exception_handler, bot)
-        future.add_done_callback(bot_exc_handler)
+        await bot.start(token)
+        # future = loop.create_task(bot.start(token))
+        # bot_exc_handler = functools.partial(bot_exception_handler, bot)
+        # future.add_done_callback(bot_exc_handler)
 
-        loop.run_forever()
+        # loop.run_forever()
     except KeyboardInterrupt:
         if bot is not None:
             loop.run_until_complete(shutdown_handler(bot, "Ctrl+C"))
@@ -312,11 +310,11 @@ def main():
     finally:
         if queue_listener:
             queue_listener.stop()
-        loop.run_until_complete(loop.shutdown_asyncgens())
+        # loop.run_until_complete(loop.shutdown_asyncgens())
         if server is not None:
-            loop.run_until_complete(server.stop())
+            await server.stop()
         if Tortoise._inited:
-            loop.run_until_complete(Tortoise.close_connections())
+            await Tortoise.close_connections()
         asyncio.set_event_loop(None)
         loop.stop()
         loop.close()
