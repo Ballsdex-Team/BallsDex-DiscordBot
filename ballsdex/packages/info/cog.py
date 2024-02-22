@@ -70,9 +70,7 @@ class Info(commands.Cog):
 
         assert self.bot.user
         assert self.bot.application
-        try:
-            assert self.bot.application.install_params
-        except AssertionError:
+        if self.bot.application.install_params is None:
             invite_link = discord.utils.oauth_url(
                 self.bot.application.id,
                 permissions=discord.Permissions(
