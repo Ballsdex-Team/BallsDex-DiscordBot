@@ -53,7 +53,7 @@ class Settings:
     bot_token: str = ""
     gateway_url: str | None = None
     shard_count: int | None = 3
-    shards_per_cluster: int = 1
+    shards_per_cluster: int = 40
     extra_shards: int = 0
     prefix: str = "b."
 
