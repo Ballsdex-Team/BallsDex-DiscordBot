@@ -1,12 +1,11 @@
 import logging
 import random
 import re
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
-from collections import namedtuple
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button

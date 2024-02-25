@@ -1,10 +1,6 @@
 import asyncio
 import json
-from collections import namedtuple
-from datetime import datetime, timedelta
 from logging import getLogger
-from time import time
-from typing import Any
 from uuid import uuid4
 
 import discord
