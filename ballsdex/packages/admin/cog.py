@@ -326,7 +326,9 @@ class Admin(commands.GroupCog):
                 "guilds", self.bot.cluster_count, {"user_id": user.id}
             )
             # guild_rests is a list of lists, join them into one list
-            guilds = [guild for sublist in guild_results for guild in sublist]
+            guilds = []
+            for result in guild_results:
+                guilds.extend(result)
         else:
             if self.bot.intents.members:
                 guilds = user.mutual_guilds
