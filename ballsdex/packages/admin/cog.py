@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
+from collections import namedtuple
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button
@@ -327,8 +328,9 @@ class Admin(commands.GroupCog):
             )
             # guild_rests is a list of lists, join them into one list
             guilds = []
+            Guild = namedtuple("Guild", "id name member_count")
             for result in guild_results:
-                guilds.extend(result)
+                guilds.extend([Guild(*x) for x in result])
         else:
             if self.bot.intents.members:
                 guilds = user.mutual_guilds

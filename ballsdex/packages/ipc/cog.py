@@ -256,10 +256,8 @@ class IPC(commands.Cog):
     async def guilds(self, user_id, command_id: str):
         user = await self.bot.fetch_user(user_id)
         guilds = [x for x in self.bot.guilds if x.owner_id == user.id]
-        # create namedtuple with id, name, membercount
-        Guild = namedtuple("Guild", "id name member_count")
-        guilds = [Guild(x.id, x.name, x.member_count) for x in guilds]
-      
+        guilds = [[x.id, x.name, x.member_count] for x in guilds]
+
         payload = {"output": guilds, "command_id": command_id}
         await self.bot.redis.execute_command(
             "PUBLISH",
