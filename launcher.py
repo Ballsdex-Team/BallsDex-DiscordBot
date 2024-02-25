@@ -66,6 +66,8 @@ def get_cluster_list(shards: int) -> list[list[int]]:
         list(range(0, shards)[i : i + settings.shards_per_cluster])
         for i in range(0, shards, settings.shards_per_cluster)
     ]
+
+
 class Status(Enum):
     Initialized = "initialized"
     Running = "running"

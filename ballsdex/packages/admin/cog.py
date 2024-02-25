@@ -321,11 +321,17 @@ class Admin(commands.GroupCog):
                     "The given user ID could not be found.", ephemeral=True
                 )
                 return
-
-        if self.bot.intents.members:
-            guilds = user.mutual_guilds
+        if cog := self.bot.get_cog("IPC"):
+            guild_results = await cog.handler(
+                "guilds", self.bot.cluster_count, {"user_id": user.id}
+            )
+            # guild_rests is a list of lists, join them into one list
+            guilds = [guild for sublist in guild_results for guild in sublist]
         else:
-            guilds = [x for x in self.bot.guilds if x.owner_id == user.id]
+            if self.bot.intents.members:
+                guilds = user.mutual_guilds
+            else:
+                guilds = [x for x in self.bot.guilds if x.owner_id == user.id]
 
         if not guilds:
             if self.bot.intents.members:
@@ -708,6 +714,9 @@ class Admin(commands.GroupCog):
             f"for the following reason: {reason}",
             self.bot,
         )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist_guild.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -753,6 +762,9 @@ class Admin(commands.GroupCog):
             await log_action(
                 f"{interaction.user} removed blacklist for guild {guild} ({guild.id})", self.bot
             )
+            cog = self.bot.get_cog("IPC")
+            if cog:
+                await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist_guild.command(name="info")
     async def blacklist_info_guild(

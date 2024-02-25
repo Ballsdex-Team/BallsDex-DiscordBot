@@ -97,9 +97,7 @@ class Info(commands.Cog):
         cog = self.bot.get_cog("IPC")
         if cog:
             result = await cog.handler("guild_count", self.bot.cluster_count)
-            servers = 0
-            for count in result:
-                servers += count
+            servers = sum(result)
         else:
             servers = len(self.bot.guilds)
         embed.description = (

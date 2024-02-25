@@ -285,6 +285,8 @@ class Dev(commands.Cog):
                     "message": ctx.message,
                 }
             )
+        if cog := self.bot.get_cog("IPC"):
+            env["ipc"] = cog
         for name, value in self.env_extensions.items():
             try:
                 env[name] = value(ctx)
