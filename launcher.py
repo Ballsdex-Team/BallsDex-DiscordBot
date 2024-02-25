@@ -101,7 +101,7 @@ class Instance:
         self.instance_count = instance_count
         self.name = name
         self.command = (
-            f'{sys.executable} -OO {Path.cwd() / BOT_FILE} "{shard_list}" {shard_count}'
+            f'{sys.executable} -O {Path.cwd() / BOT_FILE} "{shard_list}" {shard_count}'
             f" {self.id} {self.instance_count} {self.name}"
         )
         self._process: asyncio.subprocess.Process | None = None
