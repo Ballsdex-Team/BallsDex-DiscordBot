@@ -37,38 +37,6 @@ class Core(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def reload(self, ctx: commands.Context, package: str):
-        """
-        Reload an extension
-        """
-        package = "ballsdex.packages." + package
-        try:
-            try:
-                await self.bot.reload_extension(package)
-            except commands.ExtensionNotLoaded:
-                await self.bot.load_extension(package)
-        except commands.ExtensionNotFound:
-            await ctx.send("Extension not found")
-        except Exception:
-            await ctx.send("Failed to reload extension.")
-            log.error(f"Failed to reload extension {package}", exc_info=True)
-        else:
-            await ctx.send("Extension reloaded.")
-
-    @commands.command()
-    @commands.is_owner()
-    async def reloadcache(self, ctx: commands.Context):
-        """
-        Reload the cache of database models.
-
-        This is needed each time the database is updated, otherwise changes won't reflect until
-        next start.
-        """
-        await self.bot.load_cache()
-        await ctx.message.add_reaction("✅")
-
-    @commands.command()
-    @commands.is_owner()
     async def analyzedb(self, ctx: commands.Context):
         """
         Analyze the database. This refreshes the counts displayed by the `/about` command.

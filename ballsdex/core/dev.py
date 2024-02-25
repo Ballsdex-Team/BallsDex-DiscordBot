@@ -202,11 +202,12 @@ START_CODE_BLOCK_RE = re.compile(r"^((```py(thon)?)(?=\s)|(```))")
 class Dev(commands.Cog):
     """Various development focused utilities."""
 
-    def __init__(self):
+    def __init__(self, bot: commands.Bot):
         super().__init__()
         self._last_result = None
         self.sessions = {}
         self.env_extensions = {}
+        self.bot = bot
 
     @staticmethod
     def async_compile(source, filename, mode):
@@ -254,14 +255,9 @@ class Dev(commands.Cog):
         token = ctx.bot.http.token
         return re.sub(re.escape(token), "[EXPUNGED]", input_, re.I)
 
-    def get_environment(self, ctx: commands.Context) -> dict:
+    def get_environment(self, ctx: commands.Context | None) -> dict:
         env = {
-            "bot": ctx.bot,
-            "ctx": ctx,
-            "channel": ctx.channel,
-            "author": ctx.author,
-            "guild": ctx.guild,
-            "message": ctx.message,
+            "bot": self.bot,
             "asyncio": asyncio,
             "aiohttp": aiohttp,
             "discord": discord,
@@ -280,6 +276,15 @@ class Dev(commands.Cog):
             "_": self._last_result,
             "__name__": "__main__",
         }
+        if ctx:
+            env.update(
+                {
+                    "ctx": ctx,
+                    "channel": ctx.channel,
+                    "author": ctx.author,
+                    "message": ctx.message,
+                }
+            )
         for name, value in self.env_extensions.items():
             try:
                 env[name] = value(ctx)

@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import logging
 import math
+import os
 import types
 from datetime import datetime
 from typing import TYPE_CHECKING, cast
@@ -21,6 +22,7 @@ from discord.app_commands.translator import (
 from discord.enums import Locale
 from discord.ext import commands
 from prometheus_client import Histogram
+from redis import asyncio as aioredis
 from rich import box, print
 from rich.console import Console
 from rich.table import Table
@@ -48,7 +50,7 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
 
-PACKAGES = ["config", "players", "countryballs", "info", "admin", "trade", "balls"]
+PACKAGES = ["config", "players", "countryballs", "info", "admin", "trade", "balls", "ipc"]
 
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
@@ -162,6 +164,9 @@ class BallsDexBot(commands.AutoShardedBot):
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
 
         self.owner_ids: set
+        self.redis: aioredis.Redis
+        self.cluster_id = options.get("cluster_id", 0)
+        self.cluster_name = options.get("cluster_name", "main")
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(
@@ -248,6 +253,11 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
 
     async def setup_hook(self) -> None:
+        pool = aioredis.ConnectionPool.from_url(
+            f"{os.getenv('BALLSDEXBOT_REDIS_URL')}/{settings.redis_db}",
+            max_connections=20,
+        )
+        self.redis = aioredis.Redis(connection_pool=pool)
         await self.tree.set_translator(Translator())
         log.info("Starting up with %s shards...", self.shard_count)
         if settings.gateway_url is None:
@@ -294,7 +304,7 @@ class BallsDexBot(commands.AutoShardedBot):
         log.info("Loading packages...")
         await self.add_cog(Core(self))
         if self.dev:
-            await self.add_cog(Dev())
+            await self.add_cog(Dev(self))
 
         loaded_packages = []
         for package in PACKAGES:

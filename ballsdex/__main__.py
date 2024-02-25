@@ -18,6 +18,7 @@ from tortoise import Tortoise
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.logger import init_logger
 from ballsdex.settings import read_settings, settings, update_settings, write_default_settings
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
@@ -227,7 +228,9 @@ async def init_tortoise(db_url: str):
         log.info(f"Ran {len(migrations)} migrations: {', '.join(migrations)}")
 
 
-async def main(shard_ids: list[int], shard_count: int, cluster_id: int, cluster_count: int, cluster_name: str):
+async def main(
+    shard_ids: list[int], shard_count: int, cluster_id: int, cluster_count: int, cluster_name: str
+):
     bot = None
     server = None
     # cli_flags = parse_cli_flags(sys.argv[1:])
@@ -247,7 +250,7 @@ async def main(shard_ids: list[int], shard_count: int, cluster_id: int, cluster_
     asyncio.set_event_loop(loop)
 
     try:
-        # queue_listener = init_logger(False, True)
+        queue_listener = init_logger(False, True)
 
         token = settings.bot_token
         if not token:
