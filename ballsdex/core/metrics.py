@@ -22,7 +22,7 @@ class PrometheusServer:
     def __init__(self, bot: "BallsDexBot", host: str = "localhost", port: int = 15260):
         self.bot = bot
         self.host = host
-        self.port = port
+        self.port = port + (bot.cluster_id - 1)
 
         self.app = web.Application(logger=log)
         self.runner: web.AppRunner

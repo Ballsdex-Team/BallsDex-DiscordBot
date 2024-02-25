@@ -10,6 +10,7 @@ import discord
 
 from discord.ext import commands
 from logging import getLogger
+from ballsdex.core.models import BlacklistedID
 
 from ballsdex.settings import settings
 
@@ -178,7 +179,7 @@ class IPC(commands.Cog):
         Evaluate a piece of code
         """
             
-        results = await self.handler("evaluate", 4, {"code": code})
+        results = await self.handler("evaluate", self.bot.cluster_count, {"code": code})
         msg = ""
         for result in results:
             msg += f"{result}\n"
@@ -193,7 +194,7 @@ class IPC(commands.Cog):
         """
         Reload an extension
         """
-        results = await self.handler("reload_packages", 4, {"package": package})
+        results = await self.handler("reload_packages", self.bot.cluster_count, {"package": package})
         msg = ""
         for result in results:
             msg += f"{result}\n"
@@ -240,6 +241,16 @@ class IPC(commands.Cog):
     async def reload_cache(self, command_id: str):
         await self.bot.load_cache()
         payload = {"output": "Cache reloaded.", "command_id": command_id}
+        await self.bot.redis.execute_command(
+            "PUBLISH",
+            settings.redis_db,
+            json.dumps(payload),
+        )
+    
+    async def blacklist_update(self, command_id: str):
+        for blacklisted_id in await BlacklistedID.all().only("discord_id"):
+            self.blacklist.add(blacklisted_id.discord_id)
+        payload = {"output": "Blacklist updated.", "command_id": command_id}
         await self.bot.redis.execute_command(
             "PUBLISH",
             settings.redis_db,

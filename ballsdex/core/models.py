@@ -280,7 +280,10 @@ class BallInstance(models.Model):
                     "You need to provide the bot argument when using with include_emoji=True"
                 )
             if isinstance(self.countryball, Ball):
-                emoji = bot.get_emoji(self.countryball.emoji_id)
+                if "emoji" in self.countryball.capacity_logic:
+                    emoji = self.countryball.capacity_logic["emoji"]
+                else:
+                    emoji = bot.get_emoji(self.countryball.emoji_id)
                 if emoji:
                     text = f"{emoji} {text}"
         return text

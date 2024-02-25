@@ -544,6 +544,9 @@ class Admin(commands.GroupCog):
             f" for the following reason: {reason}",
             self.bot,
         )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -596,6 +599,9 @@ class Admin(commands.GroupCog):
         await log_action(
             f"{interaction.user} removed blacklist for user {user} ({user.id})", self.bot
         )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist.command(name="info")
     async def blacklist_info(

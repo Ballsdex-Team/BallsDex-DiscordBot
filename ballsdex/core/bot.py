@@ -167,6 +167,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self.redis: aioredis.Redis
         self.cluster_id = options.get("cluster_id", 0)
         self.cluster_name = options.get("cluster_name", "main")
+        self.cluster_count = options.get("cluster_count", 1)
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(
