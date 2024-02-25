@@ -39,6 +39,8 @@ repos:
           - git+https://github.com/fastapi-admin/fastapi-admin.git
           - aerich==0.6.3
           - redis
+          - orjson
+          - async-timeout
   - repo: https://github.com/csachs/pyproject-flake8
     rev: v6.1.0
     hooks:

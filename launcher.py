@@ -1,28 +1,30 @@
 from __future__ import annotations
-import logging
-
-import sys
 
 import asyncio
-
+import logging
+import os
+import sys
 from enum import Enum
 from pathlib import Path
 from time import time
 from typing import Iterable
 
 import aiohttp
+import async_timeout
+
 try:
     import orjson
-except:
+except ImportError:
     import json as orjson
-from ballsdex.logger import init_logger
-import uvloop
 
+import random
+
+import uvloop
 from redis import asyncio as aioredis
 
-import random 
-from ballsdex.settings import settings, read_settings
 from ballsdex import __version__ as ballsdex_version
+from ballsdex.logger import init_logger
+from ballsdex.settings import read_settings, settings
 
 log = logging.getLogger("ballsdex")
 
@@ -46,9 +48,7 @@ else:
 
 async def get_gateway_info() -> int:
     async with aiohttp.ClientSession() as session:
-        async with session.get(
-            GATEWAY_URL, headers=payload
-        ) as req:
+        async with session.get(GATEWAY_URL, headers=payload) as req:
             gateway_json = await req.json()
     shard_count: int = gateway_json["shards"]
     return shard_count
@@ -56,9 +56,7 @@ async def get_gateway_info() -> int:
 
 async def get_app_info() -> tuple[str, int]:
     async with aiohttp.ClientSession() as session:
-        async with session.get(
-            APPLICATION_URL, headers=payload
-        ) as req:
+        async with session.get(APPLICATION_URL, headers=payload) as req:
             response = await req.json()
     return response["name"], response["id"]
 
@@ -75,13 +73,15 @@ class Status(Enum):
     Running = "running"
     Stopped = "stopped"
 
-async def _read_stream(stream):  
+
+async def _read_stream(stream):
     while True:
         line = await stream.readline()
         if line:
             log.info(line.decode("utf-8"))
         else:
             break
+
 
 class Instance:
     def __init__(
@@ -114,21 +114,15 @@ class Instance:
 
     def process_finished(self, stderr: bytes) -> None:
         if self._process is None:
-            raise RuntimeError(
-                "This callback cannot run without a process that exited."
-            )
+            raise RuntimeError("This callback cannot run without a process that exited.")
         log.info(
-            f"[Cluster #{self.id} ({self.name})] Exited with code"
-            f" [{self._process.returncode}]"
+            f"[Cluster #{self.id} ({self.name})] Exited with code" f" [{self._process.returncode}]"
         )
         if self._process.returncode == 0:
             log.info(f"[Cluster #{self.id} ({self.name})] Stopped gracefully")
             self.future.set_result(None)
         elif self.status == Status.Stopped:
-            log.info(
-                f"[Cluster #{self.id} ({self.name})] Stopped by command, not"
-                " restarting"
-            )
+            log.info(f"[Cluster #{self.id} ({self.name})] Stopped by command, not" " restarting")
             self.future.set_result(None)
         else:
             decoded_stderr = "\n".join(stderr.decode("utf-8").split("\n"))
@@ -150,14 +144,11 @@ class Instance:
         asyncio.create_task(self._run())
         log.info(f"[Cluster #{self.id}] Started successfully")
         self.status = Status.Running
-        
 
     async def stop(self) -> None:
         self.status = Status.Stopped
         if self._process is None:
-            raise RuntimeError(
-                "Function cannot be called before initializing the Process."
-            )
+            raise RuntimeError("Function cannot be called before initializing the Process.")
         self._process.terminate()
         await asyncio.sleep(5)
         if self.is_active:
@@ -173,9 +164,7 @@ class Instance:
 
     async def _run(self) -> None:
         if self._process is None:
-            raise RuntimeError(
-                "Function cannot be called before initializing the Process."
-            )
+            raise RuntimeError("Function cannot be called before initializing the Process.")
         _, stderr = await self._process.communicate()
         self.process_finished(stderr)
 
@@ -190,7 +179,7 @@ class Main:
     def __init__(self) -> None:
         self.instances: list[Instance] = []
         pool = aioredis.ConnectionPool.from_url(
-            f"redis://redis/{settings.redis_db}",
+            f"{os.getenv('BALLSDEXBOT_REDIS_URL')}/{settings.redis_db}",
             max_connections=2,
         )
         self.redis = aioredis.Redis(connection_pool=pool)
@@ -216,6 +205,7 @@ class Main:
             args = payload.get("args", {})
             id_ = args.get("id")
             id_exists = id_ is not None
+            instance = None
 
             if id_exists:
                 try:
@@ -224,13 +214,13 @@ class Main:
                     # unknown instance
                     continue
 
-            if payload["action"] == "restart" and id_exists:
+            if payload["action"] == "restart" and instance is not None:
                 log.info(f"[INFO] Restart requested for cluster #{id_}")
                 asyncio.create_task(instance.restart())
-            elif payload["action"] == "stop" and id_exists:
+            elif payload["action"] == "stop" and instance is not None:
                 log.info(f"[INFO] Stop requested for cluster #{id_}")
                 asyncio.create_task(instance.stop())
-            elif payload["action"] == "start" and id_exists:
+            elif payload["action"] == "start" and instance is not None:
                 log.info(f"[INFO] Start requested for cluster #{id_}")
                 asyncio.create_task(instance.start())
             elif payload["action"] == "statuses" and payload.get("command_id"):
@@ -246,9 +236,7 @@ class Main:
                 await self.redis.execute_command(
                     "PUBLISH",
                     settings.redis_subscribe,
-                    orjson.dumps(
-                        {"command_id": payload["command_id"], "output": statuses}
-                    ),
+                    orjson.dumps({"command_id": payload["command_id"], "output": statuses}),
                 )
 
     async def launch(self) -> None:
@@ -290,18 +278,17 @@ class Main:
         log.info(f"[MAIN] Starting {name} ({_id}) - {len(clusters)} clusters")
         names = random.sample(names, len(clusters))
         for i, shard_list in enumerate(clusters):
-            instance = Instance(
-                i + 1, len(clusters), shard_list, shard_count, names[i], main=self
-            )
+            instance = Instance(i + 1, len(clusters), shard_list, shard_count, names[i], main=self)
             await instance.start()
             self.instances.append(instance)
 
         try:
             await asyncio.wait([i.future for i in self.instances])
-        except Exception:
-            log.info("[MAIN] Shutdown requested, stopping clusters")
-            for instance in self.instances:
-                await instance.stop()
+        except (Exception, asyncio.CancelledError):
+            async with async_timeout.timeout(15):
+                log.info("[MAIN] Shutdown requested, stopping clusters")
+                for instance in self.instances:
+                    await instance.stop()
 
 
 if __name__ == "__main__":
