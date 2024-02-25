@@ -19,7 +19,7 @@ from tortoise import Tortoise
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.logger import init_logger
-from ballsdex.settings import read_settings, settings, update_settings, write_default_settings
+from ballsdex.settings import read_settings, settings, write_default_settings
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
 log = logging.getLogger("ballsdex")
@@ -290,7 +290,7 @@ async def main(
             cluster_name=cluster_name,
         )
 
-        exc_handler = functools.partial(global_exception_handler, bot)
+        # exc_handler = functools.partial(global_exception_handler, bot)
         # loop.set_exception_handler(exc_handler)
         # loop.add_signal_handler(
         #     SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))

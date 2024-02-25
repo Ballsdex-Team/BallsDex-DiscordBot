@@ -291,10 +291,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             first_field_added = False
             buffer = ""
 
-            for emoji in emoji_ids:
-                # emoji = self.bot.get_emoji(emoji_id)
-                # if not emoji:
-                #     continue
+            for emoji_id in emoji_ids:
+                if isinstance(emoji_id, int):
+                    emoji = self.bot.get_emoji(emoji_id)
+                else:
+                    emoji = emoji_id
+
+                if emoji is None:
+                    continue
 
                 text = f"{emoji} "
                 if len(buffer) + len(text) > 1024:
