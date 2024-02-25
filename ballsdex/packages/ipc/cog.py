@@ -1,20 +1,20 @@
 import asyncio
 import json
-
+from collections import namedtuple
 from datetime import datetime, timedelta
+from logging import getLogger
 from time import time
 from typing import Any
 from uuid import uuid4
 
 import discord
-
 from discord.ext import commands
-from logging import getLogger
-from ballsdex.core.models import BlacklistedID
 
+from ballsdex.core.models import BlacklistedGuild, BlacklistedID
 from ballsdex.settings import settings
 
 log = getLogger("ballsdex.packages.ipc.cog")
+
 
 class IPC(commands.Cog):
     def __init__(self, bot):
@@ -28,17 +28,13 @@ class IPC(commands.Cog):
         asyncio.create_task(self.unregister_sub())
 
     async def register_sub(self):
-        await self.pubsub.subscribe(
-            settings.redis_db
-        )
+        await self.pubsub.subscribe(settings.redis_db)
         self.router = asyncio.create_task(self.event_handler())
 
     async def unregister_sub(self):
         if self.router and not self.router.cancelled:
             self.router.cancel()
-        await self.pubsub.unsubscribe(
-            settings.redis_db
-        )
+        await self.pubsub.unsubscribe(settings.redis_db)
 
     async def event_handler(self):
         async for message in self.pubsub.listen():
@@ -60,9 +56,7 @@ class IPC(commands.Cog):
                     )
                 else:
                     asyncio.create_task(
-                        getattr(self, payload["action"])(
-                            command_id=payload["command_id"]
-                        )
+                        getattr(self, payload["action"])(command_id=payload["command_id"])
                     )
             if payload.get("output") and payload.get("command_id") in self._messages:
                 for fut in self._messages[payload["command_id"]]:
@@ -108,7 +102,7 @@ class IPC(commands.Cog):
         except SyntaxError as e:
             result = "SyntaxError: " + str(e)
         except Exception as e:
-           result = "Error: " + str(e)
+            result = "Error: " + str(e)
 
         result = f"[Cluster #{self.bot.cluster_id}]: {result}"
         payload = {"output": result, "command_id": command_id}
@@ -117,7 +111,6 @@ class IPC(commands.Cog):
             settings.redis_db,
             json.dumps(payload),
         )
-
 
     async def handler(
         self,
@@ -152,7 +145,7 @@ class IPC(commands.Cog):
         payload = {"scope": scope, "action": action, "command_id": command_id}
         if args:
             payload["args"] = args
-        
+
         await self.bot.redis.execute_command(
             "PUBLISH",
             settings.redis_db,
@@ -162,23 +155,21 @@ class IPC(commands.Cog):
         if expected_count > 0:
             # Message collector
             try:
-                done, _ = await asyncio.wait(
-                    self._messages[command_id], timeout=_timeout
-                )
+                done, _ = await asyncio.wait(self._messages[command_id], timeout=_timeout)
                 for fut in done:
                     results.append(fut.result())
             except asyncio.TimeoutError:
                 pass
             del self._messages[command_id]
             return results
-        
+
     @commands.command()
     @commands.is_owner()
     async def ceval(self, ctx, *, code: str):
         """
         Evaluate a piece of code
         """
-            
+
         results = await self.handler("evaluate", self.bot.cluster_count, {"code": code})
         msg = ""
         for result in results:
@@ -194,7 +185,9 @@ class IPC(commands.Cog):
         """
         Reload an extension
         """
-        results = await self.handler("reload_packages", self.bot.cluster_count, {"package": package})
+        results = await self.handler(
+            "reload_packages", self.bot.cluster_count, {"package": package}
+        )
         msg = ""
         for result in results:
             msg += f"{result}\n"
@@ -217,7 +210,7 @@ class IPC(commands.Cog):
             log.error(f"Failed to reload extension {package}", exc_info=True)
         else:
             result = f"Reloaded extension {package}"
-        
+
         payload = {"output": result, "command_id": command_id}
         await self.bot.redis.execute_command(
             "PUBLISH",
@@ -237,7 +230,6 @@ class IPC(commands.Cog):
         await self.handler("reload_cache", 0, {})
         await ctx.message.add_reaction("✅")
 
-    
     async def reload_cache(self, command_id: str):
         await self.bot.load_cache()
         payload = {"output": "Cache reloaded.", "command_id": command_id}
@@ -246,11 +238,26 @@ class IPC(commands.Cog):
             settings.redis_db,
             json.dumps(payload),
         )
-    
+
     async def blacklist_update(self, command_id: str):
+        self.bot.blacklist.clear()
         for blacklisted_id in await BlacklistedID.all().only("discord_id"):
-            self.blacklist.add(blacklisted_id.discord_id)
+            self.bot.blacklist.add(blacklisted_id.discord_id)
+        self.bot.blacklist_guild.clear()
+        for blacklisted_id in await BlacklistedGuild.all().only("discord_id"):
+            self.bot.blacklist_guild.add(blacklisted_id.discord_id)
         payload = {"output": "Blacklist updated.", "command_id": command_id}
+        await self.bot.redis.execute_command(
+            "PUBLISH",
+            settings.redis_db,
+            json.dumps(payload),
+        )
+
+    async def guilds(self, user_id, command_id: str):
+        user = await self.bot.fetch_user(user_id)
+        guilds = [x for x in self.bot.guilds if x.owner_id == user.id]
+        guilds = [namedtuple(id=x.id, name=x.name, member_count=x.member_count) for x in guilds]
+        payload = {"output": guilds, "command_id": command_id}
         await self.bot.redis.execute_command(
             "PUBLISH",
             settings.redis_db,
