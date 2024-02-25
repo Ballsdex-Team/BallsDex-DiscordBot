@@ -44,8 +44,11 @@ class Info(commands.Cog):
         emotes: list[discord.Emoji] = []
 
         for ball in balls:
-            if emoji := self.bot.get_emoji(ball.emoji_id):
-                emotes.append(emoji)
+            if "emoji" in ball.capacity_logic:
+                emotes.append(ball.capacity_logic["emoji"])
+            else:
+                if emoji := self.bot.get_emoji(ball.emoji_id):
+                    emotes.append(emoji)
 
         return emotes
 
@@ -91,6 +94,14 @@ class Info(commands.Cog):
                 permissions=self.bot.application.install_params.permissions,
                 scopes=self.bot.application.install_params.scopes,
             )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            result = await cog.handler("guild_count", self.bot.cluster_count)
+            servers = 0
+            for count in result:
+                servers += count
+        else:
+            servers = len(self.bot.guilds)
         embed.description = (
             f"{' '.join(str(x) for x in balls)}\n"
             f"{settings.about_description}\n"
@@ -98,7 +109,7 @@ class Info(commands.Cog):
             f"**{balls_count:,}** {settings.collectible_name}s to collect\n"
             f"**{players_count:,}** players that caught "
             f"**{balls_instances_count:,}** {settings.collectible_name}s\n"
-            f"**{len(self.bot.guilds):,}** servers playing\n\n"
+            f"**{servers:,}** servers playing\n\n"
             "This bot was made by **El Laggron**, consider supporting me on my "
             "[Patreon](https://patreon.com/retke) :heart:\n\n"
             f"[Discord server]({settings.discord_invite}) • [Invite me]({invite_link}) • "
