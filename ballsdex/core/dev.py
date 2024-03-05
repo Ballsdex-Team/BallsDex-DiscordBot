@@ -370,7 +370,7 @@ class Dev(commands.Cog):
             exec(compiled, env)
         except SyntaxError as e:
             return await send_interactive(ctx, self.get_syntax_error(e))
-
+    
         func = env["func"]
         result = None
         try:
