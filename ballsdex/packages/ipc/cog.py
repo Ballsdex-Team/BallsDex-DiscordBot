@@ -1,172 +1,16 @@
 import asyncio
-import contextlib
-import io
 import json
 from logging import getLogger
-import textwrap
-import traceback
 from uuid import uuid4
-from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
 
 import discord
 from discord.ext import commands
-if TYPE_CHECKING:
-    from ballsdex.core.bot import BallsDexBot
 
 from ballsdex.core.models import BlacklistedGuild, BlacklistedID
 from ballsdex.settings import settings
 
 log = getLogger("ballsdex.packages.ipc.cog")
 
-def escape(text: str, *, mass_mentions: bool = False, formatting: bool = False) -> str:
-    if mass_mentions:
-        text = text.replace("@everyone", "@\u200beveryone")
-        text = text.replace("@here", "@\u200bhere")
-    if formatting:
-        text = discord.utils.escape_markdown(text)
-    return text
-
-def pagify(
-    text: str,
-    delims: Sequence[str] = ["\n"],
-    *,
-    priority: bool = False,
-    escape_mass_mentions: bool = True,
-    shorten_by: int = 8,
-    page_length: int = 2000,
-) -> Iterator[str]:
-    in_text = text
-    page_length -= shorten_by
-    while len(in_text) > page_length:
-        this_page_len = page_length
-        if escape_mass_mentions:
-            this_page_len -= in_text.count("@here", 0, page_length) + in_text.count(
-                "@everyone", 0, page_length
-            )
-        closest_delim = (in_text.rfind(d, 1, this_page_len) for d in delims)
-        if priority:
-            closest_delim = next((x for x in closest_delim if x > 0), -1)
-        else:
-            closest_delim = max(closest_delim)
-        closest_delim = closest_delim if closest_delim != -1 else this_page_len
-        if escape_mass_mentions:
-            to_send = escape(in_text[:closest_delim], mass_mentions=True)
-        else:
-            to_send = in_text[:closest_delim]
-        if len(to_send.strip()) > 0:
-            yield to_send
-        in_text = in_text[closest_delim:]
-
-    if len(in_text.strip()) > 0:
-        if escape_mass_mentions:
-            yield escape(in_text, mass_mentions=True)
-        else:
-            yield in_text
-
-
-def box(text: str, lang: str = "") -> str:
-    return f"```{lang}\n{text}\n```"
-
-
-def text_to_file(
-    text: str, filename: str = "file.txt", *, spoiler: bool = False, encoding: str = "utf-8"
-) -> discord.File:
-    file = io.BytesIO(text.encode(encoding))
-    return discord.File(file, filename, spoiler=spoiler)
-async def send_interactive(
-    ctx: commands.Context["BallsDexBot"],
-    messages: Iterable[str],
-    *,
-    timeout: int = 15,
-) -> list[discord.Message]:
-    """
-    Send multiple messages interactively.
-
-    The user will be prompted for whether or not they would like to view
-    the next message, one at a time. They will also be notified of how
-    many messages are remaining on each prompt.
-
-    Parameters
-    ----------
-    channel : discord.abc.Messageable
-        The channel to send the messages to.
-    messages : `iterable` of `str`
-        The messages to send.
-    user : discord.User
-        The user that can respond to the prompt.
-        When this is ``None``, any user can respond.
-    box_lang : Optional[str]
-        If specified, each message will be contained within a code block of
-        this language.
-    timeout : int
-        How long the user has to respond to the prompt before it times out.
-        After timing out, the bot deletes its prompt message.
-    join_character : str
-        The character used to join all the messages when the file output
-        is selected.
-
-    Returns
-    -------
-    list[discord.Message]
-        A list of sent messages.
-    """
-    result = 0
-
-    def predicate(m: discord.Message):
-        nonlocal result
-        if (ctx.author.id != m.author.id) or ctx.channel.id != m.channel.id:
-            return False
-        try:
-            result = ("more", "file").index(m.content.lower())
-        except ValueError:
-            return False
-        else:
-            return True
-
-    messages = tuple(messages)
-    ret = []
-
-    for idx, page in enumerate(messages, 1):
-        msg = await ctx.channel.send(box(page, lang="py"))
-        ret.append(msg)
-        n_remaining = len(messages) - idx
-        if n_remaining > 0:
-            if n_remaining == 1:
-                prompt_text = (
-                    "There is still one message remaining. Type {command_1} to continue"
-                    " or {command_2} to upload all contents as a file."
-                )
-            else:
-                prompt_text = (
-                    "There are still {count} messages remaining. Type {command_1} to continue"
-                    " or {command_2} to upload all contents as a file."
-                )
-            query = await ctx.channel.send(
-                prompt_text.format(count=n_remaining, command_1="`more`", command_2="`file`")
-            )
-            try:
-                resp = await ctx.bot.wait_for(
-                    "message",
-                    check=predicate,
-                    timeout=15,
-                )
-            except asyncio.TimeoutError:
-                with contextlib.suppress(discord.HTTPException):
-                    await query.delete()
-                break
-            else:
-                try:
-                    await ctx.channel.delete_messages((query, resp))  # type: ignore
-                except (discord.HTTPException, AttributeError):
-                    # In case the bot can't delete other users' messages,
-                    # or is not a bot account
-                    # or channel is a DM
-                    with contextlib.suppress(discord.HTTPException):
-                        await query.delete()
-                if result == 1:
-                    ret.append(await ctx.channel.send(file=text_to_file("".join(messages))))
-                    break
-    return ret
 
 class IPC(commands.Cog):
     def __init__(self, bot):
@@ -246,53 +90,23 @@ class IPC(commands.Cog):
             return
         env = cog.get_environment(None)
         code = cog.cleanup_code(code)
-        stdout = io.StringIO()
-        to_compile = "async def func():\n%s" % textwrap.indent(code, "  ")
-        msg = None
+
         try:
-            compiled = cog.async_compile(to_compile, "<string>", "exec")
-            exec(compiled, env)
+            compiled = cog.async_compile(code, "<string>", "eval")
+            result = await cog.maybe_await(eval(compiled, env))
             # result = cog.sanitize_output(result)
         except SyntaxError as e:
-            msg = self.get_syntax_error(e)
-        if not msg:
-            func = env["func"]
-            result = None
-            try:
-                with contextlib.redirect_stdout(stdout):
-                    result = await func()
-            except Exception as e:
-                printed = "{}{}".format(stdout.getvalue(), traceback.format_exc())
-            else:
-                printed = stdout.getvalue()
-            if result is not None:
-                msg = result
-            if printed:
-                msg = f"{printed}{result}"
+            result = "SyntaxError: " + str(e)
+        except Exception as e:
+            result = "Error: " + str(e)
 
-        result = f"[Cluster #{self.bot.cluster_id}]: {msg}"
+        result = f"[Cluster #{self.bot.cluster_id}]: {result}"
         payload = {"output": result, "command_id": command_id}
         await self.bot.redis.execute_command(
             "PUBLISH",
             settings.redis_db,
             json.dumps(payload),
         )
-
-    @classmethod
-    def get_syntax_error(cls, e):
-        """Format a syntax error to send to the user.
-
-        Returns a string representation of the error formatted as a codeblock.
-        """
-        if e.text is None:
-            return "{0.__class__.__name__}: {0}".format(e)
-        return "{0.text}\n{1:>{0.offset}}\n{2}: {0}".format(e, "^", type(e).__name__)
-        
-    
-    @staticmethod
-    def get_pages(msg: str):
-        """Pagify the given message for output to the user."""
-        return pagify(msg, delims=["\n", " "], priority=True, shorten_by=10)
 
     async def handler(
         self,
@@ -358,25 +172,8 @@ class IPC(commands.Cog):
             msg += f"{result}\n"
         if not msg:
             msg = "No result"
-        pages = pagify(msg, delims=["["], priority=True, shorten_by=10)
-        await send_interactive(ctx, pages)
-
-    @commands.command()
-    @commands.is_owner()
-    async def clustereval(self, ctx, cluster: int, *, code: str):
-        """
-        Evaluate a piece of code on a specific cluster
-        """
-        results = await self.handler(
-            "evaluate", 1, {"code": code, "cluster": cluster}
-        )
-        msg = ""
-        for result in results:
-            msg += f"{result}\n"
-        if not msg:
-            msg = "No result"
-        pages = pagify(msg, delims=["["], priority=True, shorten_by=10)
-        await send_interactive(ctx, pages)
+        msg = f"```py\n{msg}```"
+        await ctx.send(msg)
 
     @commands.command()
     @commands.is_owner()

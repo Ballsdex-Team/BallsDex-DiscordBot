@@ -170,8 +170,8 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
             balls_queryset.select_related("ball")
             .annotate(
                 searchable=RawSQL(
-                    "to_hex(ballinstance.ball_id) || ballinstance__ball.country || "
-                    "ballinstance__ball.catch_names"
+                    "to_hex(ballinstance.id) || ' ' || ballinstance__ball.country || "
+                    "' ' || ballinstance__ball.catch_names"
                 )
             )
             .filter(searchable__icontains=value)
