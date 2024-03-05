@@ -426,7 +426,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
             if await player.balls.filter(favorite=True).count() > 50:
                 await interaction.response.send_message(
-                    f"You cannot set more than 20 favorite {settings.collectible_name}s.",
+                    f"You cannot set more than 50 favorite {settings.collectible_name}s.",
                     ephemeral=True,
                 )
                 return
