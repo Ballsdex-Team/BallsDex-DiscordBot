@@ -258,19 +258,37 @@ class Trade(commands.GroupCog):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         sorting: app_commands.Choice[str],
+        trade_user: discord.User | None = None,
     ):
         """
         Show the history of your trades.
+
+        Parameters
+        ----------
+        sorting: str
+            The sorting order of the trades
+        trade_user: discord.User | None
+            The user you want to see your trade history with
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
-        history = (
-            await TradeModel.filter(
-                Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
+        if trade_user:
+            history = (
+                await TradeModel.filter(
+                    Q(player1__discord_id=user.id, player2__discord_id=trade_user.id)
+                    | Q(player1__discord_id=trade_user.id, player2__discord_id=user.id)
+                )
+                .order_by(sorting.value)
+                .prefetch_related("player1", "player2")
             )
-            .order_by(sorting.value)
-            .prefetch_related("player1", "player2")
-        )
+        else:
+            history = (
+                await TradeModel.filter(
+                    Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
+                )
+                .order_by(sorting.value)
+                .prefetch_related("player1", "player2")
+            )
         if not history:
             await interaction.followup.send("No history found.", ephemeral=True)
             return
