@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ui import Button, View, button
 
-from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
+from ballsdex.core.models import BallInstance, Trade, TradeObject
+from ballsdex.packages.trade.display import fill_trade_embed_fields
+from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -21,16 +22,6 @@ log = logging.getLogger("ballsdex.packages.trade.menu")
 
 class InvalidTradeOperation(Exception):
     pass
-
-
-@dataclass(slots=True)
-class TradingUser:
-    user: discord.User | discord.Member
-    player: Player
-    proposal: list[BallInstance] = field(default_factory=list)
-    locked: bool = False
-    cancelled: bool = False
-    accepted: bool = False
 
 
 class TradeView(View):
@@ -185,97 +176,6 @@ class TradeMenu:
             "but you can keep on editing your proposal."
         )
 
-    def _get_prefix_emote(self, trader: TradingUser) -> str:
-        if trader.cancelled:
-            return "\N{NO ENTRY SIGN}"
-        elif trader.accepted:
-            return "\N{WHITE HEAVY CHECK MARK}"
-        elif trader.locked:
-            return "\N{LOCK}"
-        else:
-            return ""
-
-    def _build_list_of_strings(self, trader: TradingUser, short: bool = False) -> list[str]:
-        # this builds a list of strings always lower than 1024 characters
-        # while not cutting in the middle of a line
-        proposal: list[str] = [""]
-        i = 0
-
-        for countryball in trader.proposal:
-            cb_text = countryball.description(
-                short=short, include_emoji=True, bot=self.bot, is_trade=True
-            )
-            if trader.locked:
-                text = f"- *{cb_text}*\n"
-            else:
-                text = f"- {cb_text}\n"
-            if trader.cancelled:
-                text = f"~~{text}~~"
-
-            if len(text) + len(proposal[i]) > 1024:
-                # move to a new list element
-                i += 1
-                proposal.append("")
-            proposal[i] += text
-
-        if not proposal[0]:
-            proposal[0] = "*Empty*"
-
-        return proposal
-
-    def update_proposals(self, compact: bool = False):
-        """
-        Update the fields in the embed according to their current proposals.
-
-        Parameters
-        ----------
-        compact: bool
-            If `True`, display countryballs in a compact way.
-        """
-        self.embed.clear_fields()
-
-        # first, build embed strings
-        # to play around the limit of 1024 characters per field, we'll be using multiple fields
-        # these vars are list of fields, being a list of lines to include
-        trader1_proposal = self._build_list_of_strings(self.trader1, compact)
-        trader2_proposal = self._build_list_of_strings(self.trader2, compact)
-
-        # then display the text. first page is easy
-        self.embed.add_field(
-            name=f"{self._get_prefix_emote(self.trader1)} {self.trader1.user.name}",
-            value=trader1_proposal[0],
-            inline=True,
-        )
-        self.embed.add_field(
-            name=f"{self._get_prefix_emote(self.trader2)} {self.trader2.user.name}",
-            value=trader2_proposal[0],
-            inline=True,
-        )
-
-        if len(trader1_proposal) > 1 or len(trader2_proposal) > 1:
-            # we'll have to trick for displaying the other pages
-            # fields have to stack themselves vertically
-            # to do this, we add a 3rd empty field on each line (since 3 fields per line)
-            i = 1
-            while i < len(trader1_proposal) or i < len(trader2_proposal):
-                self.embed.add_field(name="\u200B", value="\u200B", inline=True)  # empty
-
-                if i < len(trader1_proposal):
-                    self.embed.add_field(name="\u200B", value=trader1_proposal[i], inline=True)
-                else:
-                    self.embed.add_field(name="\u200B", value="\u200B", inline=True)
-
-                if i < len(trader2_proposal):
-                    self.embed.add_field(name="\u200B", value=trader2_proposal[i], inline=True)
-                else:
-                    self.embed.add_field(name="\u200B", value="\u200B", inline=True)
-                # always add an empty field at the end, otherwise the alignment is off
-                self.embed.add_field(name="\u200B", value="\u200B", inline=True)
-                i += 1
-
-        if len(self.embed) > 6000 and not compact:
-            self.update_proposals(compact=True)
-
     async def update_message_loop(self):
         """
         A loop task that updates each 5 second the menu with the new content.
@@ -292,7 +192,7 @@ class TradeMenu:
                 return
 
             try:
-                self.update_proposals()
+                fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
                 await self.message.edit(embed=self.embed)
             except Exception:
                 log.exception(
@@ -309,7 +209,7 @@ class TradeMenu:
         Start the trade by sending the initial message and opening up the proposals.
         """
         self._generate_embed()
-        self.update_proposals()
+        fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
         self.message = await self.channel.send(
             content=f"Hey {self.trader2.user.mention}, {self.trader1.user.name} "
             "is proposing a trade with you!",
@@ -332,7 +232,7 @@ class TradeMenu:
         for item in self.current_view.children:
             item.disabled = True  # type: ignore
 
-        self.update_proposals()
+        fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
         self.embed.description = f"**{reason}**"
         await self.message.edit(content=None, embed=self.embed, view=self.current_view)
 
@@ -345,7 +245,7 @@ class TradeMenu:
             if self.task:
                 self.task.cancel()
             self.current_view.stop()
-            self.update_proposals()
+            fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
 
             self.embed.colour = discord.Colour.yellow()
             self.embed.description = (
@@ -404,7 +304,7 @@ class TradeMenu:
         """
         result = True
         trader.accepted = True
-        self.update_proposals()
+        fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
         if self.trader1.accepted and self.trader2.accepted:
             if self.task and not self.task.cancelled():
                 # shouldn't happen but just in case

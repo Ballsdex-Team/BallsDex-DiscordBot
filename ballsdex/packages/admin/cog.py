@@ -27,7 +27,6 @@ from ballsdex.core.models import (
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
-from ballsdex.core.utils.trades import TradeViewFormat, get_embed
 from ballsdex.core.utils.transformers import (
     BallTransform,
     EconomyTransform,
@@ -35,6 +34,8 @@ from ballsdex.core.utils.transformers import (
     SpecialTransform,
 )
 from ballsdex.packages.countryballs.countryball import CountryBall
+from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
+from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -1354,12 +1355,11 @@ class Admin(commands.GroupCog):
             description=f"Trade ID: {trade.pk:0X}",
             timestamp=trade.date,
         )
-        player1balls = await trade.tradeobjects.filter(player=trade.player2).prefetch_related(
-            "ballinstance"
-        )
-        player2balls = await trade.tradeobjects.filter(player=trade.player1).prefetch_related(
-            "ballinstance"
-        )
         embed.set_footer(text="Trade date: ")
-        embed = await get_embed(embed, trade, player1balls, player2balls, self.bot)
+        fill_trade_embed_fields(
+            embed,
+            self.bot,
+            await TradingUser.from_trade_model(trade, trade.player1, self.bot),
+            await TradingUser.from_trade_model(trade, trade.player2, self.bot),
+        )
         await interaction.response.send_message(embed=embed, ephemeral=True)

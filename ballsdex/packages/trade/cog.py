@@ -11,13 +11,14 @@ from ballsdex.core.models import Player
 from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
-from ballsdex.core.utils.trades import TradeViewFormat
 from ballsdex.core.utils.transformers import (
     BallInstanceTransform,
     SpecialEnabledTransform,
     TradeCommandType,
 )
-from ballsdex.packages.trade.menu import TradeMenu, TradingUser
+from ballsdex.packages.trade.display import TradeViewFormat
+from ballsdex.packages.trade.menu import TradeMenu
+from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
