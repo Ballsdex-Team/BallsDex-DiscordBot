@@ -12,7 +12,11 @@ from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils.trades import TradeViewFormat
-from ballsdex.core.utils.transformers import BallInstanceTransform, TradeCommandType
+from ballsdex.core.utils.transformers import (
+    BallInstanceTransform,
+    SpecialEnabledTransform,
+    TradeCommandType,
+)
 from ballsdex.packages.trade.menu import TradeMenu, TradingUser
 from ballsdex.settings import settings
 
@@ -136,7 +140,13 @@ class Trade(commands.GroupCog):
         await interaction.response.send_message("Trade started!", ephemeral=True)
 
     @app_commands.command(extras={"trade": TradeCommandType.PICK})
-    async def add(self, interaction: discord.Interaction, countryball: BallInstanceTransform):
+    async def add(
+        self,
+        interaction: discord.Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
+    ):
         """
         Add a countryball to the ongoing trade.
 
@@ -144,6 +154,10 @@ class Trade(commands.GroupCog):
         ----------
         countryball: BallInstance
             The countryball you want to add to your proposal
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return

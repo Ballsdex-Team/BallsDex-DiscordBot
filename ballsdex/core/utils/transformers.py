@@ -161,6 +161,11 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
     ) -> list[app_commands.Choice[int]]:
         balls_queryset = BallInstance.filter(player__discord_id=interaction.user.id)
 
+        if (special := getattr(interaction.namespace, "special", None)) and special.isdigit():
+            balls_queryset = balls_queryset.filter(special_id=int(special))
+        if (shiny := getattr(interaction.namespace, "shiny", None)) and shiny is not None:
+            balls_queryset = balls_queryset.filter(shiny=shiny)
+
         if interaction.command and (trade_type := interaction.command.extras.get("trade", None)):
             if trade_type == TradeCommandType.PICK:
                 balls_queryset = balls_queryset.exclude(id__in=interaction.client.locked_balls)
