@@ -35,7 +35,7 @@ class TradingUser:
 
 class TradeView(View):
     def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=900)
+        super().__init__(timeout=60 * 30)
         self.trade = trade
 
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
@@ -178,7 +178,7 @@ class TradeMenu:
             f"using the {add_command} and {remove_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
-            "*You have 15 minutes before this interaction ends.*"
+            "*You have 30 minutes before this interaction ends.*"
         )
         self.embed.set_footer(
             text="This message is updated every 15 seconds, "
