@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, Iterable, TypeVar
 
@@ -7,8 +8,9 @@ import discord
 from discord import app_commands
 from discord.interactions import Interaction
 from tortoise.exceptions import DoesNotExist
-from tortoise.expressions import RawSQL
+from tortoise.expressions import Q, RawSQL
 from tortoise.models import Model
+from tortoise.timezone import now as tortoise_now
 
 from ballsdex.core.models import (
     Ball,
@@ -168,9 +170,16 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
 
         if interaction.command and (trade_type := interaction.command.extras.get("trade", None)):
             if trade_type == TradeCommandType.PICK:
-                balls_queryset = balls_queryset.exclude(id__in=interaction.client.locked_balls)
+                balls_queryset = balls_queryset.filter(
+                    Q(
+                        Q(locked__isnull=True)
+                        | Q(locked__lt=tortoise_now() + timedelta(minutes=30))
+                    )
+                )
             else:
-                balls_queryset = balls_queryset.filter(id__in=interaction.client.locked_balls)
+                balls_queryset = balls_queryset.filter(
+                    locked__isnull=False, locked__gt=tortoise_now() - timedelta(minutes=30)
+                )
         balls_queryset = (
             balls_queryset.select_related("ball")
             .annotate(

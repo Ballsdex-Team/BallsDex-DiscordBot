@@ -196,7 +196,7 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        if countryball.pk in self.bot.locked_balls:
+        if await countryball.is_locked():
             await interaction.followup.send(
                 "This countryball is currently in an active trade or donation, "
                 "please try again later.",
@@ -204,7 +204,7 @@ class Trade(commands.GroupCog):
             )
             return
 
-        self.bot.locked_balls[countryball.pk] = None
+        await countryball.lock_for_trade()
         trader.proposal.append(countryball)
         await interaction.followup.send(
             f"{countryball.countryball.country} added.", ephemeral=True
@@ -245,7 +245,7 @@ class Trade(commands.GroupCog):
         await interaction.response.send_message(
             f"{countryball.countryball.country} removed.", ephemeral=True
         )
-        del self.bot.locked_balls[countryball.pk]
+        await countryball.unlock()
 
     @app_commands.command()
     @app_commands.choices(

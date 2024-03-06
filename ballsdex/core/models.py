@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import IntEnum
 from io import BytesIO
 from typing import TYPE_CHECKING, Iterable, Tuple, Type
@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Iterable, Tuple, Type
 import discord
 from discord.utils import format_dt
 from fastapi_admin.models import AbstractAdmin
-from tortoise import exceptions, fields, models, signals, validators
+from tortoise import exceptions, fields, models, signals, timezone, validators
 
 from ballsdex.core.image_generator.image_gen import draw_card
 
@@ -189,6 +189,11 @@ class BallInstance(models.Model):
     )
     favorite = fields.BooleanField(default=False)
     tradeable = fields.BooleanField(default=True)
+    locked: fields.Field[datetime] = fields.DatetimeField(
+        description="If the instance was locked for a trade and when",
+        null=True,
+        default=None,
+    )
     extra_data = fields.JSONField(default={})
 
     class Meta:
@@ -336,6 +341,19 @@ class BallInstance(models.Model):
             buffer = await interaction.client.loop.run_in_executor(pool, self.draw_card)
 
         return content, discord.File(buffer, "card.png")
+
+    async def lock_for_trade(self):
+        self.locked = timezone.now()
+        await self.save(update_fields=("locked",))
+
+    async def unlock(self):
+        self.locked = None  # type: ignore
+        await self.save(update_fields=("locked",))
+
+    async def is_locked(self):
+        await self.refresh_from_db(fields=("locked",))
+        self.locked
+        return self.locked is not None and (self.locked + timedelta(minutes=30)) > timezone.now()
 
 
 class DonationPolicy(IntEnum):
