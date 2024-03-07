@@ -59,6 +59,8 @@ class Settings:
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
 
+    max_favorites: int = 50
+
     # /about
     about_description: str = ""
     github_link: str = ""
@@ -114,6 +116,8 @@ def read_settings(path: "Path"):
     settings.prometheus_enabled = content["prometheus"]["enabled"]
     settings.prometheus_host = content["prometheus"]["host"]
     settings.prometheus_port = content["prometheus"]["port"]
+
+    settings.max_favorites = content.get("max-favorites", 50)
     log.info("Settings loaded.")
 
 
