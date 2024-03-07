@@ -273,22 +273,17 @@ class Trade(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
         if trade_user:
-            history = (
-                await TradeModel.filter(
-                    Q(player1__discord_id=user.id, player2__discord_id=trade_user.id)
-                    | Q(player1__discord_id=trade_user.id, player2__discord_id=user.id)
-                )
-                .order_by(sorting.value)
-                .prefetch_related("player1", "player2")
+            history_queryset = TradeModel.filter(
+                Q(player1__discord_id=user.id, player2__discord_id=trade_user.id)
+                | Q(player1__discord_id=trade_user.id, player2__discord_id=user.id)
             )
         else:
-            history = (
-                await TradeModel.filter(
-                    Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
-                )
-                .order_by(sorting.value)
-                .prefetch_related("player1", "player2")
+            history_queryset = TradeModel.filter(
+                Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
             )
+        history = await history_queryset.order_by(sorting.value).prefetch_related(
+            "player1", "player2"
+        )
         if not history:
             await interaction.followup.send("No history found.", ephemeral=True)
             return
