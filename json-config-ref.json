@@ -143,6 +143,12 @@
                     }
                 }
             }
+        },
+        "max-favorites": {
+            "type": "integer",
+            "default": 50,
+            "description": "Maximum number of favorite countryballs allowed per player",
+            "minimum": 0
         }
     }
 }
