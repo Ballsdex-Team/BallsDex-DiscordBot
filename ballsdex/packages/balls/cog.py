@@ -239,11 +239,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
+        await interaction.response.defer(thinking=True)
         if user is not None:
             try:
                 player = await Player.get(discord_id=user_obj.id)
             except DoesNotExist:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"{user_obj.name} doesn't have any {settings.collectible_name} yet."
                 )
                 return
@@ -262,18 +263,18 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
         if special:
             filters["special"] = special
+            filters["ball__created_at__lt"] = special.end_date
             bot_countryballs = {
                 x: y.capacity_logic["emoji"] if self.bot.cluster_count > 1 else y.emoji_id
                 for x, y in balls.items()
                 if y.enabled and y.created_at < special.end_date
             }
         if not bot_countryballs:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"There are no {settings.collectible_name}s registered on this bot yet.",
                 ephemeral=True,
             )
             return
-        await interaction.response.defer(thinking=True)
 
         if shiny is not None:
             filters["shiny"] = shiny
