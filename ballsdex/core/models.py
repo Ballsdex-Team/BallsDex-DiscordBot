@@ -292,7 +292,10 @@ class BallInstance(models.Model):
                 else:
                     emoji = bot.get_emoji(self.countryball.emoji_id)
                 if emoji:
-                    text = f"{emoji} {text}"
+                    if self.extra_data.get("card"):
+                        text = f"{emoji} 🖼️ {text} "
+                    else:
+                        text = f"{emoji} {text}"
         return text
 
     def draw_card(self) -> BytesIO:
