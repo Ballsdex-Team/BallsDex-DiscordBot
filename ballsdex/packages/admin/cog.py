@@ -834,6 +834,8 @@ class Admin(commands.GroupCog):
             f"**Shiny:** {ball.shiny}\n"
             f"**Special:** {ball.special.name if ball.special else None}\n"
             f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
+            f"**Spawned at:** {format_dt(ball.spawned_time, style='R')}\n"
+            f"**Catch time:** {(ball.catch_date - ball.spawned_time).total_seconds()} seconds\n"
             f"**Caught in:** {ball.server_id if ball.server_id else 'N/A'}\n"
             f"**Traded:** {ball.trade_player}\n",
             ephemeral=True,
