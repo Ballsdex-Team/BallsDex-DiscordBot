@@ -82,8 +82,6 @@ class TradeView(View):
         style=discord.ButtonStyle.danger,
     )
     async def cancel(self, interaction: discord.Interaction, button: Button):
-        for countryball in self.trade.trader1.proposal + self.trade.trader2.proposal:
-            await countryball.unlock()
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
         await interaction.response.send_message("Trade has been cancelled.", ephemeral=True)
 
