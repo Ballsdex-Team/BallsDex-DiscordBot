@@ -71,6 +71,8 @@ class TradeView(View):
                 ephemeral=True,
             )
         else:
+            for countryball in trader.proposal:
+                await countryball.unlock()
             trader.proposal.clear()
             await interaction.response.send_message("Proposal cleared.", ephemeral=True)
 
