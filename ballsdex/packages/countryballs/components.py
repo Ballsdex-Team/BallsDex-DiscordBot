@@ -77,7 +77,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 )
 
             f"{interaction.user.mention} You caught **{self.ball.name}!** "
-            f"`({ball.attack_bonus:+}%)/({ball.health_bonus:+}%)` "
+            f"`({ball.attack_bonus:+}%/{ball.health_bonus:+}%)` "
             f"(`#{ball.pk:0X}`)\n\n{special}"
             )
             self.button.disabled = True
