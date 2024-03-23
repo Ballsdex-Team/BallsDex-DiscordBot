@@ -111,6 +111,6 @@ class Player(commands.GroupCog):
             return
         
         if object.developer is True:
-            await interaction.response.send_message("Oh yeah that guy is a dev")
+            await interaction.response.send_message("Oh yeah that guy is a developer")
         else:
             await interaction.response.send_message("Nuh-uh, dunno that one")
