@@ -1,6 +1,7 @@
 import logging
 import random
 import string
+from datetime import datetime
 
 import discord
 
@@ -17,6 +18,7 @@ class CountryBall:
         self.model = model
         self.message: discord.Message = discord.utils.MISSING
         self.catched = False
+        self.time = datetime.now()
 
     @classmethod
     async def get_random(cls):

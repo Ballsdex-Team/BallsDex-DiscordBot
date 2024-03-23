@@ -824,7 +824,12 @@ class Admin(commands.GroupCog):
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
             )
             return
-
+        spawned_time = format_dt(ball.spawned_time, style="R") if ball.spawned_time else "N/A"
+        catch_time = (
+            (ball.catch_date - ball.spawned_time).total_seconds()
+            if ball.catch_date and ball.spawned_time
+            else "N/A"
+        )
         await interaction.response.send_message(
             f"**{settings.collectible_name.title()} ID:** {ball.pk}\n"
             f"**Player:** {ball.player}\n"
@@ -834,6 +839,8 @@ class Admin(commands.GroupCog):
             f"**Shiny:** {ball.shiny}\n"
             f"**Special:** {ball.special.name if ball.special else None}\n"
             f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
+            f"**Spawned at:** {spawned_time}\n"
+            f"**Catch time:** {catch_time} seconds\n"
             f"**Caught in:** {ball.server_id if ball.server_id else 'N/A'}\n"
             f"**Traded:** {ball.trade_player}\n",
             ephemeral=True,
