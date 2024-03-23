@@ -3,8 +3,9 @@ from typing import TYPE_CHECKING
 import discord
 from discord import app_commands
 from discord.ext import commands
+from tortoise.exceptions import DoesNotExist
 
-from ballsdex.core.models import DonationPolicy
+from ballsdex.core.models import DonationPolicy, Player as PlayerModel
 from ballsdex.core.models import Player as PlayerModel
 from ballsdex.core.models import PrivacyPolicy
 from ballsdex.settings import settings
@@ -90,3 +91,26 @@ class Player(commands.GroupCog):
             await interaction.response.send_message("Invalid input!")
             return
         await player.save()  # do not save if the input is invalid
+
+    @app_commands.command()
+    async def developer(self, interaction: discord.Interaction, player: discord.User | None):
+        """
+        Check if a player is considered as a developer.
+
+        Parameters
+        ----------
+        player: discord.User | None
+            The player you want to inspect, if not yourself.
+        """
+        user = player or interaction.user
+
+        try:
+            object = await PlayerModel.get(discord_id=user.id)
+        except DoesNotExist:
+            await interaction.response.send_message("The provided user is not a player.", ephemeral=True)
+            return
+        
+        if object.developer is True:
+            await interaction.response.send_message("Oh yeah that guy is a dev")
+        else:
+            await interaction.response.send_message("Nuh-uh, dunno that one")

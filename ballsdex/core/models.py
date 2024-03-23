@@ -382,6 +382,10 @@ class Player(models.Model):
         description="How you want to handle privacy",
         default=PrivacyPolicy.DENY,
     )
+    developer = fields.BooleanField(
+        description="True if the player is a developer",
+        default=False,
+    )
     balls: fields.BackwardFKRelation[BallInstance]
 
     def __str__(self) -> str:
