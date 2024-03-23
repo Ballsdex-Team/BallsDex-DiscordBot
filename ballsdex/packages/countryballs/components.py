@@ -75,6 +75,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                     f"This is a **new {settings.collectible_name}** "
                     "that has been added to your completion!"
                 )
+
             f"{interaction.user.mention} You caught **{self.ball.name}!** "
             f"`ATK:{ball.attack} {ball.attack_bonus:+}%` "
             f"`HP:{ball.health} ({ball.health_bonus:+}%`) "
