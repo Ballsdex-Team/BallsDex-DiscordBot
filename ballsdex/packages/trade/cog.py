@@ -21,6 +21,8 @@ from ballsdex.packages.trade.menu import TradeMenu
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
+import datetime
+
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
