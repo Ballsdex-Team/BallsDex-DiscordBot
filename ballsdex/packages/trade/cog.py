@@ -330,6 +330,3 @@ class Trade(commands.GroupCog):
         source = TradeViewFormat(history, interaction.user.name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start()
-        source = TradeViewFormat(history, interaction.user.name, self.bot)
-        pages = Pages(source=source, interaction=interaction)
-        await pages.start()
