@@ -291,13 +291,13 @@ class Trade(commands.GroupCog):
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
-        
+
         if days < 0:
             await interaction.followup.send(
                 "Invalid number of days. Please provide a non-negative value.", ephemeral=True
             )
             return
-        
+
         if days == 0:
             history_queryset = TradeModel.filter(
                 Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
@@ -307,8 +307,10 @@ class Trade(commands.GroupCog):
             start_date = end_date - datetime.timedelta(days=days)
             if trade_user:
                 history_queryset = TradeModel.filter(
-                    (Q(player1__discord_id=user.id, player2__discord_id=trade_user.id)
-                    | Q(player1__discord_id=trade_user.id, player2__discord_id=user.id))
+                    (
+                        Q(player1__discord_id=user.id, player2__discord_id=trade_user.id)
+                        | Q(player1__discord_id=trade_user.id, player2__discord_id=user.id)
+                    )
                     & Q(date__range=(start_date, end_date))
                 )
             else:
