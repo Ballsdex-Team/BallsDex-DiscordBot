@@ -1342,7 +1342,7 @@ class Admin(commands.GroupCog):
             The sorting method you want to use.
         days: int
             Retrieve ball history for x amount of days, either from the start or the end. 
-            0 = all trade history. Most recent = last x days and Oldest = first x days.
+            0 = all ball history. Most recent = last x days and Oldest = first x days.
         """
 
         try:
