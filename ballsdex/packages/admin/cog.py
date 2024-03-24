@@ -1246,7 +1246,9 @@ class Admin(commands.GroupCog):
 
         if user2:
             if days < 0:
-                await interaction.followup.send("Invalid number of days. Please provide a non-negative value.", ephemeral=True)
+                await interaction.followup.send(
+                    "Invalid number of days. Please provide a non-negative value.", ephemeral=True
+                )
                 return
 
             if days == 0:
@@ -1280,12 +1282,16 @@ class Admin(commands.GroupCog):
             )
         else:
             if days < 0:
-                await interaction.followup.send("Invalid number of days. Please provide a non-negative value.", ephemeral=True)
+                await interaction.followup.send(
+                    "Invalid number of days. Please provide a non-negative value.", ephemeral=True
+                )
                 return
 
             if days == 0:
                 history = (
-                    await Trade.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
+                    await Trade.filter(
+                        Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
+                    )
                     .order_by(sorting.value)
                     .prefetch_related("player1", "player2")
                 )
@@ -1293,7 +1299,9 @@ class Admin(commands.GroupCog):
                 end_date = datetime.datetime.now()
                 start_date = end_date - datetime.timedelta(days=days)
                 history = (
-                    await Trade.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
+                    await Trade.filter(
+                        Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
+                    )
                     .filter(date__range=(start_date, end_date))
                     .order_by(sorting.value)
                     .prefetch_related("player1", "player2")
