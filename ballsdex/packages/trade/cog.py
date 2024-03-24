@@ -284,7 +284,8 @@ class Trade(commands.GroupCog):
         sorting: str
             The sorting order of the trades
         days: int
-            Retrieve ball history for x amount of days, either from the start or the end. 0 = all trade history. Most recent = last x days and Oldest = first x days
+            Retrieve ball history for x amount of days, either from the start or the end.
+            0 = all trade history. Most recent = last x days and Oldest = first x days.
         trade_user: discord.User | None
             The user you want to see your trade history with
         """
@@ -292,7 +293,9 @@ class Trade(commands.GroupCog):
         user = interaction.user
         
         if days < 0:
-            await interaction.followup.send("Invalid number of days. Please provide a non-negative value.", ephemeral=True)
+            await interaction.followup.send(
+                "Invalid number of days. Please provide a non-negative value.", ephemeral=True
+            )
             return
         
         if days == 0:
