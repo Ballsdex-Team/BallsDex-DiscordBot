@@ -1237,8 +1237,8 @@ class Admin(commands.GroupCog):
         sorting: str
             The sorting method you want to use.
         days: int
-            Retrieve trade history for x amount of days, either from the start or the end.
-            0 = all trade history. Most recent = last x days and Oldest = first x days 
+            Retrieve trade history for x amount of days, either from the start or the end. 
+            0 = all trade history. Most recent = last x days and Oldest = first x days. 
         user2: discord.User | None
             The second user you want to check the history of.
         """
@@ -1341,7 +1341,7 @@ class Admin(commands.GroupCog):
         sorting: str
             The sorting method you want to use.
         days: int
-            Retrieve ball history for x amount of days, either from the start or the end.
+            Retrieve ball history for x amount of days, either from the start or the end. 
             0 = all trade history. Most recent = last x days and Oldest = first x days.
         """
 
@@ -1362,7 +1362,9 @@ class Admin(commands.GroupCog):
 
         await interaction.response.defer(ephemeral=True, thinking=True)
         if days < 0:
-            await interaction.followup.send("Invalid number of days. Please provide a non-negative value.", ephemeral=True)
+            await interaction.followup.send(
+                "Invalid number of days. Please provide a non-negative value.", ephemeral=True
+            )
             return
 
         if days == 0:
@@ -1372,9 +1374,9 @@ class Admin(commands.GroupCog):
         else:
             end_date = datetime.datetime.now()
             start_date = end_date - datetime.timedelta(days=days)
-            history = await TradeObject.filter(ballinstance__id=pk, trade__date__range=(start_date, end_date)).prefetch_related(
-                "trade", "ballinstance__player"
-            )
+            history = await TradeObject.filter(
+                ballinstance__id=pk, trade__date__range=(start_date, end_date)
+            ).prefetch_related("trade", "ballinstance__player")
 
         if not history:
             await interaction.followup.send("No history found.", ephemeral=True)
