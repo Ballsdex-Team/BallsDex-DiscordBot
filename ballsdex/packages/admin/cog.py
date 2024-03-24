@@ -1237,7 +1237,8 @@ class Admin(commands.GroupCog):
         sorting: str
             The sorting method you want to use.
         days: int
-            Retrieve trade history for x amount of days, either from the start or the end. 0 = all trade history. Most recent = last x days and Oldest = first x days 
+            Retrieve trade history for x amount of days, either from the start or the end.
+            0 = all trade history. Most recent = last x days and Oldest = first x days 
         user2: discord.User | None
             The second user you want to check the history of.
         """
@@ -1332,7 +1333,8 @@ class Admin(commands.GroupCog):
         sorting: str
             The sorting method you want to use.
         days: int
-            Retrieve ball history for x amount of days, either from the start or the end. 0 = all trade history. Most recent = last x days and Oldest = first x days
+            Retrieve ball history for x amount of days, either from the start or the end.
+            0 = all trade history. Most recent = last x days and Oldest = first x days.
         """
 
         try:
