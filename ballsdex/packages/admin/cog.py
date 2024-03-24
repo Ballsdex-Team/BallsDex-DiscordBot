@@ -1,3 +1,4 @@
+import datetime
 import logging
 import random
 import re
@@ -37,8 +38,6 @@ from ballsdex.packages.countryballs.countryball import CountryBall
 from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
-
-import datetime
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
