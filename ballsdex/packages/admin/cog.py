@@ -38,6 +38,8 @@ from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fi
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
+import datetime
+
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
