@@ -273,6 +273,7 @@ class Trade(commands.GroupCog):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         sorting: app_commands.Choice[str],
+        days: int = 0,
         trade_user: discord.User | None = None,
     ):
         """
@@ -282,26 +283,46 @@ class Trade(commands.GroupCog):
         ----------
         sorting: str
             The sorting order of the trades
+        days: int
+            Retrieve ball history for x amount of days, either from the start or the end. 0 = all trade history. Most recent = last x days and Oldest = first x days
         trade_user: discord.User | None
             The user you want to see your trade history with
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
-        if trade_user:
-            history_queryset = TradeModel.filter(
-                Q(player1__discord_id=user.id, player2__discord_id=trade_user.id)
-                | Q(player1__discord_id=trade_user.id, player2__discord_id=user.id)
-            )
-        else:
+        
+        if days < 0:
+            await interaction.followup.send("Invalid number of days. Please provide a non-negative value.", ephemeral=True)
+            return
+        
+        if days == 0:
             history_queryset = TradeModel.filter(
                 Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
             )
+        else:
+            end_date = datetime.datetime.now()
+            start_date = end_date - datetime.timedelta(days=days)
+            if trade_user:
+                history_queryset = TradeModel.filter(
+                    (Q(player1__discord_id=user.id, player2__discord_id=trade_user.id)
+                    | Q(player1__discord_id=trade_user.id, player2__discord_id=user.id))
+                    & Q(date__range=(start_date, end_date))
+                )
+            else:
+                history_queryset = TradeModel.filter(
+                    (Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
+                    & Q(date__range=(start_date, end_date))
+                )
+
         history = await history_queryset.order_by(sorting.value).prefetch_related(
             "player1", "player2"
         )
         if not history:
             await interaction.followup.send("No history found.", ephemeral=True)
             return
+        source = TradeViewFormat(history, interaction.user.name, self.bot)
+        pages = Pages(source=source, interaction=interaction)
+        await pages.start()
         source = TradeViewFormat(history, interaction.user.name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start()
