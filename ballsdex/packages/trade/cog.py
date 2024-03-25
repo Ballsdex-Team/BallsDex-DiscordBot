@@ -248,6 +248,21 @@ class Trade(commands.GroupCog):
         await countryball.unlock()
 
     @app_commands.command()
+    async def cancel(self, interaction: discord.Interaction):
+        """
+        Cancel the ongoing trade.
+        """
+        trade, trader = self.get_trade(interaction)
+        if not trade or not trader:
+            await interaction.response.send_message(
+                "You do not have an ongoing trade.", ephemeral=True
+            )
+            return
+
+        await trade.user_cancel(trader)
+        await interaction.response.send_message("Trade cancelled.", ephemeral=True)
+
+    @app_commands.command()
     @app_commands.choices(
         sorting=[
             app_commands.Choice(name="Most Recent", value="-date"),

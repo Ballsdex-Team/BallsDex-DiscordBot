@@ -175,6 +175,7 @@ class BallInstance(models.Model):
         "models.Player", related_name="balls"
     )  # type: ignore
     catch_date = fields.DatetimeField(auto_now_add=True)
+    spawned_time = fields.DatetimeField(null=True)
     server_id = fields.BigIntField(
         description="Discord server ID where this ball was caught", null=True
     )
