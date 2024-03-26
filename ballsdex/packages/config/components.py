@@ -18,7 +18,7 @@ class AcceptTOSView(View):
             Button(
                 style=discord.ButtonStyle.link,
                 label="Terms of Service",
-                url=settings.term_of_service,
+                url=settings.terms_of_service,
             )
         )
         self.add_item(
