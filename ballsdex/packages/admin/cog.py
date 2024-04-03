@@ -1306,7 +1306,7 @@ class Admin(commands.GroupCog):
         sorting: str
             The sorting method you want to use.
         days: Optional[int]
-            Retrieve ball history from last x day.
+            Retrieve ball history from last x days.
         """
 
         try:
