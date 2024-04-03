@@ -1240,7 +1240,7 @@ class Admin(commands.GroupCog):
         user2: discord.User | None
             The second user you want to check the history of.
         days: Optional[int]
-            Retrieve trade history from last x day.
+            Retrieve trade history from last x days.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         if days is not None and days < 0:
