@@ -1,3 +1,4 @@
+import datetime
 import logging
 import random
 import re
@@ -1225,6 +1226,7 @@ class Admin(commands.GroupCog):
         user: discord.User,
         sorting: app_commands.Choice[str],
         user2: Optional[discord.User] = None,
+        days: Optional[int] = None,
     ):
         """
         Show the history of a user.
@@ -1237,39 +1239,45 @@ class Admin(commands.GroupCog):
             The sorting method you want to use.
         user2: discord.User | None
             The second user you want to check the history of.
+        days: Optional[int]
+            Retrieve trade history from last x days.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
-
-        if user2:
-            history = (
-                await Trade.filter(
-                    (Q(player1__discord_id=user.id) & Q(player2__discord_id=user2.id))
-                    | (Q(player1__discord_id=user2.id) & Q(player2__discord_id=user.id))
-                )
-                .order_by(sorting.value)
-                .prefetch_related("player1", "player2")
+        if days is not None and days < 0:
+            await interaction.followup.send(
+                "Invalid number of days. Please provide a non-negative value.", ephemeral=True
             )
+            return
 
-            if not history:
-                await interaction.followup.send("No history found.", ephemeral=True)
-                return
-
-            source = TradeViewFormat(
-                history, f"{user.display_name} and {user2.display_name}", self.bot
+        queryset = Trade.all()
+        if user2:
+            queryset = queryset.filter(
+                (Q(player1__discord_id=user.id) & Q(player2__discord_id=user2.id))
+                | (Q(player1__discord_id=user2.id) & Q(player2__discord_id=user.id))
             )
         else:
-            history = (
-                await Trade.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
-                .order_by(sorting.value)
-                .prefetch_related("player1", "player2")
+            queryset = queryset.filter(
+                Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
             )
 
-            if not history:
-                await interaction.followup.send("No history found.", ephemeral=True)
-                return
+        if days is not None and days > 0:
+            end_date = datetime.datetime.now()
+            start_date = end_date - datetime.timedelta(days=days)
+            queryset = queryset.filter(date__range=(start_date, end_date))
 
-            source = TradeViewFormat(history, user.display_name, self.bot)
+        queryset = queryset.order_by(sorting.value).prefetch_related("player1", "player2")
+        history = await queryset
 
+        if not history:
+            await interaction.followup.send("No history found.", ephemeral=True)
+            return
+
+        if user2:
+            await interaction.followup.send(
+                f"History of {user.display_name} and {user2.display_name}:"
+            )
+
+        source = TradeViewFormat(history, user.display_name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
@@ -1286,6 +1294,7 @@ class Admin(commands.GroupCog):
         interaction: discord.Interaction["BallsDexBot"],
         ballid: str,
         sorting: app_commands.Choice[str],
+        days: Optional[int] = None,
     ):
         """
         Show the history of a ball.
@@ -1296,6 +1305,8 @@ class Admin(commands.GroupCog):
             The ID of the ball you want to check the history of.
         sorting: str
             The sorting method you want to use.
+        days: Optional[int]
+            Retrieve ball history from last x days.
         """
 
         try:
@@ -1314,17 +1325,27 @@ class Admin(commands.GroupCog):
             return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
-        history = await TradeObject.filter(ballinstance__id=pk).prefetch_related(
-            "trade", "ballinstance__player"
-        )
-        if not history:
+        if days is not None and days < 0:
+            await interaction.followup.send(
+                "Invalid number of days. Please provide a non-negative value.", ephemeral=True
+            )
+            return
+
+        queryset = Trade.all()
+        if days is None or days == 0:
+            queryset = queryset.filter(tradeobjects__ballinstance_id=pk)
+        else:
+            end_date = datetime.datetime.now()
+            start_date = end_date - datetime.timedelta(days=days)
+            queryset = queryset.filter(
+                tradeobjects__ballinstance_id=pk, date__range=(start_date, end_date)
+            )
+        trades = await queryset.order_by(sorting.value).prefetch_related("player1", "player2")
+
+        if not trades:
             await interaction.followup.send("No history found.", ephemeral=True)
             return
-        trades = (
-            await Trade.filter(id__in=[x.trade_id for x in history])
-            .order_by(sorting.value)
-            .prefetch_related("player1", "player2")
-        )
+
         source = TradeViewFormat(trades, f"{settings.collectible_name} {ball}", self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
