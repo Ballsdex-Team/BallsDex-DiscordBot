@@ -287,7 +287,7 @@ class Trade(commands.GroupCog):
         trade_user: discord.User | None
             The user you want to see your trade history with
         days: Optional[int]
-            Retrieve trade history from last x day.
+            Retrieve trade history from last x days.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
