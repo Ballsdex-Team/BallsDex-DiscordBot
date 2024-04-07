@@ -15,7 +15,7 @@ uvloop = { version = "^0.17.0", markers = "sys_platform != 'win32'" }
 "discord.py" = "^2.3.2"
 
 # fastapi
-fastapi = "^0.104.1"
+fastapi = "^0.109.1"
 fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "0ed771026c776138aceb4ae98eeb5c976786a193"}
 uvicorn = "^0.24.0"
 
