@@ -96,7 +96,7 @@ class CatchButton(Button):
                 country=self.ball.model.country,
                 shiny=shiny,
                 special=special,
-                guild_size=10 
+                guild_size=10
                 ** math.ceil(math.log(max(interaction.user.guild.member_count - 1, 1), 10)),
             ).inc()
         return ball, is_new
