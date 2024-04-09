@@ -24,7 +24,7 @@ class CountryBall:
     async def get_random(cls):
         countryballs = list(filter(lambda m: m.enabled, balls.values()))
         if not countryballs:
-            raise RuntimeError("No ball to spawn")
+            raise RuntimeError("No rock to generate")
         rarities = [x.rarity for x in countryballs]
         cb = random.choices(population=countryballs, weights=rarities, k=1)[0]
         return cls(cb)
@@ -41,13 +41,13 @@ class CountryBall:
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
                 self.message = await channel.send(
-                    f"A wild {settings.collectible_name} appeared!",
+                    f"{settings.collectible_name} has arrived",
                     view=CatchView(self),
                     file=discord.File(file_location, filename=file_name),
                 )
             else:
-                log.error("Missing permission to spawn ball in channel %s.", channel)
+                log.error("Missing permission to generate rock in channel %s.", channel)
         except discord.Forbidden:
-            log.error(f"Missing permission to spawn ball in channel {channel}.")
+            log.error(f"Missing permission to generate rock in channel {channel}.")
         except discord.HTTPException:
-            log.error("Failed to spawn ball", exc_info=True)
+            log.error("Failed to generate rock", exc_info=True)

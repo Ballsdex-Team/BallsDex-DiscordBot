@@ -110,7 +110,7 @@ class SpawnManager:
             multiplier = 0.5
         else:
             multiplier = 0.2
-        chance = cooldown.chance - multiplier * (delta // 60)
+        chance = cooldown.chance - multiplier * (delta // 20)
 
         # manager cannot be increased more than once per 5 seconds
         if not await cooldown.increase(message):
@@ -121,7 +121,7 @@ class SpawnManager:
             return
 
         # at this point, the goal is reached
-        if delta < 600:
+        if delta < 10:
             # wait for at least 10 minutes before spawning
             return
 
