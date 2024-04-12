@@ -110,9 +110,6 @@ class Player(commands.GroupCog):
             return
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         await player.delete()
-        await interaction.response.send_message(
-            "Your player data has been deleted.", ephemeral=True
-        )
 
     @app_commands.command()
     @app_commands.choices(
