@@ -153,15 +153,18 @@ class Player(commands.GroupCog):
         else:
             await interaction.followup.send("Invalid input!", ephemeral=True)
             return
-        for file in files:
-            if file.tell() > 25 * 1024 * 1024: # 25 MB
-                await interaction.followup.send("The file is too big to be sent.", ephemeral=True)
-                return
         zip_file = BytesIO()
         with zipfile.ZipFile(zip_file, "w") as z:
             for file in files:
                 z.writestr(file.filename, file.getvalue())
         zip_file.seek(0)
+        if zip_file.tell() > 25_000_000:
+            await interaction.followup.send(
+                "Your data is too large to export."
+                "Please contact the bot support for more information.",
+                ephemeral=True,
+            )
+            return
         files = [discord.File(zip_file, "player_data.zip")]
         await interaction.followup.send("Here is your data:", files=files, ephemeral=True)
 
