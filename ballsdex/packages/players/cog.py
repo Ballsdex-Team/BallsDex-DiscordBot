@@ -123,7 +123,7 @@ class Player(commands.GroupCog):
         """
         Export your player data.
         """
-        player = await PlayerModel.get(discord_id=interaction.user.id)
+        player = await PlayerModel.get_or_none(discord_id=interaction.user.id)
         if player is None:
             await interaction.response.send_message(
                 "You don't have any player data to export.", ephemeral=True
