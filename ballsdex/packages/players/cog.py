@@ -108,6 +108,7 @@ class Player(commands.GroupCog):
         await view.wait()
         if view.value is None or not view.value:
             return
+        await interaction.response.defer()
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         await player.delete()
 
@@ -134,20 +135,20 @@ class Player(commands.GroupCog):
         if type == "balls":
             data = await get_items_csv(player)
             filename = f"{interaction.user.id}_{settings.collectible_name}.csv"
-            data.filename = filename
+            data.filename = filename  # type: ignore
             files.append(data)
         elif type == "trades":
             data = await get_trades_csv(player)
             filename = f"{interaction.user.id}_trades.csv"
-            data.filename = filename
+            data.filename = filename  # type: ignore
             files.append(data)
         elif type == "all":
             balls = await get_items_csv(player)
             trades = await get_trades_csv(player)
             balls_filename = f"{interaction.user.id}_{settings.collectible_name}.csv"
             trades_filename = f"{interaction.user.id}_trades.csv"
-            balls.filename = balls_filename
-            trades.filename = trades_filename
+            balls.filename = balls_filename  # type: ignore
+            trades.filename = trades_filename  # type: ignore
             files.append(balls)
             files.append(trades)
         else:
@@ -182,7 +183,7 @@ async def get_items_csv(player: PlayerModel) -> BytesIO:
     )
     for ball in balls:
         txt += (
-            f"{ball.id},{ball.id:0X},{ball.ball.country},{ball.catch_date},"
+            f"{ball.id},{ball.id:0X},{ball.ball.country},{ball.catch_date},"  # type: ignore
             f"{ball.trade_player.discord_id if ball.trade_player else 'None'},{ball.special},"
             f"{ball.shiny},{ball.attack},{ball.attack_bonus},{ball.health},{ball.health_bonus}\n"
         )
@@ -208,7 +209,7 @@ async def get_trades_csv(player: PlayerModel) -> BytesIO:
         ).prefetch_related("ballinstance")
         txt += (
             f"{trade.id},{trade.date},{trade.player1.discord_id},{trade.player2.discord_id},"
-            f"{','.join([i.ballinstance.to_string() for i in player2_items])},"
-            f"{','.join([i.ballinstanceto_string() for i in player1_items])}\n"
+            f"{','.join([i.ballinstance.to_string() for i in player2_items])},"  # type: ignore
+            f"{','.join([i.ballinstanceto_string() for i in player1_items])}\n"  # type: ignore
         )
     return BytesIO(txt.encode("utf-8"))
