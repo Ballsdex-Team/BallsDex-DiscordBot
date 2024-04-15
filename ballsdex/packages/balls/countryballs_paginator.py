@@ -32,7 +32,7 @@ class CountryballsSelector(Pages):
         options: List[discord.SelectOption] = []
         for ball in balls:
             if self.bot.cluster_count > 1:
-                emoji = ball.countryball.capacity_logic["emoji"]
+                emoji = ball.ball.capacity_logic["emoji"]
             else:
                 emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = "❤️ " if ball.favorite else ""
