@@ -173,7 +173,8 @@ class Player(commands.GroupCog):
             )
         except discord.Forbidden:
             await interaction.followup.send(
-                "I couldn't send the player data to you in DM. Either you blocked me or you disabled DMs in this server.",
+                "I couldn't send the player data to you in DM. "
+                "Either you blocked me or you disabled DMs in this server.",
                 ephemeral=True,
             )
 
