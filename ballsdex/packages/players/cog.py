@@ -210,6 +210,6 @@ async def get_trades_csv(player: PlayerModel) -> BytesIO:
         txt += (
             f"{trade.id},{trade.date},{trade.player1.discord_id},{trade.player2.discord_id},"
             f"{','.join([i.ballinstance.to_string() for i in player2_items])},"  # type: ignore
-            f"{','.join([i.ballinstanceto_string() for i in player1_items])}\n"  # type: ignore
+            f"{','.join([i.ballinstance.to_string() for i in player1_items])}\n"  # type: ignore
         )
     return BytesIO(txt.encode("utf-8"))
