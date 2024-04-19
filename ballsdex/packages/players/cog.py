@@ -108,7 +108,6 @@ class Player(commands.GroupCog):
         await view.wait()
         if view.value is None or not view.value:
             return
-        await interaction.response.defer()
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         await player.delete()
 
