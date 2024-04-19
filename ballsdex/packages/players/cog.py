@@ -166,8 +166,13 @@ class Player(commands.GroupCog):
             )
             return
         files = [discord.File(zip_file, "player_data.zip")]
-        await interaction.followup.send("Here is your data:", files=files, ephemeral=True)
-
+        try:
+            await interaction.user.send("Here is your player data:", files=files)
+            await interaction.followup.send("Sent your player data to your dm", ephemeral=True)
+        except discord.Forbidden:
+            await interaction.followup.send(
+                "I couldn't send the player data to you in DM. Either you blocked me or you disabled DMs in this server.", ephemeral=True
+            )
 
 async def get_items_csv(player: PlayerModel) -> BytesIO:
     """
