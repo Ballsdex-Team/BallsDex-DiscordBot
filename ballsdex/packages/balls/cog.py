@@ -591,12 +591,7 @@ async def inventory_privacy(
         if any(role.id in roles for role in interaction.user.roles):  # type: ignore
             return True
     if privacy_policy == PrivacyPolicy.DENY:
-        if interaction.user.id != player_obj.id:
-            await interaction.followup.send(
-                "This user has set their inventory to private.", ephemeral=True
-            )
-            return False
-        else:
+        if interaction.user.id == player_obj.discord_id:
             return True
     elif privacy_policy == PrivacyPolicy.SAME_SERVER:
         if not bot.intents.members:
