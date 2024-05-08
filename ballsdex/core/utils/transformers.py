@@ -173,7 +173,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
                 balls_queryset = balls_queryset.filter(
                     Q(
                         Q(locked__isnull=True)
-                        | Q(locked__lt=tortoise_now() + timedelta(minutes=30))
+                        | Q(locked__lt=tortoise_now() - timedelta(minutes=30))
                     )
                 )
             else:

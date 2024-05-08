@@ -416,6 +416,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         content, file = await countryball.prepare_for_message(interaction)
+        if user is not None and user.id != interaction.user.id:
+            content = (
+                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}.\n"
+                + content
+            )
         await interaction.followup.send(content=content, file=file)
         file.close()
 
@@ -603,6 +608,8 @@ async def inventory_privacy(
     user_obj: Union[discord.User, discord.Member],
 ):
     privacy_policy = player.privacy_policy
+    if interaction.user.id == player.discord_id:
+        return True
     if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
         roles = settings.admin_role_ids + settings.root_role_ids
         if any(role.id in roles for role in interaction.user.roles):  # type: ignore

@@ -1,5 +1,6 @@
+import datetime
 from collections import defaultdict
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import discord
 from discord import app_commands
@@ -274,6 +275,7 @@ class Trade(commands.GroupCog):
         interaction: discord.Interaction["BallsDexBot"],
         sorting: app_commands.Choice[str],
         trade_user: discord.User | None = None,
+        days: Optional[int] = None,
     ):
         """
         Show the history of your trades.
@@ -284,21 +286,35 @@ class Trade(commands.GroupCog):
             The sorting order of the trades
         trade_user: discord.User | None
             The user you want to see your trade history with
+        days: Optional[int]
+            Retrieve trade history from last x days.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
+
+        if days is not None and days < 0:
+            await interaction.followup.send(
+                "Invalid number of days. Please provide a non-negative value.", ephemeral=True
+            )
+            return
+
         if trade_user:
-            history_queryset = TradeModel.filter(
-                Q(player1__discord_id=user.id, player2__discord_id=trade_user.id)
-                | Q(player1__discord_id=trade_user.id, player2__discord_id=user.id)
+            queryset = TradeModel.filter(
+                (Q(player1__discord_id=user.id, player2__discord_id=trade_user.id))
+                | (Q(player1__discord_id=trade_user.id, player2__discord_id=user.id))
             )
         else:
-            history_queryset = TradeModel.filter(
+            queryset = TradeModel.filter(
                 Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
             )
-        history = await history_queryset.order_by(sorting.value).prefetch_related(
-            "player1", "player2"
-        )
+
+        if days is not None and days > 0:
+            end_date = datetime.datetime.now()
+            start_date = end_date - datetime.timedelta(days=days)
+            queryset = queryset.filter(date__range=(start_date, end_date))
+
+        history = await queryset.order_by(sorting.value).prefetch_related("player1", "player2")
+
         if not history:
             await interaction.followup.send("No history found.", ephemeral=True)
             return
