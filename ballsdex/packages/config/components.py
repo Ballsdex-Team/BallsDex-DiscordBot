@@ -18,14 +18,14 @@ class AcceptTOSView(View):
             Button(
                 style=discord.ButtonStyle.link,
                 label="Terms of Service",
-                url="https://gist.github.com",
+                url=settings.terms_of_service,
             )
         )
         self.add_item(
             Button(
                 style=discord.ButtonStyle.link,
                 label="Privacy policy",
-                url="https://gist.github.com",
+                url=settings.privacy_policy,
             )
         )
 

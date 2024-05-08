@@ -406,6 +406,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         content, file = await countryball.prepare_for_message(interaction)
+        if user is not None and user.id != interaction.user.id:
+            content = (
+                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}.\n"
+                + content
+            )
         await interaction.followup.send(content=content, file=file)
         file.close()
 
