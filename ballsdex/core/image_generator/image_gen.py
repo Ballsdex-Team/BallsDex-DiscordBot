@@ -37,7 +37,10 @@ def draw_card(ball_instance: "BallInstance"):
         image = Image.open("." + special_image)
     else:
         image = Image.open("." + ball.cached_regime.background)
-    icon = Image.open("." + ball.cached_economy.icon) if ball.cached_economy else None
+    image = image.convert("RGBA")
+    icon = (
+        Image.open("." + ball.cached_economy.icon).convert("RGBA") if ball.cached_economy else None
+    )
 
     draw = ImageDraw.Draw(image)
     draw.text((50, 20), ball.short_name or ball.country, font=title_font)
@@ -86,7 +89,7 @@ def draw_card(ball_instance: "BallInstance"):
         stroke_fill=(255, 255, 255, 255),
     )
 
-    artwork = Image.open("." + ball.collection_card)
+    artwork = Image.open("." + ball.collection_card).convert("RGBA")
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
 
     if icon:
