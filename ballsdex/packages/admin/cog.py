@@ -26,6 +26,7 @@ from ballsdex.core.models import (
     balls,
 )
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.enums import DONATION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.core.utils.transformers import (
@@ -45,14 +46,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.admin.cog")
 FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
-
-DONATION_POLICY_MAP = {
-    1: "Accept all donations",
-    2: "Approve donations",
-    3: "Deny all donations",
-}
-
-PRIVATE_POLICY_MAP = {1: "Public", 2: "Private", 3: "Mutual Servers"}
 
 
 async def save_file(attachment: discord.Attachment) -> Path:
@@ -1506,19 +1499,19 @@ class Admin(commands.GroupCog):
             value=len(set(total_user_balls)),
         )
         embed.add_field(
-            name=f"Total Server ({days} days))",
+            name=f"Total Server with {settings.collectible_name}s caught ({days} days))",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total {settings.collectible_name} Caught",
+            name=f"Total {settings.collectible_name}s Caught",
             value=await BallInstance.filter(player__discord_id=user.id).count(),
         )
         embed.add_field(
-            name=f"Total Unique {settings.collectible_name} Caught",
+            name=f"Total Unique {settings.collectible_name}s Caught",
             value=len(set([x.countryball for x in total_user_balls])),
         )
         embed.add_field(
-            name="Total Server",
+            name=f"Total Server with {settings.collectible_name}s Caught",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.set_thumbnail(url=user.avatar.url)  # type: ignore
