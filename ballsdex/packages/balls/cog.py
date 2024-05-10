@@ -450,7 +450,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         else:
             countryball.favorite = False  # type: ignore
             await countryball.save()
-            emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
                 f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
                 f"isn't a favorite {settings.collectible_name} anymore.",
