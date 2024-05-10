@@ -442,7 +442,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             await countryball.save()
             emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
-                f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
+                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
                 f"is now a favorite {settings.collectible_name}!",
                 ephemeral=True,
             )
@@ -452,7 +452,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             await countryball.save()
             emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
-                f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
+                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
                 f"isn't a favorite {settings.collectible_name} anymore.",
                 ephemeral=True,
             )
@@ -535,11 +535,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         trade = await Trade.create(player1=old_player, player2=new_player)
         await TradeObject.create(trade=trade, ballinstance=countryball, player=old_player)
 
-        cb_txt = countryball.description(
-            short=True, include_emoji=True, bot=self.bot, is_trade=True
-        )
         await interaction.response.send_message(
-            f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!"
+            "You just gave"
+            f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)}" 
+            "to {user.mention}!"
         )
         await countryball.unlock()
 
