@@ -980,7 +980,8 @@ class Admin(commands.GroupCog):
             f"{count} {settings.collectible_name}s from {user} have been reset.", ephemeral=True
         )
         await log_action(
-            f"{interaction.user} deleted {percentage or 100}% of {player}'s balls.", self.bot
+            f"{interaction.user} deleted {percentage or 100}% of {player}'s balls.", 
+            self.bot,
         )
 
     @balls.command(name="count")
