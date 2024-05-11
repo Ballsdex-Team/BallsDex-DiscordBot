@@ -1514,5 +1514,5 @@ class Admin(commands.GroupCog):
             name=f"Total Server with {settings.collectible_name}s Caught",
             value=len(set([x.server_id for x in total_user_balls])),
         )
-        embed.set_thumbnail(url=user.avatar.url)  # type: ignore
+        embed.set_thumbnail(url=user.display_avatar)  # type: ignore
         await interaction.followup.send(embed=embed, ephemeral=True)
