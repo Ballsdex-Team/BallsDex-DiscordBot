@@ -1440,9 +1440,10 @@ class Admin(commands.GroupCog):
             server_id=guild.id,
         ).prefetch_related("player")
 
+        owner = await self.bot.fetch_user(guild.owner_id)
         embed = discord.Embed(
             title=f"{guild.name} ({guild.id})",
-            description=f"Owner: {guild.owner} ({guild.owner_id})",
+            description=f"Owner: {owner} ({guild.owner_id})",
             color=discord.Color.blurple(),
         )
         embed.add_field(name="Members", value=guild.member_count)
