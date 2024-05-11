@@ -1439,13 +1439,18 @@ class Admin(commands.GroupCog):
             catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
             server_id=guild.id,
         ).prefetch_related("player")
-
-        owner = await self.bot.fetch_user(guild.owner_id)
-        embed = discord.Embed(
-            title=f"{guild.name} ({guild.id})",
-            description=f"Owner: {owner} ({guild.owner_id})",
-            color=discord.Color.blurple(),
-        )
+        if guild.owner_id:
+            owner = await self.bot.fetch_user(guild.owner_id)
+            embed = discord.Embed(
+                title=f"{guild.name} ({guild.id})",
+                description=f"Owner: {owner} ({guild.owner_id})",
+                color=discord.Color.blurple(),
+            )
+        else:
+            embed = discord.Embed(
+                title=f"{guild.name} ({guild.id})",
+                color=discord.Color.blurple(),
+            )
         embed.add_field(name="Members", value=guild.member_count)
         embed.add_field(name="Spawn Enabled", value=spawn_enabled)
         embed.add_field(name="Created at", value=format_dt(guild.created_at, style="R"))
