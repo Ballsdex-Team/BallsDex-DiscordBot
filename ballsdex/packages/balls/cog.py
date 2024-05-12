@@ -463,6 +463,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         user: discord.User,
         countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
     ):
         """
         Give a countryball to a user.
@@ -473,6 +475,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user you want to give a countryball to
         countryball: BallInstance
             The countryball you're giving away
+         special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
