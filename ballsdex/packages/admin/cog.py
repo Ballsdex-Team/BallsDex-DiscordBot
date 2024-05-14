@@ -26,6 +26,7 @@ from ballsdex.core.models import (
     balls,
 )
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.enums import DONATION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.core.utils.transformers import (
@@ -81,6 +82,7 @@ class Admin(commands.GroupCog):
     )
     logs = app_commands.Group(name="logs", description="Bot logs management")
     history = app_commands.Group(name="history", description="Trade history management")
+    info = app_commands.Group(name="info", description="Information Commands")
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -1391,3 +1393,132 @@ class Admin(commands.GroupCog):
             await TradingUser.from_trade_model(trade, trade.player2, self.bot),
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @info.command()
+    async def guild(
+        self,
+        interaction: discord.Interaction,
+        guild_id: str,
+        days: int = 7,
+    ):
+        """
+        Show information about the server provided
+
+        Parameters
+        ----------
+        guild: discord.Guild | None
+            The guild you want to get information about.
+        guild_id: str | None
+            The ID of the guild you want to get information about.
+        days: int
+            The amount of days to look back for the amount of balls caught.
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        guild = self.bot.get_guild(int(guild_id))
+
+        if not guild:
+            try:
+                guild = await self.bot.fetch_guild(int(guild_id))  # type: ignore
+            except ValueError:
+                await interaction.followup.send(
+                    "The guild ID you gave is not valid.", ephemeral=True
+                )
+                return
+            except discord.NotFound:
+                await interaction.followup.send(
+                    "The given guild ID could not be found.", ephemeral=True
+                )
+                return
+
+        if config := await GuildConfig.get_or_none(guild_id=guild.id):
+            spawn_enabled = config.enabled and config.guild_id
+        else:
+            spawn_enabled = False
+
+        total_server_balls = await BallInstance.filter(
+            catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
+            server_id=guild.id,
+        ).prefetch_related("player")
+        if guild.owner_id:
+            owner = await self.bot.fetch_user(guild.owner_id)
+            embed = discord.Embed(
+                title=f"{guild.name} ({guild.id})",
+                description=f"Owner: {owner} ({guild.owner_id})",
+                color=discord.Color.blurple(),
+            )
+        else:
+            embed = discord.Embed(
+                title=f"{guild.name} ({guild.id})",
+                color=discord.Color.blurple(),
+            )
+        embed.add_field(name="Members", value=guild.member_count)
+        embed.add_field(name="Spawn Enabled", value=spawn_enabled)
+        embed.add_field(name="Created at", value=format_dt(guild.created_at, style="R"))
+        embed.add_field(
+            name=f"{settings.collectible_name} Caught ({days} days)",
+            value=len(total_server_balls),
+        )
+        embed.add_field(
+            name=f"Amount of Users who caught {settings.collectible_name} ({days} days)",
+            value=len(set([x.player.discord_id for x in total_server_balls])),
+        )
+        embed.set_thumbnail(url=guild.icon.url)  # type: ignore
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @info.command()
+    async def user(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User,
+        days: int = 7,
+    ):
+        """
+        Show information about the user provided
+
+        Parameters
+        ----------
+        user: discord.User | None
+            The user you want to get information about.
+        days: int
+            The amount of days to look back for the amount of balls caught.
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        player = await Player.get_or_none(discord_id=user.id)
+        if not player:
+            await interaction.followup.send("The user you gave does not exist.", ephemeral=True)
+            return
+        total_user_balls = await BallInstance.filter(
+            catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
+            player=player,
+        )
+        embed = discord.Embed(
+            title=f"{user} ({user.id})",
+            description=(
+                f"Privacy Policy: {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
+                f"Donation Policy: {DONATION_POLICY_MAP[player.donation_policy]}"
+            ),
+            color=discord.Color.blurple(),
+        )
+        embed.add_field(name=f"Balls Caught ({days} days)", value=len(total_user_balls))
+        embed.add_field(
+            name=f"{settings.collectible_name} Caught (Unique - ({days} days))",
+            value=len(set(total_user_balls)),
+        )
+        embed.add_field(
+            name=f"Total Server with {settings.collectible_name}s caught ({days} days))",
+            value=len(set([x.server_id for x in total_user_balls])),
+        )
+        embed.add_field(
+            name=f"Total {settings.collectible_name}s Caught",
+            value=await BallInstance.filter(player__discord_id=user.id).count(),
+        )
+        embed.add_field(
+            name=f"Total Unique {settings.collectible_name}s Caught",
+            value=len(set([x.countryball for x in total_user_balls])),
+        )
+        embed.add_field(
+            name=f"Total Server with {settings.collectible_name}s Caught",
+            value=len(set([x.server_id for x in total_user_balls])),
+        )
+        embed.set_thumbnail(url=user.display_avatar)  # type: ignore
+        await interaction.followup.send(embed=embed, ephemeral=True)
