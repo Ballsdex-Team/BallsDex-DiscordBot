@@ -1476,11 +1476,11 @@ class Admin(commands.GroupCog):
         embed.add_field(name="Spawn Enabled", value=spawn_enabled)
         embed.add_field(name="Created at", value=format_dt(guild.created_at, style="R"))
         embed.add_field(
-            name=f"{settings.collectible_name} Caught ({days} days)",
+            name=f"# {settings.collectible_name} caught ({days} days)",
             value=len(total_server_balls),
         )
         embed.add_field(
-            name=f"Amount of Users who caught {settings.collectible_name} ({days} days)",
+            name=f"# of users who caught {settings.collectible_name} ({days} days)",
             value=len(set([x.player.discord_id for x in total_server_balls])),
         )
         embed.set_thumbnail(url=guild.icon.url)  # type: ignore
@@ -1520,25 +1520,25 @@ class Admin(commands.GroupCog):
             ),
             color=discord.Color.blurple(),
         )
-        embed.add_field(name=f"Balls Caught ({days} days)", value=len(total_user_balls))
+        embed.add_field(name=f"# {settings.collectible_name} caught ({days} days)", value=len(total_user_balls))
         embed.add_field(
-            name=f"{settings.collectible_name} Caught (Unique - ({days} days))",
+            name=f"# {settings.collectible_name}s caught (Unique - ({days} days))",
             value=len(set(total_user_balls)),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s caught ({days} days))",
+            name=f"# servers with {settings.collectible_name}s caught ({days} days))",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total {settings.collectible_name}s Caught",
+            name=f"# {settings.collectible_name}s caught",
             value=await BallInstance.filter(player__discord_id=user.id).count(),
         )
         embed.add_field(
-            name=f"Total Unique {settings.collectible_name}s Caught",
+            name=f"# unique {settings.collectible_name}s caught",
             value=len(set([x.countryball for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s Caught",
+            name=f"# servers with {settings.collectible_name}s saught",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
