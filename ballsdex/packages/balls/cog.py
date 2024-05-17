@@ -16,6 +16,7 @@ from ballsdex.core.models import (
     PrivacyPolicy,
     Trade,
     TradeObject,
+    Special,
     balls,
 )
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
