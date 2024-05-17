@@ -277,7 +277,9 @@ class SpecialEnabledTransformer(SpecialTransformer):
     async def load_items(self) -> Iterable[Special]:
         return await Special.filter(hidden=False).all()
 
-    async def transform(self, interaction: Interaction["BallsDexBot"], value: str) -> Union[Special, str]:
+    async def transform(
+        self, interaction: Interaction["BallsDexBot"], value: str)
+    -> Union[Special, str]:
         if value.lower() in ["all", "none"]:
             return value.lower()
         return await super().transform(interaction, value)
