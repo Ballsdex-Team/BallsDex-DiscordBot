@@ -282,7 +282,8 @@ class SpecialEnabledTransformer(SpecialTransformer):
     ) -> Union[Special, str]:
         if value.lower() in ["all", "none"]:
             return value.lower()
-        return await super().transform(interaction, value)
+        special = await super().transform(interaction, value)
+        return special or "none"
 
     async def get_options(
         self, interaction: Interaction["BallsDexBot"], value: str
