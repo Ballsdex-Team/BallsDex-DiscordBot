@@ -14,9 +14,9 @@ from ballsdex.core.models import (
     DonationPolicy,
     Player,
     PrivacyPolicy,
+    Special,
     Trade,
     TradeObject,
-    Special,
     balls,
 )
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
