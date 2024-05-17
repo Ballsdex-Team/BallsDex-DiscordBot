@@ -277,6 +277,29 @@ class SpecialEnabledTransformer(SpecialTransformer):
     async def load_items(self) -> Iterable[Special]:
         return await Special.filter(hidden=False).all()
 
+    async def transform(self, interaction: Interaction["BallsDexBot"], value: str) -> Union[Special, str]:
+        if value.lower() in ["all", "none"]:
+            return value.lower()
+        return await super().transform(interaction, value)
+
+    async def get_options(
+        self, interaction: Interaction["BallsDexBot"], value: str
+    ) -> list[app_commands.Choice[str]]:
+        await self.maybe_refresh()
+
+        choices = [
+            app_commands.Choice(name="All Specials", value="all"),
+            app_commands.Choice(name="No Specials", value="none"),
+        ]
+
+        for item in self.items.values():
+            if value.lower() in self.search_map[item]:
+                choices.append(app_commands.Choice(name=self.key(item), value=str(item.pk)))
+                if len(choices) >= 25:
+                    break
+
+        return choices
+
 
 class RegimeTransformer(TTLModelTransformer[Regime]):
     name = "regime"
