@@ -567,7 +567,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if shiny is not None:
             filters["shiny"] = shiny
         if special:
-            filters["special"] = special
+            if special == "all":
+                pass
+            elif special == "none":
+                filters["special__isnull"] = True
+            else:
+                filters["special"] = special
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
@@ -576,7 +581,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         shiny_str = "shiny " if shiny else ""
-        special_str = f"{special.name} " if special else ""
+        special_str = (
+            f"{special.name} " if isinstance(special, Special) else ""
+        )
+        if special == "all":
+            special_str = "all special "
+        if special == "none":
+            special_str = "non-special "
         guild = f" caught in {interaction.guild.name}" if current_server else ""
         await interaction.followup.send(
             f"You have {balls} {special_str}{shiny_str}"
