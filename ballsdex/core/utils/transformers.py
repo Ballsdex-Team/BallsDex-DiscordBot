@@ -278,8 +278,8 @@ class SpecialEnabledTransformer(SpecialTransformer):
         return await Special.filter(hidden=False).all()
 
     async def transform(
-        self, interaction: Interaction["BallsDexBot"], value: str)
-    -> Union[Special, str]:
+        self, interaction: Interaction["BallsDexBot"], value: str
+    ) -> Union[Special, str]:
         if value.lower() in ["all", "none"]:
             return value.lower()
         return await super().transform(interaction, value)
