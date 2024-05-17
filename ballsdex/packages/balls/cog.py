@@ -581,9 +581,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         shiny_str = "shiny " if shiny else ""
-        special_str = (
-            f"{special.name} " if isinstance(special, Special) else ""
-        )
+        special_str = f"{special.name} " if isinstance(special, Special) else ""
         if special == "all":
             special_str = "all special "
         if special == "none":
