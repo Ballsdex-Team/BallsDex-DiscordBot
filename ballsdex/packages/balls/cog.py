@@ -571,7 +571,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             if special == "all":
                 pass
             elif special == "none":
-                filters["special__isnull"] = True
+                filters["special"] = None
             else:
                 filters["special"] = special
         if current_server:
@@ -584,7 +584,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         shiny_str = "shiny " if shiny else ""
         special_str = f"{special.name} " if isinstance(special, Special) else ""
         if special == "all":
-            special_str = "all special "
+            special_str = "special "
         if special == "none":
             special_str = "non-special "
         guild = f" caught in {interaction.guild.name}" if current_server else ""
