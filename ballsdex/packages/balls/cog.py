@@ -541,7 +541,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         self,
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
-        special: SpecialEnabledTransform | None = None,
+        special: ExtraSpecialEnabledTransformer | None = None,
         shiny: bool | None = None,
         current_server: bool = False,
     ):
@@ -567,13 +567,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["ball"] = countryball
         if shiny is not None:
             filters["shiny"] = shiny
-        if special:
+        if special and special != "none":
             if special == "all":
-                pass
-            elif special == "none":
-                filters["special"] = None
+                filters["special__isnull"] = False
             else:
                 filters["special"] = special
+        elif special == "none":
+            filters["special__isnull"] = True
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
