@@ -264,7 +264,9 @@ class BallEnabledTransformer(BallTransformer):
     async def load_items(self) -> Iterable[Ball]:
         return {k: v for k, v in balls.items() if v.enabled}.values()
 
-    async def transform(self, interaction: discord.Interaction["BallsDexBot"], value: str) -> Optional[Ball]:
+    async def transform(
+        self, interaction: discord.Interaction["BallsDexBot"], value: str
+    ) -> Optional[Ball]:
         try:
             ball = await super().transform(interaction, value)
             if ball is None or not ball.enabled:
