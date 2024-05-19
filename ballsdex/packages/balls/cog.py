@@ -441,7 +441,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             countryball.favorite = True  # type: ignore
             await countryball.save()
             await interaction.response.send_message(
-                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
+                f"{countryball.description(include_emoji=True, bot=self.bot)} "
                 f"is now a favorite {settings.collectible_name}!",
                 ephemeral=True,
             )
@@ -450,7 +450,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             countryball.favorite = False  # type: ignore
             await countryball.save()
             await interaction.response.send_message(
-                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
+                f"{countryball.description(include_emoji=True, bot=self.bot)} "
                 f"isn't a favorite {settings.collectible_name} anymore.",
                 ephemeral=True,
             )
@@ -535,7 +535,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         await interaction.response.send_message(
             "You just gave "
-            f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
+            f"{countryball.description(include_emoji=True, bot=self.bot)} "
             "to {user.mention}!"
         )
         await countryball.unlock()
