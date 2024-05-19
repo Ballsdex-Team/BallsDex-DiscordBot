@@ -23,6 +23,7 @@ from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
+    ExtraSpecialEnabledTransformer,
     SpecialEnabledTransform,
     TradeCommandType,
 )
