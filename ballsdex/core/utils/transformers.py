@@ -283,6 +283,23 @@ class SpecialEnabledTransformer(SpecialTransformer):
         if value.lower() in ["all", "none"]:
             return value.lower()
         special = await super().transform(interaction, value)
+        if special and special.hidden:
+            raise ValueError("This Special is disabled and will not be shown")
+        return special or "none"
+
+
+class ExtraSpecialEnabledTransformer(SpecialTransformer):
+    async def load_items(self) -> Iterable[Special]:
+        return await Special.filter(hidden=False).all()
+
+    async def transform(
+        self, interaction: Interaction["BallsDexBot"], value: str
+    ) -> Union[Special, str]:
+        if value.lower() in ["all", "none"]:
+            return value.lower()
+        special = await super().transform(interaction, value)
+        if special and special.hidden:
+            raise ValueError("This Special is disabled and will not be shown")
         return special or "none"
 
     async def get_options(
@@ -292,16 +309,29 @@ class SpecialEnabledTransformer(SpecialTransformer):
 
         choices = [
             app_commands.Choice(name="All Specials", value="all"),
-            app_commands.Choice(name="No Specials", value="none"),
+            app_commands.Choice(name="Non-Specials", value="none"),
         ]
 
         for item in self.items.values():
-            if value.lower() in self.search_map[item]:
-                choices.append(app_commands.Choice(name=self.key(item), value=str(item.pk)))
-                if len(choices) >= 25:
-                    break
+            if not item.hidden:
+                if value.lower() in self.search_map[item]:
+                    choices.append(app_commands.Choice(name=self.key(item), value=str(item.pk)))
+                    if len(choices) >= 25:
+                        break
 
         return choices
+
+    @staticmethod
+    def get_special_filter(special: Union[Special, str]) -> dict:
+        """Generate filters based on the special value."""
+        if special == "all":
+            return {}
+        elif special == "none":
+            return {"special": None}
+        elif isinstance(special, Special):
+            return {"special": special}
+        else:
+            return {}
 
 
 class RegimeTransformer(TTLModelTransformer[Regime]):
