@@ -309,7 +309,7 @@ class ExtraSpecialEnabledTransformer(SpecialTransformer):
 
         choices = [
             app_commands.Choice(name="All Specials", value="all"),
-            app_commands.Choice(name="Non-Specials", value="none"),
+            app_commands.Choice(name="Exclude Specials", value="none"),
         ]
 
         for item in self.items.values():
