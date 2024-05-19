@@ -540,6 +540,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         self,
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
+        user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
         shiny: bool | None = None,
         current_server: bool = False,
@@ -551,6 +552,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         countryball: Ball
             The countryball you want to count
+        user: discord.User
+            The user whose collection you want to count
         special: Special
             The special you want to count
         shiny: bool
@@ -561,6 +564,21 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if interaction.response.is_done():
             return
         assert interaction.guild
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        user_obj = user or interaction.user
+        if user_obj.id != interaction.user.id:
+            try:
+                player = await Player.get(discord_id=user_obj.id)
+                if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
+                    return
+            except DoesNotExist:
+                await interaction.followup.send(
+                    f"{user_obj.name} doesn't have any {settings.collectible_name} yet."
+                )
+                return
+
         filters = {}
         if countryball:
             filters["ball"] = countryball
@@ -570,16 +588,18 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["special"] = special
         if current_server:
             filters["server_id"] = interaction.guild.id
-        filters["player__discord_id"] = interaction.user.id
-        await interaction.response.defer(ephemeral=True, thinking=True)
+        filters["player__discord_id"] = user_obj.id
+
         balls = await BallInstance.filter(**filters).count()
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         shiny_str = "shiny " if shiny else ""
         special_str = f"{special.name} " if special else ""
         guild = f" caught in {interaction.guild.name}" if current_server else ""
+
+        subject = "You have" if user_obj.id == interaction.user.id else f"{user_obj.name} has"
         await interaction.followup.send(
-            f"You have {balls} {special_str}{shiny_str}"
+            f"{subject} {balls} {special_str}{shiny_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
         )
 
