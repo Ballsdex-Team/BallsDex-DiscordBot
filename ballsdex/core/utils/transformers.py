@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, Iterable, TypeVar, Optional
+from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
 
 import discord
 from discord import app_commands
