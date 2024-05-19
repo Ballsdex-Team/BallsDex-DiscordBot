@@ -259,6 +259,7 @@ class BallTransformer(TTLModelTransformer[Ball]):
     async def load_items(self) -> Iterable[Ball]:
         return balls.values()
 
+
 class BallEnabledTransformer(BallTransformer):
     async def load_items(self) -> Iterable[Ball]:
         return {k: v for k, v in balls.items() if v.enabled}.values()
@@ -267,7 +268,9 @@ class BallEnabledTransformer(BallTransformer):
         try:
             ball = await super().transform(interaction, value)
             if ball is None or not ball.enabled:
-                raise ValueError(f"This {settings.collectible_name} is disabled and cannot be used.")
+                raise ValueError(
+                    f"This {settings.collectible_name} is disabled and cannot be used."
+                )
             return ball
         except ValueError as e:
             await interaction.response.send_message(str(e), ephemeral=True)
