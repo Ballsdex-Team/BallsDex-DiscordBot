@@ -271,7 +271,7 @@ class BallEnabledTransformer(BallTransformer):
             ball = await super().transform(interaction, value)
             if ball is None or not ball.enabled:
                 raise ValueError(
-                    f"This {settings.collectible_name} is disabled and cannot be used."
+                    f"This {settings.collectible_name} is disabled and will not be shown."
                 )
             return ball
         except ValueError as e:
