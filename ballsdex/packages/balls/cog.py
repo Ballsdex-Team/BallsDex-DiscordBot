@@ -570,11 +570,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["shiny"] = shiny
         if special and special != "none":
             if special == "all":
-                filters["special__isnull"] = False
+                pass
             else:
                 filters["special"] = special
         elif special == "none":
-            filters["special__isnull"] = True
+            filters["special"] = None
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
