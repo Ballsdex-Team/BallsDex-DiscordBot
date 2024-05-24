@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 class Trade(commands.GroupCog):
     """
-    Trade countryballs with other playersa
+    Trade countryballs with other players.
     """
 
     def __init__(self, bot: "BallsDexBot"):
