@@ -485,8 +485,8 @@ class Admin(commands.GroupCog):
         )
         await log_action(
             f"{interaction.user} gave {settings.collectible_name} {ball.country} to {user}. "
-            f"Special={special.name if special else None} ATK={instance.attack_bonus:+d} "
-            f"HP={instance.health_bonus:+d} shiny={instance.shiny}",
+            f"(Special={special.name if special else None} ATK={instance.attack_bonus:+d} "
+            f"HP={instance.health_bonus:+d} shiny={instance.shiny}).",
             self.bot,
         )
 
@@ -545,7 +545,7 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
         await log_action(
             f"{interaction.user} blacklisted {user} ({user.id})"
-            f" for the following reason: {reason}",
+            f" for the following reason: {reason}.",
             self.bot,
         )
 
@@ -598,7 +598,7 @@ class Admin(commands.GroupCog):
                 "User is now removed from blacklist.", ephemeral=True
             )
         await log_action(
-            f"{interaction.user} removed blacklist for user {user} ({user.id})", self.bot
+            f"{interaction.user} removed blacklist for user {user} ({user.id}).", self.bot
         )
 
     @blacklist.command(name="info")
@@ -703,7 +703,7 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
         await log_action(
             f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
-            f"for the following reason: {reason}",
+            f"for the following reason: {reason}.",
             self.bot,
         )
 
@@ -749,7 +749,7 @@ class Admin(commands.GroupCog):
                 "Guild is now removed from blacklist.", ephemeral=True
             )
             await log_action(
-                f"{interaction.user} removed blacklist for guild {guild} ({guild.id})", self.bot
+                f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).", self.bot
             )
 
     @blacklist_guild.command(name="info")
@@ -848,7 +848,7 @@ class Admin(commands.GroupCog):
             f"**Traded:** {ball.trade_player}\n",
             ephemeral=True,
         )
-        await log_action(f"{interaction.user} got info for {ball} ({ball.pk})", self.bot)
+        await log_action(f"{interaction.user} got info for {ball}({ball.pk}).", self.bot)
 
     @balls.command(name="delete")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -879,7 +879,7 @@ class Admin(commands.GroupCog):
         await interaction.response.send_message(
             f"{settings.collectible_name.title()} {ball_id} deleted.", ephemeral=True
         )
-        await log_action(f"{interaction.user} deleted {ball} ({ball.pk})", self.bot)
+        await log_action(f"{interaction.user} deleted {ball}({ball.pk}).", self.bot)
 
     @balls.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -918,11 +918,11 @@ class Admin(commands.GroupCog):
         trade = await Trade.create(player1=original_player, player2=player)
         await TradeObject.create(trade=trade, ballinstance=ball, player=original_player)
         await interaction.response.send_message(
-            f"Transfered {ball} ({ball.pk}) from {original_player} to {user}.",
+            f"Transfered {ball}({ball.pk}) from {original_player} to {user}.",
             ephemeral=True,
         )
         await log_action(
-            f"{interaction.user} transferred {ball} ({ball.pk}) from {original_player} to {user}",
+            f"{interaction.user} transferred {ball}({ball.pk}) from {original_player} to {user}.",
             self.bot,
         )
 
@@ -982,7 +982,9 @@ class Admin(commands.GroupCog):
             f"{count} {settings.collectible_name}s from {user} have been reset.", ephemeral=True
         )
         await log_action(
-            f"{interaction.user} deleted {percentage or 100}% of {player}'s balls", self.bot
+            f"{interaction.user} deleted {percentage or 100}% of "
+            f"{player}'s {settings.collectible_name}s.",
+            self.bot,
         )
 
     @balls.command(name="count")
