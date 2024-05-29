@@ -172,7 +172,8 @@ class Trade(commands.GroupCog):
         if countryball.favorite:
             view = ConfirmChoiceView(interaction)
             await interaction.followup.send(
-                f"This {settings.collectible_name} is a favorite, are you sure you want to trade it?",
+                f"This {settings.collectible_name} is a favorite, "
+                "are you sure you want to trade it?",
                 view=view,
                 ephemeral=True,
             )
