@@ -172,7 +172,8 @@ class Trade(commands.GroupCog):
         if countryball.favorite:
             view = ConfirmChoiceView(interaction)
             await interaction.followup.send(
-                "This countryball is a favorite, are you sure you want to trade it?",
+                f"This {settings.collectible_name} is a favorite, "
+                "are you sure you want to trade it?",
                 view=view,
                 ephemeral=True,
             )
@@ -199,7 +200,7 @@ class Trade(commands.GroupCog):
             return
         if await countryball.is_locked():
             await interaction.followup.send(
-                "This countryball is currently in an active trade or donation, "
+                f"This {settings.collectible_name} is currently in an active trade or donation, "
                 "please try again later.",
                 ephemeral=True,
             )
