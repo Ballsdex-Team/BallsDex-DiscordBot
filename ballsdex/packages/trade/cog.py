@@ -199,7 +199,7 @@ class Trade(commands.GroupCog):
             return
         if await countryball.is_locked():
             await interaction.followup.send(
-                "This {settings.collectible_name} is currently in an active trade or donation, "
+                f"This {settings.collectible_name} is currently in an active trade or donation, "
                 "please try again later.",
                 ephemeral=True,
             )
