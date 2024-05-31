@@ -88,7 +88,7 @@ class Player(commands.GroupCog):
         elif policy.value == DonationPolicy.ALWAYS_DENY:
             await interaction.response.send_message(
                 "Setting updated, it is now impossible to use "
-                f"`{settings.players_group_cog_name} give` with "
+                f"`/{settings.players_group_cog_name} give` with "
                 "you. It is still possible to perform donations using the trade system."
             )
         else:
