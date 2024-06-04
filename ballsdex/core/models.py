@@ -251,7 +251,7 @@ class BallInstance(models.Model):
             if isinstance(self.countryball, Ball)
             else f"<Ball {self.ball_id}>"
         )
-        return f"{emotes}#{self.pk:0X} {country} "
+        return f"{emotes}#{self.pk:0X} {country}".strip()
 
     def special_emoji(self, bot: discord.Client | None, use_custom_emoji: bool = True) -> str:
         if self.specialcard:
@@ -289,7 +289,7 @@ class BallInstance(models.Model):
                 emoji = bot.get_emoji(self.countryball.emoji_id)
                 if emoji:
                     text = f"{emoji} {text}"
-        return text
+        return text.strip()
 
     def draw_card(self) -> BytesIO:
         image = draw_card(self)
