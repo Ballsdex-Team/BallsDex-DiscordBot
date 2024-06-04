@@ -477,7 +477,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if not countryball.is_tradeable:
             await interaction.response.send_message(
-                "You cannot donate this countryball.", ephemeral=True
+                f"You cannot donate this {settings.collectible_name}.", ephemeral=True
             )
             return
         if user.bot:
@@ -485,7 +485,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if await countryball.is_locked():
             await interaction.response.send_message(
-                "This countryball is currently locked for a trade. Please try again later."
+                f"This {settings.collectible_name} is currently locked for a trade. "
+                "Please try again later."
             )
             return
         await countryball.lock_for_trade()
