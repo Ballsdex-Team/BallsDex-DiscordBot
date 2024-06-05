@@ -74,6 +74,7 @@ class DonationRequest(View):
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
+        self.countryball.favorite = False
         self.countryball.trade_player = self.countryball.player
         self.countryball.player = self.new_player
         await self.countryball.save()
