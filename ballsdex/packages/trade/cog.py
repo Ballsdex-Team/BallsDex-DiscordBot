@@ -213,7 +213,13 @@ class Trade(commands.GroupCog):
         )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
-    async def remove(self, interaction: discord.Interaction, countryball: BallInstanceTransform):
+    async def remove(
+        self,
+        interaction: discord.Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
+    ):
         """
         Remove a countryball from what you proposed in the ongoing trade.
 
@@ -221,6 +227,10 @@ class Trade(commands.GroupCog):
         ----------
         countryball: BallInstance
             The countryball you want to remove from your proposal
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
