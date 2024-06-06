@@ -188,7 +188,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
                     "' ' || ballinstance__ball.catch_names"
                 )
             )
-            .filter(searchable__icontains=value)
+            .filter(searchable__icontains=value.replace(".", ""))
             .limit(25)
         )
 
