@@ -330,9 +330,9 @@ class Trade(commands.GroupCog):
 
         if countryball:
             queryset = queryset.filter(
-                Q(player1__proposal__countryball=countryball)
-                | Q(player2__proposal__countryball=countryball)
-            )
+                Q(player1__tradeobjects__ballinstance__ball=countryball)
+                | Q(player2__tradeobjects__ballinstance__ball=countryball)
+            ).distinct()  # for some reason, this query creates a lot of duplicate rows?
 
         history = await queryset.order_by(sorting.value).prefetch_related("player1", "player2")
 
