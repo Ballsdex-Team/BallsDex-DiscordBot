@@ -92,8 +92,8 @@ class IPC(commands.Cog):
         code = cog.cleanup_code(code)
 
         try:
-            compiled = cog.async_compile(code, "<string>", "eval")
-            result = await cog.maybe_await(eval(compiled, env))
+            compiled = cog.async_compile(code, "<string>", "exec")
+            result = exec(compiled, env)
             # result = cog.sanitize_output(result)
         except SyntaxError as e:
             result = "SyntaxError: " + str(e)
