@@ -44,7 +44,7 @@ class AcceptTOSView(View):
         self.stop()
         await interaction.response.send_message(
             f"The new spawn channel was successfully set to {self.channel.mention}.\n"
-            f"{settings.collectible_name.title()} will start spawning as"
+            f"{settings.collectible_name.title()}s will start spawning as"
             " users talk unless the bot is disabled."
         )
 

@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, Iterable, TypeVar
+from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
 
 import discord
 from discord import app_commands
@@ -188,7 +188,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
                     "' ' || ballinstance__ball.catch_names"
                 )
             )
-            .filter(searchable__icontains=value)
+            .filter(searchable__icontains=value.replace(".", ""))
             .limit(25)
         )
 
@@ -263,6 +263,20 @@ class BallTransformer(TTLModelTransformer[Ball]):
 class BallEnabledTransformer(BallTransformer):
     async def load_items(self) -> Iterable[Ball]:
         return {k: v for k, v in balls.items() if v.enabled}.values()
+
+    async def transform(
+        self, interaction: discord.Interaction["BallsDexBot"], value: str
+    ) -> Optional[Ball]:
+        try:
+            ball = await super().transform(interaction, value)
+            if ball is None or not ball.enabled:
+                raise ValueError(
+                    f"This {settings.collectible_name} is disabled and will not be shown."
+                )
+            return ball
+        except ValueError as e:
+            await interaction.response.send_message(str(e), ephemeral=True)
+            return None
 
 
 class SpecialTransformer(TTLModelTransformer[Special]):

@@ -74,6 +74,7 @@ class DonationRequest(View):
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
+        self.countryball.favorite = False
         self.countryball.trade_player = self.countryball.player
         self.countryball.player = self.new_player
         await self.countryball.save()
@@ -479,6 +480,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         user: discord.User,
         countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
     ):
         """
         Give a countryball to a user.
@@ -489,12 +492,16 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user you want to give a countryball to
         countryball: BallInstance
             The countryball you're giving away
+         special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
         if not countryball.is_tradeable:
             await interaction.response.send_message(
-                "You cannot donate this countryball.", ephemeral=True
+                f"You cannot donate this {settings.collectible_name}.", ephemeral=True
             )
             return
         if user.bot:
@@ -502,7 +509,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if await countryball.is_locked():
             await interaction.response.send_message(
-                "This countryball is currently locked for a trade. Please try again later."
+                f"This {settings.collectible_name} is currently locked for a trade. "
+                "Please try again later."
             )
             return
         await countryball.lock_for_trade()
