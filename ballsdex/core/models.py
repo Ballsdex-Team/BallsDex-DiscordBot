@@ -31,7 +31,9 @@ async def lower_catch_names(
     update_fields: Iterable[str] | None = None,
 ):
     if instance.catch_names:
-        instance.catch_names = instance.catch_names.lower()
+        instance.catch_names = ";".join(
+            [x.strip() for x in instance.catch_names.split(";")]
+        ).lower()
 
 
 class DiscordSnowflakeValidator(validators.Validator):
