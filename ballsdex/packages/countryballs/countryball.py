@@ -29,7 +29,23 @@ class CountryBall:
         cb = random.choices(population=countryballs, weights=rarities, k=1)[0]
         return cls(cb)
 
-    async def spawn(self, channel: discord.TextChannel):
+    async def spawn(self, channel: discord.TextChannel) -> bool:
+        """
+        Spawn a countryball in a channel.
+
+        Parameters
+        ----------
+        channel: discord.TextChannel
+            The channel where to spawn the countryball. Must have permission to send messages
+            and upload files as a bot (not through interactions).
+
+        Returns
+        -------
+        bool
+            `True` if the operation succeeded, otherwise `False`. An error will be displayed
+            in the logs if that's the case.
+        """
+
         def generate_random_name():
             source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
             return "".join(random.choices(source, k=15))
@@ -45,9 +61,11 @@ class CountryBall:
                     view=CatchView(self),
                     file=discord.File(file_location, filename=file_name),
                 )
+                return True
             else:
                 log.error("Missing permission to spawn ball in channel %s.", channel)
         except discord.Forbidden:
             log.error(f"Missing permission to spawn ball in channel {channel}.")
         except discord.HTTPException:
             log.error("Failed to spawn ball", exc_info=True)
+        return False
