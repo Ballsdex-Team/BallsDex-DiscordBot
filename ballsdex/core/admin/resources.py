@@ -81,8 +81,8 @@ class SpecialResource(Model):
     filters = [
         filters.Search(
             name="name", label="Name", search_mode="icontains", placeholder="Search for events"
-        )
-    ]
+        ),
+        filters.Boolean(name="hidden", label="Hidden"),
     fields = [
         "name",
         "catch_phrase",
@@ -107,6 +107,7 @@ class SpecialResource(Model):
         ),
         "emoji",
         "tradeable",
+        "hidden,
     ]
 
     async def get_actions(self, request: Request) -> List[Action]:
