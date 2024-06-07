@@ -475,7 +475,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user you want to give a countryball to
         countryball: BallInstance
             The countryball you're giving away
-         special: Special
+        special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
         shiny: bool
             Filter the results of autocompletion to shinies. Ignored afterwards.
