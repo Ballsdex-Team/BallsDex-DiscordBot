@@ -83,6 +83,7 @@ class SpecialResource(Model):
             name="name", label="Name", search_mode="icontains", placeholder="Search for events"
         ),
         filters.Boolean(name="hidden", label="Hidden"),
+    ]
     fields = [
         "name",
         "catch_phrase",
