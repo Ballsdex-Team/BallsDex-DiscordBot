@@ -568,11 +568,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["ball"] = countryball
         if shiny is not None:
             filters["shiny"] = shiny
-        if special and special != "none":
-            if special == "all":
-                pass
-            else:
-                filters["special"] = special
+        if special and special != "none" and special != "all":
+            filters["special"] = special
         elif special == "none":
             filters["special"] = None
         if current_server:
