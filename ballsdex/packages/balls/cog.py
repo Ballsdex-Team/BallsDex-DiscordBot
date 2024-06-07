@@ -536,7 +536,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.send_message(
             "You just gave "
             f"{countryball.description(include_emoji=True, bot=self.bot)} "
-            "to {user.mention}!"
+            f"to {user.mention}!"
         )
         await countryball.unlock()
 
