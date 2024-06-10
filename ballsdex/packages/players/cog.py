@@ -112,6 +112,7 @@ class Player(commands.GroupCog):
         await player.delete()
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
     @app_commands.choices(
         type=[
             app_commands.Choice(name=settings.collectible_name.title(), value="balls"),
