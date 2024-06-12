@@ -101,6 +101,8 @@ class Player(commands.GroupCog):
         """
         Delete your player data.
         """
+        user = interaction.user
+        player = await PlayerModel.get(discord_id=user.id)
         view = ConfirmChoiceView(interaction)
         await interaction.response.send_message(
             "Are you sure you want to delete your player data?", view=view, ephemeral=True
