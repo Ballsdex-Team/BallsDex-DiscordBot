@@ -108,8 +108,7 @@ class Player(commands.GroupCog):
         await view.wait()
         if view.value is None or not view.value:
             return
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        await player.delete()
+        await BallInstance.filter(player=player).delete()
 
     @app_commands.command()
     @app_commands.choices(
