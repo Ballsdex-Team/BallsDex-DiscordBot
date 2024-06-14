@@ -1,6 +1,7 @@
 import asyncio
 import json
 from logging import getLogger
+import textwrap
 from uuid import uuid4
 
 import discord
@@ -91,8 +92,9 @@ class IPC(commands.Cog):
         env = cog.get_environment(None)
         code = cog.cleanup_code(code)
 
+        to_compile = "async def func():\n%s" % textwrap.indent(code, "  ")
         try:
-            compiled = cog.async_compile(code, "<string>", "exec")
+            compiled = cog.async_compile(to_compile, "<string>", "exec")
             result = exec(compiled, env)
             # result = cog.sanitize_output(result)
         except SyntaxError as e:
