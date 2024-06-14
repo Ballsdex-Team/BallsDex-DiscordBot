@@ -874,7 +874,7 @@ class Admin(commands.GroupCog):
             blacklisted = await BlacklistedGuild.get(discord_id=guild.id)
         except DoesNotExist:
             await interaction.response.send_message(
-                "That guild isn't blacklisted.", ephemeral = True
+                "That guild isn't blacklisted.", ephemeral=True
             )
         else:
             if blacklisted.date:
