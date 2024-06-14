@@ -4,6 +4,7 @@ import io
 import json
 from logging import getLogger
 import textwrap
+import traceback
 from uuid import uuid4
 
 import discord
@@ -96,6 +97,7 @@ class IPC(commands.Cog):
         stdout = io.StringIO()
 
         to_compile = "async def func():\n%s" % textwrap.indent(code, "  ")
+        result_func = None
         try:
             compiled = cog.async_compile(to_compile, "<string>", "exec")
             exec(compiled, env)
@@ -106,7 +108,7 @@ class IPC(commands.Cog):
         except SyntaxError as e:
             result = "SyntaxError: " + str(e)
         except Exception as e:
-            result = "Error: " + str(e)
+            result = "Error: " + "{}{}".format(stdout.getvalue(), traceback.format_exc())
         else:
             printed = stdout.getvalue()
         
