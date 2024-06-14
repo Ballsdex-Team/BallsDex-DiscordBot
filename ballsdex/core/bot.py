@@ -6,6 +6,7 @@ import logging
 import math
 import types
 from datetime import datetime
+import time
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
@@ -419,7 +420,7 @@ class BallsDexBot(commands.AutoShardedBot):
             if isinstance(error, app_commands.CommandOnCooldown):
                 await send(
                     "This command is on cooldown. Please retry "
-                    f"in {math.ceil(error.retry_after)} seconds."
+                    f"in <t:{time.time() + math.ceil(error.retry_after)}:R> seconds."
                 )
                 return
             await send("You are not allowed to use that command.")
