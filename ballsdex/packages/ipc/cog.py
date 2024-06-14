@@ -102,12 +102,16 @@ class IPC(commands.Cog):
             func = env["func"]
             result = None
             with redirect_stdout(stdout):
-                result = await func()
+                result_func = await func()
         except SyntaxError as e:
             result = "SyntaxError: " + str(e)
         except Exception as e:
             result = "Error: " + str(e)
-
+        else:
+            printed = stdout.getvalue()
+        
+        if result_func is not None:
+            result = printed + str(result_func)
         result = f"[Cluster #{self.bot.cluster_id}]: {result}"
         payload = {"output": result, "command_id": command_id}
         await self.bot.redis.execute_command(
