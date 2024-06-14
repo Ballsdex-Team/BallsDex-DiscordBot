@@ -1,4 +1,6 @@
 import asyncio
+from contextlib import redirect_stdout
+import io
 import json
 from logging import getLogger
 import textwrap
@@ -91,12 +93,16 @@ class IPC(commands.Cog):
             return
         env = cog.get_environment(None)
         code = cog.cleanup_code(code)
+        stdout = io.StringIO()
 
         to_compile = "async def func():\n%s" % textwrap.indent(code, "  ")
         try:
             compiled = cog.async_compile(to_compile, "<string>", "exec")
-            result = exec(compiled, env)
-            # result = cog.sanitize_output(result)
+            exec(compiled, env)
+            func = env["func"]
+            result = None
+            with redirect_stdout(stdout):
+                result = await func()
         except SyntaxError as e:
             result = "SyntaxError: " + str(e)
         except Exception as e:
