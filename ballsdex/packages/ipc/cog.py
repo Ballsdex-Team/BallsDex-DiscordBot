@@ -112,6 +112,8 @@ class IPC(commands.Cog):
         
         if result_func is not None:
             result = printed + str(result_func)
+        else:
+            result = printed
         result = f"[Cluster #{self.bot.cluster_id}]: {result}"
         payload = {"output": result, "command_id": command_id}
         await self.bot.redis.execute_command(
