@@ -417,8 +417,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
     @app_commands.command()
     async def favorite(
-        self, 
-        interaction: discord.Interaction, 
+        self,
+        interaction: discord.Interaction,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
         shiny: bool | None = None,
