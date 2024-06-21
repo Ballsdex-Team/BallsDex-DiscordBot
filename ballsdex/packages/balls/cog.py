@@ -139,6 +139,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         sort: SortingChoices | None = None,
         reverse: bool = False,
         countryball: BallEnabledTransform | None = None,
+        special: SpecialEnabledTransform | None = None,
     ):
         """
         List your countryballs.
@@ -153,6 +154,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Reverse the output of the list.
         countryball: Ball
             Filter the list by a specific countryball.
+        special: Special
+            Filter the list by a specific special event.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -175,6 +178,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         await player.fetch_related("balls")
         filters = {"ball__id": countryball.pk} if countryball else {}
+        if special:
+            filters["special"] = special
         if sort:
             if sort == SortingChoices.duplicates:
                 countryballs = await player.balls.filter(**filters)
