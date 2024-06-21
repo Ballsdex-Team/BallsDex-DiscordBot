@@ -3,7 +3,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Union
 
-from ballsdex.core.utils.buttons import ConfirmChoiceView
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -19,6 +18,7 @@ from ballsdex.core.models import (
     TradeObject,
     balls,
 )
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
