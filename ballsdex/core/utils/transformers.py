@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
+from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar, Union
 
 import discord
 from discord import app_commands
@@ -286,10 +286,53 @@ class SpecialTransformer(TTLModelTransformer[Special]):
     def key(self, model: Special) -> str:
         return model.name
 
-
 class SpecialEnabledTransformer(SpecialTransformer):
     async def load_items(self) -> Iterable[Special]:
         return await Special.filter(hidden=False).all()
+
+    async def transform(
+        self, interaction: Interaction["BallsDexBot"], value: str
+    ) -> Union[Special, str]:
+        if value.lower() in ["all", "none"]:
+            return value.lower()
+        special = await super().transform(interaction, value)
+        if special and special.hidden:
+            raise ValueError("This Special is disabled and will not be shown")
+        return special or "none"
+
+
+class ExtraSpecialEnabledTransformer(SpecialTransformer):
+    async def load_items(self) -> Iterable[Special]:
+        return await Special.filter(hidden=False).all()
+
+    async def transform(
+        self, interaction: Interaction["BallsDexBot"], value: str
+    ) -> Union[Special, str]:
+        if value.lower() in ["all", "none"]:
+            return value.lower()
+        special = await super().transform(interaction, value)
+        if special and special.hidden:
+            raise ValueError("This Special is disabled and will not be shown")
+        return special or "none"
+
+    async def get_options(
+        self, interaction: Interaction["BallsDexBot"], value: str
+    ) -> list[app_commands.Choice[str]]:
+        await self.maybe_refresh()
+
+        choices = [
+            app_commands.Choice(name="All Specials", value="all"),
+            app_commands.Choice(name="Exclude Specials", value="none"),
+        ]
+
+        for item in self.items.values():
+            if not item.hidden:
+                if value.lower() in self.search_map[item]:
+                    choices.append(app_commands.Choice(name=self.key(item), value=str(item.pk)))
+                    if len(choices) >= 25:
+                        break
+
+        return choices
 
 
 class RegimeTransformer(TTLModelTransformer[Regime]):
