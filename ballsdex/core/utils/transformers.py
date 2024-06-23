@@ -273,9 +273,9 @@ class SpecialTransformer(TTLModelTransformer[Special]):
         return model.name
 
 
-class SpecialEnabledTransformer(SpecialTransformer):
-    async def load_items(self) -> Iterable[Special]:
-        return await Special.filter(hidden=False).all()
+ class SpecialEnabledTransformer(SpecialTransformer):
+     async def load_items(self) -> Iterable[Special]:
+         return await Special.filter(hidden=False).all()
 
     async def transform(
         self, interaction: Interaction["BallsDexBot"], value: str
