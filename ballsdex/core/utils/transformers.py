@@ -286,6 +286,7 @@ class SpecialTransformer(TTLModelTransformer[Special]):
     def key(self, model: Special) -> str:
         return model.name
 
+
 class SpecialEnabledTransformer(SpecialTransformer):
     async def load_items(self) -> Iterable[Special]:
         return await Special.filter(hidden=False).all()
