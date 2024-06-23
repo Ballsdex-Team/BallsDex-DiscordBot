@@ -14,6 +14,7 @@ from ballsdex.core.models import (
     DonationPolicy,
     Player,
     PrivacyPolicy,
+    Special,
     Trade,
     TradeObject,
     balls,
@@ -22,6 +23,7 @@ from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
+    ExtraSpecialEnabledTransformer,
     SpecialEnabledTransform,
     TradeCommandType,
 )
@@ -553,7 +555,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         self,
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
-        special: SpecialEnabledTransform | None = None,
+        special: ExtraSpecialEnabledTransformer | None = None,
         shiny: bool | None = None,
         current_server: bool = False,
     ):
@@ -571,25 +573,36 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         current_server: bool
             Only count countryballs caught in the current server
         """
+
         if interaction.response.is_done():
             return
+
         assert interaction.guild
         filters = {}
         if countryball:
             filters["ball"] = countryball
         if shiny is not None:
             filters["shiny"] = shiny
-        if special:
-            filters["special"] = special
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
+        if special == "none":
+            filters["special_id"] = None
+        elif special == "all":
+            filters["special_id__isnull"] = False
+        else:
+            if special:
+                filters["special"] = special
         await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters).count()
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         shiny_str = "shiny " if shiny else ""
-        special_str = f"{special.name} " if special else ""
+        special_str = f"{special.name} " if isinstance(special, Special) else ""
+        if special == "all":
+            special_str = "special "
+        if special == "none":
+            special_str = "non-special "
         guild = f" caught in {interaction.guild.name}" if current_server else ""
         await interaction.followup.send(
             f"You have {balls} {special_str}{shiny_str}"
