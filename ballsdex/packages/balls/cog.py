@@ -574,7 +574,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["special_id__isnull"] = False
         else:
             if special:
-                filters["special_id"] = special.id
+                filters["special"] = special
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
