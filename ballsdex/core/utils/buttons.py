@@ -7,8 +7,10 @@ class ConfirmChoiceView(View):
         super().__init__(timeout=90)
         self.value = None
         self.interaction = interaction
+        self.interaction_response: discord.Interaction
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        self.interaction_response = interaction
         if interaction.user != self.interaction.user:
             await interaction.response.send_message(
                 "Only the original author can use this.", ephemeral=True

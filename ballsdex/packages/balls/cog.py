@@ -18,6 +18,7 @@ from ballsdex.core.models import (
     TradeObject,
     balls,
 )
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
@@ -501,30 +502,44 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 "Please try again later."
             )
             return
+        if countryball.favorite:
+            view = ConfirmChoiceView(interaction)
+            await interaction.response.send_message(
+                f"This {settings.collectible_name} is a favorite, "
+                "are you sure you want to trade it?",
+                view=view,
+                ephemeral=True,
+            )
+            await view.wait()
+            if not view.value:
+                return
+            interaction = view.interaction_response
+        else:
+            await interaction.response.defer()
         await countryball.lock_for_trade()
         new_player, _ = await Player.get_or_create(discord_id=user.id)
         old_player = countryball.player
 
         if new_player == old_player:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"You cannot give a {settings.collectible_name} to yourself."
             )
             await countryball.unlock()
             return
         if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "This player does not accept donations. You can use trades instead."
             )
             await countryball.unlock()
             return
         if new_player.discord_id in self.bot.blacklist:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You cannot donate to a blacklisted user", ephemeral=True
             )
             await countryball.unlock()
             return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
                 f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)}!\n"
                 "Do you accept this donation?",
@@ -543,7 +558,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         cb_txt = countryball.description(
             short=True, include_emoji=True, bot=self.bot, is_trade=True
         )
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!"
         )
         await countryball.unlock()
