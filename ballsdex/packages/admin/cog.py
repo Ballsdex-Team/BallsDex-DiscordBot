@@ -437,7 +437,9 @@ class Admin(commands.GroupCog):
                 "@original", content="Spawn bomb seems to have timed out."  # type: ignore
             )
 
-        await interaction.response.send_message(f"Starting spawn bomb in {channel.mention}...")
+        await interaction.response.send_message(
+            f"Starting spawn bomb in {channel.mention}...", ephemeral=True
+        )
         task = self.bot.loop.create_task(update_message_loop())
         try:
             for i in range(n):
@@ -508,6 +510,12 @@ class Admin(commands.GroupCog):
             await self._spawn_bomb(
                 interaction, countryball, channel or interaction.channel, n  # type: ignore
             )
+            await log_action(
+                f"{interaction.user} spawned {settings.collectible_name}"
+                f" {countryball or 'random'} {n} times in {channel or interaction.channel}.",
+                self.bot,
+            )
+
             return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
