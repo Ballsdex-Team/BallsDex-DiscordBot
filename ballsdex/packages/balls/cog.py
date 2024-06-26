@@ -422,7 +422,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         file.close()
 
     @app_commands.command()
-    async def favorite(self, interaction: discord.Interaction, countryball: BallInstanceTransform):
+    async def favorite(
+        self,
+        interaction: discord.Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
+    ):
         """
         Set favorite countryballs.
 
@@ -430,6 +436,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         countryball: BallInstance
             The countryball you want to set/unset as favorite
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
