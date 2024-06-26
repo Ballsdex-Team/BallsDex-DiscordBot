@@ -499,7 +499,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if countryball.favorite:
             view = ConfirmChoiceView(interaction)
-            await interaction.followup.send(
+            await interaction.response.send_message(
                 f"This {settings.collectible_name} is a favorite, "
                 "are you sure you want to trade it?",
                 view=view,
@@ -508,6 +508,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             await view.wait()
             if not view.value:
                 return
+            interaction = view.interaction_response
+        else:
+            await interaction.response.defer()
         await countryball.lock_for_trade()
         new_player, _ = await Player.get_or_create(discord_id=user.id)
         old_player = countryball.player
