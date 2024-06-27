@@ -1564,7 +1564,9 @@ class Admin(commands.GroupCog):
             name=f"Amount of Users who caught {settings.collectible_name} ({days} days)",
             value=len(set([x.player.discord_id for x in total_server_balls])),
         )
-        embed.set_thumbnail(url=guild.icon.url)  # type: ignore
+
+        if guild.icon:
+            embed.set_thumbnail(url=guild.icon.url)
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     @info.command()
