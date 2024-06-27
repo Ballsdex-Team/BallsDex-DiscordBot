@@ -113,7 +113,7 @@ class CommandTree(app_commands.CommandTree):
             log.warning(
                 f"Skipping interaction {interaction.id}, running {delta.total_seconds()}s late."
             )
-            # return False
+            return False
 
         bot = interaction.client
         if not bot.is_ready():
