@@ -1,3 +1,5 @@
+import enum
+
 DONATION_POLICY_MAP = {
     1: "Accept all donations",
     2: "Approve donations",
@@ -5,3 +7,11 @@ DONATION_POLICY_MAP = {
 }
 
 PRIVATE_POLICY_MAP = {1: "Public", 2: "Private", 3: "Mutual Servers"}
+
+
+class RarityTiers(enum.Enum):
+    legendary = "Legendary"
+    epic = "Epic"
+    rare = "Rare"
+    uncommon = "Uncommon"
+    common = "Common"

@@ -58,6 +58,7 @@ class Settings:
     collectible_name: str = "countryball"
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
+    currency_name: str = "coins"
 
     max_favorites: int = 50
 
@@ -82,6 +83,8 @@ class Settings:
     prometheus_enabled: bool = False
     prometheus_host: str = "0.0.0.0"
     prometheus_port: int = 15260
+
+    rarities: dict[str, dict[str, int]] = field(default_factory=dict)
 
 
 settings = Settings()
@@ -118,6 +121,8 @@ def read_settings(path: "Path"):
     settings.prometheus_port = content["prometheus"]["port"]
 
     settings.max_favorites = content.get("max-favorites", 50)
+
+    settings.rarities = content.get("rarities", {})
     log.info("Settings loaded.")
 
 
@@ -160,6 +165,8 @@ bot-name: BallsDex
 # this is /balls by default, but you can change it for /animals or /rocks for example
 players-group-cog-name: balls
 
+currency-name: coins
+
 # enables the /admin command
 admin-command:
 
@@ -187,6 +194,23 @@ owners:
 
   # a list of IDs that must be considered owners in addition to the application/team owner
   co-owners:
+
+rarities:
+  legendary:
+    rarity: 0.08
+    coins: 200
+  epic:
+    rarity: 0.2
+    coins: 100
+  rare:
+    rarity: 0.5
+    coins: 50
+  uncommon:
+    rarity: 0.7
+    coins: 30
+  common:
+    rarity: 1
+    coins: 20
 
 # prometheus metrics collection, leave disabled if you don't know what this is
 prometheus:

@@ -64,8 +64,10 @@ class Translator(app_commands.Translator):
             TranslationContextLocation.other,
         ):
             return None
-        return string.message.replace("countryball", settings.collectible_name).replace(
-            "BallsDex", settings.bot_name
+        return (
+            string.message.replace("countryball", settings.collectible_name)
+            .replace("BallsDex", settings.bot_name)
+            .replace("coins", settings.currency_name)
         )
 
 
@@ -111,7 +113,7 @@ class CommandTree(app_commands.CommandTree):
             log.warning(
                 f"Skipping interaction {interaction.id}, running {delta.total_seconds()}s late."
             )
-            return False
+            # return False
 
         bot = interaction.client
         if not bot.is_ready():

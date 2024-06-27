@@ -30,6 +30,16 @@ class Player(commands.GroupCog):
             ]._Parameter__parent.choices.pop()  # type: ignore
 
     @app_commands.command()
+    async def balance(self, interaction: discord.Interaction):
+        """
+        Check your balance.
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        await interaction.response.send_message(
+            f"You have {player.coins} {settings.currency_name}.", ephemeral=True
+        )
+
+    @app_commands.command()
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Open Inventory", value=PrivacyPolicy.ALLOW),

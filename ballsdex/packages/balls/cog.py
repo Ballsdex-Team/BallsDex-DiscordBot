@@ -621,6 +621,44 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"{country}{settings.collectible_name}{plural}{guild}."
         )
 
+    @app_commands.command()
+    async def dispose(self, interaction: discord.Interaction, ball: BallInstanceTransform):
+        """Dispose a countryball for coins.
+
+        Parameters
+        ----------
+        ball: BallInstance
+            The countryball you want to dispose of."""
+        if not ball:
+            return
+        if ball.countryball.enabled or not ball.is_tradeable:
+            await interaction.response.send_message(
+                f"You cannot dispose of this {settings.collectible_name}.", ephemeral=True
+            )
+            return
+        await interaction.response.defer()
+        coins = ball.countryball.coin_amount // 2
+        view = ConfirmChoiceView(interaction)
+        await interaction.response.send_message(
+            f"Are you sure you want to dispose of the {settings.collectible_name} "
+            f"{ball.description(include_emoji=True, bot=self.bot)} "
+            f"for {coins} {settings.currency_name}?",
+            view=view,
+            ephemeral=True,
+        )
+        await view.wait()
+        if not view.value:
+            return
+        player = await Player.get(discord_id=interaction.user.id)
+        await player.add_coins(coins)
+        message = (
+            f"You disposed of the {settings.collectible_name} "
+            f"{ball.description(include_emoji=True, bot=self.bot)} "
+            f"for {coins} {settings.currency_name}."
+        )
+        await ball.delete()
+        await interaction.followup.send(message)
+
 
 async def inventory_privacy(
     bot: "BallsDexBot",
