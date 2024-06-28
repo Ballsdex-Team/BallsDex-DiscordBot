@@ -50,10 +50,13 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         # TODO: use lock
         if self.ball.catched:
-            await interaction.response.send_message(
-                f"{interaction.user.mention} I was caught already!"
-            )
-            return
+            if settings.mention_user:
+                message = f"{interaction.user.mention} {settings.caught_already}"
+            else:
+                message = settings.caught_already
+
+            await interaction.response.send_message(message)
+
         if self.ball.model.catch_names:
             possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
         else:
@@ -72,18 +75,33 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 special += f"*{ball.specialcard.catch_phrase}*\n"
             if has_caught_before:
                 special += (
-                    f"This is a **new {settings.collectible_name}** "
-                    "that has been added to your completion!"
+                    f"{settings.new_comp.format(collectible_name=settings.collectible_name)}"
                 )
-            await interaction.followup.send(
-                f"{interaction.user.mention} You caught **{self.ball.name}!** "
-                f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
-                f"{special}"
-            )
+            if settings.mention_user:
+                message = (
+                    f"{interaction.user.mention} "
+                    f"{settings.you_caught.format(ball_name=self.ball.name)}"
+                    f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
+                    f"{special}"
+                )
+            else:
+                message = (
+                    f"{settings.you_caught.format(ball_name=self.ball.name)}"
+                    f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
+                    f"{special}"
+                )
+
+            await interaction.followup.send(message)
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
-            await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
+            if self.ball.catched:
+                if settings.mention_user:
+                    message = f"{interaction.user.mention} {settings.wrong_name}"
+                else:
+                    message = settings.wrong_name
+
+                await interaction.response.send_message(message)
 
     async def catch_ball(
         self, bot: "BallsDexBot", user: discord.Member
@@ -149,7 +167,7 @@ class CatchButton(Button):
 
     async def callback(self, interaction: discord.Interaction):
         if self.ball.catched:
-            await interaction.response.send_message("I was caught already!", ephemeral=True)
+            await interaction.response.send_message(f"{settings.caught_already}", ephemeral=True)
         else:
             await interaction.response.send_modal(CountryballNamePrompt(self.ball, self))
 
