@@ -93,7 +93,7 @@ def read_settings(path: "Path"):
     settings.bot_token = content["discord-token"]
     settings.gateway_url = content.get("gateway-url")
     settings.shard_count = content.get("shard-count")
-    settings.prefix = content["text-prefix"]
+    settings.prefix = str(content.get("text-prefix") or "b.")
     settings.team_owners = content.get("owners", {}).get("team-members-are-owners", False)
     settings.co_owners = content.get("owners", {}).get("co-owners", [])
 
