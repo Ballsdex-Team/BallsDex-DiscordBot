@@ -63,6 +63,36 @@
             "description": "Name of the slash command managing the collectibles (list, info, completion...). Do not add a leading slash!",
             "example": "balls"
         },
+        "wild-phrase": {
+            "type": "string",
+            "description": "The phrase used when a collectible spawns",
+            "example": "A wild {collectible_name} appeared!"
+        },
+        "wrong-name": {
+            "type": "string",
+            "description": "The phrase used when a user enters the wrong name for that collectible",
+            "example": "Wrong name!"
+        },
+        "you-caught": {
+            "type": "string",
+            "description": "The phrase used when a user catch a ball",
+            "example": "You caught {ball_name}!"
+        },
+        "new-comp": {
+            "type": "string",
+            "description": "The phrase used when a user caught a new collectible",
+            "example": "This is a **new {collectible_name}** that has been added to your completion!"
+        },
+        "caught-already": {
+            "type": "string",
+            "description": "The phrase used when a ball is caught already",
+            "example": "I was caught already!"
+        },
+        "mention-user": {
+            "type": "boolean",
+            "description": "An option to choose if wrong_name new_comp and caught_already should mention user",
+            "default": true
+        },
         "admin-command": {
             "type": "object",
             "description": "Manages access to the admin command",
