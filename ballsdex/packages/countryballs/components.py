@@ -75,9 +75,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 special += f"*{ball.specialcard.catch_phrase}*\n"
             if has_caught_before:
                 completion_phrase = settings.new_completion_phrase.format(
-                        collectible_name=settings.collectible_name
+                    collectible_name=settings.collectible_name
                 )
-    
                 special += f"{completion_phrase}"
             if settings.mention_user:
                 message = (
