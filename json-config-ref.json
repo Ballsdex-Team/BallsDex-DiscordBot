@@ -68,22 +68,22 @@
             "description": "The phrase used when a collectible spawns",
             "example": "A wild {collectible_name} appeared!"
         },
-        "wrong-name": {
+        "wrong-name-phrase": {
             "type": "string",
             "description": "The phrase used when a user enters the wrong name for that collectible",
             "example": "Wrong name!"
         },
-        "you-caught": {
+        "you-caught-phrase": {
             "type": "string",
             "description": "The phrase used when a user catch a ball",
             "example": "You caught {ball_name}!"
         },
-        "new-comp": {
+        "new-comp-phrase": {
             "type": "string",
             "description": "The phrase used when a user caught a new collectible",
             "example": "This is a **new {collectible_name}** that has been added to your completion!"
         },
-        "caught-already": {
+        "caught-already-phrase": {
             "type": "string",
             "description": "The phrase used when a ball is caught already",
             "example": "I was caught already!"
