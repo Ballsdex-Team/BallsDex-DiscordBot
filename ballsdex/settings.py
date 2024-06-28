@@ -50,13 +50,13 @@ class Settings:
         List of roles that have partial access to the /admin command (only blacklist and guilds)
     wild_phrase: str
         The phrase used when a collectible spawns
-    wrong_name: str
+    wrong_name_phrase: str
         The phrase used when a user enters the wrong name for that collectible
-    you_caught: str
+    you_caught_phrase: str
         The phrase used when a user catch a ball
-    new_comp: str = ""
+    new_completion_phrase: str = ""
         The phrase used when a user caught a new collectible
-    caught_already: str
+    caught_already_phrase: str
         The phrase used when the collectible is caught already
     mention_user: bool
         An option to choose if wrong_name new_comp and caught_already should mention user
@@ -71,10 +71,10 @@ class Settings:
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
     wild_phrase: str = ""
-    wrong_name: str = ""
-    you_caught: str = ""
-    new_comp: str = ""
-    caught_already: str = ""
+    wrong_name_phrase: str = ""
+    you_caught_phrase: str = ""
+    new_completion_phrase: str = ""
+    caught_already_phrase: str = ""
     mention_user: bool = True
 
     max_favorites: int = 50
@@ -119,12 +119,13 @@ def read_settings(path: "Path"):
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
     settings.wild_phrase = content.get("wild-phrase", "")
-    settings.wrong_name = content.get("wrong-name", "Wrong name!")
-    settings.you_caught = content.get("you-caught", "You caught {ball_name}!")
-    settings.new_comp = content.get(
-        "new-comp", "This is a **new {collectible_name}** that has been added to your completion!"
+    settings.wrong_name_phrase = content.get("wrong-name-phrase", "Wrong name!")
+    settings.you_caught_phrase = content.get("you-caught-phrase", "You caught {ball_name}!")
+    settings.new_completion_phrase = content.get(
+        "new-completion-phrase",
+        "This is a **new {collectible_name}** that has been added to your completion!",
     )
-    settings.caught_already = content.get("caught-already", "I was caught already!")
+    settings.caught_already_phrase = content.get("caught-already", "I was caught already!")
     settings.mention_user = bool(content.get("mention-user", True))
 
     settings.about_description = content["about"]["description"]
@@ -191,19 +192,19 @@ players-group-cog-name: balls
 wild-phrase: A wild {collectible_name} appeared!
 
 # override the phrase "Wrong name!"
-wrong-name: Wrong name!
+wrong-name-phrase: Wrong name!
 
 # override the phrase "You caught {ball_name}!"
 # NOTE THAT you MUST include {ball_name} somewhere in the phrase
-you-caught: You caught {ball_name}!
+you-caught-phrase: You caught {ball_name}!
 
-# override the phrase 
+# ↓↓↓↓↓↓↓↓↓↓↓↓↓↓ override the phrase ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 # "This is a **new {collectible_name}** that has been added to your completion!"
 # NOTE THAT you MUST include {collectible_name} somewhere in the phrase
-new-comp: This is a **new {collectible_name}** that has been added to your completion!
+new-completion-phrase: This is a **new {collectible_name}** that has been added to your completion!
 
 # override the phrase "I was caught already!"
-caught-already: I was caught already!
+caught-already-phrase: I was caught already!
 
 # this is an option if it should mention the user in those phrases or not
 # it will only show up first then the phrase
