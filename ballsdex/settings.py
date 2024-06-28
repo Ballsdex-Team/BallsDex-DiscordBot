@@ -197,7 +197,8 @@ wrong-name: Wrong name!
 # NOTE THAT you MUST include {ball_name} somewhere in the phrase
 you-caught: You caught {ball_name}!
 
-# override the phrase "This is a **new {collectible_name}** that has been added to your completion!"
+# override the phrase 
+# "This is a **new {collectible_name}** that has been added to your completion!"
 # NOTE THAT you MUST include {collectible_name} somewhere in the phrase
 new-comp: This is a **new {collectible_name}** that has been added to your completion!
 
