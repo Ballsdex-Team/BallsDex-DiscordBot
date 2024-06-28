@@ -51,9 +51,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         # TODO: use lock
         if self.ball.catched:
             if settings.mention_user:
-                message = f"{interaction.user.mention} {settings.caught_already}"
+                message = f"{interaction.user.mention} {settings.caught_already_phrase}"
             else:
-                message = settings.caught_already
+                message = settings.caught_already_phrase
 
             await interaction.response.send_message(message)
 
@@ -74,19 +74,17 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
             if has_caught_before:
-                special += (
-                    f"{settings.new_comp.format(collectible_name=settings.collectible_name)}"
-                )
+                special += f"{settings.new_completion_phrase.format(collectible_name=settings.collectible_name)}"
             if settings.mention_user:
                 message = (
                     f"{interaction.user.mention} "
-                    f"{settings.you_caught.format(ball_name=self.ball.name)}"
+                    f"{settings.you_caught_phrase.format(ball_name=self.ball.name)}"
                     f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
                     f"{special}"
                 )
             else:
                 message = (
-                    f"{settings.you_caught.format(ball_name=self.ball.name)}"
+                    f"{settings.you_caught_phrase.format(ball_name=self.ball.name)}"
                     f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
                     f"{special}"
                 )
@@ -97,9 +95,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         else:
             if self.ball.catched:
                 if settings.mention_user:
-                    message = f"{interaction.user.mention} {settings.wrong_name}"
+                    message = f"{interaction.user.mention} {settings.wrong_name_phrase}"
                 else:
-                    message = settings.wrong_name
+                    message = settings.wrong_name_phrase
 
                 await interaction.response.send_message(message)
 
@@ -167,7 +165,9 @@ class CatchButton(Button):
 
     async def callback(self, interaction: discord.Interaction):
         if self.ball.catched:
-            await interaction.response.send_message(f"{settings.caught_already}", ephemeral=True)
+            await interaction.response.send_message(
+                f"{settings.caught_already_phrase}", ephemeral=True
+            )
         else:
             await interaction.response.send_modal(CountryballNamePrompt(self.ball, self))
 
