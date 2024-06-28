@@ -13,11 +13,7 @@ import discord
 import discord.gateway
 from cachetools import TTLCache
 from discord import app_commands
-from discord.app_commands.translator import (
-    TranslationContextLocation,
-    TranslationContextTypes,
-    locale_str,
-)
+from discord.app_commands.translator import TranslationContextTypes, locale_str
 from discord.enums import Locale
 from discord.ext import commands
 from prometheus_client import Histogram
@@ -59,11 +55,6 @@ class Translator(app_commands.Translator):
     async def translate(
         self, string: locale_str, locale: Locale, context: TranslationContextTypes
     ) -> str | None:
-        if context.location in (
-            TranslationContextLocation.choice_name,
-            TranslationContextLocation.other,
-        ):
-            return None
         return string.message.replace("countryball", settings.collectible_name).replace(
             "BallsDex", settings.bot_name
         )

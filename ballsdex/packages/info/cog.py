@@ -5,6 +5,11 @@ from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
+from discord.app_commands.translator import (
+    TranslationContext,
+    TranslationContextLocation,
+    locale_str,
+)
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
@@ -133,7 +138,12 @@ class Info(commands.Cog):
                 continue
             content = ""
             for app_command in cog.walk_app_commands():
-                content += f"{mention_app_command(app_command)}: {app_command.description}\n"
+                translated = await self.bot.tree.translator.translate(  # type: ignore
+                    locale_str(app_command.description),
+                    interaction.locale,
+                    TranslationContext(TranslationContextLocation.other, None),
+                )
+                content += f"{mention_app_command(app_command)}: {translated}\n"
             if not content:
                 continue
             embed.add_field(name=cog.qualified_name, value=content, inline=False)
