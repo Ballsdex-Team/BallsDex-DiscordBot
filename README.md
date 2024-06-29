@@ -13,7 +13,7 @@ You can invite the official bot [here](https://discord.com/api/oauth2/authorize?
 
 ## Discord server
 
-For help installing the bot, suggestions to improve or contribtions, feel free to join the official community of developers and self-hosters!
+For help installing the bot, suggestions to improve or contributions, feel free to join the official community of developers and self-hosters!
 
 [![Discord server](https://discord.com/api/guilds/1255250024741212262/embed.png?style=banner3)](https://discord.gg/PKKhee4fvy)
 
