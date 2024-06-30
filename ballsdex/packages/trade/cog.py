@@ -342,3 +342,72 @@ class Trade(commands.GroupCog):
         source = TradeViewFormat(history, interaction.user.name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start()
+
+    @app_commands.command()
+    async def add_coins(self, interaction: discord.Interaction, amount: int):
+        """
+        Add coins to your trade proposal
+        """
+        trade, trader = self.get_trade(interaction)
+        if trader.locked:
+            await interaction.response.send_message(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return
+        if amount <= 0:
+            await interaction.response.send_message(
+                "The amount to add must be positive.", ephemeral=True
+            )
+            return
+
+        if trade and trader:
+            if amount > await trader.fetch_player_coins():
+                await interaction.response.send_message(
+                    f"You don't have enough {settings.currency_name} to add that amount.",
+                    ephemeral=True,
+                )
+            else:
+                await trader.add_coins(amount)
+                await interaction.response.send_message(
+                    f"Added {amount} {settings.currency_name} to your proposal.", ephemeral=True
+                )
+        else:
+            await interaction.response.send_message(
+                "Unable to find ongoing trade.", ephemeral=True
+            )
+
+    @app_commands.command()
+    async def remove_coins(self, interaction: discord.Interaction, amount: int):
+        """
+        Remove coins from your trade proposal
+        """
+        trade, trader = self.get_trade(interaction)
+        if trader.locked:
+            await interaction.response.send_message(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return
+        if amount < 0:
+            await interaction.response.send_message(
+                "The amount to remove must be positive.", ephemeral=True
+            )
+            return
+        if trade and trader:
+            if amount > trader.coins:
+                await interaction.response.send_message(
+                    f"You can't remove more {settings.currency_name} than are in your proposal.",
+                    ephemeral=True,
+                )
+                return
+            await trader.remove_coins(amount)
+            await interaction.response.send_message(
+                f"Removed {amount} {settings.currency_name} from your proposal.", ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(
+                "Unable to find ongoing trade.", ephemeral=True
+            )

@@ -6,6 +6,7 @@ from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.trade.trade_user import TradingUser
+from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -110,13 +111,13 @@ def fill_trade_embed_fields(
 
     # then display the text. first page is easy
     embed.add_field(
-        name=f"{_get_prefix_emote(trader1)} {trader1.user.name}",
-        value=trader1_proposal[0],
+        name=f"{_get_prefix_emote(trader1)} {trader1.user.name}\n",
+        value=f"**{trader1.coins} {settings.currency_name}**\n\n{trader1.proposal[0] if trader1.proposal else 'Empty'}",
         inline=True,
     )
     embed.add_field(
-        name=f"{_get_prefix_emote(trader2)} {trader2.user.name}",
-        value=trader2_proposal[0],
+        name=f"{_get_prefix_emote(trader2)} {trader2.user.name}\n",
+        value=f"**{trader2.coins} {settings.currency_name}**\n\n{trader2.proposal[0] if trader2.proposal else 'Empty'}",
         inline=True,
     )
 
