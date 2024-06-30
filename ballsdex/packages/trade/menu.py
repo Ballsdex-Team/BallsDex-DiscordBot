@@ -74,11 +74,6 @@ class TradeView(View):
             for countryball in trader.proposal:
                 await countryball.unlock()
             trader.proposal.clear()
-
-            if trader.coins > 0:
-                await trader.player.add_coins(trader.coins)
-                trader.coins = 0
-
             await interaction.response.send_message("Proposal cleared.", ephemeral=True)
 
     @button(
@@ -153,8 +148,6 @@ class TradeMenu:
         self.channel: discord.TextChannel = cast(discord.TextChannel, interaction.channel)
         self.trader1 = trader1
         self.trader2 = trader2
-        self.initial_coins_trader1 = trader1.coins
-        self.initial_coins_trader2 = trader2.coins
         self.embed = discord.Embed()
         self.task: asyncio.Task | None = None
         self.current_view: TradeView | ConfirmView = TradeView(self)
@@ -170,16 +163,12 @@ class TradeMenu:
     def _generate_embed(self):
         add_command = self.cog.add.extras.get("mention", "`/trade add`")
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
-        add_coins_command = self.cog.add_coins.extras.get("mention", "`/trade add_coins`")
-        remove_coins_command = self.cog.remove_coins.extras.get("mention", "`/trade remove_coins`")
 
         self.embed.title = f"{settings.collectible_name.title()}s trading"
         self.embed.color = discord.Colour.blurple()
         self.embed.description = (
             f"Add or remove {settings.collectible_name}s you want to propose to the other player "
             f"using the {add_command} and {remove_command} commands.\n"
-            "You can also add or remove coins using the "
-            f"{add_coins_command} and {remove_coins_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*You have 30 minutes before this interaction ends.*"
@@ -191,34 +180,31 @@ class TradeMenu:
 
     async def update_message_loop(self):
         """
-        A loop task that updates each 5 seconds the menu with the new content.
+        A loop task that updates each 5 second the menu with the new content.
         """
+
         assert self.task
         start_time = datetime.utcnow()
-        trade_timed_out = False
 
         while True:
             await asyncio.sleep(15)
-            elapsed_time = datetime.utcnow() - start_time
-            if elapsed_time > timedelta(minutes=30):
-                trade_timed_out = True
-                break
+            if datetime.utcnow() - start_time > timedelta(minutes=15):
+                self.embed.colour = discord.Colour.dark_red()
+                await self.cancel("The trade timed out")
+                return
 
             try:
                 fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
                 await self.message.edit(embed=self.embed)
-
             except Exception:
                 log.exception(
                     "Failed to refresh the trade menu "
                     f"guild={self.message.guild.id} "  # type: ignore
                     f"trader1={self.trader1.user.id} trader2={self.trader2.user.id}"
                 )
-                await self.cancel("The trade interaction failed due to an error.")
+                self.embed.colour = discord.Colour.dark_red()
+                await self.cancel("The trade timed out")
                 return
-
-        if trade_timed_out:
-            await self.handle_trade_timeout()
 
     async def start(self):
         """
@@ -243,12 +229,6 @@ class TradeMenu:
 
         for countryball in self.trader1.proposal + self.trader2.proposal:
             await countryball.unlock()
-
-        self.trader1.player.coins += self.trader1.coins
-        self.trader2.player.coins += self.trader2.coins
-
-        await self.trader1.player.save()
-        await self.trader2.player.save()
 
         self.current_view.stop()
         for item in self.current_view.children:
@@ -318,14 +298,6 @@ class TradeMenu:
             await countryball.unlock()
             await countryball.save()
 
-        self.trader1.player.coins -= self.trader1.coins
-        self.trader2.player.coins += self.trader1.coins
-        self.trader2.player.coins -= self.trader2.coins
-        self.trader1.player.coins += self.trader2.coins
-
-        await self.trader1.player.save()
-        await self.trader2.player.save()
-
     async def confirm(self, trader: TradingUser) -> bool:
         """
         Mark a user's proposal as accepted. If both user accept, end the trade now
@@ -364,17 +336,3 @@ class TradeMenu:
 
         await self.message.edit(content=None, embed=self.embed, view=self.current_view)
         return result
-
-    async def handle_trade_timeout(self):
-        """
-        Handle the timeout of the trade interaction.
-        Refund coins if the trade has not been concluded.
-        """
-        if not self.trader1.accepted or not self.trader2.accepted:
-            self.trader1.player.coins += self.trader1.coins
-            self.trader2.player.coins += self.trader2.coins
-
-            await self.trader1.player.save()
-            await self.trader2.player.save()
-
-            await self.cancel("The trade interaction timed out. Coins have been refunded.")
