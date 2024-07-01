@@ -112,7 +112,7 @@ def fill_trade_embed_fields(
     # then display the text. first page is easy
     embed.add_field(
         name=f"{_get_prefix_emote(trader1)} {trader1.user.name}\n",
-        value = (
+        value=(
             f"**{trader1.coins} {settings.currency_name}**\n\n"
             f"{trader1.proposal[0] if trader1.proposal else 'Empty'}"
         ),
@@ -120,7 +120,7 @@ def fill_trade_embed_fields(
     )
     embed.add_field(
         name=f"{_get_prefix_emote(trader2)} {trader2.user.name}\n",
-        value= (
+        value=(
             f"**{trader2.coins} {settings.currency_name}**\n\n"
             f"{trader2.proposal[0] if trader2.proposal else 'Empty'}",
         ),
