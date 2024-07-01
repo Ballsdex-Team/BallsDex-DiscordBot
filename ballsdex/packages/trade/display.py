@@ -115,7 +115,7 @@ def fill_trade_embed_fields(
         value = (
             f"**{trader1.coins} {settings.currency_name}**\n\n"
             f"{trader1.proposal[0] if trader1.proposal else 'Empty'}"
-        )
+        ),
         inline=True,
     )
     embed.add_field(
@@ -123,7 +123,7 @@ def fill_trade_embed_fields(
         value= (
             f"**{trader2.coins} {settings.currency_name}**\n\n"
             f"{trader2.proposal[0] if trader2.proposal else 'Empty'}",
-        )
+        ),
         inline=True,
     )
 
