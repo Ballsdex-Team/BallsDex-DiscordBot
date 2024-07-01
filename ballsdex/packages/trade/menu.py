@@ -74,6 +74,11 @@ class TradeView(View):
             for countryball in trader.proposal:
                 await countryball.unlock()
             trader.proposal.clear()
+
+            if trader.coins > 0:
+                await trader.player.add_coins(trader.coins)
+                trader.coins = 0
+
             await interaction.response.send_message("Proposal cleared.", ephemeral=True)
 
     @button(
@@ -148,6 +153,8 @@ class TradeMenu:
         self.channel: discord.TextChannel = cast(discord.TextChannel, interaction.channel)
         self.trader1 = trader1
         self.trader2 = trader2
+        self.initial_coins_trader1 = trader1.coins
+        self.initial_coins_trader2 = trader2.coins
         self.embed = discord.Embed()
         self.task: asyncio.Task | None = None
         self.current_view: TradeView | ConfirmView = TradeView(self)
@@ -163,12 +170,16 @@ class TradeMenu:
     def _generate_embed(self):
         add_command = self.cog.add.extras.get("mention", "`/trade add`")
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
+        add_coins_command = self.cog.add_coins.extras.get("mention", "`/trade add_coins`")
+        remove_coins_command = self.cog.remove_coins.extras.get("mention", "`/trade remove_coins`")
 
         self.embed.title = f"{settings.collectible_name.title()}s trading"
         self.embed.color = discord.Colour.blurple()
         self.embed.description = (
             f"Add or remove {settings.collectible_name}s you want to propose to the other player "
             f"using the {add_command} and {remove_command} commands.\n"
+            "You can also add or remove coins using the "
+            f"{add_coins_command} and {remove_coins_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*You have 30 minutes before this interaction ends.*"
@@ -180,7 +191,7 @@ class TradeMenu:
 
     async def update_message_loop(self):
         """
-        A loop task that updates each 5 second the menu with the new content.
+        A loop task that updates each 5 seconds the menu with the new content.
         """
 
         assert self.task
