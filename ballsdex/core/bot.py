@@ -5,7 +5,7 @@ import inspect
 import logging
 import math
 import types
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
@@ -33,16 +33,13 @@ from ballsdex.core.models import (
     BlacklistedGuild,
     BlacklistedID,
     Economy,
-    Player,
     Regime,
     Special,
-    Trade,
     balls,
     economies,
     regimes,
     specials,
 )
-from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
