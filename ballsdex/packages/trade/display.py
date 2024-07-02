@@ -122,7 +122,7 @@ def fill_trade_embed_fields(
         name=f"{_get_prefix_emote(trader2)} {trader2.user.name}\n",
         value=(
             f"**{trader2.coins} {settings.currency_name}**\n\n"
-            f"{trader2.proposal[0] if trader2.proposal else 'Empty'}",
+            f"{trader2.proposal[0] if trader2.proposal else 'Empty'}"
         ),
         inline=True,
     )

@@ -170,8 +170,8 @@ class TradeMenu:
     def _generate_embed(self):
         add_command = self.cog.add.extras.get("mention", "`/trade add`")
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
-        add_coins_command = self.cog.add_coins.extras.get("mention", "`/trade add_coins`")
-        remove_coins_command = self.cog.remove_coins.extras.get("mention", "`/trade remove_coins`")
+        add_coins_command = self.cog.coins_add.extras.get("mention", "`/trade coins_add`")
+        remove_coins_command = self.cog.coins_remove.extras.get("mention", "`/trade coins_remove`")
 
         self.embed.title = f"{settings.collectible_name.title()}s trading"
         self.embed.color = discord.Colour.blurple()
@@ -241,6 +241,12 @@ class TradeMenu:
         for countryball in self.trader1.proposal + self.trader2.proposal:
             await countryball.unlock()
 
+        self.trader1.player.coins += self.trader1.coins
+        self.trader2.player.coins += self.trader2.coins
+
+        await self.trader1.player.save()
+        await self.trader2.player.save()
+
         self.current_view.stop()
         for item in self.current_view.children:
             item.disabled = True  # type: ignore
@@ -283,7 +289,6 @@ class TradeMenu:
         for countryball in self.trader1.proposal:
             await countryball.refresh_from_db()
             if countryball.player.discord_id != self.trader1.player.discord_id:
-                # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
             countryball.player = self.trader2.player
             countryball.trade_player = self.trader1.player
@@ -294,6 +299,7 @@ class TradeMenu:
             )
 
         for countryball in self.trader2.proposal:
+            await countryball.refresh_from_db()
             if countryball.player.discord_id != self.trader2.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
@@ -308,6 +314,20 @@ class TradeMenu:
         for countryball in valid_transferable_countryballs:
             await countryball.unlock()
             await countryball.save()
+
+        if (
+            self.trader1.player.coins < self.trader1.coins
+            or self.trader2.player.coins < self.trader2.coins
+        ):
+            raise InvalidTradeOperation()
+
+        self.trader1.player.coins -= self.trader1.coins
+        self.trader2.player.coins += self.trader1.coins
+        self.trader2.player.coins -= self.trader2.coins
+        self.trader1.player.coins += self.trader2.coins
+
+        await self.trader1.player.save()
+        await self.trader2.player.save()
 
     async def confirm(self, trader: TradingUser) -> bool:
         """
@@ -335,6 +355,7 @@ class TradeMenu:
                 log.warning(f"Illegal trade operation between {self.trader1=} and {self.trader2=}")
                 self.embed.description = (
                     f":warning: An attempt to modify the {settings.collectible_name}s "
+                    f"or {settings.currency_name} "
                     "during the trade was detected and the trade was cancelled."
                 )
                 self.embed.colour = discord.Colour.red()

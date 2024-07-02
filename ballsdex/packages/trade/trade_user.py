@@ -22,11 +22,9 @@ class TradingUser:
 
     async def add_coins(self, amount: int):
         self.coins += amount
-        await self.player.remove_coins(amount)
 
     async def remove_coins(self, amount: int):
         self.coins -= amount
-        await self.player.add_coins(amount)
 
     async def fetch_player_coins(self) -> int:
         player, _ = await Player.get_or_create(discord_id=self.user.id)

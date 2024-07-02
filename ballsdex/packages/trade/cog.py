@@ -36,6 +36,10 @@ class Trade(commands.GroupCog):
         self.bot = bot
         self.trades: dict[int, dict[int, list[TradeMenu]]] = defaultdict(lambda: defaultdict(list))
 
+    coins = app_commands.Group(
+        name=settings.currency_name, description="Trade with other players using coins"
+    )
+
     def get_trade(
         self,
         interaction: discord.Interaction | None = None,
@@ -343,8 +347,8 @@ class Trade(commands.GroupCog):
         pages = Pages(source=source, interaction=interaction)
         await pages.start()
 
-    @app_commands.command()
-    async def add_coins(self, interaction: discord.Interaction, amount: int):
+    @coins.command(name="add")
+    async def coins_add(self, interaction: discord.Interaction, amount: int):
         """
         Add coins to your trade proposal
         """
@@ -386,8 +390,8 @@ class Trade(commands.GroupCog):
                 "Unable to find ongoing trade.", ephemeral=True
             )
 
-    @app_commands.command()
-    async def remove_coins(self, interaction: discord.Interaction, amount: int):
+    @coins.command(name="remove")
+    async def coins_remove(self, interaction: discord.Interaction, amount: int):
         """
         Remove coins from your trade proposal
         """
