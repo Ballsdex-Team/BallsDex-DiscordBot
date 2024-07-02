@@ -1394,7 +1394,7 @@ class Admin(commands.GroupCog):
             app_commands.Choice(name="Oldest", value="date"),
         ]
     )
-    async def history_countryball(
+    async def history_ball(
         self,
         interaction: discord.Interaction["BallsDexBot"],
         countryballid: str,
