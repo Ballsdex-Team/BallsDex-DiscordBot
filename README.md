@@ -13,7 +13,7 @@ You can invite the official bot [here](https://discord.com/api/oauth2/authorize?
 
 ## Discord server
 
-For help installing the bot, suggestions to improve or contributions, feel free to join the official community of developers and self-hosters!
+For help installing the bot, questions, suggestions to improve or contributions, feel free to join the official community of developers and self-hosters!
 
 [![Discord server](https://discord.com/api/guilds/1255250024741212262/embed.png?style=banner3)](https://discord.gg/PKKhee4fvy)
 
@@ -21,9 +21,9 @@ For help installing the bot, suggestions to improve or contributions, feel free 
 > 
 > [![Discord server](https://discord.com/api/guilds/1049118743101452329/embed.png?style=banner2)](https://discord.gg/Qn2Rkdkxwc)
 
-## Suggestions, questions and bug reports
+## Suggestions, issues and bug reports
 
-Our self host support has ended and we no longer maintain a support server. Any bugs or issues can be raised by creating an issue on this repo, support issues will be closed.
+Any bugs, suggestions or issues can be raised by creating an issue on this repo.
 
 ## Documentation
 
