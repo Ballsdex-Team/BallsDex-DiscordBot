@@ -21,9 +21,9 @@ For help installing the bot, questions, suggestions to improve or contributions,
 > 
 > [![Discord server](https://discord.com/api/guilds/1049118743101452329/embed.png?style=banner2)](https://discord.gg/Qn2Rkdkxwc)
 
-## Issues and bug reports
+## Suggestions, issues and bug reports
 
-Any bugs or issues can be raised by creating an issue on this repo.
+Any bugs, suggestions or issues can be raised by creating an issue on this repo.
 
 ## Documentation
 
