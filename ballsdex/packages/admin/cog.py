@@ -1386,7 +1386,7 @@ class Admin(commands.GroupCog):
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
-    @history.command(name="ball")
+    @history.command(name="countryball")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     @app_commands.choices(
         sorting=[
@@ -1397,7 +1397,7 @@ class Admin(commands.GroupCog):
     async def history_ball(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        ballid: str,
+        countryballid: str,
         sorting: app_commands.Choice[str],
         days: Optional[int] = None,
     ):
@@ -1406,7 +1406,7 @@ class Admin(commands.GroupCog):
 
         Parameters
         ----------
-        ballid: str
+        countryballid: str
             The ID of the countryball you want to check the history of.
         sorting: str
             The sorting method you want to use.
@@ -1415,7 +1415,7 @@ class Admin(commands.GroupCog):
         """
 
         try:
-            pk = int(ballid, 16)
+            pk = int(countryballid, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
