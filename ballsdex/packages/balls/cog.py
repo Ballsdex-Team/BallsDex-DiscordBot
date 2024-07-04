@@ -329,7 +329,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         else:
             entries.append(
                 (
-                    f"__**:tada: No missing {settings.collectible_name}, "
+                    f"__**:tada: No missing {settings.collectible_name}s, "
                     "congratulations! :tada:**__",
                     "\u200B",
                 )
