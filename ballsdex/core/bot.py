@@ -4,9 +4,9 @@ import asyncio
 import inspect
 import logging
 import math
+import time
 import types
 from datetime import datetime
-import time
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
