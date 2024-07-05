@@ -210,7 +210,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any {ball_txt} {settings.collectible_name}s yet."
+                    f"{user_obj.name} doesn't have any "
+                    f"{ball_txt} {settings.collectible_name}s yet."
                 )
             return
         if reverse:
