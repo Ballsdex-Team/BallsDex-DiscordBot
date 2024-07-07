@@ -1,338 +1,344 @@
-from __future__ import annotations
-
-import asyncio
-import logging
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, cast
+import datetime
+from collections import defaultdict
+from typing import TYPE_CHECKING, Optional, cast
 
 import discord
-from discord.ui import Button, View, button
+from discord import app_commands
+from discord.ext import commands
+from discord.utils import MISSING
+from tortoise.expressions import Q
 
-from ballsdex.core.models import BallInstance, Trade, TradeObject
-from ballsdex.packages.trade.display import fill_trade_embed_fields
+from ballsdex.core.models import Player
+from ballsdex.core.models import Trade as TradeModel
+from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.transformers import (
+    BallEnabledTransform,
+    BallInstanceTransform,
+    SpecialEnabledTransform,
+    TradeCommandType,
+)
+from ballsdex.packages.trade.display import TradeViewFormat
+from ballsdex.packages.trade.menu import TradeMenu
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
-    from ballsdex.packages.trade.cog import Trade as TradeCog
-
-log = logging.getLogger("ballsdex.packages.trade.menu")
 
 
-class InvalidTradeOperation(Exception):
-    pass
+class Trade(commands.GroupCog):
+    """
+    Trade countryballs with other players.
+    """
 
+    def __init__(self, bot: "BallsDexBot"):
+        self.bot = bot
+        self.trades: dict[int, dict[int, list[TradeMenu]]] = defaultdict(lambda: defaultdict(list))
 
-class TradeView(View):
-    def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=60 * 30)
-        self.trade = trade
+    def get_trade(
+        self,
+        interaction: discord.Interaction | None = None,
+        *,
+        channel: discord.TextChannel | None = None,
+        user: discord.User | discord.Member = MISSING,
+    ) -> tuple[TradeMenu, TradingUser] | tuple[None, None]:
+        """
+        Find an ongoing trade for the given interaction.
 
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
-        try:
-            self.trade._get_trader(interaction.user)
-        except RuntimeError:
-            await interaction.response.send_message(
-                "You are not allowed to interact with this trade.", ephemeral=True
-            )
-            return False
+        Parameters
+        ----------
+        interaction: discord.Interaction
+            The current interaction, used for getting the guild, channel and author.
+
+        Returns
+        -------
+        tuple[TradeMenu, TradingUser] | tuple[None, None]
+            A tuple with the `TradeMenu` and `TradingUser` if found, else `None`.
+        """
+        guild: discord.Guild
+        if interaction:
+            guild = cast(discord.Guild, interaction.guild)
+            channel = cast(discord.TextChannel, interaction.channel)
+            user = interaction.user
+        elif channel:
+            guild = channel.guild
         else:
-            return True
+            raise TypeError("Missing interaction or channel")
 
-    @button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
-    async def lock(self, interaction: discord.Interaction, button: Button):
-        trader = self.trade._get_trader(interaction.user)
-        if trader.locked:
+        if guild.id not in self.trades:
+            return (None, None)
+        if channel.id not in self.trades[guild.id]:
+            return (None, None)
+        to_remove: list[TradeMenu] = []
+        for trade in self.trades[guild.id][channel.id]:
+            if (
+                trade.current_view.is_finished()
+                or trade.trader1.cancelled
+                or trade.trader2.cancelled
+            ):
+                # remove what was supposed to have been removed
+                to_remove.append(trade)
+                continue
+            try:
+                trader = trade._get_trader(user)
+            except RuntimeError:
+                continue
+            else:
+                break
+        else:
+            for trade in to_remove:
+                self.trades[guild.id][channel.id].remove(trade)
+            return (None, None)
+
+        for trade in to_remove:
+            self.trades[guild.id][channel.id].remove(trade)
+        return (trade, trader)
+
+    @app_commands.command()
+    async def begin(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
+        """
+        Begin a trade with the chosen user.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to trade with
+        """
+        if user.bot:
+            await interaction.response.send_message("You cannot trade with bots.", ephemeral=True)
+            return
+        if user.id == interaction.user.id:
             await interaction.response.send_message(
-                "You have already locked your proposal!", ephemeral=True
+                "You cannot trade with yourself.", ephemeral=True
             )
             return
-        await self.trade.lock(trader)
-        if self.trade.trader1.locked and self.trade.trader2.locked:
-            await interaction.response.send_message(
-                "Your proposal has been locked. Now confirm again to end the trade.",
-                ephemeral=True,
-            )
-        else:
-            await interaction.response.send_message(
-                "Your proposal has been locked. "
-                "You can wait for the other user to lock their proposal.",
-                ephemeral=True,
-            )
 
-    @button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
-    async def clear(self, interaction: discord.Interaction, button: Button):
-        trader = self.trade._get_trader(interaction.user)
+        trade1, trader1 = self.get_trade(interaction)
+        trade2, trader2 = self.get_trade(channel=interaction.channel, user=user)  # type: ignore
+        if trade1 or trader1:
+            await interaction.response.send_message(
+                "You already have an ongoing trade.", ephemeral=True
+            )
+            return
+        if trade2 or trader2:
+            await interaction.response.send_message(
+                "The user you are trying to trade with is already in a trade.", ephemeral=True
+            )
+            return
+
+        player1, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        player2, _ = await Player.get_or_create(discord_id=user.id)
+        if player2.discord_id in self.bot.blacklist:
+            await interaction.response.send_message(
+                "You cannot trade with a blacklisted user.", ephemeral=True
+            )
+            return
+
+        menu = TradeMenu(
+            self, interaction, TradingUser(interaction.user, player1), TradingUser(user, player2)
+        )
+        self.trades[interaction.guild.id][interaction.channel.id].append(menu)  # type: ignore
+        await menu.start()
+        await interaction.response.send_message("Trade started!", ephemeral=True)
+
+    @app_commands.command(extras={"trade": TradeCommandType.PICK})
+    async def add(
+        self,
+        interaction: discord.Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
+    ):
+        """
+        Add a countryball to the ongoing trade.
+
+        Parameters
+        ----------
+        countryball: BallInstance
+            The countryball you want to add to your proposal
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
+        """
+        if not countryball:
+            return
+        if not countryball.is_tradeable:
+            await interaction.response.send_message(
+                f"You cannot trade this {settings.collectible_name}.", ephemeral=True
+            )
+            return
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        if countryball.favorite:
+            view = ConfirmChoiceView(interaction)
+            await interaction.followup.send(
+                f"This {settings.collectible_name} is a favorite, "
+                "are you sure you want to trade it?",
+                view=view,
+                ephemeral=True,
+            )
+            await view.wait()
+            if not view.value:
+                return
+
+        trade, trader = self.get_trade(interaction)
+        if not trade or not trader:
+            await interaction.followup.send("You do not have an ongoing trade.", ephemeral=True)
+            return
+        if trader.locked:
+            await interaction.followup.send(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return
+        if countryball in trader.proposal:
+            await interaction.followup.send(
+                f"You already have this {settings.collectible_name} in your proposal.",
+                ephemeral=True,
+            )
+            return
+        if await countryball.is_locked():
+            await interaction.followup.send(
+                f"This {settings.collectible_name} is currently in an active trade or donation, "
+                "please try again later.",
+                ephemeral=True,
+            )
+            return
+
+        await countryball.lock_for_trade()
+        trader.proposal.append(countryball)
+        await interaction.followup.send(
+            f"{countryball.countryball.country} added.", ephemeral=True
+        )
+
+    @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
+    async def remove(
+        self,
+        interaction: discord.Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
+    ):
+        """
+        Remove a countryball from what you proposed in the ongoing trade.
+
+        Parameters
+        ----------
+        countryball: BallInstance
+            The countryball you want to remove from your proposal
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
+        """
+        if not countryball:
+            return
+
+        trade, trader = self.get_trade(interaction)
+        if not trade or not trader:
+            await interaction.response.send_message(
+                "You do not have an ongoing trade.", ephemeral=True
+            )
+            return
         if trader.locked:
             await interaction.response.send_message(
                 "You have locked your proposal, it cannot be edited! "
                 "You can click the cancel button to stop the trade instead.",
                 ephemeral=True,
             )
-        else:
-            for countryball in trader.proposal:
-                await countryball.unlock()
-            trader.proposal.clear()
-            await interaction.response.send_message("Proposal cleared.", ephemeral=True)
-
-    @button(
-        label="Cancel trade",
-        emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
-        style=discord.ButtonStyle.danger,
-    )
-    async def cancel(self, interaction: discord.Interaction, button: Button):
-        await self.trade.user_cancel(self.trade._get_trader(interaction.user))
-        await interaction.response.send_message("Trade has been cancelled.", ephemeral=True)
-
-
-class ConfirmView(View):
-    def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=90)
-        self.trade = trade
-
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
-        try:
-            self.trade._get_trader(interaction.user)
-        except RuntimeError:
+            return
+        if countryball not in trader.proposal:
             await interaction.response.send_message(
-                "You are not allowed to interact with this trade.", ephemeral=True
-            )
-            return False
-        else:
-            return True
-
-    @discord.ui.button(
-        style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
-    )
-    async def accept_button(self, interaction: discord.Interaction, button: Button):
-        trader = self.trade._get_trader(interaction.user)
-        if trader.accepted:
-            await interaction.response.send_message(
-                "You have already accepted this trade.", ephemeral=True
+                f"That {settings.collectible_name} is not in your proposal.", ephemeral=True
             )
             return
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        result = await self.trade.confirm(trader)
-        if self.trade.trader1.accepted and self.trade.trader2.accepted:
-            if result:
-                await interaction.followup.send("The trade is now concluded.", ephemeral=True)
-            else:
-                await interaction.followup.send(
-                    ":warning: An error occurred while concluding the trade.", ephemeral=True
-                )
-        else:
-            await interaction.followup.send(
-                "You have accepted the trade, waiting for the other user...", ephemeral=True
-            )
+        trader.proposal.remove(countryball)
+        await interaction.response.send_message(
+            f"{countryball.countryball.country} removed.", ephemeral=True
+        )
+        await countryball.unlock()
 
-    @discord.ui.button(
-        style=discord.ButtonStyle.danger,
-        emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
+    @app_commands.command()
+    async def cancel(self, interaction: discord.Interaction):
+        """
+        Cancel the ongoing trade.
+        """
+        trade, trader = self.get_trade(interaction)
+        if not trade or not trader:
+            await interaction.response.send_message(
+                "You do not have an ongoing trade.", ephemeral=True
+            )
+            return
+
+        await trade.user_cancel(trader)
+        await interaction.response.send_message("Trade cancelled.", ephemeral=True)
+
+    @app_commands.command()
+    @app_commands.choices(
+        sorting=[
+            app_commands.Choice(name="Most Recent", value="-date"),
+            app_commands.Choice(name="Oldest", value="date"),
+        ]
     )
-    async def deny_button(self, interaction: discord.Interaction, button: Button):
-        await self.trade.user_cancel(self.trade._get_trader(interaction.user))
-        await interaction.response.send_message("Trade has been cancelled.", ephemeral=True)
-
-
-class TradeMenu:
-    def __init__(
+    async def history(
         self,
-        cog: TradeCog,
         interaction: discord.Interaction["BallsDexBot"],
-        trader1: TradingUser,
-        trader2: TradingUser,
+        sorting: app_commands.Choice[str],
+        trade_user: discord.User | None = None,
+        days: Optional[int] = None,
+        countryball: BallEnabledTransform | None = None,
     ):
-        self.cog = cog
-        self.bot = interaction.client
-        self.channel: discord.TextChannel = cast(discord.TextChannel, interaction.channel)
-        self.trader1 = trader1
-        self.trader2 = trader2
-        self.embed = discord.Embed()
-        self.task: asyncio.Task | None = None
-        self.current_view: TradeView | ConfirmView = TradeView(self)
-        self.message: discord.Message
-
-    def _get_trader(self, user: discord.User | discord.Member) -> TradingUser:
-        if user.id == self.trader1.user.id:
-            return self.trader1
-        elif user.id == self.trader2.user.id:
-            return self.trader2
-        raise RuntimeError(f"User with ID {user.id} cannot be found in the trade")
-
-    def _generate_embed(self):
-        add_command = self.cog.add.extras.get("mention", "`/trade add`")
-        remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
-
-        self.embed.title = f"{settings.collectible_name.title()}s trading"
-        self.embed.color = discord.Colour.blurple()
-        self.embed.description = (
-            f"Add or remove {settings.plural_collectible_name} you want to propose to the other player "
-            f"using the {add_command} and {remove_command} commands.\n"
-            "Once you're finished, click the lock button below to confirm your proposal.\n"
-            "You can also lock with nothing if you're receiving a gift.\n\n"
-            "*You have 30 minutes before this interaction ends.*"
-        )
-        self.embed.set_footer(
-            text="This message is updated every 15 seconds, "
-            "but you can keep on editing your proposal."
-        )
-
-    async def update_message_loop(self):
         """
-        A loop task that updates each 5 second the menu with the new content.
+        Show the history of your trades.
+
+        Parameters
+        ----------
+        sorting: str
+            The sorting order of the trades
+        trade_user: discord.User | None
+            The user you want to see your trade history with
+        days: Optional[int]
+            Retrieve trade history from last x days.
+        countryball: BallEnabledTransform | None
+            The countryball you want to filter the trade history by.
         """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        user = interaction.user
 
-        assert self.task
-        start_time = datetime.utcnow()
-
-        while True:
-            await asyncio.sleep(15)
-            if datetime.utcnow() - start_time > timedelta(minutes=15):
-                self.embed.colour = discord.Colour.dark_red()
-                await self.cancel("The trade timed out")
-                return
-
-            try:
-                fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
-                await self.message.edit(embed=self.embed)
-            except Exception:
-                log.exception(
-                    "Failed to refresh the trade menu "
-                    f"guild={self.message.guild.id} "  # type: ignore
-                    f"trader1={self.trader1.user.id} trader2={self.trader2.user.id}"
-                )
-                self.embed.colour = discord.Colour.dark_red()
-                await self.cancel("The trade timed out")
-                return
-
-    async def start(self):
-        """
-        Start the trade by sending the initial message and opening up the proposals.
-        """
-        self._generate_embed()
-        fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
-        self.message = await self.channel.send(
-            content=f"Hey {self.trader2.user.mention}, {self.trader1.user.name} "
-            "is proposing a trade with you!",
-            embed=self.embed,
-            view=self.current_view,
-        )
-        self.task = self.bot.loop.create_task(self.update_message_loop())
-
-    async def cancel(self, reason: str = "The trade has been cancelled."):
-        """
-        Cancel the trade immediately.
-        """
-        if self.task:
-            self.task.cancel()
-
-        for countryball in self.trader1.proposal + self.trader2.proposal:
-            await countryball.unlock()
-
-        self.current_view.stop()
-        for item in self.current_view.children:
-            item.disabled = True  # type: ignore
-
-        fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
-        self.embed.description = f"**{reason}**"
-        await self.message.edit(content=None, embed=self.embed, view=self.current_view)
-
-    async def lock(self, trader: TradingUser):
-        """
-        Mark a user's proposal as locked, ready for next stage
-        """
-        trader.locked = True
-        if self.trader1.locked and self.trader2.locked:
-            if self.task:
-                self.task.cancel()
-            self.current_view.stop()
-            fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
-
-            self.embed.colour = discord.Colour.yellow()
-            self.embed.description = (
-                "Both users locked their propositions! Now confirm to conclude this trade."
+        if days is not None and days < 0:
+            await interaction.followup.send(
+                "Invalid number of days. Please provide a non-negative value.", ephemeral=True
             )
-            self.current_view = ConfirmView(self)
-            await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+            return
 
-    async def user_cancel(self, trader: TradingUser):
-        """
-        Register a user request to cancel the trade
-        """
-        trader.cancelled = True
-        self.embed.colour = discord.Colour.red()
-        await self.cancel()
-
-    async def perform_trade(self):
-        valid_transferable_countryballs: list[BallInstance] = []
-
-        trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
-
-        for countryball in self.trader1.proposal:
-            await countryball.refresh_from_db()
-            if countryball.player.discord_id != self.trader1.player.discord_id:
-                # This is a invalid mutation, the player is not the owner of the countryball
-                raise InvalidTradeOperation()
-            countryball.player = self.trader2.player
-            countryball.trade_player = self.trader1.player
-            countryball.favorite = False
-            valid_transferable_countryballs.append(countryball)
-            await TradeObject.create(
-                trade=trade, ballinstance=countryball, player=self.trader1.player
+        if trade_user:
+            queryset = TradeModel.filter(
+                (Q(player1__discord_id=user.id, player2__discord_id=trade_user.id))
+                | (Q(player1__discord_id=trade_user.id, player2__discord_id=user.id))
+            )
+        else:
+            queryset = TradeModel.filter(
+                Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
             )
 
-        for countryball in self.trader2.proposal:
-            if countryball.player.discord_id != self.trader2.player.discord_id:
-                # This is a invalid mutation, the player is not the owner of the countryball
-                raise InvalidTradeOperation()
-            countryball.player = self.trader1.player
-            countryball.trade_player = self.trader2.player
-            countryball.favorite = False
-            valid_transferable_countryballs.append(countryball)
-            await TradeObject.create(
-                trade=trade, ballinstance=countryball, player=self.trader2.player
-            )
+        if days is not None and days > 0:
+            end_date = datetime.datetime.now()
+            start_date = end_date - datetime.timedelta(days=days)
+            queryset = queryset.filter(date__range=(start_date, end_date))
 
-        for countryball in valid_transferable_countryballs:
-            await countryball.unlock()
-            await countryball.save()
+        if countryball:
+            queryset = queryset.filter(
+                Q(player1__tradeobjects__ballinstance__ball=countryball)
+                | Q(player2__tradeobjects__ballinstance__ball=countryball)
+            ).distinct()  # for some reason, this query creates a lot of duplicate rows?
 
-    async def confirm(self, trader: TradingUser) -> bool:
-        """
-        Mark a user's proposal as accepted. If both user accept, end the trade now
+        history = await queryset.order_by(sorting.value).prefetch_related("player1", "player2")
 
-        If the trade is concluded, return True, otherwise if an error occurs, return False
-        """
-        result = True
-        trader.accepted = True
-        fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
-        if self.trader1.accepted and self.trader2.accepted:
-            if self.task and not self.task.cancelled():
-                # shouldn't happen but just in case
-                self.task.cancel()
-
-            self.embed.description = "Trade concluded!"
-            self.embed.colour = discord.Colour.green()
-            self.current_view.stop()
-            for item in self.current_view.children:
-                item.disabled = True  # type: ignore
-
-            try:
-                await self.perform_trade()
-            except InvalidTradeOperation:
-                log.warning(f"Illegal trade operation between {self.trader1=} and {self.trader2=}")
-                self.embed.description = (
-                    f":warning: An attempt to modify the {settings.plural_collectible_name} "
-                    "during the trade was detected and the trade was cancelled."
-                )
-                self.embed.colour = discord.Colour.red()
-                result = False
-            except Exception:
-                log.exception(f"Failed to conclude trade {self.trader1=} {self.trader2=}")
-                self.embed.description = "An error occured when concluding the trade."
-                self.embed.colour = discord.Colour.red()
-                result = False
-
-        await self.message.edit(content=None, embed=self.embed, view=self.current_view)
-        return result
+        if not history:
+            await interaction.followup.send("No history found.", ephemeral=True)
+            return
+        source = TradeViewFormat(history, interaction.user.name, self.bot)
+        pages = Pages(source=source, interaction=interaction)
+        await pages.start()
