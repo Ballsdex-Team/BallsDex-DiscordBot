@@ -291,7 +291,7 @@ class Admin(commands.GroupCog):
             informations.append("The manager is currently on cooldown.")
         if delta < 600:
             informations.append(
-                f"The manager is less than 10 minutes old, {settings.collectible_name}s "
+                f"The manager is less than 10 minutes old, {settings.plural_collectible_name} "
                 "cannot spawn at the moment."
             )
         if informations:
@@ -462,7 +462,7 @@ class Admin(commands.GroupCog):
             task.cancel()
             await interaction.followup.edit_message(
                 "@original",  # type: ignore
-                content=f"Successfully spawned {spawned} {settings.collectible_name}s "
+                content=f"Successfully spawned {spawned} {settings.plural_collectible_name} "
                 f"in {channel.mention}!",
             )
         finally:
@@ -1056,11 +1056,11 @@ class Admin(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         if not percentage:
-            text = f"Are you sure you want to delete {user}'s {settings.collectible_name}s?"
+            text = f"Are you sure you want to delete {user}'s {settings.plural_collectible_name}?"
         else:
             text = (
                 f"Are you sure you want to delete {percentage}% of "
-                f"{user}'s {settings.collectible_name}s?"
+                f"{user}'s {settings.plural_collectible_name}?"
             )
         view = ConfirmChoiceView(interaction)
         await interaction.followup.send(
@@ -1080,11 +1080,11 @@ class Admin(commands.GroupCog):
         else:
             count = await BallInstance.filter(player=player).delete()
         await interaction.followup.send(
-            f"{count} {settings.collectible_name}s from {user} have been reset.", ephemeral=True
+            f"{count} {settings.plural_collectible_name} from {user} have been reset.", ephemeral=True
         )
         await log_action(
             f"{interaction.user} deleted {percentage or 100}% of "
-            f"{player}'s {settings.collectible_name}s.",
+            f"{player}'s {settings.plural_collectible_name}.",
             self.bot,
         )
 
@@ -1610,19 +1610,19 @@ class Admin(commands.GroupCog):
             value=len(set(total_user_balls)),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s caught ({days} days))",
+            name=f"Total Server with {settings.plural_collectible_name} caught ({days} days))",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total {settings.collectible_name}s Caught",
+            name=f"Total {settings.plural_collectible_name} Caught",
             value=await BallInstance.filter(player__discord_id=user.id).count(),
         )
         embed.add_field(
-            name=f"Total Unique {settings.collectible_name}s Caught",
+            name=f"Total Unique {settings.plural_collectible_name} Caught",
             value=len(set([x.countryball for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s Caught",
+            name=f"Total Server with {settings.plural_collectible_name} Caught",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
