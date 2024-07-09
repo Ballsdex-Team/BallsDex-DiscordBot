@@ -561,8 +561,8 @@ uvicorn = {version = "*", extras = ["standard"]}
 [package.source]
 type = "git"
 url = "https://github.com/fastapi-admin/fastapi-admin"
-reference = "66b69c29fc5df1dbd4383fda5f305895a3f173f9"
-resolved_reference = "66b69c29fc5df1dbd4383fda5f305895a3f173f9"
+reference = "ebea3bf71689caa583fe55aa25db899cf8eeae31"
+resolved_reference = "ebea3bf71689caa583fe55aa25db899cf8eeae31"
 
 [[package]]
 name = "fastapi-cli"
@@ -2455,4 +2455,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "48896fa0f9940326c9fb600b9eb097cc7574f42b16af730a1cfbc226aeddb534"
+content-hash = "2c9d4f1c7cef5cfcfea0727450e9e02e4e1a23a524058ddf01465b94590c642c"
