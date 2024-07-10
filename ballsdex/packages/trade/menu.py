@@ -167,7 +167,7 @@ class TradeMenu:
         self.embed.title = f"{settings.collectible_name.title()}s trading"
         self.embed.color = discord.Colour.blurple()
         self.embed.description = (
-            f"Add or remove {settings.collectible_name}s you want to propose to the other player "
+            f"Add or remove {settings.plural_collectible_name} you want to propose to the other player "
             f"using the {add_command} and {remove_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
@@ -323,7 +323,7 @@ class TradeMenu:
             except InvalidTradeOperation:
                 log.warning(f"Illegal trade operation between {self.trader1=} and {self.trader2=}")
                 self.embed.description = (
-                    f":warning: An attempt to modify the {settings.collectible_name}s "
+                    f":warning: An attempt to modify the {settings.plural_collectible_name} "
                     "during the trade was detected and the trade was cancelled."
                 )
                 self.embed.colour = discord.Colour.red()

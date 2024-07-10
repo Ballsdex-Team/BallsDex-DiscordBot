@@ -28,10 +28,12 @@ class Settings:
         Prefix for text commands, mostly unused. Defaults to "b."
     collectible_name: str
         Usually "countryball", can be replaced when possible
+    plural_collectible_name: str
+        Usually "countryballs", can be replaced when possible
     bot_name: str
         Usually "BallsDex", can be replaced when possible
     players_group_cog_name: str
-        Set the name of the base command of the "players" cog, /balls by default
+        Set the name of the base command of the "balls" cog, /balls by default
     about_description: str
         Used in the /about command
     github_link: str
@@ -56,6 +58,7 @@ class Settings:
     prefix: str = "b."
 
     collectible_name: str = "countryball"
+    plural_collectible_name: str = "countryballs"
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
 
@@ -98,6 +101,7 @@ def read_settings(path: "Path"):
     settings.co_owners = content.get("owners", {}).get("co-owners", [])
 
     settings.collectible_name = content["collectible-name"]
+    settings.plural_collectible_name = content["plural-collectible-name"]
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
 
@@ -149,8 +153,12 @@ about:
   privacy-policy: https://gist.github.com/laggron42/1eaa122013120cdfcc6d27f9485fe0bf
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
-# override the name "countryballs" in the bot
+# override the name "countryball" in the bot
 collectible-name: countryball
+
+# WORK IN PROGRESS, DOES NOT FULLY WORK
+# override the name "countryballs" in the bot
+plural-collectible-name: countryballs
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "BallsDex" in the bot

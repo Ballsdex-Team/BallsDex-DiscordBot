@@ -17,8 +17,8 @@ activation_embed = discord.Embed(
     description=f"To enable {settings.bot_name} in your server, you must "
     f"read and accept the [Terms of Service]({settings.terms_of_service}).\n\n"
     "As a summary, these are the rules of the bot:\n"
-    f"- No farming (spamming or creating servers for {settings.collectible_name}s)\n"
-    f"- Selling or exchanging {settings.collectible_name}s "
+    f"- No farming (spamming or creating servers for {settings.plural_collectible_name})\n"
+    f"- Selling or exchanging {settings.plural_collectible_name} "
     "against money or other goods is forbidden\n"
     "- Do not attempt to abuse the bot's internals\n"
     "**Not respecting these rules will lead to a blacklist**",
@@ -90,7 +90,7 @@ class Config(commands.GroupCog):
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=False)
             await interaction.response.send_message(
                 f"{settings.bot_name} is now disabled in this server. Commands will still be "
-                f"available, but the spawn of new {settings.collectible_name}s is suspended.\n"
+                f"available, but the spawn of new {settings.plural_collectible_name} is suspended.\n"
                 "To re-enable the spawn, use the same command."
             )
         else:
@@ -100,7 +100,7 @@ class Config(commands.GroupCog):
             if config.spawn_channel and (channel := guild.get_channel(config.spawn_channel)):
                 await interaction.response.send_message(
                     f"{settings.bot_name} is now enabled in this server, "
-                    f"{settings.collectible_name}s will start spawning soon in {channel.mention}."
+                    f"{settings.plural_collectible_name} will start spawning soon in {channel.mention}."
                 )
             else:
                 await interaction.response.send_message(

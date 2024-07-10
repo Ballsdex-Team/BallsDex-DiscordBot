@@ -166,11 +166,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         except DoesNotExist:
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {settings.collectible_name}s yet."
+                    f"You don't have any {settings.plural_collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any {settings.collectible_name}s yet."
+                    f"{user_obj.name} doesn't have any {settings.plural_collectible_name} yet."
                 )
             return
         if user is not None:
@@ -206,12 +206,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             ball_txt = countryball.country if countryball else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {ball_txt} {settings.collectible_name}s yet."
+                    f"You don't have any {ball_txt} {settings.plural_collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
                     f"{user_obj.name} doesn't have any "
-                    f"{ball_txt} {settings.collectible_name}s yet."
+                    f"{ball_txt} {settings.plural_collectible_name} yet."
                 )
             return
         if reverse:
@@ -222,7 +222,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             await paginator.start()
         else:
             await paginator.start(
-                content=f"Viewing {user_obj.name}'s {settings.collectible_name}s"
+                content=f"Viewing {user_obj.name}'s {settings.plural_collectible_name}"
             )
 
     @app_commands.command()
@@ -252,7 +252,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 player = await Player.get(discord_id=user_obj.id)
             except DoesNotExist:
                 await interaction.response.send_message(
-                    f"{user_obj.name} doesn't have any {settings.collectible_name}s yet."
+                    f"{user_obj.name} doesn't have any {settings.plural_collectible_name} yet."
                 )
                 return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
@@ -272,7 +272,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             }
         if not bot_countryballs:
             await interaction.response.send_message(
-                f"There are no {settings.collectible_name}s registered on this bot yet.",
+                f"There are no {settings.plural_collectible_name} registered on this bot yet.",
                 ephemeral=True,
             )
             return
@@ -319,18 +319,18 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if owned_countryballs:
             # Getting the list of emoji IDs from the IDs of the owned countryballs
             fill_fields(
-                f"Owned {settings.collectible_name}s",
+                f"Owned {settings.plural_collectible_name}",
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
-            entries.append((f"__**Owned {settings.collectible_name}s**__", "Nothing yet."))
+            entries.append((f"__**Owned {settings.plural_collectible_name}**__", "Nothing yet."))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields(f"Missing {settings.collectible_name}s", missing)
+            fill_fields(f"Missing {settings.plural_collectible_name}", missing)
         else:
             entries.append(
                 (
-                    f"__**:tada: No missing {settings.collectible_name}s, "
+                    f"__**:tada: No missing {settings.plural_collectible_name}, "
                     "congratulations! :tada:**__",
                     "\u200B",
                 )
@@ -395,7 +395,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         except DoesNotExist:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"{msg} not have any {settings.collectible_name}s yet.",
+                f"{msg} not have any {settings.plural_collectible_name} yet.",
                 ephemeral=True,
             )
             return
@@ -408,7 +408,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if not countryball:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"{msg} not have any {settings.collectible_name}s yet.",
+                f"{msg} not have any {settings.plural_collectible_name} yet.",
                 ephemeral=True,
             )
             return
@@ -450,7 +450,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             if await player.balls.filter(favorite=True).count() >= settings.max_favorites:
                 await interaction.response.send_message(
                     f"You cannot set more than {settings.max_favorites} "
-                    f"favorite {settings.collectible_name}s.",
+                    f"favorite {settings.plural_collectible_name}.",
                     ephemeral=True,
                 )
                 return
