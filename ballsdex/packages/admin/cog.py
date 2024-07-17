@@ -17,6 +17,7 @@ from tortoise.expressions import Q
 
 from ballsdex.core.models import (
     Ball,
+    Special,
     BallInstance,
     BlacklistedGuild,
     BlacklistedID,
