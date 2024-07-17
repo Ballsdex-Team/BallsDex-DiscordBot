@@ -80,6 +80,9 @@ class Admin(commands.GroupCog):
     balls = app_commands.Group(
         name=settings.players_group_cog_name, description="Balls management"
     )
+    event = app_commands.Group(
+        name="event", description="Event management"
+    )
     logs = app_commands.Group(name="logs", description="Bot logs management")
     history = app_commands.Group(name="history", description="Trade history management")
     info = app_commands.Group(name="info", description="Information Commands")
@@ -1264,6 +1267,114 @@ class Admin(commands.GroupCog):
                 f"{missing_default}\n"
                 f"{name=} regime={regime.name} economy={economy.name if economy else None} "
                 f"{health=} {attack=} {rarity=} {enabled=} {tradeable=} emoji={emoji}",
+                files=files,
+            )
+
+    @event.command(name="create")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def event_create(
+        self,
+        interaction: discord.Interaction,
+        *,
+        name: str,
+        catch_phrase: str,
+        start_date_event: str,
+        finish_date_event: str,
+        rarity: app_commands.Range[float, 0, 1], 
+        background: discord.Attachment,
+        emoji: str,
+        tradeable: bool = True,
+        hidden: bool = False,
+    ):
+        """
+        Shortcut command for creating specials.
+
+        Parameters
+        ----------
+        name: str
+        catch_phrase: str
+        start_date_event: str
+           Date when special balls will start spawning (Year-Month-Day).
+        finish_date_event: str
+           Date when special balls will stop spawning (Year-Month-Day).
+        rarity: float
+           Value betweeen 0 and 1 (example: 0,5)
+        background: discord.Attachment
+        emoji: str
+        tradeable: bool
+        hidden: bool
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        missing_default = ""
+        RE_EMOJI = re.compile(u'([\U00002600-\U000027BF])|([\U0001f300-\U0001f64F])|([\U0001f680-\U0001f6FF])')
+
+        if RE_EMOJI.match(emoji):
+            emoji = RE_EMOJI.match(emoji)[0]
+        else:
+            return await interaction.followup.send(content="The emoji must be a valid unicode emoji character.")
+
+        try:
+            start_date_event = datetime.strptime(start_date_event, "%Y-%m-%d")
+        except Exception as e:
+            log.exception("Failed when setting the event creation date of the event.", exc_info=True)
+            await interaction.followup.send(
+                f"Failed when setting the event creation date of the event..\n"
+                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
+                "The full error is in the bot logs."
+            )
+            return
+        
+        try: 
+            finish_date_event = datetime.strptime(finish_date_event, "%Y-%m-%d")
+        except Exception as e:
+            log.exception("Failed when setting the event creation date of the event.", exc_info=True)
+            await interaction.followup.send(
+                f"Failed when setting the event creation date of the event..\n"
+                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
+                "The full error is in the bot logs."
+            )
+            return
+
+        try:
+            background_path = await save_file(background)
+        except Exception as e:
+            log.exception("Failed saving file when creating countryball", exc_info=True)
+            await interaction.followup.send(
+                f"Failed saving the attached file: {background.url}.\n"
+                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
+                "The full error is in the bot logs."
+            )
+            return
+ 
+        try:
+            await Special.create(
+                name=name,
+                catch_phrase=catch_phrase,
+                start_date=start_date_event,
+                end_date=finish_date_event,
+                rarity=rarity,
+                background="/" + str(background_path),
+                emoji=emoji,
+                tradeable=tradeable,
+                hidden=hidden,
+            )
+        except BaseORMException as e:
+            log.exception("Failed creating special with admin command", exc_info=True)
+            await interaction.followup.send(
+                f"Failed creating the event.\n"
+                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
+                "The full error is in the bot logs."
+            )
+        else:
+            files = [await background.to_file()]
+            await self.bot.load_cache()
+            await interaction.followup.send(
+                f"Successfully created a event! "
+                "The internal cache was reloaded.\n"
+                f"{missing_default}\n"
+                f"name={name} catch_phrase={catch_phrase=} start_date={start_date_event}"
+                f"end_date={finish_date_event} rarity={rarity} emoji={emoji} tradeable={tradeable} hidden={hidden}",
                 files=files,
             )
 
