@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from discord.ext import commands
 from tortoise import Tortoise
 
+from ballsdex.packages.countryballs.countryball import CountryBall
+
 log = logging.getLogger("ballsdex.core.commands")
 
 if TYPE_CHECKING:
@@ -78,3 +80,11 @@ class Core(commands.Cog):
         await connection.execute_query("ANALYZE")
         t2 = time.time()
         await ctx.send(f"Analyzed database in {round((t2 - t1) * 1000)}ms.")
+        
+    @commands.command()
+    async def claim(self, ctx: commands.Context):
+        """
+        Claim a random ball!
+        """
+        countryball = await CountryBall.get_random()
+        await ctx.send(f"{ctx.author.mention}, you have claimed the ball: {countryball.name}!")
