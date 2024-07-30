@@ -456,6 +456,8 @@ class Trade(models.Model):
     )
     date = fields.DatetimeField(auto_now_add=True)
     tradeobjects: fields.ReverseRelation[TradeObject]
+    player1_coins = fields.IntField(default=0)
+    player2_coins = fields.IntField(default=0)
 
     def __str__(self) -> str:
         return str(self.pk)

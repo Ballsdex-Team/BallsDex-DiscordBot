@@ -283,8 +283,8 @@ class TradeMenu:
 
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
-
-        trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
+        
+        trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player, player1_coins=self.trader1.coins, player2_coins=self.trader2.coins)
 
         for countryball in self.trader1.proposal:
             await countryball.refresh_from_db()
