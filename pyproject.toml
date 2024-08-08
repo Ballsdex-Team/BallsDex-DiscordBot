@@ -30,7 +30,7 @@ Pillow = "^10.4.0"
 aerich = "^0.6.3"
 pyyaml = "^6.0.1"
 cachetools = "^5.3.3"
-async-timeout = "^4.0.2"
+async-timeout = "^4.0.3"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.1"
