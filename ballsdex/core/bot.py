@@ -312,6 +312,10 @@ class BallsDexBot(commands.AutoShardedBot):
         else:
             log.info("No package loaded.")
 
+        sleep_delay = 30 * self.cluster_id
+        log.warning(f"Waiting {sleep_delay} seconds for other clusters to sync commands.")
+        await asyncio.sleep(sleep_delay)
+
         synced_commands = await self.tree.sync()
         if synced_commands:
             log.info(f"Synced {len(synced_commands)} commands.")
