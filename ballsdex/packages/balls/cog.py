@@ -183,24 +183,24 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["special"] = special
         if sort:
             if sort == SortingChoices.duplicates:
-                countryballs = await player.balls.filter(**filters)
+                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
                 count = defaultdict(int)
                 for ball in countryballs:
                     count[ball.countryball.pk] += 1
                 countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
             elif sort == SortingChoices.stats_bonus:
-                countryballs = await player.balls.filter(**filters)
+                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
                 countryballs.sort(key=lambda x: x.health_bonus + x.attack_bonus, reverse=True)
             elif sort == SortingChoices.health or sort == SortingChoices.attack:
-                countryballs = await player.balls.filter(**filters)
+                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
                 countryballs.sort(key=lambda x: getattr(x, sort.value), reverse=True)
             elif sort == SortingChoices.total_stats:
-                countryballs = await player.balls.filter(**filters)
+                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
                 countryballs.sort(key=lambda x: x.health + x.attack, reverse=True)
             else:
-                countryballs = await player.balls.filter(**filters).order_by(sort.value)
+                countryballs = await player.balls.filter(**filters).prefetch_related("ball").order_by(sort.value)
         else:
-            countryballs = await player.balls.filter(**filters).order_by("-favorite", "-shiny")
+            countryballs = await player.balls.filter(**filters).prefetch_related("ball").order_by("-favorite", "-shiny")
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
@@ -247,6 +247,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
+        await interaction.response.defer(thinking=True)
         if user is not None:
             try:
                 player = await Player.get(discord_id=user_obj.id)
@@ -259,24 +260,29 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 return
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
-        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
+        if self.bot.cluster_count > 1:
+            bot_countryballs = {
+                x: y.capacity_logic["emoji"] for x, y in balls.items() if y.enabled
+            }
+        else:
+            bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
 
         # Set of ball IDs owned by the player
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
         if special:
             filters["special"] = special
+            filters["ball__created_at__lt"] = special.end_date
             bot_countryballs = {
-                x: y.emoji_id
+                x: y.capacity_logic["emoji"] if self.bot.cluster_count > 1 else y.emoji_id
                 for x, y in balls.items()
                 if y.enabled and y.created_at < special.end_date
             }
         if not bot_countryballs:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"There are no {settings.collectible_name}s registered on this bot yet.",
                 ephemeral=True,
             )
             return
-        await interaction.response.defer(thinking=True)
 
         if shiny is not None:
             filters["shiny"] = shiny
@@ -295,8 +301,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             buffer = ""
 
             for emoji_id in emoji_ids:
-                emoji = self.bot.get_emoji(emoji_id)
-                if not emoji:
+                if isinstance(emoji_id, int):
+                    emoji = self.bot.get_emoji(emoji_id)
+                else:
+                    emoji = emoji_id
+
+                if emoji is None:
                     continue
 
                 text = f"{emoji} "
@@ -457,7 +467,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
             countryball.favorite = True  # type: ignore
             await countryball.save()
-            emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
+            if self.bot.cluster_count > 1:
+                emoji = countryball.countryball.capacity_logic["emoji"]
+            else:
+                emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
                 f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
                 f"is now a favorite {settings.collectible_name}!",
@@ -467,7 +480,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         else:
             countryball.favorite = False  # type: ignore
             await countryball.save()
-            emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
+            if self.bot.cluster_count > 1:
+                emoji = countryball.countryball.capacity_logic["emoji"]
+            else:
+                emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
+
             await interaction.response.send_message(
                 f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
                 f"isn't a favorite {settings.collectible_name} anymore.",

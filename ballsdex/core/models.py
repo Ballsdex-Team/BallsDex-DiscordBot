@@ -248,6 +248,8 @@ class BallInstance(models.Model):
             emotes += " "
         if self.specialcard:
             emotes += self.special_emoji(bot)
+        if self.extra_data.get("card"):
+            emotes += "🖼️"
         country = (
             self.countryball.country
             if isinstance(self.countryball, Ball)
@@ -288,9 +290,15 @@ class BallInstance(models.Model):
                     "You need to provide the bot argument when using with include_emoji=True"
                 )
             if isinstance(self.countryball, Ball):
-                emoji = bot.get_emoji(self.countryball.emoji_id)
+                if "emoji" in self.countryball.capacity_logic:
+                    emoji = self.countryball.capacity_logic["emoji"]
+                else:
+                    emoji = bot.get_emoji(self.countryball.emoji_id)
                 if emoji:
-                    text = f"{emoji} {text}"
+                    if self.extra_data.get("card"):
+                        text = f"{emoji} 🖼️ {text} "
+                    else:
+                        text = f"{emoji} {text}"
         return text
 
     def draw_card(self) -> BytesIO:

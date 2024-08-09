@@ -16,8 +16,10 @@ services:
     build: .
     environment:
       - *postgres-url
+      - "BALLSDEXBOT_REDIS_URL=redis://redis"
     depends_on:
       - postgres-db
+      - redis-cache
     # ports:
     #   - "15260:15260"
     networks:
@@ -27,7 +29,7 @@ services:
         source: ./
         target: /code
     tty: true
-    command: poetry run python3 -m ballsdex --dev
+    command: poetry run python3 -m launcher --dev
 
   admin-panel:
     image: ballsdex

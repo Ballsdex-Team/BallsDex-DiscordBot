@@ -3,7 +3,7 @@ import datetime
 import logging
 import random
 import re
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, cast
 
@@ -339,11 +339,20 @@ class Admin(commands.GroupCog):
                     "The given user ID could not be found.", ephemeral=True
                 )
                 return
-
-        if self.bot.intents.members:
-            guilds = user.mutual_guilds
+        if cog := self.bot.get_cog("IPC"):
+            guild_results = await cog.handler(
+                "guilds", self.bot.cluster_count, {"user_id": user.id}
+            )
+            # guild_rests is a list of lists, join them into one list
+            guilds = []
+            Guild = namedtuple("Guild", "id name member_count")
+            for result in guild_results:
+                guilds.extend([Guild(*x) for x in result])
         else:
-            guilds = [x for x in self.bot.guilds if x.owner_id == user.id]
+            if self.bot.intents.members:
+                guilds = user.mutual_guilds
+            else:
+                guilds = [x for x in self.bot.guilds if x.owner_id == user.id]
 
         if not guilds:
             if self.bot.intents.members:
@@ -647,6 +656,9 @@ class Admin(commands.GroupCog):
             f" for the following reason: {reason}.",
             self.bot,
         )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -699,6 +711,9 @@ class Admin(commands.GroupCog):
         await log_action(
             f"{interaction.user} removed blacklist for user {user} ({user.id}).", self.bot
         )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist.command(name="info")
     async def blacklist_info(
@@ -805,6 +820,9 @@ class Admin(commands.GroupCog):
             f"for the following reason: {reason}.",
             self.bot,
         )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist_guild.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -850,6 +868,9 @@ class Admin(commands.GroupCog):
             await log_action(
                 f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).", self.bot
             )
+            cog = self.bot.get_cog("IPC")
+            if cog:
+                await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist_guild.command(name="info")
     async def blacklist_info_guild(
@@ -1558,11 +1579,11 @@ class Admin(commands.GroupCog):
         embed.add_field(name="Spawn Enabled", value=spawn_enabled)
         embed.add_field(name="Created at", value=format_dt(guild.created_at, style="R"))
         embed.add_field(
-            name=f"{settings.collectible_name} Caught ({days} days)",
+            name=f"# {settings.collectible_name} caught ({days} days)",
             value=len(total_server_balls),
         )
         embed.add_field(
-            name=f"Amount of Users who caught {settings.collectible_name} ({days} days)",
+            name=f"# of users who caught {settings.collectible_name} ({days} days)",
             value=len(set([x.player.discord_id for x in total_server_balls])),
         )
 
@@ -1604,25 +1625,25 @@ class Admin(commands.GroupCog):
             ),
             color=discord.Color.blurple(),
         )
-        embed.add_field(name=f"Balls Caught ({days} days)", value=len(total_user_balls))
+        embed.add_field(name=f"# {settings.collectible_name} caught ({days} days)", value=len(total_user_balls))
         embed.add_field(
-            name=f"{settings.collectible_name} Caught (Unique - ({days} days))",
+            name=f"# {settings.collectible_name}s caught (Unique - ({days} days))",
             value=len(set(total_user_balls)),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s caught ({days} days))",
+            name=f"# servers with {settings.collectible_name}s caught ({days} days))",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total {settings.collectible_name}s Caught",
+            name=f"# {settings.collectible_name}s caught",
             value=await BallInstance.filter(player__discord_id=user.id).count(),
         )
         embed.add_field(
-            name=f"Total Unique {settings.collectible_name}s Caught",
+            name=f"# unique {settings.collectible_name}s caught",
             value=len(set([x.countryball for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s Caught",
+            name=f"# servers with {settings.collectible_name}s saught",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
