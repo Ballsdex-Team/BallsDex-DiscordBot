@@ -250,7 +250,7 @@ async def main(
     asyncio.set_event_loop(loop)
 
     try:
-        queue_listener = init_logger(False, True)
+        queue_listener = init_logger(False, False)
 
         token = settings.bot_token
         if not token:
