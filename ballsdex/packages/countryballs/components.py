@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import math
 import random
+from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -49,9 +50,12 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         # TODO: use lock
+        player, created = await Player.get_or_create(discord_id=interaction.user.id)
         if self.ball.catched:
             await interaction.response.send_message(
-                f"{interaction.user.mention} I was caught already!"
+                f"{interaction.user.mention} I was caught already!",
+                ephemeral=True,
+                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
             )
             return
         if self.ball.model.catch_names:
@@ -70,6 +74,12 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 special += f"✨ ***It's a shiny {settings.collectible_name}!*** ✨\n"
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
+            if datetime.now().strftime("%m-%d") in self.ball.model.capacity_logic:
+                capacity = self.ball.model.capacity_logic[
+                    datetime.now().strftime("%m-%d")
+                ]  # type: ignore
+                catch = capacity["catch"]  # type: ignore
+                special += f"{catch}\n"
             if has_caught_before:
                 special += (
                     f"This is a **new {settings.collectible_name}** "
@@ -78,12 +88,16 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             await interaction.followup.send(
                 f"{interaction.user.mention} You caught **{self.ball.name}!** "
                 f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
-                f"{special}"
+                f"{special}",
+                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
             )
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
-            await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
+            await interaction.response.send_message(
+                f"{interaction.user.mention} Wrong name!",
+                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+            )
 
     async def catch_ball(
         self, bot: "BallsDexBot", user: discord.Member
@@ -111,6 +125,12 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             special = random.choices(population=population + [None], weights=weights, k=1)[0]
 
         is_new = not await BallInstance.filter(player=player, ball=self.ball.model).exists()
+        if datetime.now().strftime("%m-%d") in self.ball.model.capacity_logic:
+            extra_data = self.ball.model.capacity_logic[
+                datetime.now().strftime("%m-%d")
+            ]  # type: ignore
+        else:
+            extra_data = {}
         ball = await BallInstance.create(
             ball=self.ball.model,
             player=player,
@@ -120,6 +140,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             health_bonus=bonus_health,
             server_id=user.guild.id,
             spawned_time=self.ball.time,
+            extra_data=extra_data,
         )
         if user.id in bot.catch_log:
             log.info(
