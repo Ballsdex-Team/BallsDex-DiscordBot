@@ -280,8 +280,6 @@ class BallInstance(models.Model):
         is_trade: bool = False,
     ) -> str:
         text = self.to_string(bot, is_trade=is_trade)
-        if not short:
-            text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
         if include_emoji:
             if not bot:
                 raise TypeError(
@@ -291,6 +289,8 @@ class BallInstance(models.Model):
                 emoji = bot.get_emoji(self.countryball.emoji_id)
                 if emoji:
                     text = f"{emoji} {text}"
+        if not short:
+            text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
         return text
 
     def draw_card(self) -> BytesIO:
