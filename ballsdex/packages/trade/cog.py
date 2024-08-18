@@ -37,6 +37,8 @@ class Trade(commands.GroupCog):
         self.bot = bot
         self.trades: dict[int, dict[int, list[TradeMenu]]] = defaultdict(lambda: defaultdict(list))
 
+    bulk = app_commands.Group(name="bulk", description="Bulk Commands")
+
     def get_trade(
         self,
         interaction: discord.Interaction | None = None,
@@ -214,8 +216,8 @@ class Trade(commands.GroupCog):
             f"{countryball.countryball.country} added.", ephemeral=True
         )
 
-    @app_commands.command()
-    async def bulkadd(
+    @bulk.command(name="add", extras={"trade": TradeCommandType.PICK})
+    async def bulk_add(
         self,
         interaction: discord.Interaction,
         ball: BallTransform | None = None,

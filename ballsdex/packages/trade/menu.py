@@ -10,6 +10,7 @@ from discord.ui import Button, View, button
 
 from ballsdex.core.models import BallInstance, Trade, TradeObject
 from ballsdex.core.utils import menus
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
@@ -416,24 +417,19 @@ class CountryballsSelector(Pages):
         for ball in self.balls_selected:
             trader.proposal.append(ball)
             await ball.lock_for_trade()
-        self.balls_selected.clear()
         await interaction.followup.send(
-            f"{settings.collectible_name.title()}s added to your proposal.", ephemeral=True
+            f"{len(self.balls_selected)} {settings.collectible_name.title()}s added to your proposal.",
+            ephemeral=True,
         )
+        self.balls_selected.clear()
 
     @discord.ui.button(label="Clear", style=discord.ButtonStyle.danger)
     async def clear_button(self, interaction: discord.Interaction, button: Button):
         await interaction.response.defer(thinking=True)
-        trade, trader = self.cog.get_trade(interaction)
-        if trade is None or trader is None:
-            return await interaction.followup.send(
-                "The trade has been cancelled or the user is not part of the trade.",
-                ephemeral=True,
-            )
         self.balls_selected.clear()
         await interaction.followup.send(
             f"You have cleared all currently selected {settings.collectible_name}s."
-            "This does not affect balls already added to your trade.",
+            "This does not affect balls within your trade.",
             ephemeral=True,
         )
 
