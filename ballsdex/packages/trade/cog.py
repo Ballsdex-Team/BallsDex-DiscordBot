@@ -262,6 +262,11 @@ class Trade(commands.GroupCog):
                 f"No {settings.collectible_name}s found.", ephemeral=True
             )
             return
+
+        # round balls to closest 25 for display purposes
+        balls = [x for x in balls if x.is_tradeable]
+        balls = balls[: len(balls) - (len(balls) % 25)]
+
         if len(balls) < 25:
             await interaction.followup.send(
                 f"You have less than 25 {settings.collectible_name}s, "
@@ -269,9 +274,6 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-
-        # round balls to closest 25 for display purposes
-        balls = balls[: len(balls) - (len(balls) % 25)]
 
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(
