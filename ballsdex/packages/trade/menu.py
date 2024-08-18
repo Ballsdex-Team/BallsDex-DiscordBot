@@ -427,7 +427,7 @@ class CountryballsSelector(Pages):
 
     @discord.ui.button(label="Clear", style=discord.ButtonStyle.danger)
     async def clear_button(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         self.balls_selected.clear()
         await interaction.followup.send(
             f"You have cleared all currently selected {settings.collectible_name}s."
