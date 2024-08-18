@@ -505,12 +505,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
         if user.bot:
-            await interaction.response.send_message("You cannot donate to bots.")
+            await interaction.response.send_message("You cannot donate to bots.", ephemeral=True)
             return
         if await countryball.is_locked():
             await interaction.response.send_message(
                 f"This {settings.collectible_name} is currently locked for a trade. "
-                "Please try again later."
+                "Please try again later.",
+                ephemeral=True,
             )
             return
         if countryball.favorite:
@@ -533,13 +534,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if new_player == old_player:
             await interaction.followup.send(
-                f"You cannot give a {settings.collectible_name} to yourself."
+                f"You cannot give a {settings.collectible_name} to yourself.", ephemeral=True
             )
             await countryball.unlock()
             return
         if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
             await interaction.followup.send(
-                "This player does not accept donations. You can use trades instead."
+                "This player does not accept donations. You can use trades instead.",
+                ephemeral=True,
             )
             await countryball.unlock()
             return
