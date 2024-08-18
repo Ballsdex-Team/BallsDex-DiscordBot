@@ -397,7 +397,7 @@ class CountryballsSelector(Pages):
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
     async def confirm_button(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
             return await interaction.followup.send(
@@ -427,11 +427,11 @@ class CountryballsSelector(Pages):
 
     @discord.ui.button(label="Clear", style=discord.ButtonStyle.danger)
     async def clear_button(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         self.balls_selected.clear()
         await interaction.followup.send(
             f"You have cleared all currently selected {settings.collectible_name}s."
-            "This does not affect balls within your trade.\n"
+            f"This does not affect {settings.collectible_name}s within your trade.\n"
             "There may be an instance where it shows balls on the current page as selected, "
             "this is not the case - changing page will show the correct state.",
             ephemeral=True,
