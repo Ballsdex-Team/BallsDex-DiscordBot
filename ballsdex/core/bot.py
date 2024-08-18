@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import logging
 import math
+import time
 import types
 from datetime import datetime
 from typing import TYPE_CHECKING, cast
@@ -13,11 +14,7 @@ import discord
 import discord.gateway
 from cachetools import TTLCache
 from discord import app_commands
-from discord.app_commands.translator import (
-    TranslationContextLocation,
-    TranslationContextTypes,
-    locale_str,
-)
+from discord.app_commands.translator import TranslationContextTypes, locale_str
 from discord.enums import Locale
 from discord.ext import commands
 from prometheus_client import Histogram
@@ -59,11 +56,6 @@ class Translator(app_commands.Translator):
     async def translate(
         self, string: locale_str, locale: Locale, context: TranslationContextTypes
     ) -> str | None:
-        if context.location in (
-            TranslationContextLocation.choice_name,
-            TranslationContextLocation.other,
-        ):
-            return None
         return string.message.replace("countryball", settings.collectible_name).replace(
             "BallsDex", settings.bot_name
         )
@@ -419,7 +411,7 @@ class BallsDexBot(commands.AutoShardedBot):
             if isinstance(error, app_commands.CommandOnCooldown):
                 await send(
                     "This command is on cooldown. Please retry "
-                    f"in {math.ceil(error.retry_after)} seconds."
+                    f"<t:{math.ceil(time.time() + error.retry_after)}:R>."
                 )
                 return
             await send("You are not allowed to use that command.")

@@ -31,7 +31,9 @@ async def lower_catch_names(
     update_fields: Iterable[str] | None = None,
 ):
     if instance.catch_names:
-        instance.catch_names = instance.catch_names.lower()
+        instance.catch_names = ";".join(
+            [x.strip() for x in instance.catch_names.split(";")]
+        ).lower()
 
 
 class DiscordSnowflakeValidator(validators.Validator):
@@ -175,6 +177,7 @@ class BallInstance(models.Model):
         "models.Player", related_name="balls"
     )  # type: ignore
     catch_date = fields.DatetimeField(auto_now_add=True)
+    spawned_time = fields.DatetimeField(null=True)
     server_id = fields.BigIntField(
         description="Discord server ID where this ball was caught", null=True
     )
@@ -250,7 +253,7 @@ class BallInstance(models.Model):
             if isinstance(self.countryball, Ball)
             else f"<Ball {self.ball_id}>"
         )
-        return f"{emotes}#{self.pk:0X} {country} "
+        return f"{emotes}#{self.pk:0X} {country}"
 
     def special_emoji(self, bot: discord.Client | None, use_custom_emoji: bool = True) -> str:
         if self.specialcard:

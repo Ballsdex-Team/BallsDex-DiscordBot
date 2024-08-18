@@ -74,7 +74,7 @@ class Pages(discord.ui.View):
                 self.add_item(self.go_to_last_page)
             if not self.compact:
                 self.add_item(self.numbered_page)
-            self.add_item(self.stop_pages)
+        self.add_item(self.stop_pages)
 
     async def _get_kwargs_from_page(self, page: int) -> Dict[str, Any]:
         value = await discord.utils.maybe_coroutine(self.source.format_page, self, page)

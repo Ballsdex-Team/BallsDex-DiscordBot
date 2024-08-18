@@ -18,6 +18,7 @@ from ballsdex.core.models import (
     TradeObject,
     balls,
 )
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
@@ -74,6 +75,7 @@ class DonationRequest(View):
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
+        self.countryball.favorite = False
         self.countryball.trade_player = self.countryball.player
         self.countryball.player = self.new_player
         await self.countryball.save()
@@ -138,6 +140,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         sort: SortingChoices | None = None,
         reverse: bool = False,
         countryball: BallEnabledTransform | None = None,
+        special: SpecialEnabledTransform | None = None,
     ):
         """
         List your countryballs.
@@ -152,6 +155,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Reverse the output of the list.
         countryball: Ball
             Filter the list by a specific countryball.
+        special: Special
+            Filter the list by a specific special event.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -161,11 +166,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         except DoesNotExist:
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {settings.collectible_name} yet."
+                    f"You don't have any {settings.collectible_name}s yet."
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any {settings.collectible_name} yet."
+                    f"{user_obj.name} doesn't have any {settings.collectible_name}s yet."
                 )
             return
         if user is not None:
@@ -174,6 +179,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         await player.fetch_related("balls")
         filters = {"ball__id": countryball.pk} if countryball else {}
+        if special:
+            filters["special"] = special
         if sort:
             if sort == SortingChoices.duplicates:
                 countryballs = await player.balls.filter(**filters)
@@ -199,11 +206,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             ball_txt = countryball.country if countryball else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {ball_txt} {settings.collectible_name} yet."
+                    f"You don't have any {ball_txt} {settings.collectible_name}s yet."
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any {ball_txt} {settings.collectible_name} yet."
+                    f"{user_obj.name} doesn't have any "
+                    f"{ball_txt} {settings.collectible_name}s yet."
                 )
             return
         if reverse:
@@ -244,7 +252,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 player = await Player.get(discord_id=user_obj.id)
             except DoesNotExist:
                 await interaction.response.send_message(
-                    f"{user_obj.name} doesn't have any {settings.collectible_name} yet."
+                    f"{user_obj.name} doesn't have any {settings.collectible_name}s yet."
                 )
                 return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
@@ -322,7 +330,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         else:
             entries.append(
                 (
-                    f"__**:tada: No missing {settings.collectible_name}, "
+                    f"__**:tada: No missing {settings.collectible_name}s, "
                     "congratulations! :tada:**__",
                     "\u200B",
                 )
@@ -387,7 +395,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         except DoesNotExist:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"{msg} not have any {settings.collectible_name} yet.",
+                f"{msg} not have any {settings.collectible_name}s yet.",
                 ephemeral=True,
             )
             return
@@ -400,17 +408,28 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if not countryball:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"{msg} not have any {settings.collectible_name} yet.",
+                f"{msg} not have any {settings.collectible_name}s yet.",
                 ephemeral=True,
             )
             return
 
         content, file = await countryball.prepare_for_message(interaction)
+        if user is not None and user.id != interaction.user.id:
+            content = (
+                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}.\n"
+                + content
+            )
         await interaction.followup.send(content=content, file=file)
         file.close()
 
     @app_commands.command()
-    async def favorite(self, interaction: discord.Interaction, countryball: BallInstanceTransform):
+    async def favorite(
+        self,
+        interaction: discord.Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
+    ):
         """
         Set favorite countryballs.
 
@@ -418,6 +437,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         countryball: BallInstance
             The countryball you want to set/unset as favorite
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -457,6 +480,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         user: discord.User,
         countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
     ):
         """
         Give a countryball to a user.
@@ -467,12 +492,16 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user you want to give a countryball to
         countryball: BallInstance
             The countryball you're giving away
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
         if not countryball.is_tradeable:
             await interaction.response.send_message(
-                "You cannot donate this countryball.", ephemeral=True
+                f"You cannot donate this {settings.collectible_name}.", ephemeral=True
             )
             return
         if user.bot:
@@ -480,33 +509,48 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if await countryball.is_locked():
             await interaction.response.send_message(
-                "This countryball is currently locked for a trade. Please try again later."
+                f"This {settings.collectible_name} is currently locked for a trade. "
+                "Please try again later."
             )
             return
+        if countryball.favorite:
+            view = ConfirmChoiceView(interaction)
+            await interaction.response.send_message(
+                f"This {settings.collectible_name} is a favorite, "
+                "are you sure you want to trade it?",
+                view=view,
+                ephemeral=True,
+            )
+            await view.wait()
+            if not view.value:
+                return
+            interaction = view.interaction_response
+        else:
+            await interaction.response.defer()
         await countryball.lock_for_trade()
         new_player, _ = await Player.get_or_create(discord_id=user.id)
         old_player = countryball.player
 
         if new_player == old_player:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"You cannot give a {settings.collectible_name} to yourself."
             )
             await countryball.unlock()
             return
         if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "This player does not accept donations. You can use trades instead."
             )
             await countryball.unlock()
             return
         if new_player.discord_id in self.bot.blacklist:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You cannot donate to a blacklisted user", ephemeral=True
             )
             await countryball.unlock()
             return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
                 f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)}!\n"
                 "Do you accept this donation?",
@@ -525,7 +569,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         cb_txt = countryball.description(
             short=True, include_emoji=True, bot=self.bot, is_trade=True
         )
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!"
         )
         await countryball.unlock()
@@ -586,6 +630,8 @@ async def inventory_privacy(
     user_obj: Union[discord.User, discord.Member],
 ):
     privacy_policy = player.privacy_policy
+    if interaction.user.id == player.discord_id:
+        return True
     if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
         roles = settings.admin_role_ids + settings.root_role_ids
         if any(role.id in roles for role in interaction.user.roles):  # type: ignore

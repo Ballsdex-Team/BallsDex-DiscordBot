@@ -18,14 +18,14 @@ class AcceptTOSView(View):
             Button(
                 style=discord.ButtonStyle.link,
                 label="Terms of Service",
-                url="https://gist.github.com",
+                url=settings.terms_of_service,
             )
         )
         self.add_item(
             Button(
                 style=discord.ButtonStyle.link,
                 label="Privacy policy",
-                url="https://gist.github.com",
+                url=settings.privacy_policy,
             )
         )
 
@@ -44,7 +44,7 @@ class AcceptTOSView(View):
         self.stop()
         await interaction.response.send_message(
             f"The new spawn channel was successfully set to {self.channel.mention}.\n"
-            f"{settings.collectible_name.title()} will start spawning as"
+            f"{settings.collectible_name.title()}s will start spawning as"
             " users talk unless the bot is disabled."
         )
 
