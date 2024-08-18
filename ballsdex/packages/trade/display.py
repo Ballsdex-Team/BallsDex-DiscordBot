@@ -31,7 +31,7 @@ class TradeViewFormat(menus.ListPageSource):
             timestamp=trade.date,
         )
         embed.set_footer(
-            text=f"Trade {menu.current_page + 1 }/{menu.source.get_max_pages()} | Trade date: "
+            text=f"Trade {menu.current_page + 1}/{menu.source.get_max_pages()} | Trade date: "
         )
         fill_trade_embed_fields(
             embed,
