@@ -10,9 +10,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
-from aiohttp import ClientTimeout
 import discord
 import discord.gateway
+from aiohttp import ClientTimeout
 from cachetools import TTLCache
 from discord import app_commands
 from discord.app_commands.translator import TranslationContextTypes, locale_str
