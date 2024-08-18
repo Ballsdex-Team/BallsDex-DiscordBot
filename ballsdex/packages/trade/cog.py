@@ -8,18 +8,19 @@ from discord.ext import commands
 from discord.utils import MISSING
 from tortoise.expressions import Q
 
-from ballsdex.core.models import Player
+from ballsdex.core.models import BallInstance, Player
 from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
+    BallTransform,
     SpecialEnabledTransform,
     TradeCommandType,
 )
 from ballsdex.packages.trade.display import TradeViewFormat
-from ballsdex.packages.trade.menu import TradeMenu
+from ballsdex.packages.trade.menu import BulkAddView, TradeMenu
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
@@ -35,6 +36,8 @@ class Trade(commands.GroupCog):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
         self.trades: dict[int, dict[int, list[TradeMenu]]] = defaultdict(lambda: defaultdict(list))
+
+    bulk = app_commands.Group(name="bulk", description="Bulk Commands")
 
     def get_trade(
         self,
@@ -211,6 +214,64 @@ class Trade(commands.GroupCog):
         trader.proposal.append(countryball)
         await interaction.followup.send(
             f"{countryball.countryball.country} added.", ephemeral=True
+        )
+
+    @bulk.command(name="add", extras={"trade": TradeCommandType.PICK})
+    async def bulk_add(
+        self,
+        interaction: discord.Interaction,
+        ball: BallTransform | None = None,
+        shiny: bool | None = None,
+        special: SpecialEnabledTransform | None = None,
+    ):
+        """
+        Bulk add countryballs to the ongoing trade, with paramaters to aid with searching.
+
+        Parameters
+        ----------
+        ball: Ball
+            The countryball you would like to filter the results to
+        shiny: bool
+            Filter the results to shinies
+        special: Special
+            Filter the results to a special event
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        trade, trader = self.get_trade(interaction)
+        if not trade or not trader:
+            await interaction.followup.send("You do not have an ongoing trade.", ephemeral=True)
+            return
+        if trader.locked:
+            await interaction.followup.send(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return
+        filters = {}
+        if ball:
+            filters["ball"] = ball
+        if shiny:
+            filters["shiny"] = shiny
+        if special:
+            filters["special"] = special
+        filters["player__discord_id"] = interaction.user.id
+        balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
+        if not balls:
+            await interaction.followup.send("No countryballs found.", ephemeral=True)
+            return
+        if len(balls) < 25:
+            await interaction.followup.send(
+                "You have less than 25 countryballs, you can use the add command instead.",
+                ephemeral=True,
+            )
+            return
+
+        view = BulkAddView(interaction, balls, self)  # type: ignore
+        await view.start(
+            content="Select the countryballs you want to add to your proposal, "
+            "note that the display will wipe on pagination however "
+            "the selected countryballs will remain."
         )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})

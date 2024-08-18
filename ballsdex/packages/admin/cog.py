@@ -1403,7 +1403,7 @@ class Admin(commands.GroupCog):
                 f"History of {user.display_name} and {user2.display_name}:"
             )
 
-        source = TradeViewFormat(history, user.display_name, self.bot)
+        source = TradeViewFormat(history, user.display_name, self.bot, True)
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
@@ -1472,7 +1472,7 @@ class Admin(commands.GroupCog):
             await interaction.followup.send("No history found.", ephemeral=True)
             return
 
-        source = TradeViewFormat(trades, f"{settings.collectible_name} {ball}", self.bot)
+        source = TradeViewFormat(trades, f"{settings.collectible_name} {ball}", self.bot, True)
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
