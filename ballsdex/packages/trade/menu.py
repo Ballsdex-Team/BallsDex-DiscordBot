@@ -419,7 +419,7 @@ class CountryballsSelector(Pages):
             trader.proposal.append(ball)
             await ball.lock_for_trade()
         await interaction.followup.send(
-            f"{len(self.balls_selected)} {settings.collectible_name.title()}s added to your proposal.",
+            f"{len(self.balls_selected)} {settings.collectible_name}s added to your proposal.",
             ephemeral=True,
         )
         self.balls_selected.clear()
