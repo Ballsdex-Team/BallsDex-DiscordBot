@@ -270,11 +270,15 @@ class Trade(commands.GroupCog):
             )
             return
 
+        # round balls to closest 25 for display purposes
+        balls = balls[: len(balls) - (len(balls) % 25)]
+
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(
-            content=f"Select the {settings.collectible_name}s you want to add "
-            "to your proposal, note that the display will wipe on pagination however "
-            f"the selected {settings.collectible_name}s will remain."
+            content="Select the countryballs you want to add to your proposal, "
+            "note that the display will wipe on pagination however "
+            "the selected countryballs will remain.\n"
+            "Countryballs were rounded down to closest 25 for display purposes, final page may be missing entries."
         )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
