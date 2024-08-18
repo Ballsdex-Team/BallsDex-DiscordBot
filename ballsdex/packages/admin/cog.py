@@ -431,7 +431,7 @@ class Admin(commands.GroupCog):
                     "@original",  # type: ignore
                     content=f"Spawn bomb in progress in {channel.mention}, "
                     f"{settings.collectible_name.title()}: {countryball or 'Random'}\n"
-                    f"{spawned}/{n} spawned ({round((spawned/n)*100)}%)",
+                    f"{spawned}/{n} spawned ({round((spawned / n) * 100)}%)",
                 )
                 await asyncio.sleep(5)
             await interaction.followup.edit_message(
