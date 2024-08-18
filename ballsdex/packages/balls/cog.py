@@ -341,7 +341,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         shiny_str = " shiny" if shiny else ""
         source.embed.description = (
             f"{settings.bot_name}{special_str}{shiny_str} progression: "
-            f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 1)}%**"
+            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
         source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
