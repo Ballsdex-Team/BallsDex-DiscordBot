@@ -568,7 +568,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         cb_txt = countryball.description(
             short=True, include_emoji=True, bot=self.bot, is_trade=True
-        )
+        ) + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
         await interaction.followup.send(
             f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!"
         )
