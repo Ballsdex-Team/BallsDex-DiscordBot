@@ -389,7 +389,9 @@ class CountryballsSelector(Pages):
     @discord.ui.select(min_values=1, max_values=25)
     async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
         for value in item.values:
-            ball_instance = await BallInstance.get(id=int(value)).prefetch_related("ball", "player")
+            ball_instance = await BallInstance.get(id=int(value)).prefetch_related(
+                "ball", "player"
+            )
             self.balls_selected.append(ball_instance)
         await interaction.response.defer()
 
