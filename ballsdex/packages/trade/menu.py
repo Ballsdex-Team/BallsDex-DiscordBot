@@ -429,7 +429,9 @@ class CountryballsSelector(Pages):
         self.balls_selected.clear()
         await interaction.followup.send(
             f"You have cleared all currently selected {settings.collectible_name}s."
-            "This does not affect balls within your trade.",
+            "This does not affect balls within your trade.\n"
+            "There may be an instance where it shows balls on the current page as selected, "
+            "this is not the case - changing page will show the correct state.",
             ephemeral=True,
         )
 
