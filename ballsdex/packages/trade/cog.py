@@ -260,6 +260,13 @@ class Trade(commands.GroupCog):
         if not balls:
             await interaction.followup.send("No countryballs found.", ephemeral=True)
             return
+        if len(balls) < 25:
+            await interaction.followup.send(
+                "You have less than 25 countryballs, you can use the add command instead.",
+                ephemeral=True,
+            )
+            return
+
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(
             content="Select the countryballs you want to add to your proposal, "
