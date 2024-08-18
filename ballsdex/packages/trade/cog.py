@@ -256,7 +256,7 @@ class Trade(commands.GroupCog):
         if special:
             filters["special"] = special
         filters["player__discord_id"] = interaction.user.id
-        balls = await BallInstance.filter(**filters)
+        balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
         if not balls:
             await interaction.followup.send("No countryballs found.", ephemeral=True)
             return
