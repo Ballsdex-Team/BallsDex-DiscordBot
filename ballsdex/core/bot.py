@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
+from aiohttp import ClientTimeout
 import discord
 import discord.gateway
 from cachetools import TTLCache
@@ -234,7 +235,9 @@ class BallsDexBot(commands.AutoShardedBot):
                 "ws://", "http://"
             )
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{base_url}/health", timeout=10) as resp:
+                async with session.get(
+                    f"{base_url}/health", timeout=ClientTimeout(total=10)
+                ) as resp:
                     return resp.status == 200
         except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
             return False
