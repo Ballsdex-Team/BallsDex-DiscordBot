@@ -29,6 +29,8 @@ jobs:
           echo "$HOME/.poetry/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: poetry install --with=dev --no-interaction
+      - name: Lock dependencies
+        run: poetry lock --no-update
       - name: Run black
         run: poetry run black --check --diff $(git ls-files "*.py")
       - name: Run pre-commit checks
