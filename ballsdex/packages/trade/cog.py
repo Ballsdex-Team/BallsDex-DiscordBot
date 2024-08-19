@@ -279,7 +279,8 @@ class Trade(commands.GroupCog):
             content="Select the countryballs you want to add to your proposal, "
             "note that the display will wipe on pagination however "
             "the selected countryballs will remain.\n"
-            "Countryballs were rounded down to closest 25 for display purposes, final page may be missing entries."
+            "Countryballs were rounded down to closest 25 for "
+            "display purposes, final page may be missing entries."
         )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
