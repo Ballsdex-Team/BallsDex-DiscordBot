@@ -402,7 +402,7 @@ class Trade(commands.GroupCog):
             queryset = queryset.filter(
                 Q(player1__tradeobjects__ballinstance__ball=countryball)
                 | Q(player2__tradeobjects__ballinstance__ball=countryball)
-            ).distinct("id")
+            ).distinct('id')
 
         history = await queryset.order_by(sorting.value).prefetch_related("player1", "player2")
 
