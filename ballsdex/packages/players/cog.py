@@ -225,7 +225,9 @@ class Player(commands.GroupCog):
             return
 
         await Block.create(player1=player1, player2=player2)
-        await interaction.response.send_message(f"You have blocked {user.mention}.", ephemeral=True)
+        await interaction.response.send_message(
+            f"You have blocked {user.mention}.", ephemeral=True
+        )
 
     @app_commands.command()
     async def unblock(self, interaction: discord.Interaction, user: discord.User):
