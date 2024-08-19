@@ -8,6 +8,7 @@ from discord.ext import commands
 from tortoise.expressions import Q
 
 from ballsdex.core.models import BallInstance, DonationPolicy
+from ballsdex.core.models import Friendship
 from ballsdex.core.models import Player as PlayerModel
 from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -28,6 +29,8 @@ class Player(commands.GroupCog):
             self.__cog_app_commands_group__.get_command("privacy").parameters[  # type: ignore
                 0
             ]._Parameter__parent.choices.pop()  # type: ignore
+
+    friends = app_commands.Group(name="friends", description="Friend commands")
 
     @app_commands.command()
     @app_commands.choices(
@@ -110,6 +113,50 @@ class Player(commands.GroupCog):
             return
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         await player.delete()
+
+    @friends.command()
+    async def add(self, interaction: discord.Interaction, user: discord.User):
+        """
+        Add another user as a friend.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to add as a friend.
+        """
+        player1, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
+
+        if player1 == player2:
+            await interaction.response.send_message(
+                "You cannot add yourself as a friend.", ephemeral=True
+            )
+            return
+        if user.bot:
+            await interaction.response.send_message(
+                "You cannot add a bot.", ephemeral=True
+            )
+            return
+        if player2 in self.bot.blacklist:
+            await interaction.response.send_message(
+                "You cannot add a blacklisted user.", ephemeral=True
+            )
+            return
+
+        existing_friendship = await Friendship.filter(
+            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
+        ).first()
+
+        if existing_friendship:
+            await interaction.response.send_message(
+                "You are already friends with this user.", ephemeral=True
+            )
+            return
+
+        await Friendship.create(player1=player1, player2=player2)
+        await interaction.response.send_message(
+            f"{user.mention} has been added as a friend!", ephemeral=True
+        )
 
     @app_commands.command()
     @app_commands.choices(
