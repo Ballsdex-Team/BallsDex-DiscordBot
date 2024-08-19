@@ -188,7 +188,9 @@ class Player(commands.GroupCog):
             )
             return
 
-        await Friendship.delete(player1=player1, player2=player2)
+        await Friendship.filter(
+            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
+        ).delete()
         await interaction.response.send_message(
             f"{user.mention} has been removed as a friend.", ephemeral=True
         )
