@@ -556,8 +556,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             await interaction.followup.send(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
-                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
-                f"(`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)!\n"
+                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)}!\n"
                 "Do you accept this donation?",
                 view=DonationRequest(self.bot, interaction, countryball, new_player),
             )
