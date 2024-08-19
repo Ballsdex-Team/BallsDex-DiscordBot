@@ -10,7 +10,6 @@ from discord.ui import Button, View, button
 
 from ballsdex.core.models import BallInstance, Trade, TradeObject
 from ballsdex.core.utils import menus
-from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
@@ -420,7 +419,7 @@ class CountryballsSelector(Pages):
             trader.proposal.append(ball)
             await ball.lock_for_trade()
         await interaction.followup.send(
-            f"{len(self.balls_selected)} {settings.collectible_name.title()}s added to your proposal.",
+            f"{len(self.balls_selected)} {settings.collectible_name}s added to your proposal.",
             ephemeral=True,
         )
         self.balls_selected.clear()
