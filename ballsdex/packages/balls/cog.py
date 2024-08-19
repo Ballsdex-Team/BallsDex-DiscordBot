@@ -566,8 +566,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         trade = await Trade.create(player1=old_player, player2=new_player)
         await TradeObject.create(trade=trade, ballinstance=countryball, player=old_player)
 
-        cb_txt = countryball.description(
-            short=True, include_emoji=True, bot=self.bot, is_trade=True
+        cb_txt = (
+            countryball.description(short=True, include_emoji=True, bot=self.bot, is_trade=True)
+            + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
         )
         await interaction.followup.send(
             f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!"
