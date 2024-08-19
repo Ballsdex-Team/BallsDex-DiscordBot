@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from tortoise.expressions import Q
 
-from ballsdex.core.models import BallInstance, DonationPolicy, Friendship
+from ballsdex.core.models import BallInstance, Block, DonationPolicy, Friendship
 from ballsdex.core.models import Player as PlayerModel
 from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -192,6 +192,74 @@ class Player(commands.GroupCog):
         ).delete()
         await interaction.response.send_message(
             f"{user.mention} has been removed as a friend.", ephemeral=True
+        )
+
+    @app_commands.command()
+    async def block(self, interaction: discord.Interaction, user: discord.User):
+        """
+        Block another user.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to block.
+        """
+        player1, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
+
+        if player1 == player2:
+            await interaction.response.send_message("You cannot block yourself.", ephemeral=True)
+            return
+        if user.bot:
+            await interaction.response.send_message("You cannot block a bot.", ephemeral=True)
+            return
+
+        blocked_already = await Block.filter(
+            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
+        ).first()
+
+        if blocked_already:
+            await interaction.response.send_message(
+                "You have already blocked this user.", ephemeral=True
+            )
+            return
+
+        await Block.create(player1=player1, player2=player2)
+        await interaction.response.send_message(f"You have blocked {user.mention}.", ephemeral=True)
+
+    @app_commands.command()
+    async def unblock(self, interaction: discord.Interaction, user: discord.User):
+        """
+        Unblock a user.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to unblock.
+        """
+        player1, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
+
+        if player1 == player2:
+            await interaction.response.send_message("You cannot block yourself.", ephemeral=True)
+            return
+        if user.bot:
+            await interaction.response.send_message("You cannot block a bot.", ephemeral=True)
+            return
+
+        blocked = await Block.filter(
+            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
+        ).exists()
+
+        if not blocked:
+            await interaction.response.send_message("This user isn't blocked.", ephemeral=True)
+            return
+
+        await Block.filter(
+            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
+        ).delete()
+        await interaction.response.send_message(
+            f"{user.mention} has been unblocked.", ephemeral=True
         )
 
     @app_commands.command()
