@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, cast
 import aiohttp
 import discord
 import discord.gateway
+from aiohttp import ClientTimeout
 from cachetools import TTLCache
 from discord import app_commands
 from discord.app_commands.translator import TranslationContextTypes, locale_str
@@ -110,7 +111,7 @@ class CommandTree(app_commands.CommandTree):
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
                     "The bot is currently starting, please wait for a few minutes... "
-                    f"({round((len(bot.shards)/bot.shard_count)*100)}%)",
+                    f"({round((len(bot.shards) / bot.shard_count) * 100)}%)",
                     ephemeral=True,
                 )
             return False  # wait for all shards to be connected
@@ -234,7 +235,9 @@ class BallsDexBot(commands.AutoShardedBot):
                 "ws://", "http://"
             )
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{base_url}/health", timeout=10) as resp:
+                async with session.get(
+                    f"{base_url}/health", timeout=ClientTimeout(total=10)
+                ) as resp:
                     return resp.status == 200
         except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
             return False
