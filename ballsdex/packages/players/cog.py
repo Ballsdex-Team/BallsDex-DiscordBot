@@ -8,13 +8,13 @@ from discord.ext import commands
 from tortoise.expressions import Q
 
 from ballsdex.core.models import (
-    BallInstance, 
-    DonationPolicy, 
-    Friendship, 
-    Player as PlayerModel, 
-    PrivacyPolicy, 
-    Trade, 
-    TradeObject
+    BallInstance,
+    DonationPolicy,
+    Friendship,
+    Player as PlayerModel,
+    PrivacyPolicy,
+    Trade,
+    TradeObject,
 )
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.settings import settings
