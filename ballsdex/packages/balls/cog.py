@@ -204,14 +204,16 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
+            special_txt = special if special else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {ball_txt} {settings.collectible_name}s yet."
+                    f"You don't have any {special_txt} {ball_txt} "
+                    f"{settings.collectible_name}s yet."
                 )
             else:
                 await interaction.followup.send(
                     f"{user_obj.name} doesn't have any "
-                    f"{ball_txt} {settings.collectible_name}s yet."
+                    f"{special_txt} {ball_txt} {settings.collectible_name}s yet."
                 )
             return
         if reverse:
@@ -351,7 +353,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         shiny_str = " shiny" if shiny else ""
         source.embed.description = (
             f"{settings.bot_name}{special_str}{shiny_str} progression: "
-            f"**{round(len(owned_countryballs)/len(bot_countryballs)*100, 1)}%**"
+            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
         source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
@@ -522,12 +524,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
         if user.bot:
-            await interaction.response.send_message("You cannot donate to bots.")
+            await interaction.response.send_message("You cannot donate to bots.", ephemeral=True)
             return
         if await countryball.is_locked():
             await interaction.response.send_message(
                 f"This {settings.collectible_name} is currently locked for a trade. "
-                "Please try again later."
+                "Please try again later.",
+                ephemeral=True,
             )
             return
         if countryball.favorite:
@@ -550,13 +553,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if new_player == old_player:
             await interaction.followup.send(
-                f"You cannot give a {settings.collectible_name} to yourself."
+                f"You cannot give a {settings.collectible_name} to yourself.", ephemeral=True
             )
             await countryball.unlock()
             return
         if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
             await interaction.followup.send(
-                "This player does not accept donations. You can use trades instead."
+                "This player does not accept donations. You can use trades instead.",
+                ephemeral=True,
             )
             await countryball.unlock()
             return
@@ -569,7 +573,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             await interaction.followup.send(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
-                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)!\n"
+                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
+                f"(`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)!\n"
                 "Do you accept this donation?",
                 view=DonationRequest(self.bot, interaction, countryball, new_player),
             )
@@ -583,8 +588,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         trade = await Trade.create(player1=old_player, player2=new_player)
         await TradeObject.create(trade=trade, ballinstance=countryball, player=old_player)
 
-        cb_txt = countryball.description(
-            short=True, include_emoji=True, bot=self.bot, is_trade=True
+        cb_txt = (
+            countryball.description(short=True, include_emoji=True, bot=self.bot, is_trade=True)
+            + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
         )
         await interaction.followup.send(
             f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!"

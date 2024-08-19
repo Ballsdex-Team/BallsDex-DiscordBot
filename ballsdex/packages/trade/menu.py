@@ -10,7 +10,6 @@ from discord.ui import Button, View, button
 
 from ballsdex.core.models import BallInstance, Trade, TradeObject
 from ballsdex.core.utils import menus
-from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
@@ -370,6 +369,8 @@ class CountryballsSelector(Pages):
     def set_options(self, balls: List[BallInstance]):
         options: List[discord.SelectOption] = []
         for ball in balls:
+            if ball.is_tradeable is False or ball.ball.enabled is False:
+                continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = "❤️ " if ball.favorite else ""
             shiny = "✨ " if ball.shiny else ""
@@ -397,7 +398,7 @@ class CountryballsSelector(Pages):
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
     async def confirm_button(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
             return await interaction.followup.send(
@@ -416,22 +417,32 @@ class CountryballsSelector(Pages):
                 ephemeral=True,
             )
 
+        if len(self.balls_selected) == 0:
+            return await interaction.followup.send(
+                "You have not selected any countryballs to add to your proposal.",
+                ephemeral=True,
+            )
         for ball in self.balls_selected:
+            if ball.is_tradeable is False:
+                return await interaction.followup.send(
+                    f"Countryball #{ball.pk:0X} is not tradeable.",
+                    ephemeral=True,
+                )
             trader.proposal.append(ball)
             await ball.lock_for_trade()
         await interaction.followup.send(
-            f"{len(self.balls_selected)} {settings.collectible_name.title()}s added to your proposal.",
+            f"{len(self.balls_selected)} {settings.collectible_name}s added to your proposal.",
             ephemeral=True,
         )
         self.balls_selected.clear()
 
     @discord.ui.button(label="Clear", style=discord.ButtonStyle.danger)
     async def clear_button(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         self.balls_selected.clear()
         await interaction.followup.send(
             f"You have cleared all currently selected {settings.collectible_name}s."
-            "This does not affect balls within your trade.\n"
+            f"This does not affect {settings.collectible_name}s within your trade.\n"
             "There may be an instance where it shows balls on the current page as selected, "
             "this is not the case - changing page will show the correct state.",
             ephemeral=True,

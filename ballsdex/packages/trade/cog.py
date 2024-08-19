@@ -15,7 +15,6 @@ from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
-    BallTransform,
     SpecialEnabledTransform,
     TradeCommandType,
 )
@@ -220,7 +219,7 @@ class Trade(commands.GroupCog):
     async def bulk_add(
         self,
         interaction: discord.Interaction,
-        ball: BallTransform | None = None,
+        ball: BallEnabledTransform | None = None,
         shiny: bool | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -258,11 +257,19 @@ class Trade(commands.GroupCog):
         filters["player__discord_id"] = interaction.user.id
         balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
         if not balls:
-            await interaction.followup.send("No countryballs found.", ephemeral=True)
+            await interaction.followup.send(
+                f"No {settings.collectible_name}s found.", ephemeral=True
+            )
             return
+
+        # round balls to closest 25 for display purposes
+        balls = [x for x in balls if x.is_tradeable]
+        balls = balls[: len(balls) - (len(balls) % 25)]
+
         if len(balls) < 25:
             await interaction.followup.send(
-                "You have less than 25 countryballs, you can use the add command instead.",
+                f"You have less than 25 {settings.collectible_name}s, "
+                "you can use the add command instead.",
                 ephemeral=True,
             )
             return
@@ -271,7 +278,9 @@ class Trade(commands.GroupCog):
         await view.start(
             content="Select the countryballs you want to add to your proposal, "
             "note that the display will wipe on pagination however "
-            "the selected countryballs will remain."
+            "the selected countryballs will remain.\n"
+            "Countryballs were rounded down to closest 25 for "
+            "display purposes, final page may be missing entries."
         )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
