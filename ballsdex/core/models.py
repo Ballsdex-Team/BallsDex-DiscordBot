@@ -443,3 +443,17 @@ class TradeObject(models.Model):
 
     def __str__(self) -> str:
         return str(self.pk)
+
+
+class Friendship(models.Model):
+    id: int
+    player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="friend1"
+    )
+    player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="friend2"
+    )
+    since = fields.DatetimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return str(self.pk)
