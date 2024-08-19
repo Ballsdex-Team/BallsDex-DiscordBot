@@ -457,3 +457,16 @@ class Friendship(models.Model):
 
     def __str__(self) -> str:
         return str(self.pk)
+
+
+class Block(models.Model):
+    id: int
+    player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="friend1"
+    )
+    player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="friend2"
+    )
+
+    def __str__(self) -> str:
+        return str(self.pk)
