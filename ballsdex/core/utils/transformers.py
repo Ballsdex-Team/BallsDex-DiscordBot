@@ -119,7 +119,7 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
         t2 = time.time()
         log.debug(
             f"{self.name.title()} autocompletion took "
-            f"{round((t2-t1)*1000)}ms, {len(choices)} results"
+            f"{round((t2 - t1) * 1000)}ms, {len(choices)} results"
         )
         return choices
 

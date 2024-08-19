@@ -40,6 +40,6 @@ repos:
           - aerich==0.6.3
           - redis
   - repo: https://github.com/csachs/pyproject-flake8
-    rev: v6.1.0
+    rev: v7.0.0
     hooks:
       - id: pyproject-flake8
