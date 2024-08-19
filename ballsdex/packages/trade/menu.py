@@ -369,6 +369,8 @@ class CountryballsSelector(Pages):
     def set_options(self, balls: List[BallInstance]):
         options: List[discord.SelectOption] = []
         for ball in balls:
+            if ball.is_tradeable is False or ball.ball.enabled is False:
+                continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = "❤️ " if ball.favorite else ""
             shiny = "✨ " if ball.shiny else ""
@@ -415,7 +417,17 @@ class CountryballsSelector(Pages):
                 ephemeral=True,
             )
 
+        if len(self.balls_selected) == 0:
+            return await interaction.followup.send(
+                "You have not selected any countryballs to add to your proposal.",
+                ephemeral=True,
+            )
         for ball in self.balls_selected:
+            if ball.is_tradeable is False:
+                return await interaction.followup.send(
+                    f"Countryball #{ball.pk:0X} is not tradeable.",
+                    ephemeral=True,
+                )
             trader.proposal.append(ball)
             await ball.lock_for_trade()
         await interaction.followup.send(
