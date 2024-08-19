@@ -15,7 +15,6 @@ from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
-    BallTransform,
     SpecialEnabledTransform,
     TradeCommandType,
 )
