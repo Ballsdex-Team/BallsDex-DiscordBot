@@ -520,7 +520,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             view = ConfirmChoiceView(interaction)
             await interaction.response.send_message(
                 f"This {settings.collectible_name} is a favorite, "
-                "are you sure you want to trade it?",
+                "are you sure you want to donate it?",
                 view=view,
                 ephemeral=True,
             )
@@ -549,7 +549,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if new_player.discord_id in self.bot.blacklist:
             await interaction.followup.send(
-                "You cannot donate to a blacklisted user", ephemeral=True
+                "You cannot donate to a blacklisted user.", ephemeral=True
             )
             await countryball.unlock()
             return
