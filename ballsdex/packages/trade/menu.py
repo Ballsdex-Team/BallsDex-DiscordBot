@@ -419,13 +419,13 @@ class CountryballsSelector(Pages):
 
         if len(self.balls_selected) == 0:
             return await interaction.followup.send(
-                "You have not selected any countryballs to add to your proposal.",
+                f"You have not selected any {settings.collectible_name}s to add to your proposal.",
                 ephemeral=True,
             )
         for ball in self.balls_selected:
             if ball.is_tradeable is False:
                 return await interaction.followup.send(
-                    f"Countryball #{ball.pk:0X} is not tradeable.",
+                    f"{settings.collectible_name.title()} #{ball.pk:0X} is not tradeable.",
                     ephemeral=True,
                 )
             trader.proposal.append(ball)
