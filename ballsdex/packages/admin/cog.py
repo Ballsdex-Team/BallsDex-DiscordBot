@@ -614,6 +614,11 @@ class Admin(commands.GroupCog):
                 "You must provide either `user` or `user_id`.", ephemeral=True
             )
             return
+        if user == interaction.user:
+            await interaction.response.send_message(
+                "You cannot blacklist yourself!", ephemeral=True
+            )
+            return
 
         if not user:
             try:
