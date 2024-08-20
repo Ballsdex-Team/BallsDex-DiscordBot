@@ -419,7 +419,7 @@ class CountryballsSelector(Pages):
 
         if len(self.balls_selected) == 0:
             return await interaction.followup.send(
-                f"You have not selected any {settings.collectible_name} to add to your proposal.",
+                f"You have not selected any {settings.collectible_name}s to add to your proposal.",
                 ephemeral=True,
             )
         for ball in self.balls_selected:
