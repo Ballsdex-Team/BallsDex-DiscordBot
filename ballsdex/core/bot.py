@@ -7,7 +7,7 @@ import math
 import time
 import types
 from datetime import datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Collection, cast
 
 import aiohttp
 import discord
@@ -117,9 +117,9 @@ class CommandTree(app_commands.CommandTree):
         return await bot.blacklist_check(interaction)
 
 
-class BallsDexBot(commands.AutoShardedBot):
+class BallsDexBot(commands.AutoShardedBot, discord.Client):
     """
-    BallsDex Discord bot
+    BallsDex Discord Bot
     """
 
     def __init__(self, command_prefix: PrefixType[BallsDexBot], dev: bool = False, **options):
@@ -153,7 +153,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self.command_log: set[int] = set()
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
 
-        self.owner_ids: set
+        self.owner_ids: Collection[int] = set()
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(
