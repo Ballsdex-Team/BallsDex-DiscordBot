@@ -1085,7 +1085,7 @@ class Admin(commands.GroupCog):
         else:
             count = await BallInstance.filter(player=player).delete()
         await interaction.followup.send(
-            f"{count} {settings.collectible_name}s from {user} have been reset.", ephemeral=True
+            f"{count} {settings.collectible_name}s from {user} have been deleted.", ephemeral=True
         )
         await log_action(
             f"{interaction.user} deleted {percentage or 100}% of "
@@ -1127,6 +1127,7 @@ class Admin(commands.GroupCog):
             filters["player__discord_id"] = user.id
         await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters).count()
+        verb = "is" if balls == 1 else "are"
         country = f"{ball.country} " if ball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
@@ -1138,7 +1139,7 @@ class Admin(commands.GroupCog):
             )
         else:
             await interaction.followup.send(
-                f"There are {balls} {special_str}{shiny_str}"
+                f"There {verb} {balls} {special_str}{shiny_str}"
                 f"{country}{settings.collectible_name}{plural}."
             )
 
