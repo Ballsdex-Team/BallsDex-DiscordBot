@@ -7,14 +7,14 @@ import math
 import time
 import types
 from datetime import datetime
-from typing import TYPE_CHECKING, Collection, cast
+from typing import TYPE_CHECKING, cast
 
 import aiohttp
 import discord
 import discord.gateway
 from aiohttp import ClientTimeout
 from cachetools import TTLCache
-from discord import app_commands
+from discord import app_commands, Interaction
 from discord.app_commands.translator import TranslationContextTypes, locale_str
 from discord.enums import Locale
 from discord.ext import commands
@@ -95,7 +95,7 @@ async def on_request_end(
 
 
 class CommandTree(app_commands.CommandTree):
-    async def interaction_check(self, interaction: discord.Interaction[BallsDexBot], /) -> bool:
+    async def interaction_check(self, interaction: Interaction, /) -> bool:
         # checking if the moment we receive this interaction isn't too late already
         # there is a 3 seconds limit for initial response, taking a little margin into account
         # https://discord.com/developers/docs/interactions/receiving-and-responding#responding-to-an-interaction
@@ -120,7 +120,7 @@ class CommandTree(app_commands.CommandTree):
 
 class BallsDexBot(commands.AutoShardedBot, discord.Client):
     """
-    BallsDex Discord bot
+    BallsDex Discord Bot
     """
 
     def __init__(self, command_prefix: PrefixType[BallsDexBot], dev: bool = False, **options):
@@ -154,7 +154,7 @@ class BallsDexBot(commands.AutoShardedBot, discord.Client):
         self.command_log: set[int] = set()
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
 
-        self.owner_ids: Collection[int] = set()
+        self.owner_ids: set[int] = set()
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(
