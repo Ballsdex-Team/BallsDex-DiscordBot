@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from ballsdex.core.models import GuildConfig
+from ballsdex.core.models import GuildConfig, Player
 from ballsdex.packages.config.components import AcceptTOSView
 from ballsdex.settings import settings
 
@@ -40,13 +40,15 @@ class Config(commands.GroupCog):
     async def channel(
         self,
         interaction: discord.Interaction,
-        channel: discord.TextChannel,
+        channel: discord.TextChannel | None = None,
     ):
         """
         Set or change the channel where countryballs will spawn.
         """
         guild = cast(discord.Guild, interaction.guild)  # guild-only command
         user = cast(discord.Member, interaction.user)
+        if not channel:
+            channel = interaction.channel
         if not user.guild_permissions.manage_guild:
             await interaction.response.send_message(
                 "You need the permission to manage the server to use this."
@@ -67,8 +69,14 @@ class Config(commands.GroupCog):
                 f"I need the permission to send embed links in {channel.mention}."
             )
             return
+        player, _ = await Player.get_or_create(discord_id=user.id)
+        view = AcceptTOSView(interaction, channel, player)
+        message = await channel.send(
+            embed=activation_embed, view=view
+        )
+        view.message = message
         await interaction.response.send_message(
-            embed=activation_embed, view=AcceptTOSView(interaction, channel)
+            f"Embed sent in {channel.mention}.", ephemeral=True
         )
 
     @app_commands.command()
