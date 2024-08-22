@@ -75,7 +75,7 @@ class Config(commands.GroupCog):
         view.message = message
 
         await interaction.response.send_message(
-            f"Embed sent in {channel.mention}.", ephemeral=True
+            f"The activation embed has been sent in {channel.mention}.", ephemeral=True
         )
 
     @app_commands.command()
