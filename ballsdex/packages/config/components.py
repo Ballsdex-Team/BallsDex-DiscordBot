@@ -1,3 +1,5 @@
+from typing import Optional
+
 import discord
 from discord.ui import Button, View, button
 
@@ -16,7 +18,7 @@ class AcceptTOSView(View):
         self.original_interaction = interaction
         self.channel = channel
         self.new_player = new_player
-        self.message: discord.Message = None
+        self.message: Optional[discord.Message] = None
 
         self.add_item(
             Button(
@@ -34,7 +36,7 @@ class AcceptTOSView(View):
         )
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id != self.new_player.discord_id:
+        if interaction.user.id != self.new_player.id:
             await interaction.response.send_message(
                 "You are not allowed to interact with this menu.", ephemeral=True
             )
