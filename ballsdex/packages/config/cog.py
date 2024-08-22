@@ -71,9 +71,7 @@ class Config(commands.GroupCog):
             return
         player, _ = await Player.get_or_create(discord_id=user.id)
         view = AcceptTOSView(interaction, channel, player)
-        message = await channel.send(
-            embed=activation_embed, view=view
-        )
+        message = await channel.send(embed=activation_embed, view=view)
         view.message = message
         await interaction.response.send_message(
             f"Embed sent in {channel.mention}.", ephemeral=True
