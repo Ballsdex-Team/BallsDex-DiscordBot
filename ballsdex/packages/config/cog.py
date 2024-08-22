@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from ballsdex.core.models import GuildConfig, Player
+from ballsdex.core.models import GuildConfig
 from ballsdex.packages.config.components import AcceptTOSView
 from ballsdex.settings import settings
 
@@ -73,10 +73,13 @@ class Config(commands.GroupCog):
             await interaction.response.send_message(
                 f"Embed sent in {channel.mention}.", ephemeral=True
             )
-        else:
-            await interaction.response.send_message(
-                "The specified channel is not valid.", ephemeral=True
-            )
+        elif not channel:
+            if isinstance(interaction.channel, discord.TextChannel):
+                channel = interaction.channel
+                await interaction.response.send_message(
+                    "The specified channel is not valid.", ephemeral=True
+                )
+                return
 
     @app_commands.command()
     async def disable(self, interaction: discord.Interaction):
