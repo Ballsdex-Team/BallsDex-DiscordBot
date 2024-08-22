@@ -50,7 +50,7 @@ class AcceptTOSView(View):
         style=discord.ButtonStyle.success,
         emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}",
     )
-    async def accept_button(self, interaction: discord.Interaction, item: discord.ui.Button):
+    async def accept_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
         config.spawn_channel = self.channel.id  # type: ignore
         await config.save()
@@ -59,7 +59,7 @@ class AcceptTOSView(View):
         )
         self.stop()
         if self.message:
-            item.disabled = True
+            button.disabled = True
             try:
                 await self.message.edit(view=self)  # Update the original message
             except discord.HTTPException:
@@ -70,11 +70,6 @@ class AcceptTOSView(View):
             " users talk unless the bot is disabled."
         )
 
-        try:
-            await self.message.edit(view=self)
-        except discord.HTTPException:
-            pass
-
     async def on_timeout(self) -> None:
         self.stop()
         if self.message:
@@ -84,3 +79,4 @@ class AcceptTOSView(View):
                 await self.message.edit(view=self)  # Update the original message
             except discord.HTTPException:
                 pass
+
