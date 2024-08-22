@@ -79,4 +79,3 @@ class AcceptTOSView(View):
                 await self.message.edit(view=self)  # Update the original message
             except discord.HTTPException:
                 pass
-
