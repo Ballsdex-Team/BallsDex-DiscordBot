@@ -72,7 +72,8 @@ class AcceptTOSView(View):
         self.stop()
         if self.message:
             for item in self.children:
-                item.disabled = True
+                if isinstance(item, discord.ui.Button):
+                    item.disabled = True
             try:
                 await self.message.edit(view=self)
             except discord.HTTPException:
