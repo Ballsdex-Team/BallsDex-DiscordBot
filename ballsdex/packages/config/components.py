@@ -1,26 +1,22 @@
 import discord
 from discord.ui import Button, View, button
 
-from ballsdex.core.models import GuildConfig, Player
+from ballsdex.core.models import GuildConfig
 from ballsdex.settings import settings
 
 
 class AcceptTOSView(View):
-    """
-    Button prompting the admin setting up the bot to accept the terms of service.
-    """
-
     def __init__(
         self,
         interaction: discord.Interaction,
         channel: discord.TextChannel,
-        new_player: Player,
+        new_player: discord.Member,
     ):
         super().__init__()
         self.original_interaction = interaction
         self.channel = channel
         self.new_player = new_player
-        self.message = None
+        self.message: discord.Message = None
 
         self.add_item(
             Button(
@@ -61,7 +57,7 @@ class AcceptTOSView(View):
         if self.message:
             button.disabled = True
             try:
-                await self.message.edit(view=self)  # Update the original message
+                await self.message.edit(view=self)
             except discord.HTTPException:
                 pass
         await interaction.response.send_message(
@@ -76,6 +72,6 @@ class AcceptTOSView(View):
             for item in self.children:
                 item.disabled = True
             try:
-                await self.message.edit(view=self)  # Update the original message
+                await self.message.edit(view=self)
             except discord.HTTPException:
                 pass
