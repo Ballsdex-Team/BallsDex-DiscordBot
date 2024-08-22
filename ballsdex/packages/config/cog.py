@@ -47,7 +47,7 @@ class Config(commands.GroupCog):
         channel: Optional[discord.TextChannel] = None,
     ):
         """
-        The new text channel to set.
+        Set or change the channel where countryballs will spawn.
 
         Parameters
         ----------
@@ -55,37 +55,28 @@ class Config(commands.GroupCog):
             The channel you want to set, current one if not specified.
         """
         user = cast(discord.Member, interaction.user)
-
-        if channel is None:
-            if isinstance(interaction.channel, discord.TextChannel):
-                channel = cast(discord.TextChannel, interaction.channel)
-            else:
-                await interaction.response.send_message(
-                    "The current channel is not a valid text channel.", ephemeral=True
-                )
-                return
-
         if not user.guild_permissions.manage_guild:
             await interaction.response.send_message(
                 "You need the permission to manage the server to use this."
             )
             return
 
-        if channel and isinstance(channel, discord.TextChannel):
-            view = AcceptTOSView(interaction, channel, user)
-            message = await channel.send(embed=activation_embed, view=view)
-            view.message = message
-
-            await interaction.response.send_message(
-                f"Embed sent in {channel.mention}.", ephemeral=True
-            )
-        elif not channel:
+        if channel is None:
             if isinstance(interaction.channel, discord.TextChannel):
                 channel = interaction.channel
+            else:
                 await interaction.response.send_message(
-                    "The specified channel is not valid.", ephemeral=True
+                    "The current channel is not a valid text channel.", ephemeral=True
                 )
                 return
+
+        view = AcceptTOSView(interaction, channel, user)
+        message = await channel.send(embed=activation_embed, view=view)
+        view.message = message
+
+        await interaction.response.send_message(
+            f"Embed sent in {channel.mention}.", ephemeral=True
+        )
 
     @app_commands.command()
     async def disable(self, interaction: discord.Interaction):
