@@ -66,8 +66,7 @@ class Config(commands.GroupCog):
             return
 
         if channel and isinstance(channel, discord.TextChannel):
-            player, _ = await Player.get_or_create(discord_id=user.id)
-            view = AcceptTOSView(interaction, channel, player)
+            view = AcceptTOSView(interaction, channel, user)
             message = await channel.send(embed=activation_embed, view=view)
             view.message = message
 
