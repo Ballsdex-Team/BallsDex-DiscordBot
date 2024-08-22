@@ -36,16 +36,24 @@ class Config(commands.GroupCog):
         self.bot = bot
 
     @app_commands.command()
-    @app_commands.describe(channel="The new text channel to set.")
+    @app_commands.checks.bot_has_permissions(
+        read_messages=True,
+        send_messages=True,
+        embed_links=True,
+    )
     async def channel(
         self,
         interaction: discord.Interaction,
         channel: Optional[discord.TextChannel] = None,
     ):
         """
-        Set or change the channel where countryballs will spawn.
+        The new text channel to set.
+
+        Parameters
+        ----------
+        channel: discord.TextChannel
+            The channel you want to set, current one if not specified.
         """
-        guild = cast(discord.Guild, interaction.guild)  # guild-only command
         user = cast(discord.Member, interaction.user)
 
         if not channel:
@@ -57,24 +65,7 @@ class Config(commands.GroupCog):
             )
             return
 
-        # Check if channel is not None before accessing its permissions
-        if channel:
-            if not channel.permissions_for(guild.me).read_messages:
-                await interaction.response.send_message(
-                    f"I need the permission to read messages in {channel.mention}."
-                )
-                return
-            if not channel.permissions_for(guild.me).send_messages:
-                await interaction.response.send_message(
-                    f"I need the permission to send messages in {channel.mention}."
-                )
-                return
-            if not channel.permissions_for(guild.me).embed_links:
-                await interaction.response.send_message(
-                    f"I need the permission to send embed links in {channel.mention}."
-                )
-                return
-
+        if channel and isinstance(channel, discord.TextChannel):
             player, _ = await Player.get_or_create(discord_id=user.id)
             view = AcceptTOSView(interaction, channel, player)
             message = await channel.send(embed=activation_embed, view=view)
@@ -118,7 +109,8 @@ class Config(commands.GroupCog):
                 if channel:
                     await interaction.response.send_message(
                         f"{settings.bot_name} is now enabled in this server, "
-                        f"{settings.collectible_name}s will start spawning soon in {channel.mention}."
+                        f"{settings.collectible_name}s will start spawning "
+                        f"soon in {channel.mention}."
                     )
                 else:
                     await interaction.response.send_message(
