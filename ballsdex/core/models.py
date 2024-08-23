@@ -363,12 +363,14 @@ class DonationPolicy(IntEnum):
     ALWAYS_ACCEPT = 1
     REQUEST_APPROVAL = 2
     ALWAYS_DENY = 3
+    FRIENDS_ONLY = 4
 
 
 class PrivacyPolicy(IntEnum):
     ALLOW = 1
     DENY = 2
     SAME_SERVER = 3
+    FRIENDS_ONLY = 4
 
 
 class Player(models.Model):
