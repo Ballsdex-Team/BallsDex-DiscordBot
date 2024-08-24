@@ -11,6 +11,7 @@ class AcceptTOSView(View):
     """
     Button prompting the admin setting up the bot to accept the terms of service.
     """
+
     def __init__(
         self,
         interaction: discord.Interaction,
