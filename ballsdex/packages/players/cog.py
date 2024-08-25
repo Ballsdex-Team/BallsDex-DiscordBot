@@ -257,10 +257,10 @@ class Player(commands.GroupCog):
         player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
 
         if player1 == player2:
-            await interaction.response.send_message("You cannot block yourself.", ephemeral=True)
+            await interaction.response.send_message("You cannot unblock yourself.", ephemeral=True)
             return
         if user.bot:
-            await interaction.response.send_message("You cannot block a bot.", ephemeral=True)
+            await interaction.response.send_message("You cannot unblock a bot.", ephemeral=True)
             return
 
         blocked = await Block.filter(
