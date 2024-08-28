@@ -400,15 +400,18 @@ class Trade(commands.GroupCog):
 
         if countryball:
             queryset = queryset.filter(
-                Q(player1__tradeobjects__ballinstance__ball=countryball)
-                | Q(player2__tradeobjects__ballinstance__ball=countryball)
-            ).distinct()  # for some reason, this query creates a lot of duplicate rows?
+                Q(tradeobjects__ballinstance__ball=countryball)
+            ).distinct()
 
-        history = await queryset.order_by(sorting.value).prefetch_related("player1", "player2")
+        history = await queryset.order_by(sorting.value).prefetch_related(
+            "player1", "player2", "tradeobjects__ballinstance__ball"
+        )
 
         if not history:
             await interaction.followup.send("No history found.", ephemeral=True)
             return
+
         source = TradeViewFormat(history, interaction.user.name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start()
+
