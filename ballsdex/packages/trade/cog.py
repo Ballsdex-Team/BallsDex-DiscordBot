@@ -399,9 +399,7 @@ class Trade(commands.GroupCog):
             queryset = queryset.filter(date__range=(start_date, end_date))
 
         if countryball:
-            queryset = queryset.filter(
-                Q(tradeobjects__ballinstance__ball=countryball)
-            ).distinct()
+            queryset = queryset.filter(Q(tradeobjects__ballinstance__ball=countryball)).distinct()
 
         history = await queryset.order_by(sorting.value).prefetch_related(
             "player1", "player2", "tradeobjects__ballinstance__ball"
@@ -414,4 +412,3 @@ class Trade(commands.GroupCog):
         source = TradeViewFormat(history, interaction.user.name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start()
-
