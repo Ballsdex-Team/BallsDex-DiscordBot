@@ -32,6 +32,8 @@ class Settings:
         Usually "BallsDex", can be replaced when possible
     players_group_cog_name: str
         Set the name of the base command of the "players" cog, /balls by default
+    max_favorites:
+        Set the maximum amount of favorited countryballs a user can have, 50 by default.
     about_description: str
         Used in the /about command
     github_link: str
@@ -160,6 +162,9 @@ bot-name: BallsDex
 # this is /balls by default, but you can change it for /animals or /rocks for example
 players-group-cog-name: balls
 
+# maximum amount of favorites that are allowed
+max-favorites: 50
+
 # enables the /admin command
 admin-command:
 
@@ -202,6 +207,7 @@ def update_settings(path: "Path"):
 
     add_owners = True
     add_config_ref = "# yaml-language-server: $schema=json-config-ref.json" not in content
+    add_max_favorites = "max-favorites:" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -223,6 +229,12 @@ owners:
             content = content.replace("$schema=config-ref.json", "$schema=json-config-ref.json")
         else:
             content = "# yaml-language-server: $schema=json-config-ref.json\n" + content
+
+    if add_max_favorites:
+        content += """
+# maximum amount of favorites that are allowed
+max-favorites: 50
+"""
 
     if any((add_owners, add_config_ref)):
         path.write_text(content)

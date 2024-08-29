@@ -520,7 +520,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             view = ConfirmChoiceView(interaction)
             await interaction.response.send_message(
                 f"This {settings.collectible_name} is a favorite, "
-                "are you sure you want to trade it?",
+                "are you sure you want to donate it?",
                 view=view,
                 ephemeral=True,
             )
@@ -549,15 +549,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if new_player.discord_id in self.bot.blacklist:
             await interaction.followup.send(
-                "You cannot donate to a blacklisted user", ephemeral=True
+                "You cannot donate to a blacklisted user.", ephemeral=True
             )
             await countryball.unlock()
             return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             await interaction.followup.send(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
-                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
-                f"(`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)!\n"
+                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)}!\n"
                 "Do you accept this donation?",
                 view=DonationRequest(self.bot, interaction, countryball, new_player),
             )
