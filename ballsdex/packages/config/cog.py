@@ -36,6 +36,7 @@ class Config(commands.GroupCog):
         self.bot = bot
 
     @app_commands.command()
+    @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.checks.bot_has_permissions(
         read_messages=True,
         send_messages=True,
@@ -55,11 +56,6 @@ class Config(commands.GroupCog):
             The channel you want to set, current one if not specified.
         """
         user = cast(discord.Member, interaction.user)
-        if not user.guild_permissions.manage_guild:
-            await interaction.response.send_message(
-                "You need the permission to manage the server to use this."
-            )
-            return
 
         if channel is None:
             if isinstance(interaction.channel, discord.TextChannel):
