@@ -1567,7 +1567,7 @@ class Admin(commands.GroupCog):
             value=len(total_server_balls),
         )
         embed.add_field(
-            name="Amount of users who caught\n"f"{settings.collectible_name}s ({days} days):",
+            name="Amount of users who caught\n" f"{settings.collectible_name}s ({days} days):",
             value=len(set([x.player.discord_id for x in total_server_balls])),
         )
 
