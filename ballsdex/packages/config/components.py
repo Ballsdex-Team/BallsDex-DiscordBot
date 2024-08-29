@@ -73,7 +73,6 @@ class AcceptTOSView(View):
         )
 
     async def on_timeout(self) -> None:
-        self.stop()
         if self.message:
             for item in self.children:
                 if isinstance(item, discord.ui.Button):
