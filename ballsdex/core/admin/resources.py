@@ -205,7 +205,7 @@ class BallResource(Model):
         ),
         Field(
             name="collection_card",
-            label="Collection card",
+            label="Collection card (1600x900)",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
