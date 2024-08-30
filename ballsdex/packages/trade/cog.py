@@ -249,7 +249,7 @@ class Trade(commands.GroupCog):
             return
         filters = {}
         if countryball:
-            filters["ball"] = ball
+            filters["ball"] = countryball
         if shiny:
             filters["shiny"] = shiny
         if special:
