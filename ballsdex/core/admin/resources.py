@@ -102,7 +102,7 @@ class SpecialResource(Model):
         "rarity",
         Field(
             name="background",
-            label="Special background",
+            label="Special background (1428x2000)",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
@@ -205,7 +205,7 @@ class BallResource(Model):
         ),
         Field(
             name="collection_card",
-            label="Collection card",
+            label="Collection card (16:9 ratio)",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),

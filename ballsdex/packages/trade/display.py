@@ -167,14 +167,20 @@ def fill_trade_embed_fields(
                     f"{_get_prefix_emote(trader1)} {trader1.user.name}"
                     f" {trader1.user.id if is_admin else ''}"
                 ),
-                value=f"Trade too long, only showing last page:\n{trader1_proposal[-1]}",
+                value=(
+                    f"Trade too long, only showing last page:\n{trader1_proposal[-1]}"
+                    f"\nTotal: {len(trader1.proposal)}"
+                ),
                 inline=True,
             )
             embed.add_field(
                 name=(
                     f"{_get_prefix_emote(trader2)} {trader2.user.name}"
-                    f" {trader2.user.id if is_admin else ''}",
+                    f" {trader2.user.id if is_admin else ''}"
                 ),
-                value=f"Trade too long, only showing last page:\n{trader2_proposal[-1]}",
+                value=(
+                    f"Trade too long, only showing last page:\n{trader2_proposal[-1]}\n"
+                    f"Total: {len(trader2.proposal)}"
+                ),
                 inline=True,
             )

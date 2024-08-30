@@ -183,24 +183,28 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["special"] = special
         if sort:
             if sort == SortingChoices.duplicates:
-                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
+                countryballs = await player.balls.filter(**filters)
                 count = defaultdict(int)
                 for ball in countryballs:
                     count[ball.countryball.pk] += 1
                 countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
             elif sort == SortingChoices.stats_bonus:
-                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
+                countryballs = await player.balls.filter(**filters)
                 countryballs.sort(key=lambda x: x.health_bonus + x.attack_bonus, reverse=True)
             elif sort == SortingChoices.health or sort == SortingChoices.attack:
-                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
+                countryballs = await player.balls.filter(**filters)
                 countryballs.sort(key=lambda x: getattr(x, sort.value), reverse=True)
             elif sort == SortingChoices.total_stats:
-                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
+                countryballs = await player.balls.filter(**filters)
                 countryballs.sort(key=lambda x: x.health + x.attack, reverse=True)
+            elif sort == SortingChoices.rarity:
+                countryballs = await player.balls.filter(**filters).order_by(
+                    sort.value, "ball__country"
+                )
             else:
-                countryballs = await player.balls.filter(**filters).prefetch_related("ball").order_by(sort.value)
+                countryballs = await player.balls.filter(**filters).order_by(sort.value)
         else:
-            countryballs = await player.balls.filter(**filters).prefetch_related("ball").order_by("-favorite", "-shiny")
+            countryballs = await player.balls.filter(**filters).order_by("-favorite", "-shiny")
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
@@ -249,13 +253,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
-        await interaction.response.defer(thinking=True)
+        extra_text = "shiny " if shiny else "" + f"{special.name} " if special else ""
         if user is not None:
             try:
                 player = await Player.get(discord_id=user_obj.id)
             except DoesNotExist:
                 await interaction.response.send_message(
-                    f"{user_obj.name} doesn't have any {settings.collectible_name}s yet."
+                    f"{user_obj.name} doesn't have any "
+                    f"{extra_text}{settings.collectible_name}s yet."
                 )
                 return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
@@ -273,18 +278,20 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
         if special:
             filters["special"] = special
-            filters["ball__created_at__lt"] = special.end_date
             bot_countryballs = {
                 x: y.capacity_logic["emoji"] if self.bot.cluster_count > 1 else y.emoji_id
                 for x, y in balls.items()
                 if y.enabled and y.created_at < special.end_date
             }
         if not bot_countryballs:
-            await interaction.followup.send(
-                f"There are no {settings.collectible_name}s registered on this bot yet.",
+            await interaction.response.send_message(
+                f"There are no {extra_text}{settings.collectible_name}s"
+                " registered on this bot yet.",
                 ephemeral=True,
             )
             return
+
+        await interaction.response.defer(thinking=True)
 
         if shiny is not None:
             filters["shiny"] = shiny
@@ -486,7 +493,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 emoji = countryball.countryball.capacity_logic["emoji"]
             else:
                 emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
-
             await interaction.response.send_message(
                 f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
                 f"isn't a favorite {settings.collectible_name} anymore.",
@@ -537,7 +543,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             view = ConfirmChoiceView(interaction)
             await interaction.response.send_message(
                 f"This {settings.collectible_name} is a favorite, "
-                "are you sure you want to trade it?",
+                "are you sure you want to donate it?",
                 view=view,
                 ephemeral=True,
             )
@@ -566,15 +572,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if new_player.discord_id in self.bot.blacklist:
             await interaction.followup.send(
-                "You cannot donate to a blacklisted user", ephemeral=True
+                "You cannot donate to a blacklisted user.", ephemeral=True
             )
             await countryball.unlock()
             return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             await interaction.followup.send(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
-                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)} "
-                f"(`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)!\n"
+                f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)}!\n"
                 "Do you accept this donation?",
                 view=DonationRequest(self.bot, interaction, countryball, new_player),
             )

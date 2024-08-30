@@ -41,9 +41,12 @@ class CountryballsSelector(Pages):
             custom_art = "🖼️" if "card" in ball.extra_data else ""
             options.append(
                 discord.SelectOption(
-                    label=f"{favorite}{shiny}{special}{custom_art}#{ball.pk:0X} {ball.countryball.country}",
-                    description=f"ATK: {ball.attack_bonus:+d}% • HP: {ball.health_bonus:+d}% • "
-                    f"Caught on {ball.catch_date.strftime('%d/%m/%y %H:%M')}",
+                    label=f"{favorite}{shiny}{special}#{custom_art}{ball.pk:0X} {ball.countryball.country}",
+                    description=(
+                        f"ATK: {ball.attack}({ball.attack_bonus:+d}%) "
+                        f"• HP: {ball.health}({ball.health_bonus:+d}%) • "
+                        f"Caught on {ball.catch_date.strftime('%d/%m/%y %H:%M')}"
+                    ),
                     emoji=emoji,
                     value=f"{ball.pk}",
                 )

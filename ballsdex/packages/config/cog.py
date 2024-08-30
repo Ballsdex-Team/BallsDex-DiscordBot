@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import discord
 from discord import app_commands
@@ -36,53 +36,52 @@ class Config(commands.GroupCog):
         self.bot = bot
 
     @app_commands.command()
-    @app_commands.describe(channel="The new text channel to set.")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.checks.bot_has_permissions(
+        read_messages=True,
+        send_messages=True,
+        embed_links=True,
+    )
     async def channel(
         self,
         interaction: discord.Interaction,
-        channel: discord.TextChannel,
+        channel: Optional[discord.TextChannel] = None,
     ):
         """
         Set or change the channel where countryballs will spawn.
+
+        Parameters
+        ----------
+        channel: discord.TextChannel
+            The channel you want to set, current one if not specified.
         """
-        guild = cast(discord.Guild, interaction.guild)  # guild-only command
         user = cast(discord.Member, interaction.user)
-        if not user.guild_permissions.manage_guild:
-            await interaction.response.send_message(
-                "You need the permission to manage the server to use this."
-            )
-            return
-        if not channel.permissions_for(guild.me).read_messages:
-            await interaction.response.send_message(
-                f"I need the permission to read messages in {channel.mention}."
-            )
-            return
-        if not channel.permissions_for(guild.me).send_messages:
-            await interaction.response.send_message(
-                f"I need the permission to send messages in {channel.mention}."
-            )
-            return
-        if not channel.permissions_for(guild.me).embed_links:
-            await interaction.response.send_message(
-                f"I need the permission to send embed links in {channel.mention}."
-            )
-            return
+
+        if channel is None:
+            if isinstance(interaction.channel, discord.TextChannel):
+                channel = interaction.channel
+            else:
+                await interaction.response.send_message(
+                    "The current channel is not a valid text channel.", ephemeral=True
+                )
+                return
+
+        view = AcceptTOSView(interaction, channel, user)
+        message = await channel.send(embed=activation_embed, view=view)
+        view.message = message
+
         await interaction.response.send_message(
-            embed=activation_embed, view=AcceptTOSView(interaction, channel)
+            f"The activation embed has been sent in {channel.mention}.", ephemeral=True
         )
 
     @app_commands.command()
+    @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.checks.bot_has_permissions(send_messages=True)
     async def disable(self, interaction: discord.Interaction):
         """
         Disable or enable countryballs spawning.
         """
         guild = cast(discord.Guild, interaction.guild)  # guild-only command
-        user = cast(discord.Member, interaction.user)
-        if not user.guild_permissions.manage_guild:
-            await interaction.response.send_message(
-                "You need the permission to manage the server to use this."
-            )
-            return
         config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
         if config.enabled:
             config.enabled = False  # type: ignore
@@ -98,10 +97,17 @@ class Config(commands.GroupCog):
             await config.save()
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=True)
             if config.spawn_channel and (channel := guild.get_channel(config.spawn_channel)):
-                await interaction.response.send_message(
-                    f"{settings.bot_name} is now enabled in this server, "
-                    f"{settings.collectible_name}s will start spawning soon in {channel.mention}."
-                )
+                if channel:
+                    await interaction.response.send_message(
+                        f"{settings.bot_name} is now enabled in this server, "
+                        f"{settings.collectible_name}s will start spawning "
+                        f"soon in {channel.mention}."
+                    )
+                else:
+                    await interaction.response.send_message(
+                        "The spawning channel specified in the configuration is not available.",
+                        ephemeral=True,
+                    )
             else:
                 await interaction.response.send_message(
                     f"{settings.bot_name} is now enabled in this server, however there is no "
