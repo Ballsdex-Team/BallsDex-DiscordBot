@@ -422,37 +422,45 @@ class CountryballsSelector(Pages):
         await interaction.response.defer(thinking=True, ephemeral=True)
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
-            return await interaction.followup.send(
+            await interaction.followup.send(
                 "The trade has been cancelled or the user is not part of the trade.",
                 ephemeral=True,
             )
+            return
         if trader.locked:
-            return await interaction.followup.send(
+            await interaction.followup.send(
                 "You have locked your proposal, it cannot be edited! "
                 "You can click the cancel button to stop the trade instead.",
                 ephemeral=True,
             )
+            return
         if any(ball in trader.proposal for ball in self.balls_selected):
-            return await interaction.followup.send(
+            await interaction.followup.send(
                 f"You have already added some of the {settings.collectible_name}s you selected.",
                 ephemeral=True,
             )
+            return
 
         if len(self.balls_selected) == 0:
-            return await interaction.followup.send(
-                f"You have not selected any {settings.collectible_name}s to add to your proposal.",
+            await interaction.followup.send(
+                f"You have not selected any {settings.collectible_name}s "
+                "to add to your proposal.",
                 ephemeral=True,
             )
+            return
         for ball in self.balls_selected:
             if ball.is_tradeable is False:
-                return await interaction.followup.send(
+                await interaction.followup.send(
                     f"{settings.collectible_name.title()} #{ball.pk:0X} is not tradeable.",
                     ephemeral=True,
                 )
+                return
             trader.proposal.append(ball)
             await ball.lock_for_trade()
+        grammar = "" if len(self.balls_selected) == 1 else "s"
         await interaction.followup.send(
-            f"{len(self.balls_selected)} {settings.collectible_name}s added to your proposal.",
+            f"{len(self.balls_selected)} {settings.collectible_name}"
+            f"{grammar} added to your proposal.",
             ephemeral=True,
         )
         self.balls_selected.clear()
