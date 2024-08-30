@@ -19,7 +19,7 @@ from ballsdex.core.utils.transformers import (
     TradeCommandType,
 )
 from ballsdex.packages.trade.display import TradeViewFormat
-from ballsdex.packages.trade.menu import BulkAddView, TradeMenu
+from ballsdex.packages.trade.menu import BulkAddView, TradeMenu, TradeViewMenu
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
@@ -412,3 +412,21 @@ class Trade(commands.GroupCog):
         source = TradeViewFormat(history, interaction.user.name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start()
+
+    @app_commands.command()
+    async def view(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+    ):
+        """
+        View the countryballs added to an ongoing trade.
+        """
+        trade, trader = self.get_trade(interaction)
+        if not trade or not trader:
+            await interaction.response.send_message(
+                "You do not have an ongoing trade.", ephemeral=True
+            )
+            return
+
+        source = TradeViewMenu(interaction, [trade.trader1, trade.trader2], self)
+        await source.start(content="Select a user to view their proposal.")
