@@ -756,7 +756,10 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message("That user isn't blacklisted.", ephemeral=True)
         else:
             if blacklisted.moderator_id:
-                moderator_msg = f"Moderator: {await self.bot.fetch_user(blacklisted.moderator_id)} ({blacklisted.moderator_id})"
+                moderator_msg = (
+                    f"Moderator: {await self.bot.fetch_user(blacklisted.moderator_id)}"
+                    f" ({blacklisted.moderator_id})"
+                )
             else:
                 moderator_msg = "Moderator: Unknown"
             if blacklisted.date:
@@ -802,7 +805,7 @@ class Admin(commands.GroupCog):
             return
 
         source = BlacklistViewFormat(history, _id, self.bot)
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Pages(source=source, interaction=interaction, compact=True)  # type: ignore
         await pages.start(ephemeral=True)
 
     @blacklist_guild.command(name="add")
@@ -952,7 +955,10 @@ class Admin(commands.GroupCog):
             )
         else:
             if blacklisted.moderator_id:
-                moderator_msg = f"Moderator: {await self.bot.fetch_user(blacklisted.moderator_id)} ({blacklisted.moderator_id})"
+                moderator_msg = (
+                    f"Moderator: {await self.bot.fetch_user(blacklisted.moderator_id)}"
+                    f"({blacklisted.moderator_id})"
+                )
             else:
                 moderator_msg = "Moderator: Unknown"
             if blacklisted.date:

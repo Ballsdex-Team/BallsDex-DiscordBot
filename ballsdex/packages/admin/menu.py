@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Iterable, Union
+from typing import TYPE_CHECKING, Iterable
 
 import discord
 from discord.utils import format_dt
@@ -9,6 +9,7 @@ from ballsdex.core.utils.paginator import Pages
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+
 
 class BlacklistViewFormat(menus.ListPageSource):
     def __init__(self, entries: Iterable[BlacklistHistory], user_id: int, bot: "BallsDexBot"):
@@ -25,16 +26,17 @@ class BlacklistViewFormat(menus.ListPageSource):
         if blacklist.moderator_id:
             moderator = await self.bot.fetch_user(blacklist.moderator_id)
             embed.add_field(
-                name="Blacklisted by" if blacklist.action_type == "blacklist" else "Unblacklisted by",
+                name="Blacklisted by"
+                if blacklist.action_type == "blacklist"
+                else "Unblacklisted by",
                 value=f"{moderator.display_name} ({moderator.id})",
-                inline=True
+                inline=True,
             )
-        embed.add_field(
-            name="Action Time",
-            value=format_dt(blacklist.date, "R"),
-            inline=True
-        )
+        embed.add_field(name="Action Time", value=format_dt(blacklist.date, "R"), inline=True)
         embed.set_footer(
-            text=f"Blacklist History {menu.current_page + 1 }/{menu.source.get_max_pages()} | Blacklist date: "
+            text=(
+                f"Blacklist History {menu.current_page + 1}/{menu.source.get_max_pages()}"
+                " | Blacklist date: "
+            )
         )
         return embed
