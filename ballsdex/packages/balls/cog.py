@@ -197,6 +197,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             elif sort == SortingChoices.total_stats:
                 countryballs = await player.balls.filter(**filters)
                 countryballs.sort(key=lambda x: x.health + x.attack, reverse=True)
+            elif sort == SortingChoices.rarity:
+                countryballs = await player.balls.filter(**filters).order_by(
+                    sort.value, "ball__country"
+                )
             else:
                 countryballs = await player.balls.filter(**filters).order_by(sort.value)
         else:
