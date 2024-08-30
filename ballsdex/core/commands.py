@@ -37,18 +37,6 @@ class Core(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def reloadcache(self, ctx: commands.Context):
-        """
-        Reload the cache of database models.
-
-        This is needed each time the database is updated, otherwise changes won't reflect until
-        next start.
-        """
-        await self.bot.load_cache()
-        await ctx.message.add_reaction("✅")
-
-    @commands.command()
-    @commands.is_owner()
     async def analyzedb(self, ctx: commands.Context):
         """
         Analyze the database. This refreshes the counts displayed by the `/about` command.
