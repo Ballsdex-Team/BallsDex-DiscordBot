@@ -1085,7 +1085,7 @@ class Admin(commands.GroupCog):
         else:
             count = await BallInstance.filter(player=player).delete()
         await interaction.followup.send(
-            f"{count} {settings.collectible_name}s from {user} have been reset.", ephemeral=True
+            f"{count} {settings.collectible_name}s from {user} have been deleted.", ephemeral=True
         )
         await log_action(
             f"{interaction.user} deleted {percentage or 100}% of "
@@ -1127,6 +1127,7 @@ class Admin(commands.GroupCog):
             filters["player__discord_id"] = user.id
         await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters).count()
+        verb = "is" if balls == 1 else "are"
         country = f"{ball.country} " if ball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
@@ -1138,7 +1139,7 @@ class Admin(commands.GroupCog):
             )
         else:
             await interaction.followup.send(
-                f"There are {balls} {special_str}{shiny_str}"
+                f"There {verb} {balls} {special_str}{shiny_str}"
                 f"{country}{settings.collectible_name}{plural}."
             )
 
@@ -1551,7 +1552,7 @@ class Admin(commands.GroupCog):
             owner = await self.bot.fetch_user(guild.owner_id)
             embed = discord.Embed(
                 title=f"{guild.name} ({guild.id})",
-                description=f"Owner: {owner} ({guild.owner_id})",
+                description=f"**Owner:** {owner} ({guild.owner_id})",
                 color=discord.Color.blurple(),
             )
         else:
@@ -1559,15 +1560,15 @@ class Admin(commands.GroupCog):
                 title=f"{guild.name} ({guild.id})",
                 color=discord.Color.blurple(),
             )
-        embed.add_field(name="Members", value=guild.member_count)
-        embed.add_field(name="Spawn Enabled", value=spawn_enabled)
-        embed.add_field(name="Created at", value=format_dt(guild.created_at, style="R"))
+        embed.add_field(name="Members:", value=guild.member_count)
+        embed.add_field(name="Spawn enabled:", value=spawn_enabled)
+        embed.add_field(name="Created at:", value=format_dt(guild.created_at, style="F"))
         embed.add_field(
-            name=f"{settings.collectible_name} Caught ({days} days)",
+            name=f"{settings.collectible_name.title()}s caught ({days} days):",
             value=len(total_server_balls),
         )
         embed.add_field(
-            name=f"Amount of Users who caught {settings.collectible_name} ({days} days)",
+            name="Amount of users who caught\n" f"{settings.collectible_name}s ({days} days):",
             value=len(set([x.player.discord_id for x in total_server_balls])),
         )
 
@@ -1604,30 +1605,33 @@ class Admin(commands.GroupCog):
         embed = discord.Embed(
             title=f"{user} ({user.id})",
             description=(
-                f"Privacy Policy: {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
-                f"Donation Policy: {DONATION_POLICY_MAP[player.donation_policy]}"
+                f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
+                f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}"
             ),
             color=discord.Color.blurple(),
         )
-        embed.add_field(name=f"Balls Caught ({days} days)", value=len(total_user_balls))
         embed.add_field(
-            name=f"{settings.collectible_name} Caught (Unique - ({days} days))",
+            name=f"{settings.collectible_name.title()}s caught ({days} days):",
+            value=len(total_user_balls),
+        )
+        embed.add_field(
+            name=f"Unique {settings.collectible_name}s caught ({days} days):",
             value=len(set(total_user_balls)),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s caught ({days} days))",
+            name=f"Total servers with {settings.collectible_name}s caught ({days} days):",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total {settings.collectible_name}s Caught",
+            name=f"Total {settings.collectible_name}s caught:",
             value=await BallInstance.filter(player__discord_id=user.id).count(),
         )
         embed.add_field(
-            name=f"Total Unique {settings.collectible_name}s Caught",
+            name=f"Total unique {settings.collectible_name}s caught:",
             value=len(set([x.countryball for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s Caught",
+            name=f"Total servers with {settings.collectible_name}s caught:",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore

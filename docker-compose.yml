@@ -1,5 +1,3 @@
-version: '3.4'
-
 x-common-env-vars:
   - &postgres-db
     POSTGRES_DB=ballsdex
