@@ -364,9 +364,7 @@ class BallsDexBot(commands.AutoShardedBot):
     async def on_command_error(
         self, context: commands.Context, exception: commands.errors.CommandError
     ):
-        if isinstance(
-            exception, (commands.CommandNotFound, commands.CheckFailure, commands.DisabledCommand)
-        ):
+        if isinstance(exception, (commands.CommandNotFound, commands.DisabledCommand)):
             return
 
         assert context.command
@@ -380,26 +378,34 @@ class BallsDexBot(commands.AutoShardedBot):
             await context.send("An attachment is missing.")
             return
 
-        if isinstance(exception, commands.CommandInvokeError):
-            if isinstance(exception.original, discord.Forbidden):
-                await context.send("The bot does not have the permission to do something.")
-                # log to know where permissions are lacking
+        if isinstance(exception, commands.CheckFailure):
+            if isinstance(exception, commands.BotMissingPermissions):
+                missing_perms = ", ".join(exception.missing_permissions)
+                await context.send(
+                    f"The bot is missing the permissions: `{missing_perms}`."
+                    " Give the bot those permissions for the command to work as expected."
+                )
                 log.warning(
-                    f"Missing permissions for text command {context.command.name}",
-                    exc_info=exception.original,
+                    f"Missing bot permissions for command {context.command.name}: {missing_perms}",
+                    exc_info=exception,
                 )
                 return
 
-            log.error(f"Error in text command {context.command.name}", exc_info=exception.original)
+            if isinstance(exception, commands.MissingPermissions):
+                missing_perms = ", ".join(exception.missing_permissions)
+                await context.send(
+                    f"You are missing the following permissions: `{missing_perms}`."
+                    " You need those permissions to run this command."
+                )
+                return
+
+            return
+
+        if isinstance(exception, commands.CommandInvokeError):
             await context.send(
                 "An error occured when running the command. Contact support if this persists."
             )
-            return
-
-        await context.send(
-            "An error occured when running the command. Contact support if this persists."
-        )
-        log.error(f"Unknown error in text command {context.command.name}", exc_info=exception)
+            log.error(f"Unknown error in text command {context.command.name}", exc_info=exception)
 
     async def on_application_command_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
@@ -410,14 +416,35 @@ class BallsDexBot(commands.AutoShardedBot):
             else:
                 await interaction.response.send_message(content, ephemeral=True)
 
+        if isinstance(error, app_commands.CommandOnCooldown):
+            await send(
+                "This command is on cooldown. Please retry "
+                f"<t:{math.ceil(time.time() + error.retry_after)}:R>."
+            )
+            return
+
         if isinstance(error, app_commands.CheckFailure):
-            if isinstance(error, app_commands.CommandOnCooldown):
+            if isinstance(error, app_commands.BotMissingPermissions):
+                missing_perms = ", ".join(error.missing_permissions)
                 await send(
-                    "This command is on cooldown. Please retry "
-                    f"<t:{math.ceil(time.time() + error.retry_after)}:R>."
+                    f"The bot is missing the permissions: `{missing_perms}`."
+                    " Give the bot those permissions for the command to work as expected."
+                )
+                command_name = getattr(interaction.command, "name", "unknown")
+                log.warning(
+                    f"Missing bot permissions for command {command_name}: {missing_perms}",
+                    exc_info=error,
                 )
                 return
-            await send("You are not allowed to use that command.")
+
+            if isinstance(error, app_commands.MissingPermissions):
+                missing_perms = ", ".join(error.missing_permissions)
+                await send(
+                    f"You are missing the following permissions: `{missing_perms}`."
+                    " You need those permissions to run this command."
+                )
+                return
+
             return
 
         if isinstance(error, app_commands.TransformerError):
