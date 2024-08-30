@@ -75,17 +75,17 @@ class Config(commands.GroupCog):
         )
 
     @app_commands.command()
+    @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.checks.bot_has_permissions(
+        read_messages=True,
+        send_messages=True,
+        embed_links=True,
+    )
     async def disable(self, interaction: discord.Interaction):
         """
         Disable or enable countryballs spawning.
         """
         guild = cast(discord.Guild, interaction.guild)  # guild-only command
-        user = cast(discord.Member, interaction.user)
-        if not user.guild_permissions.manage_guild:
-            await interaction.response.send_message(
-                "You need the permission to manage the server to use this."
-            )
-            return
         config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
         if config.enabled:
             config.enabled = False  # type: ignore
