@@ -405,7 +405,7 @@ class CountryballsSelector(Pages):
                 "ball", "player"
             )
             if ball_instance not in self.balls_selected:
-                self.balls_selected.append(ball_instance)
+                self.balls_selected.add(ball_instance)
         await interaction.followup.send(
             (
                 f"All {settings.collectible_name}s on this page have been selected.\n"
