@@ -319,7 +319,7 @@ class GuildConfigResource(Model):
             placeholder="Filter by ID",
         ),
     ]
-    fields = ["guild_id", "spawn_channel", "enabled"]
+    fields = ["guild_id", "spawn_channel", "enabled", "silent"]
 
 
 @app.register
