@@ -183,28 +183,28 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["special"] = special
         if sort:
             if sort == SortingChoices.duplicates:
-                countryballs = await player.balls.filter(**filters)
+                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
                 count = defaultdict(int)
                 for ball in countryballs:
                     count[ball.countryball.pk] += 1
                 countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
             elif sort == SortingChoices.stats_bonus:
-                countryballs = await player.balls.filter(**filters)
+                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
                 countryballs.sort(key=lambda x: x.health_bonus + x.attack_bonus, reverse=True)
             elif sort == SortingChoices.health or sort == SortingChoices.attack:
-                countryballs = await player.balls.filter(**filters)
+                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
                 countryballs.sort(key=lambda x: getattr(x, sort.value), reverse=True)
             elif sort == SortingChoices.total_stats:
-                countryballs = await player.balls.filter(**filters)
+                countryballs = await player.balls.filter(**filters).prefetch_related("ball")
                 countryballs.sort(key=lambda x: x.health + x.attack, reverse=True)
             elif sort == SortingChoices.rarity:
                 countryballs = await player.balls.filter(**filters).order_by(
                     sort.value, "ball__country"
-                )
+                ).prefetch_related("ball")
             else:
-                countryballs = await player.balls.filter(**filters).order_by(sort.value)
+                countryballs = await player.balls.filter(**filters).order_by(sort.value).prefetch_related("ball")
         else:
-            countryballs = await player.balls.filter(**filters).order_by("-favorite", "-shiny")
+            countryballs = await player.balls.filter(**filters).order_by("-favorite", "-shiny").prefetch_related("ball")
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
