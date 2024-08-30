@@ -364,9 +364,7 @@ class BallsDexBot(commands.AutoShardedBot):
     async def on_command_error(
         self, context: commands.Context, exception: commands.errors.CommandError
     ):
-        if isinstance(
-            exception, (commands.CommandNotFound, commands.CheckFailure, commands.DisabledCommand)
-        ):
+        if isinstance(exception, commands.CommandNotFound):
             return
 
         assert context.command
