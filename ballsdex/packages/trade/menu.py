@@ -472,7 +472,8 @@ class CountryballsSelector(Pages):
 
 class BulkAddView(CountryballsSelector):
     async def on_timeout(self) -> None:
-        return await super().on_timeout()
+        await super().on_timeout()
+        return
 
 
 class TradeViewSource(menus.ListPageSource):
@@ -520,19 +521,21 @@ class TradeViewMenu(Pages):
         player = await Player.get(discord_id=int(item.values[0]))
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
-            return await interaction.followup.send(
+            await interaction.followup.send(
                 "The trade has been cancelled or the user is not part of the trade.",
                 ephemeral=True,
             )
+            return
         trade_player = (
             trade.trader1 if trade.trader1.user.id == player.discord_id else trade.trader2
         )
         ball_instances = trade_player.proposal
         if len(ball_instances) == 0:
-            return await interaction.followup.send(
+            await interaction.followup.send(
                 f"{trade_player.user} has not added any {settings.collectible_name}s.",
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(thinking=True)
         paginator = CountryballsViewer(interaction, ball_instances)
