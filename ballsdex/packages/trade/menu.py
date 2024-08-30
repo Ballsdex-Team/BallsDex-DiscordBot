@@ -166,6 +166,7 @@ class TradeMenu:
     def _generate_embed(self):
         add_command = self.cog.add.extras.get("mention", "`/trade add`")
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
+        view_command = self.cog.view.extras.get("mention", "`/trade view`")
 
         self.embed.title = f"{settings.collectible_name.title()}s trading"
         self.embed.color = discord.Colour.blurple()
@@ -174,7 +175,8 @@ class TradeMenu:
             f"using the {add_command} and {remove_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
-            "*You have 30 minutes before this interaction ends.*"
+            "*You have 30 minutes before this interaction ends.*\n\n"
+            f"Use the {view_command} command to see the full list of {settings.collectible_name}s "
         )
         self.embed.set_footer(
             text="This message is updated every 15 seconds, "

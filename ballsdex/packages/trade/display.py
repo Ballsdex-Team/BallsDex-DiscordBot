@@ -184,5 +184,3 @@ def fill_trade_embed_fields(
                 ),
                 inline=True,
             )
-            if embed.description:
-                embed.description += "\n\nTrade too long, use `/trade view` to see the full trade."
