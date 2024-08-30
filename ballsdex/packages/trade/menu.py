@@ -3,14 +3,15 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, List, cast
+from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
 from discord.ui import Button, View, button
 
-from ballsdex.core.models import BallInstance, Trade, TradeObject
+from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
+from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
@@ -165,6 +166,7 @@ class TradeMenu:
     def _generate_embed(self):
         add_command = self.cog.add.extras.get("mention", "`/trade add`")
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
+        view_command = self.cog.view.extras.get("mention", "`/trade view`")
 
         self.embed.title = f"{settings.collectible_name.title()}s trading"
         self.embed.color = discord.Colour.blurple()
@@ -173,7 +175,8 @@ class TradeMenu:
             f"using the {add_command} and {remove_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
-            "*You have 30 minutes before this interaction ends.*"
+            "*You have 30 minutes before this interaction ends.*\n\n"
+            f"Use the {view_command} command to see the full list of {settings.collectible_name}s "
         )
         self.embed.set_footer(
             text="This message is updated every 15 seconds, "
@@ -363,13 +366,13 @@ class CountryballsSelector(Pages):
         self.add_item(self.select_ball_menu)
         self.add_item(self.confirm_button)
         self.add_item(self.clear_button)
-        self.balls_selected: List[BallInstance] = []
+        self.balls_selected: Set[BallInstance] = set()
         self.cog = cog
 
     def set_options(self, balls: List[BallInstance]):
         options: List[discord.SelectOption] = []
         for ball in balls:
-            if ball.is_tradeable is False or ball.ball.enabled is False:
+            if ball.is_tradeable is False:
                 continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = "❤️ " if ball.favorite else ""
@@ -393,7 +396,7 @@ class CountryballsSelector(Pages):
             ball_instance = await BallInstance.get(id=int(value)).prefetch_related(
                 "ball", "player"
             )
-            self.balls_selected.append(ball_instance)
+            self.balls_selected.add(ball_instance)
         await interaction.response.defer()
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
@@ -452,3 +455,62 @@ class CountryballsSelector(Pages):
 class BulkAddView(CountryballsSelector):
     async def on_timeout(self) -> None:
         return await super().on_timeout()
+
+
+class TradeViewSource(menus.ListPageSource):
+    def __init__(self, entries: List[TradingUser]):
+        super().__init__(entries, per_page=25)
+
+    async def format_page(self, menu, players: List[TradingUser]):
+        menu.set_options(players)
+        return True  # signal to edit the page
+
+
+class TradeViewMenu(Pages):
+    def __init__(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        proposal: List[TradingUser],
+        cog: TradeCog,
+    ):
+        self.bot = interaction.client
+        source = TradeViewSource(proposal)
+        super().__init__(source, interaction=interaction)
+        self.add_item(self.select_player_menu)
+        self.cog = cog
+
+    def set_options(self, players: List[TradingUser]):
+        options: List[discord.SelectOption] = []
+        for player in players:
+            user_obj = player.user
+            options.append(
+                discord.SelectOption(
+                    label=f"{user_obj.display_name}",
+                    description=(
+                        f"ID: {user_obj.id} | {len(player.proposal)} "
+                        f"{settings.collectible_name}s"
+                    ),
+                    value=f"{user_obj.id}",
+                )
+            )
+        self.select_player_menu.options = options
+
+    @discord.ui.select()
+    async def select_player_menu(
+        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
+    ):
+        player = await Player.get(discord_id=int(item.values[0]))
+        trade, trader = self.cog.get_trade(interaction)
+        if trade is None or trader is None:
+            return await interaction.followup.send(
+                "The trade has been cancelled or the user is not part of the trade.",
+                ephemeral=True,
+            )
+        trade_player = (
+            trade.trader1 if trade.trader1.user.id == player.discord_id else trade.trader2
+        )
+        ball_instances = trade_player.proposal
+
+        await interaction.response.defer(thinking=True)
+        paginator = CountryballsViewer(interaction, ball_instances)
+        await paginator.start()
