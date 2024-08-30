@@ -197,6 +197,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             elif sort == SortingChoices.total_stats:
                 countryballs = await player.balls.filter(**filters)
                 countryballs.sort(key=lambda x: x.health + x.attack, reverse=True)
+            elif sort == SortingChoices.rarity:
+                countryballs = await player.balls.filter(**filters).order_by(
+                    sort.value, "ball__country"
+                )
             else:
                 countryballs = await player.balls.filter(**filters).order_by(sort.value)
         else:
@@ -249,12 +253,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
+        extra_text = "shiny " if shiny else "" + f"{special.name} " if special else ""
         if user is not None:
             try:
                 player = await Player.get(discord_id=user_obj.id)
             except DoesNotExist:
                 await interaction.response.send_message(
-                    f"{user_obj.name} doesn't have any {settings.collectible_name}s yet."
+                    f"{user_obj.name} doesn't have any "
+                    f"{extra_text}{settings.collectible_name}s yet."
                 )
                 return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
@@ -274,10 +280,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             }
         if not bot_countryballs:
             await interaction.response.send_message(
-                f"There are no {settings.collectible_name}s registered on this bot yet.",
+                f"There are no {extra_text}{settings.collectible_name}s"
+                " registered on this bot yet.",
                 ephemeral=True,
             )
             return
+
         await interaction.response.defer(thinking=True)
 
         if shiny is not None:
