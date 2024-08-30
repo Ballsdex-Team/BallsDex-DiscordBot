@@ -365,6 +365,7 @@ class CountryballsSelector(Pages):
         super().__init__(source, interaction=interaction)
         self.add_item(self.select_ball_menu)
         self.add_item(self.confirm_button)
+        self.add_item(self.select_all_button)
         self.add_item(self.clear_button)
         self.balls_selected: Set[BallInstance] = set()
         self.cog = cog
@@ -398,6 +399,23 @@ class CountryballsSelector(Pages):
             )
             self.balls_selected.add(ball_instance)
         await interaction.response.defer()
+
+    @discord.ui.button(label="Select Page", style=discord.ButtonStyle.secondary)
+    async def select_all_button(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        for ball in self.select_ball_menu.options:
+            ball_instance = await BallInstance.get(id=int(ball.value)).prefetch_related(
+                "ball", "player"
+            )
+            if ball_instance not in self.balls_selected:
+                self.balls_selected.add(ball_instance)
+        await interaction.followup.send(
+            (
+                f"All {settings.collectible_name}s on this page have been selected.\n"
+                "Note that the menu may not reflect this change until you change page."
+            ),
+            ephemeral=True,
+        )
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
     async def confirm_button(self, interaction: discord.Interaction, button: Button):
