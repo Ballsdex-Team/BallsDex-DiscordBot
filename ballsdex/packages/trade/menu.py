@@ -528,6 +528,11 @@ class TradeViewMenu(Pages):
             trade.trader1 if trade.trader1.user.id == player.discord_id else trade.trader2
         )
         ball_instances = trade_player.proposal
+        if len(ball_instances) == 0:
+            return await interaction.followup.send(
+                f"{trade_player.user} has not added any {settings.collectible_name}s.",
+                ephemeral=True,
+            )
 
         await interaction.response.defer(thinking=True)
         paginator = CountryballsViewer(interaction, ball_instances)
