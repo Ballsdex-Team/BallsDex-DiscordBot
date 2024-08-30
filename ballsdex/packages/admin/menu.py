@@ -26,9 +26,11 @@ class BlacklistViewFormat(menus.ListPageSource):
         if blacklist.moderator_id:
             moderator = await self.bot.fetch_user(blacklist.moderator_id)
             embed.add_field(
-                name="Blacklisted by"
-                if blacklist.action_type == "blacklist"
-                else "Unblacklisted by",
+                name=(
+                    "Blacklisted by"
+                    if blacklist.action_type == "blacklist"
+                    else "Unblacklisted by"
+                ),
                 value=f"{moderator.display_name} ({moderator.id})",
                 inline=True,
             )
