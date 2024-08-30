@@ -23,6 +23,18 @@ activation_embed = discord.Embed(
     "- Do not attempt to abuse the bot's internals\n"
     "**Not respecting these rules will lead to a blacklist**",
 )
+silent_activation_embed = discord.Embed(
+    colour=0x00D936,
+    title=f"{settings.bot_name} activation",
+    description=f"To enable {settings.bot_name} in your server with the silent mode enabled, "
+    f"you must read and accept the [Terms of Service]({settings.terms_of_service}).\n\n"
+    "As a summary, these are the rules of the bot:\n"
+    f"- No farming (spamming or creating servers for {settings.collectible_name}s)\n"
+    f"- Selling or exchanging {settings.collectible_name}s "
+    "against money or other goods is forbidden\n"
+    "- Do not attempt to abuse the bot's internals\n"
+    "**Not respecting these rules will lead to a blacklist**",
+)
 
 
 @app_commands.default_permissions(manage_guild=True)
@@ -66,8 +78,47 @@ class Config(commands.GroupCog):
                 )
                 return
 
-        view = AcceptTOSView(interaction, channel, user)
+        view = AcceptTOSView(interaction, channel, user, silent=False)
         message = await channel.send(embed=activation_embed, view=view)
+        view.message = message
+
+        await interaction.response.send_message(
+            f"The activation embed has been sent in {channel.mention}.", ephemeral=True
+        )
+
+    @app_commands.command()
+    @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.checks.bot_has_permissions(
+        read_messages=True,
+        send_messages=True,
+        embed_links=True,
+    )
+    async def silent(
+        self,
+        interaction: discord.Interaction,
+        channel: Optional[discord.TextChannel] = None,
+    ):
+        """
+        Set the channel where countryballs will spawn with the silent mode.
+
+        Parameters
+        ----------
+        channel: discord.TextChannel
+            The channel you want to set, current one if not specified.
+        """
+        user = cast(discord.Member, interaction.user)
+
+        if channel is None:
+            if isinstance(interaction.channel, discord.TextChannel):
+                channel = interaction.channel
+            else:
+                await interaction.response.send_message(
+                    "The current channel is not a valid text channel.", ephemeral=True
+                )
+                return
+
+        view = AcceptTOSView(interaction, channel, user, silent=True)
+        message = await channel.send(embed=silent_activation_embed, view=view)
         view.message = message
 
         await interaction.response.send_message(
