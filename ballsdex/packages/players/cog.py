@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from tortoise.expressions import Q
 
-from ballsdex.core.models import BallInstance, DonationPolicy
+from ballsdex.core.models import BallInstance, balls, DonationPolicy
 from ballsdex.core.models import Player as PlayerModel
 from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject
 from ballsdex.core.utils.buttons import ConfirmChoiceView
