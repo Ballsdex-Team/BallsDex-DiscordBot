@@ -126,7 +126,7 @@ class Player(commands.GroupCog):
             .distinct()
             .values_list("ball_id")
         )
-        completion_percentage = (f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%")
+        completion_percentage = f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
         ball = await BallInstance.filter(player=player).count()
         shiny = await BallInstance.filter(player=player, shiny=True).count()
         special = await BallInstance.filter(player=player).exclude(special=None).count()
