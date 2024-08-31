@@ -119,12 +119,15 @@ class Player(commands.GroupCog):
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         user = interaction.user
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
-        filters = {"ball__enabled": True}
+        total_countryballs = len(bot_countryballs)
         owned_countryballs = set(
-            x[0] for x in await BallInstance.filter(**filters).distinct().values_list("ball_id")
+            x[0]
+            for x in await BallInstance.filter(ball__enabled=True, player=player)
+            .distinct()
+            .values_list("ball_id")
         )
         completion_percentage = (
-            f"{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%"
+            f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
         )
         ball = await BallInstance.filter(player=player).count()
         shiny = await BallInstance.filter(player=player, shiny=True).count()
@@ -133,12 +136,12 @@ class Player(commands.GroupCog):
             await Trade.filter(player1__discord_id=interaction.user.id).count()
             + await Trade.filter(player2__discord_id=interaction.user.id).count()
         )
+
         embed = discord.Embed(
             title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Stats**",
             description=f"Here are your current statistics in {settings.bot_name.title()}!",
             color=discord.Color.blurple(),
         )
-
         embed.add_field(
             name="**Completion:**",
             value=f"{completion_percentage}",
@@ -159,7 +162,9 @@ class Player(commands.GroupCog):
             name="**Trades Completed:**",
             value=f"{trades:,}",
         )
-        embed.set_footer(text="Keep collecting and trading to improve your stats!")
+        embed.set_footer(
+            text="Keep collecting and trading to improve your stats!"
+        )
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
         await interaction.response.send_message(embed=embed)
 
