@@ -121,10 +121,7 @@ class Player(commands.GroupCog):
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
         filters = {"ball__enabled": True}
         owned_countryballs = set(
-            x[0]
-            for x in await BallInstance.filter(**filters)
-            .distinct()
-            .values_list("ball_id")
+            x[0] for x in await BallInstance.filter(**filters).distinct().values_list("ball_id")
         )
         completion_percentage = (
             f"{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%"
@@ -162,9 +159,7 @@ class Player(commands.GroupCog):
             name="**Trades Completed:**",
             value=f"{trades:,}",
         )
-        embed.set_footer(
-            text="Keep collecting and trading to improve your stats!"
-        )
+        embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
         await interaction.response.send_message(embed=embed)
 
