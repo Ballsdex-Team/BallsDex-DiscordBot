@@ -112,6 +112,63 @@ class Player(commands.GroupCog):
         await player.delete()
 
     @app_commands.command()
+    async def stats(self, interaction: discord.Interaction):
+        """
+        View your statistics in the bot!
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        user = interaction.user
+        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
+        filters = {"ball__enabled": True}
+        owned_countryballs = set(
+            x[0]
+            for x in await BallInstance.filter(**filters)
+            .distinct()
+            .values_list("ball_id")
+        )
+        completion_percentage = (
+            f"{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%"
+        )
+        ball = await BallInstance.filter(player=player).count()
+        shiny = await BallInstance.filter(player=player, shiny=True).count()
+        special = await BallInstance.filter(player=player).exclude(special=None).count()
+        trades = (
+            await Trade.filter(player1__discord_id=interaction.user.id).count()
+            + await Trade.filter(player2__discord_id=interaction.user.id).count()
+        )
+        embed = discord.Embed(
+            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Stats**",
+            description=f"Here are your current statistics in {settings.bot_name.title()}!",
+            color=discord.Color.blurple(),
+        )
+
+        embed.add_field(
+            name="**Completion:**",
+            value=f"{completion_percentage}",
+        )
+        embed.add_field(
+            name=f"**{settings.collectible_name.title()}s Owned:**",
+            value=f"{ball:,}",
+        )
+        embed.add_field(
+            name=f"**Shiny {settings.collectible_name}s:**",
+            value=f"{shiny:,}\n",
+        )
+        embed.add_field(
+            name=f"**Special {settings.collectible_name}s:**",
+            value=f"{special:,}",
+        )
+        embed.add_field(
+            name="**Trades Completed:**",
+            value=f"{trades:,}",
+        )
+        embed.set_footer(
+            text="Keep collecting and trading to improve your stats!"
+        )
+        embed.set_thumbnail(url=user.display_avatar)  # type: ignore
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command()
     @app_commands.choices(
         type=[
             app_commands.Choice(name=settings.collectible_name.title(), value="balls"),
