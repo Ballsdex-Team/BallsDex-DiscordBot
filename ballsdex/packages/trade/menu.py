@@ -440,7 +440,8 @@ class CountryballsSelector(Pages):
 
         if len(self.balls_selected) == 0:
             return await interaction.followup.send(
-                f"You have not selected any {settings.collectible_name}s to add to your proposal.",
+                f"You have not selected any {settings.collectible_name}s "
+                "to add to your proposal.",
                 ephemeral=True,
             )
         for ball in self.balls_selected:
@@ -451,8 +452,10 @@ class CountryballsSelector(Pages):
                 )
             trader.proposal.append(ball)
             await ball.lock_for_trade()
+        grammar = "" if len(self.balls_selected) == 1 else "s"
         await interaction.followup.send(
-            f"{len(self.balls_selected)} {settings.collectible_name}s added to your proposal.",
+            f"{len(self.balls_selected)} {settings.collectible_name}"
+            f"{grammar} added to your proposal.",
             ephemeral=True,
         )
         self.balls_selected.clear()

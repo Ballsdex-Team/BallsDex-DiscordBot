@@ -219,7 +219,7 @@ class Trade(commands.GroupCog):
     async def bulk_add(
         self,
         interaction: discord.Interaction,
-        ball: BallEnabledTransform | None = None,
+        countryball: BallEnabledTransform | None = None,
         shiny: bool | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -228,7 +228,7 @@ class Trade(commands.GroupCog):
 
         Parameters
         ----------
-        ball: Ball
+        countryball: Ball
             The countryball you would like to filter the results to
         shiny: bool
             Filter the results to shinies
@@ -248,8 +248,8 @@ class Trade(commands.GroupCog):
             )
             return
         filters = {}
-        if ball:
-            filters["ball"] = ball
+        if countryball:
+            filters["ball"] = countryball
         if shiny:
             filters["shiny"] = shiny
         if special:
@@ -276,10 +276,10 @@ class Trade(commands.GroupCog):
 
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(
-            content="Select the countryballs you want to add to your proposal, "
-            "note that the display will wipe on pagination however "
-            "the selected countryballs will remain.\n"
-            "Countryballs were rounded down to closest 25 for "
+            content=f"Select the {settings.collectible_name}s you want to add to your proposal,"
+            " note that the display will wipe on pagination however "
+            f"the selected {settings.collectible_name}s will remain.\n"
+            f"{settings.collectible_name.title()}s were rounded down to closest 25 for "
             "display purposes, final page may be missing entries."
         )
 
