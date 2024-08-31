@@ -482,7 +482,7 @@ class Admin(commands.GroupCog):
 
         Parameters
         ----------
-        ball: Ball | None
+        countryball: Ball | None
             The countryball you want to spawn. Random according to rarities if not specified.
         channel: discord.TextChannel | None
             The channel you want to spawn the countryball in. Current channel if not specified.
