@@ -455,7 +455,8 @@ class CountryballsSelector(Pages):
             trader.proposal.append(ball)
             await ball.lock_for_trade()
         grammar = (
-            f"{settings.collectible_name}" if len(self.balls_selected) == 1
+            f"{settings.collectible_name}"
+            if len(self.balls_selected) == 1
             else f"{settings.plural_collectible_name}"
         )
         await interaction.followup.send(
