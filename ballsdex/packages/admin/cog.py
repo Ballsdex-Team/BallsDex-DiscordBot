@@ -709,7 +709,8 @@ class Admin(commands.GroupCog):
                 "User is now removed from blacklist.", ephemeral=True
             )
         await log_action(
-            f"{interaction.user} removed blacklist for user {user} ({user.id}).", self.bot
+            f"{interaction.user} removed blacklist for user {user} ({user.id}).\nReason: {reason}",
+            self.bot,
         )
 
     @blacklist.command(name="info")
@@ -779,7 +780,7 @@ class Admin(commands.GroupCog):
 
     @blacklist.command(name="history")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def blacklist_history(self, interaction: discord.Interaction, id: str):
+    async def blacklist_history(self, interaction: discord.Interaction, user_id: str):
         """
         Show the history of a blacklisted user or guild.
 
@@ -789,7 +790,7 @@ class Admin(commands.GroupCog):
             The ID of the user or guild you want to check.
         """
         try:
-            _id = int(id)
+            _id = int(user_id)
         except ValueError:
             await interaction.response.send_message(
                 "The ID you gave is not valid.", ephemeral=True
@@ -916,7 +917,9 @@ class Admin(commands.GroupCog):
                 "Guild is now removed from blacklist.", ephemeral=True
             )
             await log_action(
-                f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).", self.bot
+                f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).\n"
+                f"Reason: {reason}",
+                self.bot,
             )
 
     @blacklist_guild.command(name="info")
