@@ -258,7 +258,7 @@ class Trade(commands.GroupCog):
         balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
         if not balls:
             await interaction.followup.send(
-                f"No {settings.collectible_name}s found.", ephemeral=True
+                f"No {settings.plural_collectible_name} found.", ephemeral=True
             )
             return
 
@@ -268,7 +268,7 @@ class Trade(commands.GroupCog):
 
         if len(balls) < 25:
             await interaction.followup.send(
-                f"You have less than 25 {settings.collectible_name}s, "
+                f"You have less than 25 {settings.plural_collectible_name}, "
                 "you can use the add command instead.",
                 ephemeral=True,
             )
@@ -276,10 +276,10 @@ class Trade(commands.GroupCog):
 
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(
-            content=f"Select the {settings.collectible_name}s you want to add to your proposal,"
-            " note that the display will wipe on pagination however "
-            f"the selected {settings.collectible_name}s will remain.\n"
-            f"{settings.collectible_name.title()}s were rounded down to closest 25 for "
+            content=f"Select the {settings.plural_collectible_name} you want to add "
+            "to your proposal, note that the display will wipe on pagination however "
+            f"the selected {settings.plural_collectible_name} will remain.\n"
+            f"{settings.plural_collectible_name.title()} were rounded down to closest 25 for "
             "display purposes, final page may be missing entries."
         )
 
