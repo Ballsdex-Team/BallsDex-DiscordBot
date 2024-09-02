@@ -395,6 +395,9 @@ class BlacklistedID(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
+    moderator_id = fields.BigIntField(
+        description="Discord Moderator ID", validators=[DiscordSnowflakeValidator()], null=True
+    )
     reason = fields.TextField(null=True, default=None)
     date = fields.DatetimeField(null=True, default=None, auto_now_add=True)
 
@@ -406,11 +409,28 @@ class BlacklistedGuild(models.Model):
     discord_id = fields.BigIntField(
         description="Discord Guild ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
+    moderator_id = fields.BigIntField(
+        description="Discord Moderator ID", validators=[DiscordSnowflakeValidator()], null=True
+    )
     reason = fields.TextField(null=True, default=None)
     date = fields.DatetimeField(null=True, default=None, auto_now_add=True)
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+
+class BlacklistHistory(models.Model):
+    id = fields.IntField(pk=True)
+    discord_id = fields.BigIntField(
+        description="Discord ID", validators=[DiscordSnowflakeValidator()]
+    )
+    moderator_id = fields.BigIntField(
+        description="Discord Moderator ID", validators=[DiscordSnowflakeValidator()]
+    )
+    reason = fields.TextField(null=True, default=None)
+    date = fields.DatetimeField(auto_now_add=True)
+    id_type = fields.CharField(max_length=64, default="user")
+    action_type = fields.CharField(max_length=64, default="blacklist")
 
 
 class Trade(models.Model):
