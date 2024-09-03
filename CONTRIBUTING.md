@@ -28,10 +28,10 @@ Export the appropriate environment variables as described in the
 
 ### Installing the dependencies
 
-1. Get Python 3.10 and pip
-2. Install poetry with `pip install poetry`
-3. Run `poetry install`
-4. You may run commands inside the virtualenv with `poetry run ...`, or use `poetry shell`
+1. Get Python 3.10 and pip.
+2. Install poetry with `pip install poetry`.
+3. Run `poetry install`.
+4. You may run commands inside the virtualenv with `poetry run ...`, or use `poetry shell`.
 5. Set up your IDE Python version to the one from Poetry. The path to the virtualenv can
    be obtained with `poetry show -v`.
 

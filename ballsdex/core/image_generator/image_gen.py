@@ -43,7 +43,13 @@ def draw_card(ball_instance: "BallInstance"):
     )
 
     draw = ImageDraw.Draw(image)
-    draw.text((50, 20), ball.short_name or ball.country, font=title_font)
+    draw.text(
+        (50, 20),
+        ball.short_name or ball.country,
+        font=title_font,
+        stroke_width=2,
+        stroke_fill=(0, 0, 0, 255),
+    )
     for i, line in enumerate(textwrap.wrap(f"Ability: {ball.capacity_name}", width=26)):
         draw.text(
             (100, 1050 + 100 * i),
