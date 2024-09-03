@@ -155,6 +155,7 @@ class TradeMenu:
         self.task: asyncio.Task | None = None
         self.current_view: TradeView | ConfirmView = TradeView(self)
         self.message: discord.Message
+        self.end_time = math.ceil((datetime.now(timezone.utc) + timedelta(minutes=30)).timestamp())
 
     def _get_trader(self, user: discord.User | discord.Member) -> TradingUser:
         if user.id == self.trader1.user.id:
@@ -167,6 +168,7 @@ class TradeMenu:
         add_command = self.cog.add.extras.get("mention", "`/trade add`")
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
         view_command = self.cog.view.extras.get("mention", "`/trade view`")
+        timestamp = f"<t:{self.end_time}:R>"
 
         self.embed.title = f"{settings.collectible_name.title()}s trading"
         self.embed.color = discord.Colour.blurple()
@@ -175,7 +177,7 @@ class TradeMenu:
             f"using the {add_command} and {remove_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
-            "*You have 30 minutes before this interaction ends.*\n\n"
+            f"*This interaction ends {timestamp}.*\n\n"
             f"Use the {view_command} command to see the full list of {settings.collectible_name}s "
         )
         self.embed.set_footer(
