@@ -361,12 +361,14 @@ class CountryballsSelector(Pages):
     ):
         self.bot = interaction.client
         self.interaction = interaction
+        self.all_balls = balls
         source = CountryballsSource(balls)
         super().__init__(source, interaction=interaction)
         self.add_item(self.select_ball_menu)
         self.add_item(self.confirm_button)
         self.add_item(self.select_all_button)
         self.add_item(self.clear_button)
+        self.add_item(self.select_all_pages_button)
         self.balls_selected: Set[BallInstance] = set()
         self.cog = cog
 
@@ -410,10 +412,25 @@ class CountryballsSelector(Pages):
             if ball_instance not in self.balls_selected:
                 self.balls_selected.add(ball_instance)
         await interaction.followup.send(
-            (
-                f"All {settings.collectible_name}s on this page have been selected.\n"
-                "Note that the menu may not reflect this change until you change page."
-            ),
+            f"All {settings.collectible_name}s on this page have been selected.\n"
+            "Note that the menu may not reflect this change until you change page.",
+            ephemeral=True,
+        )
+
+    @discord.ui.button(label="Select All Pages", style=discord.ButtonStyle.secondary)
+    async def select_all_pages_button(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button,
+    ):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        
+        for ball in self.all_balls:
+            if ball not in self.balls_selected:
+                self.balls_selected.append(ball)
+
+        await interaction.followup.send(
+            f"All {settings.collectible_name}s across all pages have been selected.",
             ephemeral=True,
         )
 
