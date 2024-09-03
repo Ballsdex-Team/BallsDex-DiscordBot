@@ -58,6 +58,7 @@ class Config(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         channel: Optional[discord.TextChannel] = None,
+        silent: bool = False,
     ):
         """
         Set or change the channel where countryballs will spawn.
@@ -66,6 +67,8 @@ class Config(commands.GroupCog):
         ----------
         channel: discord.TextChannel
             The channel you want to set, current one if not specified.
+        silent: bool
+            Whether to config a server silently or not.
         """
         user = cast(discord.Member, interaction.user)
 
@@ -78,47 +81,8 @@ class Config(commands.GroupCog):
                 )
                 return
 
-        view = AcceptTOSView(interaction, channel, user, silent=False)
+        view = AcceptTOSView(interaction, channel, user, silent=silent)
         message = await channel.send(embed=activation_embed, view=view)
-        view.message = message
-
-        await interaction.response.send_message(
-            f"The activation embed has been sent in {channel.mention}.", ephemeral=True
-        )
-
-    @app_commands.command()
-    @app_commands.checks.has_permissions(manage_guild=True)
-    @app_commands.checks.bot_has_permissions(
-        read_messages=True,
-        send_messages=True,
-        embed_links=True,
-    )
-    async def silent(
-        self,
-        interaction: discord.Interaction,
-        channel: Optional[discord.TextChannel] = None,
-    ):
-        """
-        Set the channel where countryballs will spawn with the silent mode.
-
-        Parameters
-        ----------
-        channel: discord.TextChannel
-            The channel you want to set, current one if not specified.
-        """
-        user = cast(discord.Member, interaction.user)
-
-        if channel is None:
-            if isinstance(interaction.channel, discord.TextChannel):
-                channel = interaction.channel
-            else:
-                await interaction.response.send_message(
-                    "The current channel is not a valid text channel.", ephemeral=True
-                )
-                return
-
-        view = AcceptTOSView(interaction, channel, user, silent=True)
-        message = await channel.send(embed=silent_activation_embed, view=view)
         view.message = message
 
         await interaction.response.send_message(
