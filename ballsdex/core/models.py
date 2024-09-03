@@ -281,7 +281,7 @@ class BallInstance(models.Model):
     ) -> str:
         text = self.to_string(bot, is_trade=is_trade)
         if not short:
-            text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
+            text += f" ATK:{self.attack_bonus:+d}% ({self.attack}) HP:{self.health_bonus:+d}% ({self.health})"
         if include_emoji:
             if not bot:
                 raise TypeError(
