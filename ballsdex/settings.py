@@ -210,6 +210,9 @@ caught-already-phrase: I was caught already!
 # it will only show up first then the phrase
 mention-user: true
 
+# Maximum amount of favorites that are allowed
+max-favorites: 50
+
 # enables the /admin command
 admin-command:
 
