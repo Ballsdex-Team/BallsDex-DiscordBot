@@ -576,11 +576,13 @@ class Admin(commands.GroupCog):
             player=player,
             shiny=(shiny if shiny is not None else random.randint(1, 2048) == 1),
             attack_bonus=(
-                attack_bonus if attack_bonus is not None
+                attack_bonus
+                if attack_bonus is not None
                 else random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
             ),
             health_bonus=(
-                health_bonus if health_bonus is not None
+                health_bonus
+                if health_bonus is not None
                 else random.randint(-settings.max_defense_bonus, settings.max_defense_bonus)
             ),
             special=special,
