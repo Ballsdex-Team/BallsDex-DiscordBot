@@ -35,9 +35,9 @@ class Settings:
     max_favorites:
         Set the maximum amount of favorited countryballs a user can have, 50 by default.
     max_attack_bonus:
-        Set the biggest attack bonus that a spawned countryball can have.
+        Set the biggest/smallest attack bonus that a spawned countryball can have.
     max_defense_bonus:
-        Set the biggest defense bonus that a spawned countryball can have.
+        Set the biggest/smallest defense bonus that a spawned countryball can have.
     about_description: str
         Used in the /about command
     github_link: str
@@ -173,10 +173,10 @@ players-group-cog-name: balls
 # maximum amount of favorites that are allowed
 max-favorites: 50
 
-# the maximum stat attack bonus possible
+# the biggest/smallest stat attack bonus possible
 max-attack-bonus: 20
 
-# the maximum stat defense bonus possible
+# the biggest/smallest stat defense bonus possible
 max-defense-bonus: 20
 
 # enables the /admin command
@@ -254,13 +254,13 @@ max-favorites: 50
 
     if add_max_attack:
         content += """
-# the maximum stat attack bonus possible
+# the biggest/smallest stat attack bonus possible
 max-attack-bonus: 20
 """
 
     if add_max_defense:
         content += """
-# the maximum stat defense bonus possible
+# the biggest/smallest stat defense bonus possible
 max-defense-bonus: 20
 """
 
