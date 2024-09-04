@@ -173,10 +173,12 @@ players-group-cog-name: balls
 # maximum amount of favorites that are allowed
 max-favorites: 50
 
-# the biggest/smallest stat attack bonus possible
+# the highest/lowest possible attack bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
 max-attack-bonus: 20
 
-# the biggest/smallest stat defense bonus possible
+# the highest/lowest possible defense bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
 max-defense-bonus: 20
 
 # enables the /admin command
@@ -254,13 +256,15 @@ max-favorites: 50
 
     if add_max_attack:
         content += """
-# the biggest/smallest stat attack bonus possible
+# the highest/lowest possible attack bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
 max-attack-bonus: 20
 """
 
     if add_max_defense:
         content += """
-# the biggest/smallest stat defense bonus possible
+# the highest/lowest possible defense bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
 max-defense-bonus: 20
 """
 
