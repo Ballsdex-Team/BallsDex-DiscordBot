@@ -23,6 +23,11 @@ caught_balls = Counter(
     "caught_cb", "Caught countryballs", ["country", "shiny", "special", "guild_size"]
 )
 
+def get_allowed_mentions(mention_user: bool) -> discord.AllowedMentions:
+    if mention_user:
+        return discord.AllowedMentions(users=True)
+    else:
+        return discord.AllowedMentions(users=False)
 
 class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name}!"):
     name = TextInput(
@@ -50,13 +55,10 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         # TODO: use lock
         if self.ball.catched:
-            if settings.mention_user:
-                message = f"{interaction.user.mention} {settings.caught_already_phrase}"
-            else:
-                message = settings.caught_already_phrase
-
-            await interaction.response.send_message(message)
-
+            message = f"{interaction.user.mention} {settings.caught_already_phrase}"
+            mentions = get_allowed_mentions(settings.mention_user)
+            await interaction.response.send_message(message, allowed_mentions=mentions)
+            return
         if self.ball.model.catch_names:
             possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
         else:
@@ -78,32 +80,21 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                     collectible_name=settings.collectible_name
                 )
                 special += f"{completion_phrase}"
-            if settings.mention_user:
-                message = (
+            message = (
                     f"{interaction.user.mention} "
                     f"{settings.you_caught_phrase.format(ball_name=self.ball.name)}"
                     f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
                     f"{special}"
                 )
-            else:
-                message = (
-                    f"{settings.you_caught_phrase.format(ball_name=self.ball.name)}"
-                    f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
-                    f"{special}"
-                )
-
-            await interaction.followup.send(message)
+            mentions = get_allowed_mentions(settings.mention_user)
+            await interaction.response.send_message(message, allowed_mentions=mentions)
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
             if self.ball.catched:
-                if settings.mention_user:
-                    message = f"{interaction.user.mention} {settings.wrong_name_phrase}"
-                else:
-                    message = settings.wrong_name_phrase
-
-                await interaction.response.send_message(message)
-
+                message = f"{interaction.user.mention} {settings.wrong_name_phrase}"
+                mentions = get_allowed_mentions(settings.mention_user)
+                await interaction.response.send_message(message, allowed_mentions=mentions)
     async def catch_ball(
         self, bot: "BallsDexBot", user: discord.Member
     ) -> tuple[BallInstance, bool]:
