@@ -91,8 +91,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         player, created = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
-        bonus_attack = random.randint(-20, 20)
-        bonus_health = random.randint(-20, 20)
+        bonus_attack = random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
+        bonus_health = random.randint(-settings.max_defense_bonus, settings.max_defense_bonus)
         shiny = random.randint(1, 2048) == 1
 
         # check if we can spawn cards with a special background
