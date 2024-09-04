@@ -35,9 +35,9 @@ class Settings:
     max_favorites:
         Set the maximum amount of favorited countryballs a user can have, 50 by default.
     max_attack_bonus:
-        Set the biggest attack stat bonus possible that the bot can spawn.
+        Set the biggest attack bonus that a spawned countryball can have.
     max_defense_bonus:
-        Set the biggest defense stat bonus possible that the bot can spawn.
+        Set the biggest defense bonus that a spawned countryball can have.
     about_description: str
         Used in the /about command
     github_link: str
