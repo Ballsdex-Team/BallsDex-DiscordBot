@@ -24,6 +24,13 @@ caught_balls = Counter(
 )
 
 
+def get_allowed_mentions(mention_user: bool) -> discord.AllowedMentions:
+    if mention_user:
+        return discord.AllowedMentions(users=True)
+    else:
+        return discord.AllowedMentions(users=False)
+
+
 class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name}!"):
     name = TextInput(
         label=f"Name of this {settings.collectible_name}",
@@ -50,10 +57,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         # TODO: use lock
         if self.ball.catched:
-            await interaction.response.send_message(
-                f"{interaction.user.mention} I was caught already!"
-            )
-            return
+            message = f"{interaction.user.mention} {settings.caught_already_phrase}"
+            mentions = get_allowed_mentions(settings.mention_user)
+            await interaction.response.send_message(message, allowed_mentions=mentions)
         if self.ball.model.catch_names:
             possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
         else:
@@ -71,19 +77,24 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
             if has_caught_before:
-                special += (
-                    f"This is a **new {settings.collectible_name}** "
-                    "that has been added to your completion!"
+                completion_phrase = settings.new_completion_phrase.format(
+                    collectible_name=settings.collectible_name
                 )
-            await interaction.followup.send(
-                f"{interaction.user.mention} You caught **{self.ball.name}!** "
-                f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
+                special += f"{completion_phrase}"
+            message = (
+                f"{interaction.user.mention} "
+                f"{settings.you_caught_phrase.format(ball_name=self.ball.name)}"
+                f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
                 f"{special}"
             )
+            mentions = get_allowed_mentions(settings.mention_user)
+            await interaction.followup.send(message, allowed_mentions=mentions)
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
-            await interaction.response.send_message(f"{interaction.user.mention} Wrong name!")
+            message = f"{interaction.user.mention} {settings.wrong_name_phrase}"
+            mentions = get_allowed_mentions(settings.mention_user)
+            await interaction.response.send_message(message, allowed_mentions=mentions)
 
     async def catch_ball(
         self, bot: "BallsDexBot", user: discord.Member
@@ -149,7 +160,9 @@ class CatchButton(Button):
 
     async def callback(self, interaction: discord.Interaction):
         if self.ball.catched:
-            await interaction.response.send_message("I was caught already!", ephemeral=True)
+            await interaction.response.send_message(
+                f"{settings.caught_already_phrase}", ephemeral=True
+            )
         else:
             await interaction.response.send_modal(CountryballNamePrompt(self.ball, self))
 

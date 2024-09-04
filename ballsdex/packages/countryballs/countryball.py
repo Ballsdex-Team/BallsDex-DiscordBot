@@ -57,7 +57,7 @@ class CountryBall:
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
                 self.message = await channel.send(
-                    f"A wild {settings.collectible_name} appeared!",
+                    f"{settings.wild_phrase.format(collectible_name=settings.collectible_name)}",
                     view=CatchView(self),
                     file=discord.File(file_location, filename=file_name),
                 )
