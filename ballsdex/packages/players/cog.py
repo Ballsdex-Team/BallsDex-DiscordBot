@@ -140,8 +140,7 @@ class Player(commands.GroupCog):
         shiny = await player.balls.filter(shiny=True).count()
         special = await player.balls.filter().exclude(special=None).count()
         trades = await Trade.filter(
-            Q(player1__discord_id=interaction.user.id)
-            | Q(player2__discord_id=interaction.user.id)
+            Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
         ).count()
 
         embed = discord.Embed(
