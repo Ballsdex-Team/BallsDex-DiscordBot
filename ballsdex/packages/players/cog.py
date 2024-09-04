@@ -116,49 +116,45 @@ class Player(commands.GroupCog):
         """
         View your statistics in the bot!
         """
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        try:
+            player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related(
+                "balls"
+            )
+        except DoesNotExist:
+            await interaction.response.send_message(
+                "You aren't registered as a player, you have no stats to show!", ephemeral=True
+            )
+            return
+
         user = interaction.user
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
         total_countryballs = len(bot_countryballs)
         owned_countryballs = set(
             x[0]
-            for x in await BallInstance.filter(ball__enabled=True, player=player)
+            for x in await player.balls.filter(ball__enabled=True)
             .distinct()
             .values_list("ball_id")
         )
         completion_percentage = f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
-        ball = await BallInstance.filter(player=player).count()
-        shiny = await BallInstance.filter(player=player, shiny=True).count()
-        special = await BallInstance.filter(player=player).exclude(special=None).count()
-        trades = (
-            await Trade.filter(player1__discord_id=interaction.user.id).count()
-            + await Trade.filter(player2__discord_id=interaction.user.id).count()
-        )
+        ball = await player.balls.all().count()
+        shiny = await player.balls.filter(shiny=True).count()
+        special = await player.balls.filter().exclude(special=None).count()
+        trades = await Trade.filter(
+            Q(player1__discord_id=interaction.user.id)
+            | Q(player2__discord_id=interaction.user.id)
+        ).count()
 
         embed = discord.Embed(
             title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Stats**",
-            description=f"Here are your current statistics in {settings.bot_name.title()}!",
             color=discord.Color.blurple(),
         )
-        embed.add_field(
-            name="**Completion:**",
-            value=f"{completion_percentage}",
-        )
-        embed.add_field(
-            name=f"**{settings.collectible_name.title()}s Owned:**",
-            value=f"{ball:,}",
-        )
-        embed.add_field(
-            name=f"**Shiny {settings.collectible_name}s:**",
-            value=f"{shiny:,}\n",
-        )
-        embed.add_field(
-            name=f"**Special {settings.collectible_name}s:**",
-            value=f"{special:,}",
-        )
-        embed.add_field(
-            name="**Trades Completed:**",
-            value=f"{trades:,}",
+        embed.description = (
+            "Here are your current statistics in the bot!\n\n"
+            f"**Completion:** {completion_percentage}\n"
+            f"**{settings.collectible_name.title()}s Owned:** {ball:,}\n"
+            f"**Shiny {settings.collectible_name.title()}s:** {shiny:,}\n"
+            f"**Special {settings.collectible_name.title()}s:** {special:,}\n"
+            f"**Trades Completed:** {trades:,}"
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
