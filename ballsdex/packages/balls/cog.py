@@ -455,6 +455,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if not countryball:
             return
 
+        if settings.max_favorites == 0:
+            await interaction.response.send_message(
+                f"You cannot set favorite {settings.plural_collectible_name} in this bot."
+                return
+            )
+
         if not countryball.favorite:
             player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
             grammar = (
