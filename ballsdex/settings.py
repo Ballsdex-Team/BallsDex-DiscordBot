@@ -34,6 +34,10 @@ class Settings:
         Set the name of the base command of the "players" cog, /balls by default
     max_favorites:
         Set the maximum amount of favorited countryballs a user can have, 50 by default.
+    max_attack_bonus:
+        Set the biggest attack stat bonus possible that the bot can spawn.
+    max_defense_bonus:
+        Set the biggest defense stat bonus possible that the bot can spawn.
     about_description: str
         Used in the /about command
     github_link: str
@@ -62,6 +66,8 @@ class Settings:
     players_group_cog_name: str = "balls"
 
     max_favorites: int = 50
+    max_attack_bonus: int = 20
+    max_defense_bonus: int = 20
 
     # /about
     about_description: str = ""
@@ -120,6 +126,8 @@ def read_settings(path: "Path"):
     settings.prometheus_port = content["prometheus"]["port"]
 
     settings.max_favorites = content.get("max-favorites", 50)
+    settings.max_attack_bonus = content.get("max-attack-bonus", 20)
+    settings.max_defense_bonus = content.get("max-defense-bonus", 20)
     log.info("Settings loaded.")
 
 
@@ -165,6 +173,12 @@ players-group-cog-name: balls
 # maximum amount of favorites that are allowed
 max-favorites: 50
 
+# the maximum stat attack bonus possible
+max-attack-bonus: 20
+
+# the maximum stat defense bonus possible
+max-defense-bonus: 20
+
 # enables the /admin command
 admin-command:
 
@@ -208,6 +222,8 @@ def update_settings(path: "Path"):
     add_owners = True
     add_config_ref = "# yaml-language-server: $schema=json-config-ref.json" not in content
     add_max_favorites = "max-favorites:" not in content
+    add_max_attack = "max-attack-bonus" not in content
+    add_max_defense = "max-defense-bonus" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -234,6 +250,18 @@ owners:
         content += """
 # maximum amount of favorites that are allowed
 max-favorites: 50
+"""
+
+    if add_max_attack:
+        content += """
+# the maximum stat attack bonus possible
+max-attack-bonus: 20
+"""
+
+    if add_max_defense:
+        content += """
+# the maximum stat defense bonus possible
+max-defense-bonus: 20
 """
 
     if any((add_owners, add_config_ref)):
