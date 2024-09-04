@@ -138,6 +138,7 @@ class Player(commands.GroupCog):
         )
         completion_percentage = f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
         ball = await player.balls.all().count()
+        caught_owned = await player.balls.filter(trade_player=None).count()
         shiny = await player.balls.filter(shiny=True).count()
         special = await player.balls.filter().exclude(special=None).count()
         trades = await Trade.filter(
@@ -152,6 +153,7 @@ class Player(commands.GroupCog):
             "Here are your current statistics in the bot!\n\n"
             f"**Completion:** {completion_percentage}\n"
             f"**{settings.collectible_name.title()}s Owned:** {ball:,}\n"
+            f"**Caught {settings.collectible_name.title()}s Owned**: {caught_owned:,}\n"
             f"**Shiny {settings.collectible_name.title()}s:** {shiny:,}\n"
             f"**Special {settings.collectible_name.title()}s:** {special:,}\n"
             f"**Trades Completed:** {trades:,}"
