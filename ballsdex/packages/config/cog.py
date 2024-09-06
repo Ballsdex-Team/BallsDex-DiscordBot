@@ -56,7 +56,7 @@ class Config(commands.GroupCog):
         channel: discord.TextChannel
             The channel you want to set, current one if not specified.
         silent: bool
-            Whether to config a server silently or not.
+            Whether to config a server to suppress wrong name and error messages.
         """
         user = cast(discord.Member, interaction.user)
 
