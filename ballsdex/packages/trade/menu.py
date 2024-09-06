@@ -177,7 +177,7 @@ class TradeMenu:
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*This trade will timeout "
-            f"{format_dt(datetime.now(timezone.utc) + timedelta(minutes=30), style="R")}.*\n\n"
+            f"{format_dt(datetime.now(timezone.utc) + timedelta(minutes=30), style='R')}.*\n\n"
             f"Use the {view_command} command to see the full list of {settings.collectible_name}s "
         )
         self.embed.set_footer(
