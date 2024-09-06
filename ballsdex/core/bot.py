@@ -385,10 +385,6 @@ class BallsDexBot(commands.AutoShardedBot):
                     f"The bot is missing the permissions: `{missing_perms}`."
                     " Give the bot those permissions for the command to work as expected."
                 )
-                log.warning(
-                    f"Missing bot permissions for command {context.command.name}: {missing_perms}",
-                    exc_info=exception,
-                )
                 return
 
             if isinstance(exception, commands.MissingPermissions):
@@ -429,11 +425,6 @@ class BallsDexBot(commands.AutoShardedBot):
                 await send(
                     f"The bot is missing the permissions: `{missing_perms}`."
                     " Give the bot those permissions for the command to work as expected."
-                )
-                command_name = getattr(interaction.command, "name", "unknown")
-                log.warning(
-                    f"Missing bot permissions for command {command_name}: {missing_perms}",
-                    exc_info=error,
                 )
                 return
 
