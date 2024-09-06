@@ -225,7 +225,7 @@ def update_settings(path: "Path"):
     add_config_ref = "# yaml-language-server: $schema=json-config-ref.json" not in content
     add_max_favorites = "max-favorites:" not in content
     add_max_attack = "max-attack-bonus" not in content
-    add_max_health = "max_health_bonus" not in content
+    add_max_health = "max-health-bonus" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
