@@ -74,7 +74,7 @@
             "description": "The biggest/smallest attack bonus that a spawned countryball can have.",
             "example": "20"
         },
-        "max_health_bonus": {
+        "max-health-bonus": {
             "type": "integer",
             "description": "The biggest/smallest health bonus that a spawned countryball can have.",
             "example": "20"
