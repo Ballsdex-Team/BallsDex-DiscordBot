@@ -185,6 +185,7 @@ class BallResource(Model):
         "country",
         "short_name",
         "catch_names",
+        "translations",
         "created_at",
         "regime",
         "economy",
