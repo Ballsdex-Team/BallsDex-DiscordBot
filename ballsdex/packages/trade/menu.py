@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
 from discord.ui import Button, View, button
-from discord.utils import format_dt
+from discord.utils import format_dt, utcnow
 
 from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
 from ballsdex.core.utils import menus
@@ -177,8 +177,9 @@ class TradeMenu:
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*This trade will timeout "
-            f"{format_dt(datetime.now(timezone.utc) + timedelta(minutes=30), style='R')}.*\n\n"
-            f"Use the {view_command} command to see the full list of {settings.collectible_name}s "
+            f"{format_dt(utcnow() + timedelta(minutes=30), style='R')}.*\n\n"
+            f"Use the {view_command} command to see the full"
+            f" list of {settings.plural_collectible_name}."
         )
         self.embed.set_footer(
             text="This message is updated every 15 seconds, "
