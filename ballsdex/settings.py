@@ -127,7 +127,7 @@ def read_settings(path: "Path"):
 
     settings.max_favorites = content.get("max-favorites", 50)
     settings.max_attack_bonus = content.get("max-attack-bonus", 20)
-    settings.max_health_bonus = content.get("max_health_bonus", 20)
+    settings.max_health_bonus = content.get("max-health-bonus", 20)
     log.info("Settings loaded.")
 
 
@@ -179,7 +179,7 @@ max-attack-bonus: 20
 
 # the highest/lowest possible health bonus, do not leave empty
 # this cannot be smaller than 0, enter a positive number
-max_health_bonus: 20
+max-health-bonus: 20
 
 # enables the /admin command
 admin-command:
@@ -265,7 +265,7 @@ max-attack-bonus: 20
         content += """
 # the highest/lowest possible health bonus, do not leave empty
 # this cannot be smaller than 0, enter a positive number
-max_health_bonus: 20
+max-health-bonus: 20
 """
 
     if any((add_owners, add_config_ref)):
