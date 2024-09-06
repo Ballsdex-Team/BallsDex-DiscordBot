@@ -202,6 +202,7 @@ class BallInstance(models.Model):
         default=None,
     )
     extra_data = fields.JSONField(default={})
+    deleted = fields.BooleanField(default=False)
 
     class Meta:
         unique_together = ("player", "id")

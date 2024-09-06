@@ -1165,13 +1165,17 @@ class Admin(commands.GroupCog):
         if not view.value:
             return
         if percentage:
-            balls = await BallInstance.filter(player=player)
+            balls = await BallInstance.filter(
+                player=player
+            )  # TODO: Do we delete perm or soft delete here?
             to_delete = random.sample(balls, int(len(balls) * (percentage / 100)))
             for ball in to_delete:
                 await ball.delete()
             count = len(to_delete)
         else:
-            count = await BallInstance.filter(player=player).delete()
+            count = await BallInstance.filter(
+                player=player
+            ).delete()  # TODO: Do we delete perm or soft delete here?
         await interaction.followup.send(
             f"{count} {settings.plural_collectible_name} from {user} have been deleted.",
             ephemeral=True,
