@@ -28,6 +28,8 @@ class Settings:
         Prefix for text commands, mostly unused. Defaults to "b."
     collectible_name: str
         Usually "countryball", can be replaced when possible
+    plural_collectible_name: str
+        Usually "countryballs", can be replaced when possible
     bot_name: str
         Usually "BallsDex", can be replaced when possible
     players_group_cog_name: str
@@ -62,6 +64,7 @@ class Settings:
     prefix: str = "b."
 
     collectible_name: str = "countryball"
+    plural_collectible_name: str = "countryballs"
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
 
@@ -106,6 +109,7 @@ def read_settings(path: "Path"):
     settings.co_owners = content.get("owners", {}).get("co-owners", [])
 
     settings.collectible_name = content["collectible-name"]
+    settings.plural_collectible_name = content["plural-collectible-name"]
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
 
@@ -161,6 +165,10 @@ about:
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "countryballs" in the bot
 collectible-name: countryball
+
+# WORK IN PROGRESS, DOES NOT FULLY WORK
+# override the name "countryballs" in the bot
+plural-collectible-name: countryballs
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "BallsDex" in the bot
@@ -224,6 +232,7 @@ def update_settings(path: "Path"):
     add_owners = True
     add_config_ref = "# yaml-language-server: $schema=json-config-ref.json" not in content
     add_max_favorites = "max-favorites:" not in content
+    add_plural_collectible = "plural-collectible-name" not in content
     add_max_attack = "max-attack-bonus" not in content
     add_max_health = "max-health-bonus" not in content
 
@@ -252,6 +261,13 @@ owners:
         content += """
 # maximum amount of favorites that are allowed
 max-favorites: 50
+"""
+
+    if add_plural_collectible:
+        content += """
+# WORK IN PROGRESS, DOES NOT FULLY WORK
+# override the name "countryballs" in the bot
+plural-collectible-name: countryballs
 """
 
     if add_max_attack:
