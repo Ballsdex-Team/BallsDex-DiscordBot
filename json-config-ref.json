@@ -50,8 +50,13 @@
         },
         "collectible-name": {
             "type": "string",
-            "description": "The name of the collectible, used everywhere except command descriptions. An 's' is appended to the end of this string for pluralization",
+            "description": "The name of the collectible, used everywhere except command descriptions.",
             "example": "ball"
+        },
+        "plural-collectible-name": {
+            "type": "string",
+            "description": "The plural name of the collectible, used everywhere except command descriptions.",
+            "example": "balls"
         },
         "bot-name": {
             "type": "string",

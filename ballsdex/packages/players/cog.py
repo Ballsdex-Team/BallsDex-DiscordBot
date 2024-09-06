@@ -78,8 +78,8 @@ class Player(commands.GroupCog):
         player.donation_policy = DonationPolicy(policy.value)
         if policy.value == DonationPolicy.ALWAYS_ACCEPT:
             await interaction.response.send_message(
-                f"Setting updated, you will now receive all donated {settings.collectible_name}s "
-                "immediately."
+                "Setting updated, you will now receive all donated "
+                f"{settings.plural_collectible_name} immediately."
             )
         elif policy.value == DonationPolicy.REQUEST_APPROVAL:
             await interaction.response.send_message(
