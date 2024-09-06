@@ -103,7 +103,9 @@ def read_settings(path: "Path"):
     settings.co_owners = content.get("owners", {}).get("co-owners", [])
 
     settings.collectible_name = content["collectible-name"]
-    settings.plural_collectible_name = content["plural-collectible-name"]
+    settings.plural_collectible_name = content.get(
+        "plural-collectible-name", content["collectible-name"] + "s"
+    )
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
 
