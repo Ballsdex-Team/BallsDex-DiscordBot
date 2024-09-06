@@ -36,8 +36,8 @@ class Settings:
         Set the maximum amount of favorited countryballs a user can have, 50 by default.
     max_attack_bonus:
         Set the biggest/smallest attack bonus that a spawned countryball can have.
-    max_defense_bonus:
-        Set the biggest/smallest defense bonus that a spawned countryball can have.
+    max_health_bonus:
+        Set the biggest/smallest health bonus that a spawned countryball can have.
     about_description: str
         Used in the /about command
     github_link: str
@@ -67,7 +67,7 @@ class Settings:
 
     max_favorites: int = 50
     max_attack_bonus: int = 20
-    max_defense_bonus: int = 20
+    max_health_bonus: int = 20
 
     # /about
     about_description: str = ""
@@ -127,7 +127,7 @@ def read_settings(path: "Path"):
 
     settings.max_favorites = content.get("max-favorites", 50)
     settings.max_attack_bonus = content.get("max-attack-bonus", 20)
-    settings.max_defense_bonus = content.get("max-defense-bonus", 20)
+    settings.max_health_bonus = content.get("max_health_bonus", 20)
     log.info("Settings loaded.")
 
 
@@ -177,9 +177,9 @@ max-favorites: 50
 # this cannot be smaller than 0, enter a positive number
 max-attack-bonus: 20
 
-# the highest/lowest possible defense bonus, do not leave empty
+# the highest/lowest possible health bonus, do not leave empty
 # this cannot be smaller than 0, enter a positive number
-max-defense-bonus: 20
+max_health_bonus: 20
 
 # enables the /admin command
 admin-command:
@@ -225,7 +225,7 @@ def update_settings(path: "Path"):
     add_config_ref = "# yaml-language-server: $schema=json-config-ref.json" not in content
     add_max_favorites = "max-favorites:" not in content
     add_max_attack = "max-attack-bonus" not in content
-    add_max_defense = "max-defense-bonus" not in content
+    add_max_health = "max_health_bonus" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -263,9 +263,9 @@ max-attack-bonus: 20
 
     if add_max_defense:
         content += """
-# the highest/lowest possible defense bonus, do not leave empty
+# the highest/lowest possible health bonus, do not leave empty
 # this cannot be smaller than 0, enter a positive number
-max-defense-bonus: 20
+max_health_bonus: 20
 """
 
     if any((add_owners, add_config_ref)):
