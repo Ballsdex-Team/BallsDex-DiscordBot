@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
 from discord.ui import Button, View, button
+from discord.utils import format_dt, utcnow
 
 from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
 from ballsdex.core.utils import menus
@@ -175,9 +176,10 @@ class TradeMenu:
             f"using the {add_command} and {remove_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
-            "*You have 30 minutes before this interaction ends.*\n\n"
-            f"Use the {view_command} command to see the full "
-            f"list of {settings.plural_collectible_name}."
+            "*This trade will timeout "
+            f"{format_dt(utcnow() + timedelta(minutes=30), style='R')}.*\n\n"
+            f"Use the {view_command} command to see the full"
+            f" list of {settings.plural_collectible_name}."
         )
         self.embed.set_footer(
             text="This message is updated every 15 seconds, "
