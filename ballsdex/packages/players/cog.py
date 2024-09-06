@@ -117,12 +117,8 @@ class Player(commands.GroupCog):
         """
         View your statistics in the bot!
         """
-        player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related(
-            "balls"
-        )
-        ball = await BallInstance.filter(player=player).prefetch_related(
-            "special"
-        )
+        player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related("balls")
+        ball = await BallInstance.filter(player=player).prefetch_related("special")
 
         user = interaction.user
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
