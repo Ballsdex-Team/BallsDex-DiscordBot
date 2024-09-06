@@ -583,7 +583,7 @@ class Admin(commands.GroupCog):
             health_bonus=(
                 health_bonus
                 if health_bonus is not None
-                else random.randint(-settings.max_defense_bonus, settings.max_defense_bonus)
+                else random.randint(-settings.max_health_bonus, settings.max_health_bonus)
             ),
             special=special,
         )
