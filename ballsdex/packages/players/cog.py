@@ -117,15 +117,12 @@ class Player(commands.GroupCog):
         """
         View your statistics in the bot!
         """
-        try:
-            player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related(
-                "balls"
-            )
-        except DoesNotExist:
-            await interaction.response.send_message(
-                "You aren't registered as a player, you have no stats to show!", ephemeral=True
-            )
-            return
+        player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related(
+            "balls"
+        )
+        ball = await BallInstance.filter(player=player).prefetch_related(
+            "special"
+        )
 
         user = interaction.user
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
@@ -137,10 +134,10 @@ class Player(commands.GroupCog):
             .values_list("ball_id")
         )
         completion_percentage = f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
-        ball = await player.balls.all().count()
-        caught_owned = await player.balls.filter(trade_player=None).count()
-        shiny = await player.balls.filter(shiny=True).count()
-        special = await player.balls.filter().exclude(special=None).count()
+        caught_owned = [x for x in ball if x.trade_player is None]
+        balls_owned = [x for x in ball]
+        shiny = [x for x in ball if x.shiny is True]
+        special = [x for x in ball if x.special is not None]
         trades = await Trade.filter(
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
         ).count()
@@ -152,11 +149,11 @@ class Player(commands.GroupCog):
         embed.description = (
             "Here are your current statistics in the bot!\n\n"
             f"**Completion:** {completion_percentage}\n"
-            f"**{settings.collectible_name.title()}s Owned:** {ball:,}\n"
-            f"**Caught {settings.collectible_name.title()}s Owned**: {caught_owned:,}\n"
-            f"**Shiny {settings.collectible_name.title()}s:** {shiny:,}\n"
-            f"**Special {settings.collectible_name.title()}s:** {special:,}\n"
-            f"**Trades Completed:** {trades:,}"
+            f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned)}\n"
+            f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned)}\n"
+            f"**Shiny {settings.collectible_name.title()}s:** {len(shiny)}\n"
+            f"**Special {settings.collectible_name.title()}s:** {len(special)}\n"
+            f"**Trades Completed:** {trades}"
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
