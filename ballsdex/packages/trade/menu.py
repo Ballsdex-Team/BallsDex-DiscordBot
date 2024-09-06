@@ -169,7 +169,7 @@ class TradeMenu:
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
         view_command = self.cog.view.extras.get("mention", "`/trade view`")
 
-        self.embed.title = f"{settings.plural_collectible_name.title()} trading"
+        self.embed.title = f"{settings.collectible_name.title()}s trading"
         self.embed.color = discord.Colour.blurple()
         self.embed.description = (
             f"Add or remove {settings.collectible_name}s you want to propose to the other player "
@@ -178,8 +178,7 @@ class TradeMenu:
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*This trade will timeout "
             f"{format_dt(datetime.now(timezone.utc) + timedelta(minutes=30), style="R")}.*\n\n"
-            f"Use the {view_command} command to see the full "
-            f"list of {settings.plural_collectible_name}."
+            f"Use the {view_command} command to see the full list of {settings.collectible_name}s "
         )
         self.embed.set_footer(
             text="This message is updated every 15 seconds, "
@@ -331,7 +330,7 @@ class TradeMenu:
             except InvalidTradeOperation:
                 log.warning(f"Illegal trade operation between {self.trader1=} and {self.trader2=}")
                 self.embed.description = (
-                    f":warning: An attempt to modify the {settings.plural_collectible_name} "
+                    f":warning: An attempt to modify the {settings.collectible_name}s "
                     "during the trade was detected and the trade was cancelled."
                 )
                 self.embed.colour = discord.Colour.red()
@@ -414,7 +413,7 @@ class CountryballsSelector(Pages):
                 self.balls_selected.add(ball_instance)
         await interaction.followup.send(
             (
-                f"All {settings.plural_collectible_name} on this page have been selected.\n"
+                f"All {settings.collectible_name}s on this page have been selected.\n"
                 "Note that the menu may not reflect this change until you change page."
             ),
             ephemeral=True,
@@ -437,14 +436,13 @@ class CountryballsSelector(Pages):
             )
         if any(ball in trader.proposal for ball in self.balls_selected):
             return await interaction.followup.send(
-                "You have already added some of the "
-                f"{settings.plural_collectible_name} you selected.",
+                f"You have already added some of the {settings.collectible_name}s you selected.",
                 ephemeral=True,
             )
 
         if len(self.balls_selected) == 0:
             return await interaction.followup.send(
-                f"You have not selected any {settings.plural_collectible_name} "
+                f"You have not selected any {settings.collectible_name}s "
                 "to add to your proposal.",
                 ephemeral=True,
             )
@@ -456,13 +454,11 @@ class CountryballsSelector(Pages):
                 )
             trader.proposal.append(ball)
             await ball.lock_for_trade()
-        grammar = (
-            f"{settings.collectible_name}"
-            if len(self.balls_selected) == 1
-            else f"{settings.plural_collectible_name}"
-        )
+        grammar = "" if len(self.balls_selected) == 1 else "s"
         await interaction.followup.send(
-            f"{len(self.balls_selected)} {grammar} added to your proposal.", ephemeral=True
+            f"{len(self.balls_selected)} {settings.collectible_name}"
+            f"{grammar} added to your proposal.",
+            ephemeral=True,
         )
         self.balls_selected.clear()
 
@@ -471,11 +467,10 @@ class CountryballsSelector(Pages):
         await interaction.response.defer(thinking=True, ephemeral=True)
         self.balls_selected.clear()
         await interaction.followup.send(
-            f"You have cleared all currently selected {settings.plural_collectible_name}."
-            f"This does not affect {settings.plural_collectible_name} within your trade.\n"
-            f"There may be an instance where it shows {settings.plural_collectible_name} on the"
-            " current page as selected, this is not the case - "
-            "changing page will show the correct state.",
+            f"You have cleared all currently selected {settings.collectible_name}s."
+            f"This does not affect {settings.collectible_name}s within your trade.\n"
+            "There may be an instance where it shows balls on the current page as selected, "
+            "this is not the case - changing page will show the correct state.",
             ephemeral=True,
         )
 
@@ -516,7 +511,7 @@ class TradeViewMenu(Pages):
                     label=f"{user_obj.display_name}",
                     description=(
                         f"ID: {user_obj.id} | {len(player.proposal)} "
-                        f"{settings.plural_collectible_name}"
+                        f"{settings.collectible_name}s"
                     ),
                     value=f"{user_obj.id}",
                 )
@@ -540,7 +535,7 @@ class TradeViewMenu(Pages):
         ball_instances = trade_player.proposal
         if len(ball_instances) == 0:
             return await interaction.followup.send(
-                f"{trade_player.user} has not added any {settings.plural_collectible_name}.",
+                f"{trade_player.user} has not added any {settings.collectible_name}s.",
                 ephemeral=True,
             )
 
