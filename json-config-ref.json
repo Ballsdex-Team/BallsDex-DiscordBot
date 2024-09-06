@@ -74,9 +74,9 @@
             "description": "The biggest/smallest attack bonus that a spawned countryball can have.",
             "example": "20"
         },
-        "max-defense-bonus": {
+        "max_health_bonus": {
             "type": "integer",
-            "description": "The biggest/smallest defense bonus that a spawned countryball can have.",
+            "description": "The biggest/smallest health bonus that a spawned countryball can have.",
             "example": "20"
         },
         "bot-name": {
