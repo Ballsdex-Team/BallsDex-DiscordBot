@@ -60,7 +60,7 @@
         },
         "collectible-name": {
             "type": "string",
-            "description": "The name of the collectible, used everywhere except command descriptions. An 's' is appended to the end of this string for pluralization",
+            "description": "The name of the collectible, used everywhere except command descriptions.",
             "example": "ball"
         },
         "max-favorites": {
@@ -78,6 +78,11 @@
             "type": "integer",
             "description": "The biggest/smallest health bonus that a spawned countryball can have.",
             "example": "20"
+        },
+        "plural-collectible-name": {
+            "type": "string",
+            "description": "The plural name of the collectible, used everywhere except command descriptions.",
+            "example": "balls"
         },
         "bot-name": {
             "type": "string",
