@@ -543,7 +543,7 @@ class Admin(commands.GroupCog):
     async def give(
         self,
         interaction: discord.Interaction,
-        ball: BallTransform,
+        countryball: BallTransform,
         user: discord.User,
         special: SpecialTransform | None = None,
         shiny: bool | None = None,
@@ -555,15 +555,15 @@ class Admin(commands.GroupCog):
 
         Parameters
         ----------
-        ball: Ball
+        countryball: Ball
         user: discord.User
         special: Special | None
         shiny: bool
             Omit this to make it random.
         health_bonus: int | None
-            Omit this to make it random (-20/+20%).
+            Omit this to make it random.
         attack_bonus: int | None
-            Omit this to make it random (-20/+20%).
+            Omit this to make it random.
         """
         # the transformers triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
@@ -572,22 +572,32 @@ class Admin(commands.GroupCog):
 
         player, created = await Player.get_or_create(discord_id=user.id)
         instance = await BallInstance.create(
-            ball=ball,
+            ball=countryball,
             player=player,
             shiny=(shiny if shiny is not None else random.randint(1, 2048) == 1),
-            attack_bonus=(attack_bonus if attack_bonus is not None else random.randint(-20, 20)),
-            health_bonus=(health_bonus if health_bonus is not None else random.randint(-20, 20)),
+            attack_bonus=(
+                attack_bonus
+                if attack_bonus is not None
+                else random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
+            ),
+            health_bonus=(
+                health_bonus
+                if health_bonus is not None
+                else random.randint(-settings.max_health_bonus, settings.max_health_bonus)
+            ),
             special=special,
         )
         await interaction.followup.send(
-            f"`{ball.country}` {settings.collectible_name} was successfully given to `{user}`.\n"
-            f"Special: `{special.name if special else None}` • ATK:`{instance.attack_bonus:+d}` • "
-            f"HP:`{instance.health_bonus:+d}` • Shiny: `{instance.shiny}`"
+            f"`{countryball.country}` {settings.collectible_name} was successfully given to "
+            f"`{user}`.\nSpecial: `{special.name if special else None}` • ATK: "
+            f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
+            f"• Shiny: `{instance.shiny}`"
         )
         await log_action(
-            f"{interaction.user} gave {settings.collectible_name} {ball.country} to {user}. "
-            f"(Special={special.name if special else None} ATK={instance.attack_bonus:+d} "
-            f"HP={instance.health_bonus:+d} shiny={instance.shiny}).",
+            f"{interaction.user} gave {settings.collectible_name} "
+            f"{countryball.country} to {user}. (Special={special.name if special else None} "
+            f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d} "
+            f"shiny={instance.shiny}).",
             self.bot,
         )
 

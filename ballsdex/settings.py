@@ -36,6 +36,10 @@ class Settings:
         Set the name of the base command of the "players" cog, /balls by default
     max_favorites:
         Set the maximum amount of favorited countryballs a user can have, 50 by default.
+    max_attack_bonus:
+        Set the biggest/smallest attack bonus that a spawned countryball can have.
+    max_health_bonus:
+        Set the biggest/smallest health bonus that a spawned countryball can have.
     about_description: str
         Used in the /about command
     github_link: str
@@ -65,6 +69,8 @@ class Settings:
     players_group_cog_name: str = "balls"
 
     max_favorites: int = 50
+    max_attack_bonus: int = 20
+    max_health_bonus: int = 20
 
     # /about
     about_description: str = ""
@@ -126,6 +132,8 @@ def read_settings(path: "Path"):
     settings.prometheus_port = content["prometheus"]["port"]
 
     settings.max_favorites = content.get("max-favorites", 50)
+    settings.max_attack_bonus = content.get("max-attack-bonus", 20)
+    settings.max_health_bonus = content.get("max-health-bonus", 20)
     log.info("Settings loaded.")
 
 
@@ -175,6 +183,14 @@ players-group-cog-name: balls
 # maximum amount of favorites that are allowed
 max-favorites: 50
 
+# the highest/lowest possible attack bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
+max-attack-bonus: 20
+
+# the highest/lowest possible health bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
+max-health-bonus: 20
+
 # enables the /admin command
 admin-command:
 
@@ -218,6 +234,8 @@ def update_settings(path: "Path"):
     add_owners = True
     add_config_ref = "# yaml-language-server: $schema=json-config-ref.json" not in content
     add_max_favorites = "max-favorites:" not in content
+    add_max_attack = "max-attack-bonus" not in content
+    add_max_health = "max-health-bonus" not in content
     add_plural_collectible = "plural-collectible-name" not in content
 
     for line in content.splitlines():
@@ -247,6 +265,19 @@ owners:
 max-favorites: 50
 """
 
+    if add_max_attack:
+        content += """
+# the highest/lowest possible attack bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
+max-attack-bonus: 20
+"""
+
+    if add_max_health:
+        content += """
+# the highest/lowest possible health bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
+max-health-bonus: 20
+"""
     if add_plural_collectible:
         content += """
 # WORK IN PROGRESS, DOES NOT FULLY WORK
