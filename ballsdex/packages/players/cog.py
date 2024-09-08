@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING
 import discord
 from discord import app_commands
 from discord.ext import commands
+from discord.utils import format_dt
 from tortoise.expressions import Q
 
 from ballsdex.core.models import BallInstance, Block, DonationPolicy, Friendship
 from ballsdex.core.models import Player as PlayerModel
 from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -29,7 +31,9 @@ class Player(commands.GroupCog):
                 0
             ]._Parameter__parent.choices.pop()  # type: ignore
 
-    friends = app_commands.Group(name="friends", description="Friend commands")
+    friend = app_commands.Group(name="friends", description="Friend commands")
+    blocked = app_commands.Group(name="blocked", description="Block commands")
+    donation = app_commands.Group(name="donation", description="Donation commands")
 
     @app_commands.command()
     @app_commands.choices(
@@ -37,26 +41,32 @@ class Player(commands.GroupCog):
             app_commands.Choice(name="Open Inventory", value=PrivacyPolicy.ALLOW),
             app_commands.Choice(name="Private Inventory", value=PrivacyPolicy.DENY),
             app_commands.Choice(name="Same Server", value=PrivacyPolicy.SAME_SERVER),
-            app_commands.Choice(name="Friends Only", value=PrivacyPolicy.FRIENDS_ONLY),
+            app_commands.Choice(name="Friends Only", value=PrivacyPolicy.FRIENDS),
         ]
     )
-    async def privacy(self, interaction: discord.Interaction, policy: PrivacyPolicy):
+    async def privacy(self, interaction: discord.Interaction, policy: app_commands.Choice[int]):
         """
         Set your privacy policy.
+
+        Parameters
+        ----------
+        policy: PrivacyPolicy
+            The new privacy policy to choose.
         """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player.donation_policy = DonationPolicy(policy.value)
         if policy == PrivacyPolicy.SAME_SERVER and not self.bot.intents.members:
             await interaction.response.send_message(
                 "I need the `members` intent to use this policy.", ephemeral=True
             )
             return
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        player.privacy_policy = policy
+
         await player.save()
         await interaction.response.send_message(
             f"Your privacy policy has been set to **{policy.name}**.", ephemeral=True
         )
 
-    @app_commands.command()
+    @donation.command()
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Accept all donations", value=DonationPolicy.ALWAYS_ACCEPT),
@@ -69,9 +79,7 @@ class Player(commands.GroupCog):
             ),
         ]
     )
-    async def donation_policy(
-        self, interaction: discord.Interaction, policy: app_commands.Choice[int]
-    ):
+    async def policy(self, interaction: discord.Interaction, policy: app_commands.Choice[int]):
         """
         Change how you want to receive donations from /balls give
 
@@ -127,7 +135,7 @@ class Player(commands.GroupCog):
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         await player.delete()
 
-    @friends.command()
+    @friend.command()
     async def add(self, interaction: discord.Interaction, user: discord.User):
         """
         Add another user as a friend.
@@ -148,28 +156,34 @@ class Player(commands.GroupCog):
         if user.bot:
             await interaction.response.send_message("You cannot add a bot.", ephemeral=True)
             return
-        if player2 in self.bot.blacklist:
-            await interaction.response.send_message(
-                "You cannot add a blacklisted user.", ephemeral=True
-            )
-            return
 
-        existing_friendship = await Friendship.filter(
+        blocked = await Block.filter(
             (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
-        ).first()
+        ).exists()
 
-        if existing_friendship:
+        if blocked:
             await interaction.response.send_message(
-                "You are already friends with this user.", ephemeral=True
+                "You cannot add a blocked user, to unblock use the command `/player unblock`.",
+                ephemeral=True,
             )
             return
 
-        await Friendship.create(player1=player1, player2=player2)
-        await interaction.response.send_message(
-            f"{user.mention} has been added as a friend!", ephemeral=True
-        )
+        friended = await Friendship.filter(
+            (Q(player1=player1) & Q(player2=player2))
+            | (Q(player1=player2) & Q(player2=player1))
+        ).exists()
 
-    @friends.command()
+        if friended:
+            await interaction.response.send_message(
+                "You are already friends with that user!", ephemeral=True
+            )
+        else:
+            await Friendship.create(player1=player1, player2=player2)
+            await interaction.response.send_message(
+                f"You are now friends with {user.name}.", ephemeral=True
+            )
+
+    @friend.command()
     async def remove(self, interaction: discord.Interaction, user: discord.User):
         """
         Remove a friend.
@@ -183,30 +197,64 @@ class Player(commands.GroupCog):
         player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
 
         if player1 == player2:
-            await interaction.response.send_message(
-                "You cannot remove yourself as a friend.", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot remove yourself.", ephemeral=True)
             return
         if user.bot:
             await interaction.response.send_message("You cannot remove a bot.", ephemeral=True)
             return
 
-        existing_friendship = await Friendship.filter(
-            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
+        friendship_exists = await Friendship.filter(
+            (Q(player1=player1) & Q(player2=player2))
+            | (Q(player1=player2) & Q(player2=player1))
         ).exists()
 
-        if not existing_friendship:
+        if not friendship_exists:
             await interaction.response.send_message(
                 "You are not friends with this user.", ephemeral=True
             )
             return
+        else:
+            await Friendship.filter(
+                (Q(player1=player1) & Q(player2=player2)) |
+                (Q(player1=player2) & Q(player2=player1))
+            ).delete()
+            await interaction.response.send_message(
+                f"{user.name} has been removed as a friend.", ephemeral=True
+            )
 
-        await Friendship.filter(
-            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
-        ).delete()
-        await interaction.response.send_message(
-            f"{user.mention} has been removed as a friend.", ephemeral=True
-        )
+    @friend.command()
+    async def list(self, interaction: discord.Interaction):
+        """
+        View all your friends.
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        friendships = await Friendship.filter(
+            Q(player1=player) | Q(player2=player)
+        ).select_related("player1", "player2").all()
+
+        if not friendships:
+            await interaction.response.send_message(
+                "You haven't got any friends!", ephemeral=True
+            )
+            return
+
+        entries: list[tuple[str, str]] = []
+        for idx, relation in enumerate(friendships, start=1):
+            if relation.player1 == player:
+                friend = relation.player2
+            else:
+                friend = relation.player1
+
+        since = format_dt(relation.since, style='f')
+        entries.append((f"{idx}. ID: {friend}\n", f"Since: {since}"))
+
+        source = FieldPageSource(entries, per_page=5, inline=False)
+        source.embed.title = "Friend List"
+        source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
+        source.embed.set_footer(text="To add a friend, use the command /player friends add.")
+
+        pages = Pages(source=source, interaction=interaction, compact=True)
+        await pages.start(ephemeral=True)
 
     @app_commands.command()
     async def block(self, interaction: discord.Interaction, user: discord.User):
@@ -221,26 +269,50 @@ class Player(commands.GroupCog):
         player1, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
 
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
         if player1 == player2:
-            await interaction.response.send_message("You cannot block yourself.", ephemeral=True)
+            await interaction.followup.send("You cannot block yourself.", ephemeral=True)
             return
         if user.bot:
-            await interaction.response.send_message("You cannot block a bot.", ephemeral=True)
+            await interaction.followup.send("You cannot block a bot.", ephemeral=True)
             return
 
-        blocked_already = await Block.filter(
-            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
-        ).first()
+        blocked = await Block.filter(
+            (Q(player1=player1) & Q(player2=player2))
+            | (Q(player1=player2) & Q(player2=player1))
+        ).exists()
 
-        if blocked_already:
-            await interaction.response.send_message(
+        if blocked:
+            await interaction.followup.send(
                 "You have already blocked this user.", ephemeral=True
             )
             return
+        
+        friended = await Friendship.filter(
+            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
+        ).exists()
+
+        if friended:
+            view = ConfirmChoiceView(interaction)
+            await interaction.followup.send(
+                "This user is your friend, are you sure you want to block them?",
+                view=view,
+                ephemeral=True,
+            )
+            await view.wait()
+
+            if not view.value:
+                return
+            else:
+                await Friendship.filter(
+                    (Q(player1=player1) & Q(player2=player2))
+                    | (Q(player1=player2) & Q(player2=player1))
+                ).delete()
 
         await Block.create(player1=player1, player2=player2)
-        await interaction.response.send_message(
-            f"You have blocked {user.mention}.", ephemeral=True
+        await interaction.followup.send(
+            f"You have now blocked {user.name}.", ephemeral=True
         )
 
     @app_commands.command()
@@ -257,26 +329,64 @@ class Player(commands.GroupCog):
         player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
 
         if player1 == player2:
-            await interaction.response.send_message("You cannot unblock yourself.", ephemeral=True)
+            await interaction.response.send_message(
+                "You cannot unblock yourself.", ephemeral=True
+            )
             return
         if user.bot:
             await interaction.response.send_message("You cannot unblock a bot.", ephemeral=True)
             return
 
         blocked = await Block.filter(
-            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
+            (Q(player1=player1) & Q(player2=player2))
+            | (Q(player1=player2) & Q(player2=player1))
         ).exists()
 
         if not blocked:
             await interaction.response.send_message("This user isn't blocked.", ephemeral=True)
             return
+        else:
+            await Block.filter(
+                (Q(player1=player1) & Q(player2=player2)) |
+                (Q(player1=player2) & Q(player2=player1))
+            ).delete()
+            await interaction.response.send_message(
+                f"{user.name} has been unblocked.", ephemeral=True
+            )
 
-        await Block.filter(
-            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
-        ).delete()
-        await interaction.response.send_message(
-            f"{user.mention} has been unblocked.", ephemeral=True
-        )
+    @blocked.command()
+    async def list(self, interaction: discord.Interaction):
+        """
+        View all the users you have blocked.
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        blocked = await Block.filter(
+            Q(player1=player) | Q(player2=player)
+        ).select_related("player1", "player2").all()
+
+        if not blocked:
+            await interaction.response.send_message(
+                "You haven't blocked any users!", ephemeral=True
+            )
+            return
+
+        entries: list[tuple[str, str]] = []
+        for idx, relation in enumerate(blocked, start=1):
+            if relation.player1 == player:
+                blocked = relation.player2
+            else:
+                blocked = relation.player1
+
+        since = format_dt(relation.date, style='f')
+        entries.append((f"{idx}. ID: {blocked}", f"Blocked at: {since}"))
+
+        source = FieldPageSource(entries, per_page=5, inline=False)
+        source.embed.title = "Blocked Users List"
+        source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
+        source.embed.set_footer(text="To block a user, use the command /player block.")
+
+        pages = Pages(source=source, interaction=interaction, compact=True)
+        await pages.start(ephemeral=True)
 
     @app_commands.command()
     @app_commands.choices(
