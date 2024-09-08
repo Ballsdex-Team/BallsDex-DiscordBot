@@ -41,7 +41,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         try:
             config = await GuildConfig.get(guild_id=interaction.guild_id)
         except DoesNotExist:
-            await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
+            config = await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
         log.exception("An error occured in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
             await interaction.followup.send(
@@ -58,7 +58,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         try:
             config = await GuildConfig.get(guild_id=interaction.guild_id)
         except DoesNotExist:
-            await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
+            config = await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
 
         if self.ball.catched:
             await interaction.response.send_message(
