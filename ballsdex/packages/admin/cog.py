@@ -996,17 +996,17 @@ class Admin(commands.GroupCog):
 
     @balls.command(name="info")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def balls_info(self, interaction: discord.Interaction, ball_id: str):
+    async def balls_info(self, interaction: discord.Interaction, countryball_id: str):
         """
         Show information about a countryball.
 
         Parameters
         ----------
-        ball_id: str
+        countryball_id: str
             The ID of the countryball you want to get information about.
         """
         try:
-            pk = int(ball_id, 16)
+            pk = int(countryball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
@@ -1046,17 +1046,17 @@ class Admin(commands.GroupCog):
 
     @balls.command(name="delete")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_delete(self, interaction: discord.Interaction, ball_id: str):
+    async def balls_delete(self, interaction: discord.Interaction, countryball_id: str):
         """
         Delete a countryball.
 
         Parameters
         ----------
-        ball_id: str
+        countryball_id: str
             The ID of the countryball you want to delete.
         """
         try:
-            ballIdConverted = int(ball_id, 16)
+            ballIdConverted = int(countryball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
@@ -1071,27 +1071,27 @@ class Admin(commands.GroupCog):
             return
         await ball.delete()
         await interaction.response.send_message(
-            f"{settings.collectible_name.title()} {ball_id} deleted.", ephemeral=True
+            f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True
         )
         await log_action(f"{interaction.user} deleted {ball}({ball.pk}).", self.bot)
 
     @balls.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_transfer(
-        self, interaction: discord.Interaction, ball_id: str, user: discord.User
+        self, interaction: discord.Interaction, countryball_id: str, user: discord.User
     ):
         """
         Transfer a countryball to another user.
 
         Parameters
         ----------
-        ball_id: str
+        countryball_id: str
             The ID of the countryball you want to transfer.
         user: discord.User
             The user you want to transfer the countryball to.
         """
         try:
-            ballIdConverted = int(ball_id, 16)
+            ballIdConverted = int(countryball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
@@ -1188,7 +1188,7 @@ class Admin(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         user: discord.User | None = None,
-        ball: BallTransform | None = None,
+        countryball: BallTransform | None = None,
         shiny: bool | None = None,
         special: SpecialTransform | None = None,
     ):
@@ -1199,15 +1199,15 @@ class Admin(commands.GroupCog):
         ----------
         user: discord.User
             The user you want to count the countryballs of.
-        ball: Ball
+        countryball: Ball
         shiny: bool
         special: Special
         """
         if interaction.response.is_done():
             return
         filters = {}
-        if ball:
-            filters["ball"] = ball
+        if countryball:
+            filters["ball"] = countryball
         if shiny is not None:
             filters["shiny"] = shiny
         if special:
@@ -1217,7 +1217,7 @@ class Admin(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters).count()
         verb = "is" if balls == 1 else "are"
-        country = f"{ball.country} " if ball else ""
+        country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
         shiny_str = "shiny " if shiny else ""
@@ -1492,7 +1492,7 @@ class Admin(commands.GroupCog):
     async def history_ball(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        countryballid: str,
+        countryball_id: str,
         sorting: app_commands.Choice[str],
         days: Optional[int] = None,
     ):
@@ -1501,7 +1501,7 @@ class Admin(commands.GroupCog):
 
         Parameters
         ----------
-        countryballid: str
+        countryball_id: str
             The ID of the countryball you want to check the history of.
         sorting: str
             The sorting method you want to use.
@@ -1510,7 +1510,7 @@ class Admin(commands.GroupCog):
         """
 
         try:
-            pk = int(countryballid, 16)
+            pk = int(countryball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
@@ -1555,18 +1555,18 @@ class Admin(commands.GroupCog):
     async def trade_info(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        tradeid: str,
+        trade_id: str,
     ):
         """
         Show the contents of a certain trade.
 
         Parameters
         ----------
-        tradeid: str
+        trade_id: str
             The ID of the trade you want to check the history of.
         """
         try:
-            pk = int(tradeid, 16)
+            pk = int(trade_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 "The trade ID you gave is not valid.", ephemeral=True
