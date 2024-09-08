@@ -8,10 +8,13 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
+from tortoise.expressions import Q
 
 from ballsdex.core.models import (
     BallInstance,
+    Block,
     DonationPolicy,
+    Friendship,
     Player,
     PrivacyPolicy,
     Trade,
@@ -253,16 +256,18 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
+        await interaction.response.defer(thinking=True)
         extra_text = "shiny " if shiny else "" + f"{special.name} " if special else ""
         if user is not None:
             try:
                 player = await Player.get(discord_id=user_obj.id)
             except DoesNotExist:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"{user_obj.name} doesn't have any "
                     f"{extra_text}{settings.collectible_name}s yet."
                 )
                 return
+
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
         # Filter disabled balls, they do not count towards progression
@@ -279,7 +284,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 if y.enabled and y.created_at < special.end_date
             }
         if not bot_countryballs:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"There are no {extra_text}{settings.collectible_name}s"
                 " registered on this bot yet.",
                 ephemeral=True,
@@ -524,6 +529,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
+        blocked = await Block.filter((Q(player1=user.id) & Q(player2=interaction.user.id))).exists()
+        if blocked:
+            await interaction.response.send_message(
+                "You cannot donate to a user that has blocked you.", ephemeral=True
+            )
         if countryball.favorite:
             view = ConfirmChoiceView(interaction)
             await interaction.response.send_message(
@@ -555,6 +565,19 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             await countryball.unlock()
             return
+
+        friendship = await Friendship.filter(
+            (Q(player1=new_player) & Q(player2=old_player))
+            | (Q(player1=old_player) & Q(player2=new_player))
+        ).exists()
+        if new_player.donation_policy == DonationPolicy.FRIENDS_ONLY:
+            if not friendship:
+                await interaction.followup.send(
+                    "This player only accepts donations from friends, use trades instead.",
+                    ephemeral=True,
+                )
+                await countryball.unlock()
+                return
         if new_player.discord_id in self.bot.blacklist:
             await interaction.followup.send(
                 "You cannot donate to a blacklisted user.", ephemeral=True
@@ -643,17 +666,37 @@ async def inventory_privacy(
     user_obj: Union[discord.User, discord.Member],
 ):
     privacy_policy = player.privacy_policy
+    friendship = await Friendship.filter(
+        (Q(player1=interaction.user.id) & Q(player2=user_obj.id))
+        | (Q(player1=user_obj.id) & Q(player2=interaction.user.id))
+    ).exists()
+    blocked = await Block.filter(
+        (Q(player1=interaction.user.id) & Q(player2=user_obj.id))
+        | (Q(player1=user_obj.id) & Q(player2=interaction.user.id))
+    ).exists()
     if interaction.user.id == player.discord_id:
         return True
     if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
         roles = settings.admin_role_ids + settings.root_role_ids
         if any(role.id in roles for role in interaction.user.roles):  # type: ignore
             return True
-    if privacy_policy == PrivacyPolicy.DENY:
+    if blocked:
+        await interaction.followup.send(
+            "You cannot interact with a blocked user.", ephemeral=True
+        )
+        return False
+    elif privacy_policy == PrivacyPolicy.DENY:
         await interaction.followup.send(
             "This user has set their inventory to private.", ephemeral=True
         )
         return False
+    elif privacy_policy == PrivacyPolicy.FRIENDS:
+        if not friendship:
+            await interaction.followup.send(
+                "This user's inventory can only be viewed from users they have added as friends.",
+                ephemeral=True,
+            )
+            return False
     elif privacy_policy == PrivacyPolicy.SAME_SERVER:
         if not bot.intents.members:
             await interaction.followup.send(
