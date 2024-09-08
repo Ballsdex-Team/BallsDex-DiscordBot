@@ -59,7 +59,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         if self.ball.catched:
             message = f"{interaction.user.mention} {settings.caught_already_phrase}"
             mentions = get_allowed_mentions(settings.mention_user)
-            await interaction.response.send_message(message, allowed_mentions=mentions)
+            await interaction.response.send_message(
+                message,
+                allowed_mentions=mentions,
+                ephemeral=config.silent,
+            )
         if self.ball.model.catch_names:
             possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
         else:
@@ -94,7 +98,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         else:
             message = f"{interaction.user.mention} {settings.wrong_name_phrase}"
             mentions = get_allowed_mentions(settings.mention_user)
-            await interaction.response.send_message(message, allowed_mentions=mentions)
+            await interaction.response.send_message(
+                message,
+                allowed_mentions=mentions,
+                ephemeral=config.silent,
+            )
 
     async def catch_ball(
         self, bot: "BallsDexBot", user: discord.Member
