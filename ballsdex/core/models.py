@@ -370,7 +370,7 @@ class PrivacyPolicy(IntEnum):
     ALLOW = 1
     DENY = 2
     SAME_SERVER = 3
-    FRIENDS_ONLY = 4
+    FRIENDS = 4
 
 
 class Player(models.Model):
@@ -469,6 +469,7 @@ class Block(models.Model):
     player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
         "models.Player", related_name="block2"
     )
+    date = fields.DatetimeField(auto_now_add=True)
 
     def __str__(self) -> str:
         return str(self.pk)
