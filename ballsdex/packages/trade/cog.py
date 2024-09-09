@@ -115,7 +115,7 @@ class Trade(commands.GroupCog):
                 "You cannot trade with yourself.", ephemeral=True
             )
             return
-        blocked = await Block.filter((Q(player1=user.id) & Q(player2=interaction.user.id))).exists()
+        blocked = await player1.is_blocked(player2)
         if blocked:
             await interaction.response.send_message(
                 "You cannot begin a trade with a user that has blocked you.", ephemeral=True
