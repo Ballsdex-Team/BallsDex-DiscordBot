@@ -392,6 +392,18 @@ class Player(models.Model):
     def __str__(self) -> str:
         return str(self.discord_id)
 
+    async def is_friend(self, other_player: "Player") -> bool:
+        return await Friendship.filter(
+            (Q(player1=self) & Q(player2=other_player))
+            | (Q(player1=other_player) & Q(player2=self))
+        ).exists()
+
+    async def is_blocked(self, other_player: "Player") -> bool:
+        return await Block.filter(
+            (Q(player1=self) & Q(player2=other_player))
+            | (Q(player1=other_player) & Q(player2=self))
+        ).exists()
+
 
 class BlacklistedID(models.Model):
     discord_id = fields.BigIntField(
