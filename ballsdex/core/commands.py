@@ -48,7 +48,7 @@ class Core(commands.Cog):
             except commands.ExtensionNotLoaded:
                 await self.bot.load_extension(package)
         except commands.ExtensionNotFound:
-            await ctx.send("Extension not found")
+            await ctx.send("Extension not found.")
         except Exception:
             await ctx.send("Failed to reload extension.")
             log.error(f"Failed to reload extension {package}", exc_info=True)

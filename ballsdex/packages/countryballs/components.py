@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord.ui import Button, Modal, TextInput, View
 from prometheus_client import Counter
+from tortoise.exceptions import DoesNotExist
 from tortoise.timezone import now as datetime_now
 
 from ballsdex.core.models import BallInstance, GuildConfig, Player, specials
@@ -37,7 +38,10 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         self.button = button
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, /) -> None:
-        config = await GuildConfig.get(guild_id=interaction.guild_id)
+        try:
+            config = await GuildConfig.get(guild_id=interaction.guild_id)
+        except DoesNotExist:
+            config = await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
         log.exception("An error occured in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
             await interaction.followup.send(
@@ -51,7 +55,10 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             )
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
-        config = await GuildConfig.get(guild_id=interaction.guild_id)
+        try:
+            config = await GuildConfig.get(guild_id=interaction.guild_id)
+        except DoesNotExist:
+            config = await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
 
         if self.ball.catched:
             await interaction.response.send_message(
@@ -64,6 +71,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
         else:
             possible_names = (self.ball.name.lower(),)
+        if self.ball.model.translations:
+            possible_names += tuple(x.lower() for x in self.ball.model.translations.split(";"))
 
         if self.name.value.lower().strip() in possible_names:
             self.ball.catched = True

@@ -41,5 +41,5 @@ async def setup(bot: "BallsDexBot"):
     n = Admin(bot)
     if command_count(n) > 3900:
         strip_descriptions(n)
-        log.warn("/admin command too long, stripping descriptions")
+        log.warn("/admin command too long, stripping descriptions.")
     await bot.add_cog(n)
