@@ -28,12 +28,18 @@ class Settings:
         Prefix for text commands, mostly unused. Defaults to "b."
     collectible_name: str
         Usually "countryball", can be replaced when possible
+    plural_collectible_name: str
+        Usually "countryballs", can be replaced when possible
     bot_name: str
         Usually "BallsDex", can be replaced when possible
     players_group_cog_name: str
         Set the name of the base command of the "players" cog, /balls by default
     max_favorites:
         Set the maximum amount of favorited countryballs a user can have, 50 by default.
+    max_attack_bonus:
+        Set the biggest/smallest attack bonus that a spawned countryball can have.
+    max_health_bonus:
+        Set the biggest/smallest health bonus that a spawned countryball can have.
     about_description: str
         Used in the /about command
     github_link: str
@@ -58,10 +64,13 @@ class Settings:
     prefix: str = "b."
 
     collectible_name: str = "countryball"
+    plural_collectible_name: str = "countryballs"
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
 
     max_favorites: int = 50
+    max_attack_bonus: int = 20
+    max_health_bonus: int = 20
 
     # /about
     about_description: str = ""
@@ -100,6 +109,9 @@ def read_settings(path: "Path"):
     settings.co_owners = content.get("owners", {}).get("co-owners", [])
 
     settings.collectible_name = content["collectible-name"]
+    settings.plural_collectible_name = content.get(
+        "plural-collectible-name", content["collectible-name"] + "s"
+    )
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
 
@@ -120,6 +132,8 @@ def read_settings(path: "Path"):
     settings.prometheus_port = content["prometheus"]["port"]
 
     settings.max_favorites = content.get("max-favorites", 50)
+    settings.max_attack_bonus = content.get("max-attack-bonus", 20)
+    settings.max_health_bonus = content.get("max-health-bonus", 20)
     log.info("Settings loaded.")
 
 
@@ -151,8 +165,12 @@ about:
   privacy-policy: https://gist.github.com/laggron42/1eaa122013120cdfcc6d27f9485fe0bf
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
-# override the name "countryballs" in the bot
+# override the name "countryball" in the bot
 collectible-name: countryball
+
+# WORK IN PROGRESS, DOES NOT FULLY WORK
+# override the name "countryballs" in the bot
+plural-collectible-name: countryballs
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "BallsDex" in the bot
@@ -164,6 +182,14 @@ players-group-cog-name: balls
 
 # maximum amount of favorites that are allowed
 max-favorites: 50
+
+# the highest/lowest possible attack bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
+max-attack-bonus: 20
+
+# the highest/lowest possible health bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
+max-health-bonus: 20
 
 # enables the /admin command
 admin-command:
@@ -208,6 +234,9 @@ def update_settings(path: "Path"):
     add_owners = True
     add_config_ref = "# yaml-language-server: $schema=json-config-ref.json" not in content
     add_max_favorites = "max-favorites:" not in content
+    add_max_attack = "max-attack-bonus" not in content
+    add_max_health = "max-health-bonus" not in content
+    add_plural_collectible = "plural-collectible-name" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -234,6 +263,26 @@ owners:
         content += """
 # maximum amount of favorites that are allowed
 max-favorites: 50
+"""
+
+    if add_max_attack:
+        content += """
+# the highest/lowest possible attack bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
+max-attack-bonus: 20
+"""
+
+    if add_max_health:
+        content += """
+# the highest/lowest possible health bonus, do not leave empty
+# this cannot be smaller than 0, enter a positive number
+max-health-bonus: 20
+"""
+    if add_plural_collectible:
+        content += """
+# WORK IN PROGRESS, DOES NOT FULLY WORK
+# override the name "countryballs" in the bot
+plural-collectible-name: countryballs
 """
 
     if any((add_owners, add_config_ref)):

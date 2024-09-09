@@ -17,8 +17,8 @@ activation_embed = discord.Embed(
     description=f"To enable {settings.bot_name} in your server, you must "
     f"read and accept the [Terms of Service]({settings.terms_of_service}).\n\n"
     "As a summary, these are the rules of the bot:\n"
-    f"- No farming (spamming or creating servers for {settings.collectible_name}s)\n"
-    f"- Selling or exchanging {settings.collectible_name}s "
+    f"- No farming (spamming or creating servers for {settings.plural_collectible_name})\n"
+    f"- Selling or exchanging {settings.plural_collectible_name} "
     "against money or other goods is forbidden\n"
     "- Do not attempt to abuse the bot's internals\n"
     "**Not respecting these rules will lead to a blacklist**",
@@ -46,6 +46,7 @@ class Config(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         channel: Optional[discord.TextChannel] = None,
+        silent: bool = False,
     ):
         """
         Set or change the channel where countryballs will spawn.
@@ -54,6 +55,8 @@ class Config(commands.GroupCog):
         ----------
         channel: discord.TextChannel
             The channel you want to set, current one if not specified.
+        silent: bool
+            Whether to config a server to suppress wrong name and error messages.
         """
         user = cast(discord.Member, interaction.user)
 
@@ -66,7 +69,7 @@ class Config(commands.GroupCog):
                 )
                 return
 
-        view = AcceptTOSView(interaction, channel, user)
+        view = AcceptTOSView(interaction, channel, user, silent=silent)
         message = await channel.send(embed=activation_embed, view=view)
         view.message = message
 
@@ -89,8 +92,8 @@ class Config(commands.GroupCog):
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=False)
             await interaction.response.send_message(
                 f"{settings.bot_name} is now disabled in this server. Commands will still be "
-                f"available, but the spawn of new {settings.collectible_name}s is suspended.\n"
-                "To re-enable the spawn, use the same command."
+                f"available, but the spawn of new {settings.plural_collectible_name}"
+                "is suspended.\nTo re-enable the spawn, use the same command."
             )
         else:
             config.enabled = True  # type: ignore
@@ -100,7 +103,7 @@ class Config(commands.GroupCog):
                 if channel:
                     await interaction.response.send_message(
                         f"{settings.bot_name} is now enabled in this server, "
-                        f"{settings.collectible_name}s will start spawning "
+                        f"{settings.plural_collectible_name} will start spawning "
                         f"soon in {channel.mention}."
                     )
                 else:
