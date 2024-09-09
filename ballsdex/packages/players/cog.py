@@ -157,25 +157,19 @@ class Player(commands.GroupCog):
             await interaction.response.send_message("You cannot add a bot.", ephemeral=True)
             return
 
-        blocked = await Block.filter(
-            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
-        ).exists()
+        blocked = await player1.is_blocked(player2)
 
         if blocked:
             await interaction.response.send_message(
-                "You cannot add a blocked user, to unblock use the command `/player unblock`.",
+                "You cannot add a blocked user. To unblock, use `/player unblock`.",
                 ephemeral=True,
             )
             return
 
-        friended = await Friendship.filter(
-            (Q(player1=player1) & Q(player2=player2))
-            | (Q(player1=player2) & Q(player2=player1))
-        ).exists()
-
+        friended = await player1.is_friend(player2)
         if friended:
             await interaction.response.send_message(
-                "You are already friends with that user!", ephemeral=True
+                "You are already friends with this user!", ephemeral=True
             )
         else:
             await Friendship.create(player1=player1, player2=player2)
@@ -203,11 +197,7 @@ class Player(commands.GroupCog):
             await interaction.response.send_message("You cannot remove a bot.", ephemeral=True)
             return
 
-        friendship_exists = await Friendship.filter(
-            (Q(player1=player1) & Q(player2=player2))
-            | (Q(player1=player2) & Q(player2=player1))
-        ).exists()
-
+        friendship_exists = await player1.is_friend(player2)
         if not friendship_exists:
             await interaction.response.send_message(
                 "You are not friends with this user.", ephemeral=True
@@ -228,6 +218,7 @@ class Player(commands.GroupCog):
         View all your friends.
         """
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+
         friendships = await Friendship.filter(
             Q(player1=player) | Q(player2=player)
         ).select_related("player1", "player2").all()
@@ -239,14 +230,15 @@ class Player(commands.GroupCog):
             return
 
         entries: list[tuple[str, str]] = []
+
         for idx, relation in enumerate(friendships, start=1):
             if relation.player1 == player:
                 friend = relation.player2
             else:
                 friend = relation.player1
 
-        since = format_dt(relation.since, style='f')
-        entries.append((f"{idx}. ID: {friend}\n", f"Since: {since}"))
+            since = format_dt(relation.since, style='f')
+            entries.append((f"{idx}. {friend.discord_id}\n", f"Since: {since}"))
 
         source = FieldPageSource(entries, per_page=5, inline=False)
         source.embed.title = "Friend List"
@@ -278,21 +270,14 @@ class Player(commands.GroupCog):
             await interaction.followup.send("You cannot block a bot.", ephemeral=True)
             return
 
-        blocked = await Block.filter(
-            (Q(player1=player1) & Q(player2=player2))
-            | (Q(player1=player2) & Q(player2=player1))
-        ).exists()
-
+        blocked = await player1.is_blocked(player2)
         if blocked:
             await interaction.followup.send(
                 "You have already blocked this user.", ephemeral=True
             )
             return
-        
-        friended = await Friendship.filter(
-            (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
-        ).exists()
 
+        friended = await player1.is_friend(player2)
         if friended:
             view = ConfirmChoiceView(interaction)
             await interaction.followup.send(
@@ -337,10 +322,7 @@ class Player(commands.GroupCog):
             await interaction.response.send_message("You cannot unblock a bot.", ephemeral=True)
             return
 
-        blocked = await Block.filter(
-            (Q(player1=player1) & Q(player2=player2))
-            | (Q(player1=player2) & Q(player2=player1))
-        ).exists()
+        blocked = await player1.is_blocked(player2)
 
         if not blocked:
             await interaction.response.send_message("This user isn't blocked.", ephemeral=True)
@@ -360,25 +342,27 @@ class Player(commands.GroupCog):
         View all the users you have blocked.
         """
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        blocked = await Block.filter(
+        
+        blocked_relations = await Block.filter(
             Q(player1=player) | Q(player2=player)
         ).select_related("player1", "player2").all()
 
-        if not blocked:
+        if not blocked_relations:
             await interaction.response.send_message(
                 "You haven't blocked any users!", ephemeral=True
             )
             return
 
         entries: list[tuple[str, str]] = []
-        for idx, relation in enumerate(blocked, start=1):
-            if relation.player1 == player:
-                blocked = relation.player2
-            else:
-                blocked = relation.player1
 
-        since = format_dt(relation.date, style='f')
-        entries.append((f"{idx}. ID: {blocked}", f"Blocked at: {since}"))
+        for idx, relation in enumerate(blocked_relations, start=1):
+            if relation.player1 == player:
+                blocked_user = relation.player2
+            else:
+                blocked_user = relation.player1
+
+            since = format_dt(relation.date, style='f')
+            entries.append((f"{idx}. {blocked_user.discord_id}", f"Blocked at: {since}"))
 
         source = FieldPageSource(entries, per_page=5, inline=False)
         source.embed.title = "Blocked Users List"
