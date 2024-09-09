@@ -71,6 +71,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
         else:
             possible_names = (self.ball.name.lower(),)
+        if self.ball.model.translations:
+            possible_names += tuple(x.lower() for x in self.ball.model.translations.split(";"))
 
         if self.name.value.lower().strip() in possible_names:
             self.ball.catched = True
