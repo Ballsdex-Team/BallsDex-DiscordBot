@@ -102,7 +102,7 @@ class SpecialResource(Model):
         "rarity",
         Field(
             name="background",
-            label="Special background",
+            label="Special background (1428x2000)",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
@@ -185,6 +185,7 @@ class BallResource(Model):
         "country",
         "short_name",
         "catch_names",
+        "translations",
         "created_at",
         "regime",
         "economy",
@@ -205,7 +206,7 @@ class BallResource(Model):
         ),
         Field(
             name="collection_card",
-            label="Collection card",
+            label="Collection card (16:9 ratio)",
             display=displays.Image(width="40"),
             input_=inputs.Image(upload=upload, null=True),
         ),
@@ -319,7 +320,7 @@ class GuildConfigResource(Model):
             placeholder="Filter by ID",
         ),
     ]
-    fields = ["guild_id", "spawn_channel", "enabled"]
+    fields = ["guild_id", "spawn_channel", "enabled", "silent"]
 
 
 @app.register

@@ -19,7 +19,7 @@ from ballsdex.core.utils.transformers import (
     TradeCommandType,
 )
 from ballsdex.packages.trade.display import TradeViewFormat
-from ballsdex.packages.trade.menu import BulkAddView, TradeMenu
+from ballsdex.packages.trade.menu import BulkAddView, TradeMenu, TradeViewMenu
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
 
@@ -219,7 +219,7 @@ class Trade(commands.GroupCog):
     async def bulk_add(
         self,
         interaction: discord.Interaction,
-        ball: BallEnabledTransform | None = None,
+        countryball: BallEnabledTransform | None = None,
         shiny: bool | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -228,7 +228,7 @@ class Trade(commands.GroupCog):
 
         Parameters
         ----------
-        ball: Ball
+        countryball: Ball
             The countryball you would like to filter the results to
         shiny: bool
             Filter the results to shinies
@@ -248,8 +248,8 @@ class Trade(commands.GroupCog):
             )
             return
         filters = {}
-        if ball:
-            filters["ball"] = ball
+        if countryball:
+            filters["ball"] = countryball
         if shiny:
             filters["shiny"] = shiny
         if special:
@@ -258,12 +258,17 @@ class Trade(commands.GroupCog):
         balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
         if not balls:
             await interaction.followup.send(
-                f"No {settings.collectible_name}s found.", ephemeral=True
+                f"No {settings.plural_collectible_name} found.", ephemeral=True
             )
             return
+
+        # round balls to closest 25 for display purposes
+        balls = [x for x in balls if x.is_tradeable]
+        balls = balls[: len(balls) - (len(balls) % 25)]
+
         if len(balls) < 25:
             await interaction.followup.send(
-                f"You have less than 25 {settings.collectible_name}s, "
+                f"You have less than 25 {settings.plural_collectible_name}, "
                 "you can use the add command instead.",
                 ephemeral=True,
             )
@@ -271,9 +276,11 @@ class Trade(commands.GroupCog):
 
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(
-            content=f"Select the {settings.collectible_name}s you want to add "
+            content=f"Select the {settings.plural_collectible_name} you want to add "
             "to your proposal, note that the display will wipe on pagination however "
-            f"the selected {settings.collectible_name}s will remain."
+            f"the selected {settings.plural_collectible_name} will remain.\n"
+            f"{settings.plural_collectible_name.title()} were rounded down to closest 25 for "
+            "display purposes, final page may be missing entries."
         )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
@@ -392,16 +399,34 @@ class Trade(commands.GroupCog):
             queryset = queryset.filter(date__range=(start_date, end_date))
 
         if countryball:
-            queryset = queryset.filter(
-                Q(player1__tradeobjects__ballinstance__ball=countryball)
-                | Q(player2__tradeobjects__ballinstance__ball=countryball)
-            ).distinct()  # for some reason, this query creates a lot of duplicate rows?
+            queryset = queryset.filter(Q(tradeobjects__ballinstance__ball=countryball)).distinct()
 
-        history = await queryset.order_by(sorting.value).prefetch_related("player1", "player2")
+        history = await queryset.order_by(sorting.value).prefetch_related(
+            "player1", "player2", "tradeobjects__ballinstance__ball"
+        )
 
         if not history:
             await interaction.followup.send("No history found.", ephemeral=True)
             return
+
         source = TradeViewFormat(history, interaction.user.name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start()
+
+    @app_commands.command()
+    async def view(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+    ):
+        """
+        View the countryballs added to an ongoing trade.
+        """
+        trade, trader = self.get_trade(interaction)
+        if not trade or not trader:
+            await interaction.response.send_message(
+                "You do not have an ongoing trade.", ephemeral=True
+            )
+            return
+
+        source = TradeViewMenu(interaction, [trade.trader1, trade.trader2], self)
+        await source.start(content="Select a user to view their proposal.")

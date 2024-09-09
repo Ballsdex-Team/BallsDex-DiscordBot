@@ -36,6 +36,19 @@ async def lower_catch_names(
         ).lower()
 
 
+async def lower_translations(
+    model: Type[Ball],
+    instance: Ball,
+    created: bool,
+    using_db: "BaseDBAsyncClient | None" = None,
+    update_fields: Iterable[str] | None = None,
+):
+    if instance.translations:
+        instance.translations = ";".join(
+            [x.strip() for x in instance.translations.split(";")]
+        ).lower()
+
+
 class DiscordSnowflakeValidator(validators.Validator):
     def __call__(self, value: int):
         if not 17 <= len(str(value)) <= 19:
@@ -61,6 +74,10 @@ class GuildConfig(models.Model):
     )
     enabled = fields.BooleanField(
         description="Whether the bot will spawn countryballs in this guild", default=True
+    )
+    silent = fields.BooleanField(
+        description="Whether the responses of guesses get sent as ephemeral or not",
+        default=False,
     )
 
 
@@ -117,6 +134,11 @@ class Ball(models.Model):
         default=None,
         description="Additional possible names for catching this ball, separated by semicolons",
     )
+    translations = fields.TextField(
+        null=True,
+        default=None,
+        description="Translations for the country name, separated by semicolons",
+    )
     regime: fields.ForeignKeyRelation[Regime] = fields.ForeignKeyField(
         "models.Regime", description="Political regime of this country", on_delete=fields.CASCADE
     )
@@ -165,6 +187,7 @@ class Ball(models.Model):
 
 
 Ball.register_listener(signals.Signals.pre_save, lower_catch_names)
+Ball.register_listener(signals.Signals.pre_save, lower_translations)
 
 
 class BallInstance(models.Model):
@@ -240,7 +263,7 @@ class BallInstance(models.Model):
         emotes = ""
         if bot and self.pk in bot.locked_balls and not is_trade:  # type: ignore
             emotes += "🔒"
-        if self.favorite:
+        if self.favorite and not is_trade:
             emotes += "❤️"
         if self.shiny:
             emotes += "✨"
@@ -409,6 +432,9 @@ class BlacklistedID(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
+    moderator_id = fields.BigIntField(
+        description="Discord Moderator ID", validators=[DiscordSnowflakeValidator()], null=True
+    )
     reason = fields.TextField(null=True, default=None)
     date = fields.DatetimeField(null=True, default=None, auto_now_add=True)
 
@@ -420,11 +446,28 @@ class BlacklistedGuild(models.Model):
     discord_id = fields.BigIntField(
         description="Discord Guild ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
+    moderator_id = fields.BigIntField(
+        description="Discord Moderator ID", validators=[DiscordSnowflakeValidator()], null=True
+    )
     reason = fields.TextField(null=True, default=None)
     date = fields.DatetimeField(null=True, default=None, auto_now_add=True)
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+
+class BlacklistHistory(models.Model):
+    id = fields.IntField(pk=True)
+    discord_id = fields.BigIntField(
+        description="Discord ID", validators=[DiscordSnowflakeValidator()]
+    )
+    moderator_id = fields.BigIntField(
+        description="Discord Moderator ID", validators=[DiscordSnowflakeValidator()]
+    )
+    reason = fields.TextField(null=True, default=None)
+    date = fields.DatetimeField(auto_now_add=True)
+    id_type = fields.CharField(max_length=64, default="user")
+    action_type = fields.CharField(max_length=64, default="blacklist")
 
 
 class Trade(models.Model):

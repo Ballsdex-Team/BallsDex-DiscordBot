@@ -20,6 +20,7 @@ from ballsdex.core.models import (
     BallInstance,
     BlacklistedGuild,
     BlacklistedID,
+    BlacklistHistory,
     GuildConfig,
     Player,
     Trade,
@@ -35,6 +36,7 @@ from ballsdex.core.utils.transformers import (
     RegimeTransform,
     SpecialTransform,
 )
+from ballsdex.packages.admin.menu import BlacklistViewFormat
 from ballsdex.packages.countryballs.countryball import CountryBall
 from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
@@ -291,7 +293,7 @@ class Admin(commands.GroupCog):
             informations.append("The manager is currently on cooldown.")
         if delta < 600:
             informations.append(
-                f"The manager is less than 10 minutes old, {settings.collectible_name}s "
+                f"The manager is less than 10 minutes old, {settings.plural_collectible_name} "
                 "cannot spawn at the moment."
             )
         if informations:
@@ -462,7 +464,7 @@ class Admin(commands.GroupCog):
             task.cancel()
             await interaction.followup.edit_message(
                 "@original",  # type: ignore
-                content=f"Successfully spawned {spawned} {settings.collectible_name}s "
+                content=f"Successfully spawned {spawned} {settings.plural_collectible_name} "
                 f"in {channel.mention}!",
             )
         finally:
@@ -482,7 +484,7 @@ class Admin(commands.GroupCog):
 
         Parameters
         ----------
-        ball: Ball | None
+        countryball: Ball | None
             The countryball you want to spawn. Random according to rarities if not specified.
         channel: discord.TextChannel | None
             The channel you want to spawn the countryball in. Current channel if not specified.
@@ -541,7 +543,7 @@ class Admin(commands.GroupCog):
     async def give(
         self,
         interaction: discord.Interaction,
-        ball: BallTransform,
+        countryball: BallTransform,
         user: discord.User,
         special: SpecialTransform | None = None,
         shiny: bool | None = None,
@@ -553,15 +555,15 @@ class Admin(commands.GroupCog):
 
         Parameters
         ----------
-        ball: Ball
+        countryball: Ball
         user: discord.User
         special: Special | None
         shiny: bool
             Omit this to make it random.
         health_bonus: int | None
-            Omit this to make it random (-20/+20%).
+            Omit this to make it random.
         attack_bonus: int | None
-            Omit this to make it random (-20/+20%).
+            Omit this to make it random.
         """
         # the transformers triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
@@ -570,22 +572,32 @@ class Admin(commands.GroupCog):
 
         player, created = await Player.get_or_create(discord_id=user.id)
         instance = await BallInstance.create(
-            ball=ball,
+            ball=countryball,
             player=player,
             shiny=(shiny if shiny is not None else random.randint(1, 2048) == 1),
-            attack_bonus=(attack_bonus if attack_bonus is not None else random.randint(-20, 20)),
-            health_bonus=(health_bonus if health_bonus is not None else random.randint(-20, 20)),
+            attack_bonus=(
+                attack_bonus
+                if attack_bonus is not None
+                else random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
+            ),
+            health_bonus=(
+                health_bonus
+                if health_bonus is not None
+                else random.randint(-settings.max_health_bonus, settings.max_health_bonus)
+            ),
             special=special,
         )
         await interaction.followup.send(
-            f"`{ball.country}` {settings.collectible_name} was successfully given to `{user}`.\n"
-            f"Special: `{special.name if special else None}` • ATK:`{instance.attack_bonus:+d}` • "
-            f"HP:`{instance.health_bonus:+d}` • Shiny: `{instance.shiny}`"
+            f"`{countryball.country}` {settings.collectible_name} was successfully given to "
+            f"`{user}`.\nSpecial: `{special.name if special else None}` • ATK: "
+            f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
+            f"• Shiny: `{instance.shiny}`"
         )
         await log_action(
-            f"{interaction.user} gave {settings.collectible_name} {ball.country} to {user}. "
-            f"(Special={special.name if special else None} ATK={instance.attack_bonus:+d} "
-            f"HP={instance.health_bonus:+d} shiny={instance.shiny}).",
+            f"{interaction.user} gave {settings.collectible_name} "
+            f"{countryball.country} to {user}. (Special={special.name if special else None} "
+            f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d} "
+            f"shiny={instance.shiny}).",
             self.bot,
         )
 
@@ -614,6 +626,11 @@ class Admin(commands.GroupCog):
                 "You must provide either `user` or `user_id`.", ephemeral=True
             )
             return
+        if user == interaction.user:
+            await interaction.response.send_message(
+                "You cannot blacklist yourself!", ephemeral=True
+            )
+            return
 
         if not user:
             try:
@@ -628,13 +645,13 @@ class Admin(commands.GroupCog):
                     "The given user ID could not be found.", ephemeral=True
                 )
                 return
-
-        final_reason = (
-            f"{reason}\nDone through the bot by {interaction.user} ({interaction.user.id})"
-        )
-
         try:
-            await BlacklistedID.create(discord_id=user.id, reason=final_reason)
+            await BlacklistedID.create(
+                discord_id=user.id, reason=reason, moderator_id=interaction.user.id
+            )
+            await BlacklistHistory.create(
+                discord_id=user.id, reason=reason, moderator_id=interaction.user.id, id_type="user"
+            )
         except IntegrityError:
             await interaction.response.send_message(
                 "That user was already blacklisted.", ephemeral=True
@@ -655,6 +672,7 @@ class Admin(commands.GroupCog):
         interaction: discord.Interaction,
         user: discord.User | None = None,
         user_id: str | None = None,
+        reason: str | None = None,
     ):
         """
         Remove a user from the blacklist. No reload is needed.
@@ -665,6 +683,8 @@ class Admin(commands.GroupCog):
             The user you want to unblacklist, if available in the current server.
         user_id: str | None
             The ID of the user you want to unblacklist, if it's not in the current server.
+        reason: str | None
+            The reason for unblacklisting the user.
         """
         if (user and user_id) or (not user and not user_id):
             await interaction.response.send_message(
@@ -692,12 +712,20 @@ class Admin(commands.GroupCog):
             await interaction.response.send_message("That user isn't blacklisted.", ephemeral=True)
         else:
             await blacklisted.delete()
+            await BlacklistHistory.create(
+                discord_id=user.id,
+                reason=reason,
+                moderator_id=interaction.user.id,
+                id_type="user",
+                action_type="unblacklist",
+            )
             self.bot.blacklist.remove(user.id)
             await interaction.response.send_message(
                 "User is now removed from blacklist.", ephemeral=True
             )
         await log_action(
-            f"{interaction.user} removed blacklist for user {user} ({user.id}).", self.bot
+            f"{interaction.user} removed blacklist for user {user} ({user.id}).\nReason: {reason}",
+            self.bot,
         )
 
     @blacklist.command(name="info")
@@ -743,20 +771,58 @@ class Admin(commands.GroupCog):
         except DoesNotExist:
             await interaction.response.send_message("That user isn't blacklisted.", ephemeral=True)
         else:
+            if blacklisted.moderator_id:
+                moderator_msg = (
+                    f"Moderator: {await self.bot.fetch_user(blacklisted.moderator_id)}"
+                    f" ({blacklisted.moderator_id})"
+                )
+            else:
+                moderator_msg = "Moderator: Unknown"
             if blacklisted.date:
                 await interaction.response.send_message(
                     f"`{user}` (`{user.id}`) was blacklisted on {format_dt(blacklisted.date)}"
                     f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
-                    f"{blacklisted.reason}",
+                    f"{blacklisted.reason}\n{moderator_msg}",
                     ephemeral=True,
                 )
             else:
                 await interaction.response.send_message(
                     f"`{user}` (`{user.id}`) is currently blacklisted (date unknown)"
                     " for the following reason:\n"
-                    f"{blacklisted.reason}",
+                    f"{blacklisted.reason}\n{moderator_msg}",
                     ephemeral=True,
                 )
+
+    @blacklist.command(name="history")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+    async def blacklist_history(self, interaction: discord.Interaction, user_id: str):
+        """
+        Show the history of a blacklisted user or guild.
+
+        Parameters
+        ----------
+        id: str
+            The ID of the user or guild you want to check.
+        """
+        try:
+            _id = int(user_id)
+        except ValueError:
+            await interaction.response.send_message(
+                "The ID you gave is not valid.", ephemeral=True
+            )
+            return
+
+        history = await BlacklistHistory.filter(discord_id=_id).order_by("-date")
+
+        if not history:
+            await interaction.response.send_message(
+                "No history found for that ID.", ephemeral=True
+            )
+            return
+
+        source = BlacklistViewFormat(history, _id, self.bot)
+        pages = Pages(source=source, interaction=interaction, compact=True)  # type: ignore
+        await pages.start(ephemeral=True)
 
     @blacklist_guild.command(name="add")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -792,7 +858,15 @@ class Admin(commands.GroupCog):
         final_reason = f"{reason}\nBy: {interaction.user} ({interaction.user.id})"
 
         try:
-            await BlacklistedGuild.create(discord_id=guild.id, reason=final_reason)
+            await BlacklistedGuild.create(
+                discord_id=guild.id, reason=final_reason, moderator_id=interaction.user.id
+            )
+            await BlacklistHistory.create(
+                discord_id=guild.id,
+                reason=final_reason,
+                moderator_id=interaction.user.id,
+                id_type="guild",
+            )
         except IntegrityError:
             await interaction.response.send_message(
                 "That guild was already blacklisted.", ephemeral=True
@@ -812,6 +886,7 @@ class Admin(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         guild_id: str,
+        reason: str | None = None,
     ):
         """
         Remove a guild from the blacklist. No reload is needed.
@@ -820,6 +895,8 @@ class Admin(commands.GroupCog):
         ----------
         guild_id: str
             The ID of the guild you want to unblacklist.
+        reason: str | None
+            The reason for unblacklisting the guild.
         """
 
         try:
@@ -843,12 +920,21 @@ class Admin(commands.GroupCog):
             )
         else:
             await blacklisted.delete()
+            await BlacklistHistory.create(
+                discord_id=guild.id,
+                reason=reason,
+                moderator_id=interaction.user.id,
+                id_type="guild",
+                action_type="unblacklist",
+            )
             self.bot.blacklist_guild.remove(guild.id)
             await interaction.response.send_message(
                 "Guild is now removed from blacklist.", ephemeral=True
             )
             await log_action(
-                f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).", self.bot
+                f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).\n"
+                f"Reason: {reason}",
+                self.bot,
             )
 
     @blacklist_guild.command(name="info")
@@ -886,34 +972,41 @@ class Admin(commands.GroupCog):
                 "That guild isn't blacklisted.", ephemeral=True
             )
         else:
+            if blacklisted.moderator_id:
+                moderator_msg = (
+                    f"Moderator: {await self.bot.fetch_user(blacklisted.moderator_id)}"
+                    f"({blacklisted.moderator_id})"
+                )
+            else:
+                moderator_msg = "Moderator: Unknown"
             if blacklisted.date:
                 await interaction.response.send_message(
                     f"`{guild}` (`{guild.id}`) was blacklisted on {format_dt(blacklisted.date)}"
                     f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
-                    f"{blacklisted.reason}",
+                    f"{blacklisted.reason}\n{moderator_msg}",
                     ephemeral=True,
                 )
             else:
                 await interaction.response.send_message(
                     f"`{guild}` (`{guild.id}`) is currently blacklisted (date unknown)"
                     " for the following reason:\n"
-                    f"{blacklisted.reason}",
+                    f"{blacklisted.reason}\n{moderator_msg}",
                     ephemeral=True,
                 )
 
     @balls.command(name="info")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def balls_info(self, interaction: discord.Interaction, ball_id: str):
+    async def balls_info(self, interaction: discord.Interaction, countryball_id: str):
         """
         Show information about a countryball.
 
         Parameters
         ----------
-        ball_id: str
+        countryball_id: str
             The ID of the countryball you want to get information about.
         """
         try:
-            pk = int(ball_id, 16)
+            pk = int(countryball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
@@ -953,17 +1046,17 @@ class Admin(commands.GroupCog):
 
     @balls.command(name="delete")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_delete(self, interaction: discord.Interaction, ball_id: str):
+    async def balls_delete(self, interaction: discord.Interaction, countryball_id: str):
         """
         Delete a countryball.
 
         Parameters
         ----------
-        ball_id: str
+        countryball_id: str
             The ID of the countryball you want to delete.
         """
         try:
-            ballIdConverted = int(ball_id, 16)
+            ballIdConverted = int(countryball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
@@ -978,27 +1071,27 @@ class Admin(commands.GroupCog):
             return
         await ball.delete()
         await interaction.response.send_message(
-            f"{settings.collectible_name.title()} {ball_id} deleted.", ephemeral=True
+            f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True
         )
         await log_action(f"{interaction.user} deleted {ball}({ball.pk}).", self.bot)
 
     @balls.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_transfer(
-        self, interaction: discord.Interaction, ball_id: str, user: discord.User
+        self, interaction: discord.Interaction, countryball_id: str, user: discord.User
     ):
         """
         Transfer a countryball to another user.
 
         Parameters
         ----------
-        ball_id: str
+        countryball_id: str
             The ID of the countryball you want to transfer.
         user: discord.User
             The user you want to transfer the countryball to.
         """
         try:
-            ballIdConverted = int(ball_id, 16)
+            ballIdConverted = int(countryball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
@@ -1056,11 +1149,11 @@ class Admin(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         if not percentage:
-            text = f"Are you sure you want to delete {user}'s {settings.collectible_name}s?"
+            text = f"Are you sure you want to delete {user}'s {settings.plural_collectible_name}?"
         else:
             text = (
                 f"Are you sure you want to delete {percentage}% of "
-                f"{user}'s {settings.collectible_name}s?"
+                f"{user}'s {settings.plural_collectible_name}?"
             )
         view = ConfirmChoiceView(interaction)
         await interaction.followup.send(
@@ -1080,11 +1173,12 @@ class Admin(commands.GroupCog):
         else:
             count = await BallInstance.filter(player=player).delete()
         await interaction.followup.send(
-            f"{count} {settings.collectible_name}s from {user} have been reset.", ephemeral=True
+            f"{count} {settings.plural_collectible_name} from {user} have been deleted.",
+            ephemeral=True,
         )
         await log_action(
             f"{interaction.user} deleted {percentage or 100}% of "
-            f"{player}'s {settings.collectible_name}s.",
+            f"{player}'s {settings.plural_collectible_name}.",
             self.bot,
         )
 
@@ -1094,7 +1188,7 @@ class Admin(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         user: discord.User | None = None,
-        ball: BallTransform | None = None,
+        countryball: BallTransform | None = None,
         shiny: bool | None = None,
         special: SpecialTransform | None = None,
     ):
@@ -1105,15 +1199,15 @@ class Admin(commands.GroupCog):
         ----------
         user: discord.User
             The user you want to count the countryballs of.
-        ball: Ball
+        countryball: Ball
         shiny: bool
         special: Special
         """
         if interaction.response.is_done():
             return
         filters = {}
-        if ball:
-            filters["ball"] = ball
+        if countryball:
+            filters["ball"] = countryball
         if shiny is not None:
             filters["shiny"] = shiny
         if special:
@@ -1122,7 +1216,8 @@ class Admin(commands.GroupCog):
             filters["player__discord_id"] = user.id
         await interaction.response.defer(ephemeral=True, thinking=True)
         balls = await BallInstance.filter(**filters).count()
-        country = f"{ball.country} " if ball else ""
+        verb = "is" if balls == 1 else "are"
+        country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
         shiny_str = "shiny " if shiny else ""
@@ -1133,7 +1228,7 @@ class Admin(commands.GroupCog):
             )
         else:
             await interaction.followup.send(
-                f"There are {balls} {special_str}{shiny_str}"
+                f"There {verb} {balls} {special_str}{shiny_str}"
                 f"{country}{settings.collectible_name}{plural}."
             )
 
@@ -1397,7 +1492,7 @@ class Admin(commands.GroupCog):
     async def history_ball(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        countryballid: str,
+        countryball_id: str,
         sorting: app_commands.Choice[str],
         days: Optional[int] = None,
     ):
@@ -1406,7 +1501,7 @@ class Admin(commands.GroupCog):
 
         Parameters
         ----------
-        countryballid: str
+        countryball_id: str
             The ID of the countryball you want to check the history of.
         sorting: str
             The sorting method you want to use.
@@ -1415,7 +1510,7 @@ class Admin(commands.GroupCog):
         """
 
         try:
-            pk = int(countryballid, 16)
+            pk = int(countryball_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
@@ -1460,18 +1555,18 @@ class Admin(commands.GroupCog):
     async def trade_info(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        tradeid: str,
+        trade_id: str,
     ):
         """
         Show the contents of a certain trade.
 
         Parameters
         ----------
-        tradeid: str
+        trade_id: str
             The ID of the trade you want to check the history of.
         """
         try:
-            pk = int(tradeid, 16)
+            pk = int(trade_id, 16)
         except ValueError:
             await interaction.response.send_message(
                 "The trade ID you gave is not valid.", ephemeral=True
@@ -1546,7 +1641,7 @@ class Admin(commands.GroupCog):
             owner = await self.bot.fetch_user(guild.owner_id)
             embed = discord.Embed(
                 title=f"{guild.name} ({guild.id})",
-                description=f"Owner: {owner} ({guild.owner_id})",
+                description=f"**Owner:** {owner} ({guild.owner_id})",
                 color=discord.Color.blurple(),
             )
         else:
@@ -1554,15 +1649,15 @@ class Admin(commands.GroupCog):
                 title=f"{guild.name} ({guild.id})",
                 color=discord.Color.blurple(),
             )
-        embed.add_field(name="Members", value=guild.member_count)
-        embed.add_field(name="Spawn Enabled", value=spawn_enabled)
-        embed.add_field(name="Created at", value=format_dt(guild.created_at, style="R"))
+        embed.add_field(name="Members:", value=guild.member_count)
+        embed.add_field(name="Spawn enabled:", value=spawn_enabled)
+        embed.add_field(name="Created at:", value=format_dt(guild.created_at, style="F"))
         embed.add_field(
-            name=f"{settings.collectible_name} Caught ({days} days)",
+            name=f"{settings.plural_collectible_name.title()} caught ({days} days):",
             value=len(total_server_balls),
         )
         embed.add_field(
-            name=f"Amount of Users who caught {settings.collectible_name} ({days} days)",
+            name=f"Amount of users who caught\n{settings.plural_collectible_name} ({days} days):",
             value=len(set([x.player.discord_id for x in total_server_balls])),
         )
 
@@ -1599,30 +1694,33 @@ class Admin(commands.GroupCog):
         embed = discord.Embed(
             title=f"{user} ({user.id})",
             description=(
-                f"Privacy Policy: {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
-                f"Donation Policy: {DONATION_POLICY_MAP[player.donation_policy]}"
+                f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
+                f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}"
             ),
             color=discord.Color.blurple(),
         )
-        embed.add_field(name=f"Balls Caught ({days} days)", value=len(total_user_balls))
         embed.add_field(
-            name=f"{settings.collectible_name} Caught (Unique - ({days} days))",
+            name=f"{settings.plural_collectible_name.title()} caught ({days} days):",
+            value=len(total_user_balls),
+        )
+        embed.add_field(
+            name=f"Unique {settings.plural_collectible_name} caught ({days} days):",
             value=len(set(total_user_balls)),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s caught ({days} days))",
+            name=f"Total servers with {settings.plural_collectible_name} caught ({days} days):",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total {settings.collectible_name}s Caught",
+            name=f"Total {settings.plural_collectible_name} caught:",
             value=await BallInstance.filter(player__discord_id=user.id).count(),
         )
         embed.add_field(
-            name=f"Total Unique {settings.collectible_name}s Caught",
+            name=f"Total unique {settings.plural_collectible_name} caught:",
             value=len(set([x.countryball for x in total_user_balls])),
         )
         embed.add_field(
-            name=f"Total Server with {settings.collectible_name}s Caught",
+            name=f"Total servers with {settings.plural_collectible_name} caught:",
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
