@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from tortoise.expressions import Q
 
-from ballsdex.core.models import BallInstance, DonationPolicy
+from ballsdex.core.models import BallInstance, DonationPolicy, MentionPolicy
 from ballsdex.core.models import Player as PlayerModel
 from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -95,6 +95,29 @@ class Player(commands.GroupCog):
             await interaction.response.send_message("Invalid input!")
             return
         await player.save()  # do not save if the input is invalid
+
+    @app_commands.command()
+    @app_commands.choices(
+        policy=[
+            app_commands.Choice(name="Accept all mentions", value=MentionPolicy.ALLOW),
+            app_commands.Choice(name="Deny all mentions", value=MentionPolicy.DENY),
+        ]
+    )
+    async def mention_policy(self, interaction: discord.Interaction, policy: MentionPolicy):
+        """
+        Set your mention policy.
+
+        Parameters
+        ----------
+        policy: MentionPolicy
+            The new policy for mentions
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player.mention_policy = policy
+        await player.save()
+        await interaction.response.send_message(
+            f"Your mention policy has been set to **{policy.name.lower()}**.", ephemeral=True
+        )
 
     @app_commands.command()
     async def delete(self, interaction: discord.Interaction):

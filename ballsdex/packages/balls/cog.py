@@ -577,6 +577,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)}!\n"
                 "Do you accept this donation?",
                 view=DonationRequest(self.bot, interaction, countryball, new_player),
+                allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
             )
             return
 
@@ -593,7 +594,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
         )
         await interaction.followup.send(
-            f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!"
+            f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!",
+            allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
         )
         await countryball.unlock()
 

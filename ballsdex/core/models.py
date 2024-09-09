@@ -394,6 +394,11 @@ class PrivacyPolicy(IntEnum):
     SAME_SERVER = 3
 
 
+class MentionPolicy(IntEnum):
+    ALLOW = 1
+    DENY = 2
+
+
 class Player(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
@@ -408,10 +413,19 @@ class Player(models.Model):
         description="How you want to handle privacy",
         default=PrivacyPolicy.DENY,
     )
+    mention_policy = fields.IntEnumField(
+        MentionPolicy,
+        description="How you want to handle mentions",
+        default=MentionPolicy.ALLOW,
+    )
     balls: fields.BackwardFKRelation[BallInstance]
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+    @property
+    def can_be_mentioned(self) -> bool:
+        return self.mention_policy == MentionPolicy.ALLOW
 
 
 class BlacklistedID(models.Model):

@@ -225,6 +225,7 @@ class TradeMenu:
             "is proposing a trade with you!",
             embed=self.embed,
             view=self.current_view,
+            allowed_mentions=discord.AllowedMentions(users=self.trader2.player.can_be_mentioned),
         )
         self.task = self.bot.loop.create_task(self.update_message_loop())
 
