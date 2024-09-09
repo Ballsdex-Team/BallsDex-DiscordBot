@@ -9,7 +9,7 @@ from tortoise.expressions import Q
 
 from ballsdex.core.models import BallInstance, DonationPolicy
 from ballsdex.core.models import Player as PlayerModel
-from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject
+from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.settings import settings
 
@@ -110,6 +110,50 @@ class Player(commands.GroupCog):
             return
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         await player.delete()
+
+    @app_commands.command()
+    async def stats(self, interaction: discord.Interaction):
+        """
+        View your statistics in the bot!
+        """
+        await interaction.response.defer(thinking=True)
+        player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related("balls")
+        ball = await BallInstance.filter(player=player).prefetch_related("special")
+
+        user = interaction.user
+        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
+        total_countryballs = len(bot_countryballs)
+        owned_countryballs = set(
+            x[0]
+            for x in await player.balls.filter(ball__enabled=True)
+            .distinct()
+            .values_list("ball_id")
+        )
+        completion_percentage = f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
+        caught_owned = [x for x in ball if x.trade_player is None]
+        balls_owned = [x for x in ball]
+        shiny = [x for x in ball if x.shiny is True]
+        special = [x for x in ball if x.special is not None]
+        trades = await Trade.filter(
+            Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
+        ).count()
+
+        embed = discord.Embed(
+            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Stats**",
+            color=discord.Color.blurple(),
+        )
+        embed.description = (
+            "Here are your current statistics in the bot!\n\n"
+            f"**Completion:** {completion_percentage}\n"
+            f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned)}\n"
+            f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned)}\n"
+            f"**Shiny {settings.collectible_name.title()}s:** {len(shiny)}\n"
+            f"**Special {settings.collectible_name.title()}s:** {len(special)}\n"
+            f"**Trades Completed:** {trades}"
+        )
+        embed.set_footer(text="Keep collecting and trading to improve your stats!")
+        embed.set_thumbnail(url=user.display_avatar)  # type: ignore
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command()
     @app_commands.choices(
