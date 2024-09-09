@@ -116,6 +116,7 @@ class Player(commands.GroupCog):
         """
         View your statistics in the bot!
         """
+        await interaction.response.defer(thinking=True)
         player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related("balls")
         ball = await BallInstance.filter(player=player).prefetch_related("special")
 
@@ -152,7 +153,7 @@ class Player(commands.GroupCog):
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command()
     @app_commands.choices(
