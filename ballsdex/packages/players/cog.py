@@ -31,8 +31,8 @@ class Player(commands.GroupCog):
                 0
             ]._Parameter__parent.choices.pop()  # type: ignore
 
-    friend = app_commands.Group(name="friends", description="Friend commands")
-    blocked = app_commands.Group(name="blocked", description="Block commands")
+    friend = app_commands.Group(name="friend", description="Friend commands")
+    blocked = app_commands.Group(name="block", description="Block commands")
     donation = app_commands.Group(name="donation", description="Donation commands")
 
     @app_commands.command()
@@ -196,11 +196,19 @@ class Player(commands.GroupCog):
             await interaction.response.send_message(
                 "You are already friends with this user!", ephemeral=True
             )
+            return
         else:
-            await Friendship.create(player1=player1, player2=player2)
+            view = ConfirmChoiceView(interaction, user=user)
             await interaction.response.send_message(
-                f"You are now friends with {user.name}.", ephemeral=True
+                f"{user.mention}, {interaction.user} has sent you a friend request!",
+                view=view,
             )
+            await view.wait()
+
+            if not view.value:
+                return
+            else:
+                await Friendship.create(player1=player1, player2=player2)
 
     @friend.command(name="remove")
     async def friend_remove(self, interaction: discord.Interaction, user: discord.User):
@@ -251,7 +259,9 @@ class Player(commands.GroupCog):
         )
 
         if not friendships:
-            await interaction.response.send_message("You haven't got any friends!", ephemeral=True)
+            await interaction.response.send_message(
+                "You currently do not have any friends added.", ephemeral=True
+            )
             return
 
         entries: list[tuple[str, str]] = []
@@ -263,7 +273,7 @@ class Player(commands.GroupCog):
                 friend = relation.player1
 
             since = format_dt(relation.since, style="f")
-            entries.append((f"{idx}. {friend.discord_id}\n", f"Since: {since}"))
+            entries.append((f"{idx}. <@{friend.discord_id}>\n", f"Since: {since}"))
 
         source = FieldPageSource(entries, per_page=5, inline=False)
         source.embed.title = "Friend List"
@@ -273,8 +283,8 @@ class Player(commands.GroupCog):
         pages = Pages(source=source, interaction=interaction, compact=True)
         await pages.start(ephemeral=True)
 
-    @app_commands.command()
-    async def block(self, interaction: discord.Interaction, user: discord.User):
+    @blocked.command(name="add")
+    async def block_add(self, interaction: discord.Interaction, user: discord.User):
         """
         Block another user.
 
@@ -321,8 +331,8 @@ class Player(commands.GroupCog):
         await Block.create(player1=player1, player2=player2)
         await interaction.followup.send(f"You have now blocked {user.name}.", ephemeral=True)
 
-    @app_commands.command()
-    async def unblock(self, interaction: discord.Interaction, user: discord.User):
+    @blocked.command(name="remove")
+    async def block_remove(self, interaction: discord.Interaction, user: discord.User):
         """
         Unblock a user.
 
