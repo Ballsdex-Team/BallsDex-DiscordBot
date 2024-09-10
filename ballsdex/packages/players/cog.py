@@ -66,7 +66,7 @@ class Player(commands.GroupCog):
             f"Your privacy policy has been set to **{policy.name}**.", ephemeral=True
         )
 
-    @donation.command()
+    @donation.command(name="policy")
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Accept all donations", value=DonationPolicy.ALWAYS_ACCEPT),
@@ -79,7 +79,7 @@ class Player(commands.GroupCog):
             ),
         ]
     )
-    async def policy(self, interaction: discord.Interaction, policy: app_commands.Choice[int]):
+    async def donation_policy(self, interaction: discord.Interaction, policy: app_commands.Choice[int]):
         """
         Change how you want to receive donations from /balls give
 
@@ -135,8 +135,8 @@ class Player(commands.GroupCog):
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         await player.delete()
 
-    @friend.command()
-    async def add(self, interaction: discord.Interaction, user: discord.User):
+    @friend.command(name="add")
+    async def friend_add(self, interaction: discord.Interaction, user: discord.User):
         """
         Add another user as a friend.
 
@@ -161,7 +161,8 @@ class Player(commands.GroupCog):
 
         if blocked:
             await interaction.response.send_message(
-                "You cannot add a blocked user. To unblock, use `/player unblock`.",
+                "You cannot add a blocked user. To unblock, use "
+                f"{self.cog.add.extras.("mention", "`/player unblock`")}.",
                 ephemeral=True,
             )
             return
@@ -177,8 +178,8 @@ class Player(commands.GroupCog):
                 f"You are now friends with {user.name}.", ephemeral=True
             )
 
-    @friend.command()
-    async def remove(self, interaction: discord.Interaction, user: discord.User):
+    @friend.command(name="remove")
+    async def friend_remove(self, interaction: discord.Interaction, user: discord.User):
         """
         Remove a friend.
 
@@ -212,8 +213,8 @@ class Player(commands.GroupCog):
                 f"{user.name} has been removed as a friend.", ephemeral=True
             )
 
-    @friend.command()
-    async def list(self, interaction: discord.Interaction):
+    @friend.command(name="list")
+    async def friend_list(self, interaction: discord.Interaction):
         """
         View all your friends.
         """
@@ -336,8 +337,8 @@ class Player(commands.GroupCog):
                 f"{user.name} has been unblocked.", ephemeral=True
             )
 
-    @blocked.command()
-    async def list(self, interaction: discord.Interaction):
+    @blocked.command(name="list")
+    async def blocked_list(self, interaction: discord.Interaction):
         """
         View all the users you have blocked.
         """
