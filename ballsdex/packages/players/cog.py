@@ -8,9 +8,9 @@ from discord.ext import commands
 from discord.utils import format_dt
 from tortoise.expressions import Q
 
-from ballsdex.core.models import BallInstance, Block, DonationPolicy, Friendship
+from ballsdex.core.models import BallInstance, Block, DonationPolicy, Friendship, MentionPolicy
 from ballsdex.core.models import Player as PlayerModel
-from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject
+from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.settings import settings
@@ -79,7 +79,9 @@ class Player(commands.GroupCog):
             ),
         ]
     )
-    async def donation_policy(self, interaction: discord.Interaction, policy: app_commands.Choice[int]):
+    async def donation_policy(
+        self, interaction: discord.Interaction, policy: app_commands.Choice[int]
+    ):
         """
         Change how you want to receive donations from /balls give
 
@@ -92,9 +94,8 @@ class Player(commands.GroupCog):
         player.donation_policy = DonationPolicy(policy.value)
         if policy.value == DonationPolicy.ALWAYS_ACCEPT:
             await interaction.response.send_message(
-                f"Setting updated, you will now receive all donated {settings.collectible_name}s "
-                "immediately.",
-                ephemeral=True,
+                "Setting updated, you will now receive all donated "
+                f"{settings.plural_collectible_name} immediately."
             )
         elif policy.value == DonationPolicy.REQUEST_APPROVAL:
             await interaction.response.send_message(
@@ -119,6 +120,29 @@ class Player(commands.GroupCog):
             await interaction.response.send_message("Invalid input!", ephemeral=True)
             return
         await player.save()  # do not save if the input is invalid
+
+    @app_commands.command()
+    @app_commands.choices(
+        policy=[
+            app_commands.Choice(name="Accept all mentions", value=MentionPolicy.ALLOW),
+            app_commands.Choice(name="Deny all mentions", value=MentionPolicy.DENY),
+        ]
+    )
+    async def mention_policy(self, interaction: discord.Interaction, policy: MentionPolicy):
+        """
+        Set your mention policy.
+
+        Parameters
+        ----------
+        policy: MentionPolicy
+            The new policy for mentions
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player.mention_policy = policy
+        await player.save()
+        await interaction.response.send_message(
+            f"Your mention policy has been set to **{policy.name.lower()}**.", ephemeral=True
+        )
 
     @app_commands.command()
     async def delete(self, interaction: discord.Interaction):
@@ -160,9 +184,9 @@ class Player(commands.GroupCog):
         blocked = await player1.is_blocked(player2)
 
         if blocked:
+            player_unblock = self.unblock.extras.get("mention", "`/player unblock`")
             await interaction.response.send_message(
-                "You cannot add a blocked user. To unblock, use "
-                f"{self.cog.add.extras.get("mention", "`/player unblock`")}.",
+                "You cannot add a blocked user. To unblock, use " f"{player_unblock}.",
                 ephemeral=True,
             )
             return
@@ -206,28 +230,28 @@ class Player(commands.GroupCog):
             return
         else:
             await Friendship.filter(
-                (Q(player1=player1) & Q(player2=player2)) |
-                (Q(player1=player2) & Q(player2=player1))
+                (Q(player1=player1) & Q(player2=player2))
+                | (Q(player1=player2) & Q(player2=player1))
             ).delete()
             await interaction.response.send_message(
                 f"{user.name} has been removed as a friend.", ephemeral=True
             )
 
     @friend.command(name="list")
-    async def friend_list(self, interaction: discord.Interaction):
+    async def friend_list(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         View all your friends.
         """
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
 
-        friendships = await Friendship.filter(
-            Q(player1=player) | Q(player2=player)
-        ).select_related("player1", "player2").all()
+        friendships = (
+            await Friendship.filter(Q(player1=player) | Q(player2=player))
+            .select_related("player1", "player2")
+            .all()
+        )
 
         if not friendships:
-            await interaction.response.send_message(
-                "You haven't got any friends!", ephemeral=True
-            )
+            await interaction.response.send_message("You haven't got any friends!", ephemeral=True)
             return
 
         entries: list[tuple[str, str]] = []
@@ -238,7 +262,7 @@ class Player(commands.GroupCog):
             else:
                 friend = relation.player1
 
-            since = format_dt(relation.since, style='f')
+            since = format_dt(relation.since, style="f")
             entries.append((f"{idx}. {friend.discord_id}\n", f"Since: {since}"))
 
         source = FieldPageSource(entries, per_page=5, inline=False)
@@ -273,9 +297,7 @@ class Player(commands.GroupCog):
 
         blocked = await player1.is_blocked(player2)
         if blocked:
-            await interaction.followup.send(
-                "You have already blocked this user.", ephemeral=True
-            )
+            await interaction.followup.send("You have already blocked this user.", ephemeral=True)
             return
 
         friended = await player1.is_friend(player2)
@@ -297,9 +319,7 @@ class Player(commands.GroupCog):
                 ).delete()
 
         await Block.create(player1=player1, player2=player2)
-        await interaction.followup.send(
-            f"You have now blocked {user.name}.", ephemeral=True
-        )
+        await interaction.followup.send(f"You have now blocked {user.name}.", ephemeral=True)
 
     @app_commands.command()
     async def unblock(self, interaction: discord.Interaction, user: discord.User):
@@ -315,9 +335,7 @@ class Player(commands.GroupCog):
         player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
 
         if player1 == player2:
-            await interaction.response.send_message(
-                "You cannot unblock yourself.", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot unblock yourself.", ephemeral=True)
             return
         if user.bot:
             await interaction.response.send_message("You cannot unblock a bot.", ephemeral=True)
@@ -330,23 +348,25 @@ class Player(commands.GroupCog):
             return
         else:
             await Block.filter(
-                (Q(player1=player1) & Q(player2=player2)) |
-                (Q(player1=player2) & Q(player2=player1))
+                (Q(player1=player1) & Q(player2=player2))
+                | (Q(player1=player2) & Q(player2=player1))
             ).delete()
             await interaction.response.send_message(
                 f"{user.name} has been unblocked.", ephemeral=True
             )
 
     @blocked.command(name="list")
-    async def blocked_list(self, interaction: discord.Interaction):
+    async def blocked_list(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         View all the users you have blocked.
         """
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        
-        blocked_relations = await Block.filter(
-            Q(player1=player) | Q(player2=player)
-        ).select_related("player1", "player2").all()
+
+        blocked_relations = (
+            await Block.filter(Q(player1=player) | Q(player2=player))
+            .select_related("player1", "player2")
+            .all()
+        )
 
         if not blocked_relations:
             await interaction.response.send_message(
@@ -362,7 +382,7 @@ class Player(commands.GroupCog):
             else:
                 blocked_user = relation.player1
 
-            since = format_dt(relation.date, style='f')
+            since = format_dt(relation.date, style="f")
             entries.append((f"{idx}. {blocked_user.discord_id}", f"Blocked at: {since}"))
 
         source = FieldPageSource(entries, per_page=5, inline=False)
@@ -372,6 +392,50 @@ class Player(commands.GroupCog):
 
         pages = Pages(source=source, interaction=interaction, compact=True)
         await pages.start(ephemeral=True)
+
+    @app_commands.command()
+    async def stats(self, interaction: discord.Interaction):
+        """
+        View your statistics in the bot!
+        """
+        await interaction.response.defer(thinking=True)
+        player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related("balls")
+        ball = await BallInstance.filter(player=player).prefetch_related("special")
+
+        user = interaction.user
+        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
+        total_countryballs = len(bot_countryballs)
+        owned_countryballs = set(
+            x[0]
+            for x in await player.balls.filter(ball__enabled=True)
+            .distinct()
+            .values_list("ball_id")
+        )
+        completion_percentage = f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
+        caught_owned = [x for x in ball if x.trade_player is None]
+        balls_owned = [x for x in ball]
+        shiny = [x for x in ball if x.shiny is True]
+        special = [x for x in ball if x.special is not None]
+        trades = await Trade.filter(
+            Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
+        ).count()
+
+        embed = discord.Embed(
+            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Stats**",
+            color=discord.Color.blurple(),
+        )
+        embed.description = (
+            "Here are your current statistics in the bot!\n\n"
+            f"**Completion:** {completion_percentage}\n"
+            f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned)}\n"
+            f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned)}\n"
+            f"**Shiny {settings.collectible_name.title()}s:** {len(shiny)}\n"
+            f"**Special {settings.collectible_name.title()}s:** {len(special)}\n"
+            f"**Trades Completed:** {trades}"
+        )
+        embed.set_footer(text="Keep collecting and trading to improve your stats!")
+        embed.set_thumbnail(url=user.display_avatar)  # type: ignore
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command()
     @app_commands.choices(

@@ -8,13 +8,10 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
-from tortoise.expressions import Q
 
 from ballsdex.core.models import (
     BallInstance,
-    Block,
     DonationPolicy,
-    Friendship,
     Player,
     PrivacyPolicy,
     Trade,
@@ -169,11 +166,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         except DoesNotExist:
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {settings.collectible_name}s yet."
+                    f"You don't have any {settings.plural_collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any {settings.collectible_name}s yet."
+                    f"{user_obj.name} doesn't have any {settings.plural_collectible_name} yet."
                 )
             return
         if user is not None:
@@ -222,13 +219,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             special_txt = special if special else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {special_txt} {ball_txt} "
-                    f"{settings.collectible_name}s yet."
+                    f"You don't have any {special_txt}{ball_txt} "
+                    f"{settings.plural_collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
                     f"{user_obj.name} doesn't have any "
-                    f"{special_txt} {ball_txt} {settings.collectible_name}s yet."
+                    f"{special_txt}{ball_txt} {settings.plural_collectible_name} yet."
                 )
             return
         if reverse:
@@ -239,7 +236,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             await paginator.start()
         else:
             await paginator.start(
-                content=f"Viewing {user_obj.name}'s {settings.collectible_name}s"
+                content=f"Viewing {user_obj.name}'s {settings.plural_collectible_name}"
             )
 
     @app_commands.command()
@@ -272,10 +269,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             except DoesNotExist:
                 await interaction.followup.send(
                     f"{user_obj.name} doesn't have any "
-                    f"{extra_text}{settings.collectible_name}s yet."
+                    f"{extra_text}{settings.plural_collectible_name} yet."
                 )
                 return
-            
+
             interaction_player = await Player.get(discord_id=interaction.user.id)
             blocked = await player.is_blocked(interaction_player)
             if blocked:
@@ -302,7 +299,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             }
         if not bot_countryballs:
             await interaction.followup.send(
-                f"There are no {extra_text}{settings.collectible_name}s"
+                f"There are no {extra_text}{settings.plural_collectible_name}"
                 " registered on this bot yet.",
                 ephemeral=True,
             )
@@ -349,18 +346,18 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if owned_countryballs:
             # Getting the list of emoji IDs from the IDs of the owned countryballs
             fill_fields(
-                f"Owned {settings.collectible_name}s",
+                f"Owned {settings.plural_collectible_name}",
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
             entries.append((f"__**Owned {settings.collectible_name}s**__", "Nothing yet."))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields(f"Missing {settings.collectible_name}s", missing)
+            fill_fields(f"Missing {settings.plural_collectible_name}", missing)
         else:
             entries.append(
                 (
-                    f"__**:tada: No missing {settings.collectible_name}s, "
+                    f"__**:tada: No missing {settings.plural_collectible_name}, "
                     "congratulations! :tada:**__",
                     "\u200B",
                 )
@@ -425,7 +422,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         except DoesNotExist:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"{msg} not have any {settings.collectible_name}s yet.",
+                f"{msg} not have any {settings.plural_collectible_name} yet.",
                 ephemeral=True,
             )
             return
@@ -448,7 +445,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if not countryball:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"{msg} not have any {settings.collectible_name}s yet.",
+                f"{msg} not have any {settings.plural_collectible_name} yet.",
                 ephemeral=True,
             )
             return
@@ -485,12 +482,22 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if not countryball:
             return
 
+        if settings.max_favorites == 0:
+            await interaction.response.send_message(
+                f"You cannot set favorite {settings.plural_collectible_name} in this bot."
+            )
+            return
+
         if not countryball.favorite:
             player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
+            grammar = (
+                f"{settings.collectible_name}"
+                if settings.max_favorites == 1
+                else f"{settings.plural_collectible_name}"
+            )
             if await player.balls.filter(favorite=True).count() >= settings.max_favorites:
                 await interaction.response.send_message(
-                    f"You cannot set more than {settings.max_favorites} "
-                    f"favorite {settings.collectible_name}s.",
+                    f"You cannot set more than {settings.max_favorites} favorite {grammar}.",
                     ephemeral=True,
                 )
                 return
@@ -614,6 +621,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)}!\n"
                 "Do you accept this donation?",
                 view=DonationRequest(self.bot, interaction, countryball, new_player),
+                allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
             )
             return
 
@@ -630,7 +638,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
         )
         await interaction.followup.send(
-            f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!"
+            f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!",
+            allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
         )
         await countryball.unlock()
 

@@ -3,7 +3,17 @@
     "title": "Ballsdex configuration",
     "description": "Core settings for the Ballsdex Discord bot",
     "type": "object",
-    "required": ["discord-token", "text-prefix", "about", "collectible-name", "bot-name", "players-group-cog-name", "admin-command", "prometheus", "owners"],
+    "required": [
+        "discord-token",
+        "text-prefix",
+        "about",
+        "collectible-name",
+        "bot-name",
+        "players-group-cog-name",
+        "admin-command",
+        "prometheus",
+        "owners",
+    ],
     "properties": {
         "discord-token": {
             "description": "The Discord bot token",
@@ -50,8 +60,29 @@
         },
         "collectible-name": {
             "type": "string",
-            "description": "The name of the collectible, used everywhere except command descriptions. An 's' is appended to the end of this string for pluralization",
+            "description": "The name of the collectible, used everywhere except command descriptions.",
             "example": "ball"
+        },
+        "max-favorites": {
+            "type": "integer",
+            "default": 50,
+            "description": "Maximum number of favorite countryballs allowed per player",
+            "minimum": 0
+        },
+        "max-attack-bonus": {
+            "type": "integer",
+            "description": "The biggest/smallest attack bonus that a spawned countryball can have.",
+            "example": "20"
+        },
+        "max-health-bonus": {
+            "type": "integer",
+            "description": "The biggest/smallest health bonus that a spawned countryball can have.",
+            "example": "20"
+        },
+        "plural-collectible-name": {
+            "type": "string",
+            "description": "The plural name of the collectible, used everywhere except command descriptions.",
+            "example": "balls"
         },
         "bot-name": {
             "type": "string",
@@ -143,12 +174,6 @@
                     }
                 }
             }
-        },
-        "max-favorites": {
-            "type": "integer",
-            "default": 50,
-            "description": "Maximum number of favorite countryballs allowed per player",
-            "minimum": 0
         }
     }
 }
