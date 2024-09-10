@@ -5,8 +5,8 @@ from typing import Optional
 
 class ConfirmChoiceView(View):
     def __init__(
-        self, 
-        interaction: discord.Interaction, 
+        self,
+        interaction: discord.Interaction,
         user: Optional[discord.User] = None,
     ):
         super().__init__(timeout=90)
