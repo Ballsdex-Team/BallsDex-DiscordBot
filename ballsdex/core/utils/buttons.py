@@ -1,6 +1,7 @@
+from typing import Optional
+
 import discord
 from discord.ui import Button, View
-from typing import Optional
 
 
 class ConfirmChoiceView(View):
