@@ -162,7 +162,7 @@ class Player(commands.GroupCog):
         if blocked:
             await interaction.response.send_message(
                 "You cannot add a blocked user. To unblock, use "
-                f"{self.cog.add.extras.("mention", "`/player unblock`")}.",
+                f"{self.cog.add.extras.get("mention", "`/player unblock`")}.",
                 ephemeral=True,
             )
             return
