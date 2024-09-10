@@ -600,6 +600,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             await interaction.followup.send(
                 "You cannot interact with a user that has blocked you.", ephemeral=True
             )
+            await countryball.unlock()
             return
         if new_player.discord_id in self.bot.blacklist:
             await interaction.followup.send(
@@ -689,10 +690,7 @@ async def inventory_privacy(
     user_obj: Union[discord.User, discord.Member],
 ):
     privacy_policy = player.privacy_policy
-    friendship = await Friendship.filter(
-        (Q(player1=interaction.user.id) & Q(player2=user_obj.id))
-        | (Q(player1=user_obj.id) & Q(player2=interaction.user.id))
-    ).exists()
+    interacting_player = await Player.get(discord_id=interaction.user.id)
     if interaction.user.id == player.discord_id:
         return True
     if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
@@ -705,7 +703,7 @@ async def inventory_privacy(
         )
         return False
     elif privacy_policy == PrivacyPolicy.FRIENDS:
-        if not friendship:
+        if not await interacting_player.is_friend(player):
             await interaction.followup.send(
                 "This user's inventory can only be viewed from users they have added as friends.",
                 ephemeral=True,
