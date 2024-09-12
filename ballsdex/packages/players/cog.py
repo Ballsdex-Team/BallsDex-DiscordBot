@@ -34,6 +34,7 @@ class Player(commands.GroupCog):
     friend = app_commands.Group(name="friend", description="Friend commands")
     blocked = app_commands.Group(name="block", description="Block commands")
     donation = app_commands.Group(name="donation", description="Donation commands")
+    mention = app_commands.Group(name="mention", description="Mention commands")
 
     @app_commands.command()
     @app_commands.choices(
@@ -44,7 +45,7 @@ class Player(commands.GroupCog):
             app_commands.Choice(name="Friends Only", value=PrivacyPolicy.FRIENDS),
         ]
     )
-    async def privacy(self, interaction: discord.Interaction, policy: app_commands.Choice[int]):
+    async def privacy(self, interaction: discord.Interaction, policy: PrivacyPolicy):
         """
         Set your privacy policy.
 
@@ -54,13 +55,12 @@ class Player(commands.GroupCog):
             The new privacy policy to choose.
         """
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        player.donation_policy = DonationPolicy(policy.value)
         if policy == PrivacyPolicy.SAME_SERVER and not self.bot.intents.members:
             await interaction.response.send_message(
                 "I need the `members` intent to use this policy.", ephemeral=True
             )
             return
-
+        player.privacy_policy = PrivacyPolicy(policy.value)
         await player.save()
         await interaction.response.send_message(
             f"Your privacy policy has been set to **{policy.name}**.", ephemeral=True
@@ -79,9 +79,7 @@ class Player(commands.GroupCog):
             ),
         ]
     )
-    async def donation_policy(
-        self, interaction: discord.Interaction, policy: app_commands.Choice[int]
-    ):
+    async def donation_policy(self, interaction: discord.Interaction, policy: DonationPolicy):
         """
         Change how you want to receive donations from /balls give
 
@@ -121,7 +119,7 @@ class Player(commands.GroupCog):
             return
         await player.save()  # do not save if the input is invalid
 
-    @app_commands.command()
+    @mention.command(name="policy")
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Accept all mentions", value=MentionPolicy.ALLOW),
