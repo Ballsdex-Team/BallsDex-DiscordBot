@@ -107,12 +107,18 @@ class Trade(commands.GroupCog):
         user: discord.User
             The user you want to trade with
         """
+        guild = cast(discord.Guild, interaction.guild)
         if user.bot:
             await interaction.response.send_message("You cannot trade with bots.", ephemeral=True)
             return
         if user.id == interaction.user.id:
             await interaction.response.send_message(
                 "You cannot trade with yourself.", ephemeral=True
+            )
+            return
+        if guild.get_member(user.id) is None:
+            await interaction.response.send_message(
+                "You cannot trade with a user that is not in the server.", ephemeral=True
             )
             return
 
