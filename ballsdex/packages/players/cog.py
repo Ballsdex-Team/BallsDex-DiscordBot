@@ -274,10 +274,7 @@ class Player(commands.GroupCog):
 
             since = format_dt(relation.since, style="f")
             entries.append(
-                (
-                    "",
-                    f"**{idx}.** <@{friend.discord_id}> ({friend.discord_id})\nSince: {since}"
-                )
+                ("", f"**{idx}.** <@{friend.discord_id}> ({friend.discord_id})\nSince: {since}")
             )
 
         source = FieldPageSource(entries, per_page=5, inline=False)
@@ -402,7 +399,7 @@ class Player(commands.GroupCog):
                 (
                     "",
                     f"**{idx}.** <@{blocked_user.discord_id}> "
-                    f"({blocked_user.discord_id})\nBlocked at: {since}"
+                    f"({blocked_user.discord_id})\nBlocked at: {since}",
                 )
             )
 
