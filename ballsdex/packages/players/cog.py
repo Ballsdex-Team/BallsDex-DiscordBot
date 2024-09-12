@@ -184,7 +184,7 @@ class Player(commands.GroupCog):
         blocked = await player1.is_blocked(player2)
 
         if blocked:
-            player_unblock = self.block_remove.extras.get("mention", "`/player block_remove`")
+            player_unblock = self.block_remove.extras.get("mention", "/player block remove")
             await interaction.response.send_message(
                 "You cannot add a blocked user. To unblock, use " f"{player_unblock}.",
                 ephemeral=True,
@@ -273,12 +273,17 @@ class Player(commands.GroupCog):
                 friend = relation.player1
 
             since = format_dt(relation.since, style="f")
-            entries.append((f"{idx}. <@{friend.discord_id}>\n", f"Since: {since}"))
+            entries.append(
+                (
+                    "",
+                    f"**{idx}.** <@{friend.discord_id}> ({friend.discord_id})\nSince: {since}"
+                )
+            )
 
         source = FieldPageSource(entries, per_page=5, inline=False)
         source.embed.title = "Friend List"
         source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
-        source.embed.set_footer(text="To add a friend, use the command /player friends add.")
+        source.embed.set_footer(text="To add a friend, use the command /player friend add.")
 
         pages = Pages(source=source, interaction=interaction, compact=True)
         await pages.start(ephemeral=True)
@@ -393,12 +398,18 @@ class Player(commands.GroupCog):
                 blocked_user = relation.player1
 
             since = format_dt(relation.date, style="f")
-            entries.append((f"{idx}. {blocked_user.discord_id}", f"Blocked at: {since}"))
+            entries.append(
+                (
+                    "",
+                    f"**{idx}.** <@{blocked_user.discord_id}> "
+                    f"({blocked_user.discord_id})\nBlocked at: {since}"
+                )
+            )
 
         source = FieldPageSource(entries, per_page=5, inline=False)
         source.embed.title = "Blocked Users List"
         source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
-        source.embed.set_footer(text="To block a user, use the command /player block.")
+        source.embed.set_footer(text="To block a user, use the command /player block add.")
 
         pages = Pages(source=source, interaction=interaction, compact=True)
         await pages.start(ephemeral=True)
