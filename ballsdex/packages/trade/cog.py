@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 
+@app_commands.guild_only()
 class Trade(commands.GroupCog):
     """
     Trade countryballs with other players.
