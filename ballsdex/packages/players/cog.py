@@ -245,8 +245,9 @@ class Player(commands.GroupCog):
             )
             return
         else:
+            await interaction.response.defer(thinking=True)
             view = ConfirmChoiceView(interaction, user=user)
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{user.mention}, {interaction.user} has sent you a friend request!",
                 view=view,
                 allowed_mentions=discord.AllowedMentions(users=player2.can_be_mentioned),
@@ -255,8 +256,13 @@ class Player(commands.GroupCog):
 
             if not view.value:
                 return
-            else:
-                await Friendship.create(player1=player1, player2=player2)
+
+        friended = await player1.is_friend(player2)
+        if friended:
+            await interaction.followup.send("You are already friends with this user!")
+            return
+
+        await Friendship.create(player1=player1, player2=player2)
 
     @friend.command(name="remove")
     async def friend_remove(self, interaction: discord.Interaction, user: discord.User):
