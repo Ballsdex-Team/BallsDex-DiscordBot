@@ -360,7 +360,6 @@ class Player(commands.GroupCog):
         else:
             await Block.filter(
                 (Q(player1=player1) & Q(player2=player2))
-                | (Q(player1=player2) & Q(player2=player1))
             ).delete()
             await interaction.response.send_message(
                 f"{user.name} has been unblocked.", ephemeral=True
