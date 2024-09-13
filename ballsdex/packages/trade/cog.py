@@ -116,6 +116,14 @@ class Trade(commands.GroupCog):
                 "You cannot trade with yourself.", ephemeral=True
             )
             return
+        player1, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        player2, _ = await Player.get_or_create(discord_id=user.id)
+        blocked = await player1.is_blocked(player2)
+        if blocked:
+            await interaction.response.send_message(
+                "You cannot begin a trade with a user that has blocked you.", ephemeral=True
+            )
+            return
 
         trade1, trader1 = self.get_trade(interaction)
         trade2, trader2 = self.get_trade(channel=interaction.channel, user=user)  # type: ignore
