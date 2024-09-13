@@ -9,12 +9,16 @@ class ConfirmChoiceView(View):
         self,
         interaction: discord.Interaction,
         user: Optional[discord.User] = None,
+        accept_message: Optional[str] = None,
+        cancel_message: Optional[str] = None,
     ):
         super().__init__(timeout=90)
         self.value = None
         self.interaction = interaction
         self.user = user or interaction.user
         self.interaction_response: discord.Interaction
+        self.accept_message = accept_message
+        self.cancel_message = cancel_message
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         self.interaction_response = interaction
@@ -46,9 +50,15 @@ class ConfirmChoiceView(View):
     async def confirm_button(self, interaction: discord.Interaction, button: Button):
         for item in self.children:
             item.disabled = True  # type: ignore
-        await interaction.response.edit_message(
-            content=interaction.message.content + "\nConfirmed", view=self  # type: ignore
-        )
+        if not self.accept_message:
+            await interaction.response.edit_message(
+                content=interaction.message.content + "\nConfirmed", view=self  # type: ignore
+            )
+        else:
+            await interaction.response.edit_message(
+                content=interaction.message.content + f"\n{self.accept_message}",
+                view=self,  # type: ignore
+            )
         self.value = True
         self.stop()
 
@@ -59,8 +69,14 @@ class ConfirmChoiceView(View):
     async def cancel_button(self, interaction: discord.Interaction, button: Button):
         for item in self.children:
             item.disabled = True  # type: ignore
-        await interaction.response.edit_message(
-            content=interaction.message.content + "\nCancelled", view=self  # type: ignore
-        )
+        if not self.cancel_message:
+            await interaction.response.edit_message(
+                content=interaction.message.content + "\nCancelled", view=self  # type: ignore
+            )
+        else:
+            await interaction.response.edit_message(
+                content=interaction.message.content + f"\n{self.cancel_message}",
+                view=self,  # type: ignore
+            )
         self.value = False
         self.stop()
