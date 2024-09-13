@@ -154,8 +154,8 @@ class Player(commands.GroupCog):
     @friend.command(name="policy")
     @app_commands.choices(
         policy=[
-            app_commands.Choice(name="Accept all friend requests", value=MentionPolicy.ALLOW),
-            app_commands.Choice(name="Deny all friend requests", value=MentionPolicy.DENY),
+            app_commands.Choice(name="Accept all friend requests", value=FriendPolicy.ALLOW),
+            app_commands.Choice(name="Deny all friend requests", value=FriendPolicy.DENY),
         ]
     )
     async def friend_policy(self, interaction: discord.Interaction, policy: FriendPolicy):
