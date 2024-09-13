@@ -283,8 +283,27 @@ class TradeMenu:
 
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
-        
-        trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player, player1_coins=self.trader1.coins, player2_coins=self.trader2.coins)
+
+        trade = await Trade.create(
+            player1=self.trader1.player,
+            player2=self.trader2.player,
+            player1_coins=self.trader1.coins,
+            player2_coins=self.trader2.coins,
+        )
+
+        if (
+            self.trader1.player.coins < self.trader1.coins
+            or self.trader2.player.coins < self.trader2.coins
+        ):
+            raise InvalidTradeOperation()
+
+        self.trader1.player.coins -= self.trader1.coins
+        self.trader2.player.coins += self.trader1.coins
+        self.trader2.player.coins -= self.trader2.coins
+        self.trader1.player.coins += self.trader2.coins
+
+        await self.trader1.player.save()
+        await self.trader2.player.save()
 
         for countryball in self.trader1.proposal:
             await countryball.refresh_from_db()
@@ -314,20 +333,6 @@ class TradeMenu:
         for countryball in valid_transferable_countryballs:
             await countryball.unlock()
             await countryball.save()
-
-        if (
-            self.trader1.player.coins < self.trader1.coins
-            or self.trader2.player.coins < self.trader2.coins
-        ):
-            raise InvalidTradeOperation()
-
-        self.trader1.player.coins -= self.trader1.coins
-        self.trader2.player.coins += self.trader1.coins
-        self.trader2.player.coins -= self.trader2.coins
-        self.trader1.player.coins += self.trader2.coins
-
-        await self.trader1.player.save()
-        await self.trader2.player.save()
 
     async def confirm(self, trader: TradingUser) -> bool:
         """
