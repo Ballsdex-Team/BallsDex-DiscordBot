@@ -435,7 +435,6 @@ class Player(models.Model):
     async def is_blocked(self, other_player: "Player") -> bool:
         return await Block.filter(
             (Q(player1=self) & Q(player2=other_player))
-            | (Q(player1=other_player) & Q(player2=self))
         ).exists()
 
     @property
