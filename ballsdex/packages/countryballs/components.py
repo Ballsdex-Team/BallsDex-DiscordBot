@@ -98,9 +98,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 f"{settings.you_caught_phrase.format(ball_name=self.ball.name)}"
                 f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
                 f"{special}"
+            )
+            await interaction.followup.send(
+                message,
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
             )
-            await interaction.followup.send(message, allowed_mentions=mentions)
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:

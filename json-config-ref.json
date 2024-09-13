@@ -119,12 +119,6 @@
             "description": "The phrase used when a ball is caught already",
             "example": "I was caught already!"
         },
-        "mention-user": {
-            "type": "boolean",
-            "description": "An option to choose if wrong_name new_comp and caught_already should mention user",
-            "default": true
-        },
-        },
         "admin-command": {
             "type": "object",
             "description": "Manages access to the admin command",

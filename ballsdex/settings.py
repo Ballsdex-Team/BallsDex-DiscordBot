@@ -66,8 +66,6 @@ class Settings:
         The phrase used when a user caught a new collectible
     caught_already_phrase: str
         The phrase used when the collectible is caught already
-    mention_user: bool
-        An option to choose if wrong_name new_comp and caught_already should mention user
     """
 
     bot_token: str = ""
@@ -357,7 +355,8 @@ you-caught-phrase: You caught {ball_name}!
 
     if add_new_completion_phrase:
         content += """
-# Override the phrase 'This is a **new {collectible_name}** that has been added to your completion!'
+# ↓↓↓↓↓↓↓↓↓↓↓↓↓↓ override the phrase ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+# 'This is a **new {collectible_name}** that has been added to your completion!'
 # NOTE THAT you MUST include {collectible_name} somewhere in the phrase
 new-completion-phrase: This is a **new {collectible_name}** that has been added to your completion!
 """
