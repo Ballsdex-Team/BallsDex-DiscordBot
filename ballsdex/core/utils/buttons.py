@@ -1,21 +1,30 @@
+from typing import Optional
+
 import discord
 from discord.ui import Button, View
 
 
 class ConfirmChoiceView(View):
-    def __init__(self, interaction: discord.Interaction):
+    def __init__(
+        self,
+        interaction: discord.Interaction,
+        user: Optional[discord.User] = None,
+    ):
         super().__init__(timeout=90)
         self.value = None
         self.interaction = interaction
+        self.user = user or interaction.user
         self.interaction_response: discord.Interaction
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         self.interaction_response = interaction
-        if interaction.user != self.interaction.user:
+
+        if interaction.user != self.user:
             await interaction.response.send_message(
-                "Only the original author can use this.", ephemeral=True
+                "You cannot interact with this view.", ephemeral=True
             )
             return False
+
         if self.value is not None:
             await interaction.response.send_message(
                 "You've already made a choice.", ephemeral=True

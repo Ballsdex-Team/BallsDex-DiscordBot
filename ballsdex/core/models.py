@@ -10,6 +10,7 @@ import discord
 from discord.utils import format_dt
 from fastapi_admin.models import AbstractAdmin
 from tortoise import exceptions, fields, models, signals, timezone, validators
+from tortoise.expressions import Q
 
 from ballsdex.core.image_generator.image_gen import draw_card
 
@@ -386,12 +387,14 @@ class DonationPolicy(IntEnum):
     ALWAYS_ACCEPT = 1
     REQUEST_APPROVAL = 2
     ALWAYS_DENY = 3
+    FRIENDS_ONLY = 4
 
 
 class PrivacyPolicy(IntEnum):
     ALLOW = 1
     DENY = 2
     SAME_SERVER = 3
+    FRIENDS = 4
 
 
 class MentionPolicy(IntEnum):
@@ -422,6 +425,15 @@ class Player(models.Model):
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+    async def is_friend(self, other_player: "Player") -> bool:
+        return await Friendship.filter(
+            (Q(player1=self) & Q(player2=other_player))
+            | (Q(player1=other_player) & Q(player2=self))
+        ).exists()
+
+    async def is_blocked(self, other_player: "Player") -> bool:
+        return await Block.filter((Q(player1=self) & Q(player2=other_player))).exists()
 
     @property
     def can_be_mentioned(self) -> bool:
@@ -497,6 +509,34 @@ class TradeObject(models.Model):
     player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
         "models.Player", related_name="tradeobjects"
     )
+
+    def __str__(self) -> str:
+        return str(self.pk)
+
+
+class Friendship(models.Model):
+    id: int
+    player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="friend1"
+    )
+    player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="friend2"
+    )
+    since = fields.DatetimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return str(self.pk)
+
+
+class Block(models.Model):
+    id: int
+    player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="block1"
+    )
+    player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="block2"
+    )
+    date = fields.DatetimeField(auto_now_add=True)
 
     def __str__(self) -> str:
         return str(self.pk)

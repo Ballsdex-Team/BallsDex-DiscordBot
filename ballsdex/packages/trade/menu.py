@@ -394,6 +394,7 @@ class CountryballsSelector(Pages):
                 )
             )
         self.select_ball_menu.options = options
+        self.select_ball_menu.max_values = len(options)
 
     @discord.ui.select(min_values=1, max_values=25)
     async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
