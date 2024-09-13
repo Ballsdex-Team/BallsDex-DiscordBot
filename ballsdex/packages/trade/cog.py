@@ -49,6 +49,16 @@ class Trade(commands.GroupCog):
     ) -> tuple[TradeMenu, TradingUser] | tuple[None, None]:
         """
         Find an ongoing trade for the given interaction.
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+            The current interaction, used for getting the guild, channel and author.
+
+        Returns
+        -------
+        tuple[TradeMenu, TradingUser] | tuple[None, None]
+            A tuple with the `TradeMenu` and `TradingUser` if found, else `None`.
         """
         guild: discord.Guild
         if interaction:
@@ -61,9 +71,9 @@ class Trade(commands.GroupCog):
             raise TypeError("Missing interaction or channel")
 
         if guild.id not in self.trades:
-            return None, None
+            return (None, None)
         if channel.id not in self.trades[guild.id]:
-            return None, None
+            return (None, None)
         to_remove: list[TradeMenu] = []
         for trade in self.trades[guild.id][channel.id]:
             if (
@@ -82,7 +92,7 @@ class Trade(commands.GroupCog):
         else:
             for trade in to_remove:
                 self.trades[guild.id][channel.id].remove(trade)
-            return None, None
+            return (None, None)
 
         for trade in to_remove:
             self.trades[guild.id][channel.id].remove(trade)
@@ -173,6 +183,15 @@ class Trade(commands.GroupCog):
     ):
         """
         Add a countryball to the ongoing trade.
+
+        Parameters
+        ----------
+        countryball: BallInstance
+            The countryball you want to add to your proposal
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -229,7 +248,16 @@ class Trade(commands.GroupCog):
         shiny: bool | None = None,
     ):
         """
-        Remove a countryball from the ongoing trade.
+        Remove a countryball from what you proposed in the ongoing trade.
+
+        Parameters
+        ----------
+        countryball: BallInstance
+            The countryball you want to remove from your proposal
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -263,6 +291,12 @@ class Trade(commands.GroupCog):
         await interaction.response.send_message("Trade cancelled.", ephemeral=True)
 
     @app_commands.command()
+    @app_commands.choices(
+        sorting=[
+            app_commands.Choice(name="Most Recent", value="-date"),
+            app_commands.Choice(name="Oldest", value="date"),
+        ]
+    )
     async def history(
         self,
         interaction: discord.Interaction["BallsDexBot"],
@@ -273,6 +307,17 @@ class Trade(commands.GroupCog):
     ):
         """
         Show the history of your trades.
+
+        Parameters
+        ----------
+        sorting: str
+            The sorting order of the trades
+        trade_user: discord.User | None
+            The user you want to see your trade history with
+        days: Optional[int]
+            Retrieve trade history from last x days.
+        countryball: BallEnabledTransform | None
+            The countryball you want to filter the trade history by.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
