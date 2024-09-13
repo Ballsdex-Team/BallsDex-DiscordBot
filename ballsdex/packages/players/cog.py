@@ -6,6 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import format_dt
+from tortoise.exceptions import DoesNotExist
 from tortoise.expressions import Q
 
 from ballsdex.core.models import BallInstance, Block, DonationPolicy, Friendship, MentionPolicy
@@ -414,8 +415,16 @@ class Player(commands.GroupCog):
         """
         View your statistics in the bot!
         """
-        await interaction.response.defer(thinking=True)
-        player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related("balls")
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        try:
+            player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related(
+                "balls"
+            )
+        except DoesNotExist:
+            await interaction.followup.send(
+                "You haven't got any statistics to show!", ephemeral=True
+            )
+            return
         ball = await BallInstance.filter(player=player).prefetch_related("special")
 
         user = interaction.user
@@ -427,7 +436,12 @@ class Player(commands.GroupCog):
             .distinct()
             .values_list("ball_id")
         )
-        completion_percentage = f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
+        if total_countryballs > 0:
+            completion_percentage = (
+                f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
+            )
+        else:
+            completion_percentage = "0.0%"
         caught_owned = [x for x in ball if x.trade_player is None]
         balls_owned = [x for x in ball]
         shiny = [x for x in ball if x.shiny is True]
@@ -451,7 +465,7 @@ class Player(commands.GroupCog):
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
-        await interaction.followup.send(embed=embed)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command()
     @app_commands.choices(
