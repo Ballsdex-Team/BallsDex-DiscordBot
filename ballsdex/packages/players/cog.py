@@ -420,7 +420,7 @@ class Player(commands.GroupCog):
                 "You haven't got any statistics to show!", ephemeral=True
             )
             return
-        ball = await BallInstance.filter(player=player).prefetch_related("special")
+        ball = await BallInstance.filter(player=player).prefetch_related("special", "trade_player")
 
         user = interaction.user
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
@@ -452,11 +452,11 @@ class Player(commands.GroupCog):
         embed.description = (
             "Here are your current statistics in the bot!\n\n"
             f"**Completion:** {completion_percentage}\n"
-            f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned)}\n"
-            f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned)}\n"
-            f"**Shiny {settings.collectible_name.title()}s:** {len(shiny)}\n"
-            f"**Special {settings.collectible_name.title()}s:** {len(special)}\n"
-            f"**Trades Completed:** {trades}"
+            f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned):,}\n"
+            f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned):,}\n"
+            f"**Shiny {settings.collectible_name.title()}s:** {len(shiny):,}\n"
+            f"**Special {settings.collectible_name.title()}s:** {len(special):,}\n"
+            f"**Trades Completed:** {trades:,}"
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
