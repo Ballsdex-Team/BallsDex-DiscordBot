@@ -181,7 +181,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         blocked = await player.is_blocked(interaction_player)
         if blocked:
             await interaction.followup.send(
-                "You cannot view the list of a user that has blocked you.", ephemeral=True
+                "You cannot view the list of a user that has you blocked.", ephemeral=True
             )
             return
 
@@ -714,7 +714,7 @@ async def inventory_privacy(
     elif privacy_policy == PrivacyPolicy.FRIENDS:
         if not await interacting_player.is_friend(player):
             await interaction.followup.send(
-                "This user's inventory can only be viewed from users they have added as friends.",
+                "This users inventory can only be viewed from users they have added as friends.",
                 ephemeral=True,
             )
             return False
