@@ -179,6 +179,11 @@ class Player(commands.GroupCog):
         if user.bot:
             await interaction.response.send_message("You cannot add a bot.", ephemeral=True)
             return
+        if player2.discord_id in self.bot.blacklist:
+            await interaction.response.send_message(
+                "You cannot add a blacklisted user as a friend.", ephemeral=True
+            )
+            return
 
         blocked = await player1.is_blocked(player2)
 
@@ -201,6 +206,7 @@ class Player(commands.GroupCog):
             await interaction.response.send_message(
                 f"{user.mention}, {interaction.user} has sent you a friend request!",
                 view=view,
+                allowed_mentions=discord.AllowedMentions(users=player2.can_be_mentioned),
             )
             await view.wait()
 
