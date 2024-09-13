@@ -358,9 +358,7 @@ class Player(commands.GroupCog):
             await interaction.response.send_message("This user isn't blocked.", ephemeral=True)
             return
         else:
-            await Block.filter(
-                (Q(player1=player1) & Q(player2=player2))
-            ).delete()
+            await Block.filter((Q(player1=player1) & Q(player2=player2))).delete()
             await interaction.response.send_message(
                 f"{user.name} has been unblocked.", ephemeral=True
             )

@@ -433,9 +433,7 @@ class Player(models.Model):
         ).exists()
 
     async def is_blocked(self, other_player: "Player") -> bool:
-        return await Block.filter(
-            (Q(player1=self) & Q(player2=other_player))
-        ).exists()
+        return await Block.filter((Q(player1=self) & Q(player2=other_player))).exists()
 
     @property
     def can_be_mentioned(self) -> bool:
