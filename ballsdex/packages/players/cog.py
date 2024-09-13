@@ -157,7 +157,7 @@ class Player(commands.GroupCog):
             app_commands.Choice(name="Deny all friend requests", value=FriendPolicy.DENY),
         ]
     )
-    async def friend(self, interaction: discord.Interaction, policy: FriendPolicy):
+    async def friends(self, interaction: discord.Interaction, policy: FriendPolicy):
         """
         Set your friend policy.
 
