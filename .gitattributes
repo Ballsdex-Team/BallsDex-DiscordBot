@@ -3,3 +3,4 @@
 # binary file excludsions
 *.png binary
 *.tff binary
+*.ttf binary

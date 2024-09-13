@@ -185,6 +185,7 @@ class BallResource(Model):
         "country",
         "short_name",
         "catch_names",
+        "translations",
         "created_at",
         "regime",
         "economy",
@@ -319,7 +320,7 @@ class GuildConfigResource(Model):
             placeholder="Filter by ID",
         ),
     ]
-    fields = ["guild_id", "spawn_channel", "enabled"]
+    fields = ["guild_id", "spawn_channel", "enabled", "silent"]
 
 
 @app.register

@@ -8,9 +8,10 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord.ui import Button, Modal, TextInput, View
 from prometheus_client import Counter
+from tortoise.exceptions import DoesNotExist
 from tortoise.timezone import now as datetime_now
 
-from ballsdex.core.models import BallInstance, Player, specials
+from ballsdex.core.models import BallInstance, GuildConfig, Player, specials
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -22,13 +23,6 @@ log = logging.getLogger("ballsdex.packages.countryballs.components")
 caught_balls = Counter(
     "caught_cb", "Caught countryballs", ["country", "shiny", "special", "guild_size"]
 )
-
-
-def get_allowed_mentions(mention_user: bool) -> discord.AllowedMentions:
-    if mention_user:
-        return discord.AllowedMentions(users=True)
-    else:
-        return discord.AllowedMentions(users=False)
 
 
 class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name}!"):
@@ -44,30 +38,44 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         self.button = button
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, /) -> None:
+        try:
+            config = await GuildConfig.get(guild_id=interaction.guild_id)
+        except DoesNotExist:
+            config = await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
         log.exception("An error occured in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
             await interaction.followup.send(
-                f"An error occured with this {settings.collectible_name}."
+                f"An error occured with this {settings.collectible_name}.",
+                ephemeral=config.silent,
             )
         else:
             await interaction.response.send_message(
-                f"An error occured with this {settings.collectible_name}."
+                f"An error occured with this {settings.collectible_name}.",
+                ephemeral=config.silent,
             )
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         # TODO: use lock
+        player, created = await Player.get_or_create(discord_id=interaction.user.id)
+        try:
+            config = await GuildConfig.get(guild_id=interaction.guild_id)
+        except DoesNotExist:
+            config = await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
+
         if self.ball.catched:
             message = f"{interaction.user.mention} {settings.caught_already_phrase}"
-            mentions = get_allowed_mentions(settings.mention_user)
             await interaction.response.send_message(
                 message,
-                allowed_mentions=mentions,
+                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
                 ephemeral=config.silent,
             )
         if self.ball.model.catch_names:
             possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
         else:
             possible_names = (self.ball.name.lower(),)
+        if self.ball.model.translations:
+            possible_names += tuple(x.lower() for x in self.ball.model.translations.split(";"))
+
         if self.name.value.lower().strip() in possible_names:
             self.ball.catched = True
             await interaction.response.defer(thinking=True)
@@ -90,17 +98,16 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 f"{settings.you_caught_phrase.format(ball_name=self.ball.name)}"
                 f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
                 f"{special}"
+                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
             )
-            mentions = get_allowed_mentions(settings.mention_user)
             await interaction.followup.send(message, allowed_mentions=mentions)
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
             message = f"{interaction.user.mention} {settings.wrong_name_phrase}"
-            mentions = get_allowed_mentions(settings.mention_user)
             await interaction.response.send_message(
                 message,
-                allowed_mentions=mentions,
+                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
                 ephemeral=config.silent,
             )
 
@@ -110,8 +117,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         player, created = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
-        bonus_attack = random.randint(-20, 20)
-        bonus_health = random.randint(-20, 20)
+        bonus_attack = random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
+        bonus_health = random.randint(-settings.max_health_bonus, settings.max_health_bonus)
         shiny = random.randint(1, 2048) == 1
 
         # check if we can spawn cards with a special background
