@@ -26,6 +26,7 @@ from ballsdex.core.utils.transformers import (
     SpecialEnabledTransform,
     TradeCommandType,
 )
+from ballsdex.core.utils.utils import is_staff
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.settings import settings
 
@@ -179,7 +180,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction_player = await Player.get(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
-        if blocked:
+        if blocked and not is_staff(interaction):
             await interaction.followup.send(
                 "You cannot view the list of a user that has you blocked.", ephemeral=True
             )
@@ -275,7 +276,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
             interaction_player = await Player.get(discord_id=interaction.user.id)
             blocked = await player.is_blocked(interaction_player)
-            if blocked:
+            if blocked and not is_staff(interaction):
                 await interaction.followup.send(
                     "You cannot view the completion of a user that has blocked you.",
                     ephemeral=True,
@@ -433,7 +434,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         interaction_player = await Player.get(discord_id=interaction.user.id)
         blocked = await player.is_blocked(interaction_player)
-        if blocked:
+        if blocked and not is_staff(interaction):
             await interaction.followup.send(
                 f"You cannot view the last caught {settings.collectible_name} "
                 "of a user that has blocked you.",
