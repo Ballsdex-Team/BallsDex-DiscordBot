@@ -42,8 +42,8 @@ class Player(commands.GroupCog):
         policy=[
             app_commands.Choice(name="Open Inventory", value=PrivacyPolicy.ALLOW),
             app_commands.Choice(name="Private Inventory", value=PrivacyPolicy.DENY),
-            app_commands.Choice(name="Same Server", value=PrivacyPolicy.SAME_SERVER),
             app_commands.Choice(name="Friends Only", value=PrivacyPolicy.FRIENDS),
+            app_commands.Choice(name="Same Server", value=PrivacyPolicy.SAME_SERVER),
         ]
     )
     async def privacy(self, interaction: discord.Interaction, policy: PrivacyPolicy):
@@ -374,9 +374,7 @@ class Player(commands.GroupCog):
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
 
         blocked_relations = (
-            await Block.filter(player1=player)
-            .select_related("player1", "player2")
-            .all()
+            await Block.filter(player1=player).select_related("player1", "player2").all()
         )
 
         if not blocked_relations:
