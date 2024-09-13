@@ -1,4 +1,5 @@
 from typing import Iterator, Sequence
+
 import discord
 
 
@@ -38,6 +39,7 @@ def pagify(
             yield escape(in_text, mass_mentions=True)
         else:
             yield in_text
+
 
 def escape(text: str, *, mass_mentions: bool = False, formatting: bool = False) -> str:
     if mass_mentions:
