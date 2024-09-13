@@ -41,10 +41,9 @@ class Player(commands.GroupCog):
 
     friend = app_commands.Group(name="friend", description="Friend commands")
     blocked = app_commands.Group(name="block", description="Block commands")
-    donation = app_commands.Group(name="donation", description="Donation commands")
-    mention = app_commands.Group(name="mention", description="Mention commands")
+    policy = app_commands.Group(name="policy", description="Policy commands")
 
-    @app_commands.command()
+    @policy.command()
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Open Inventory", value=PrivacyPolicy.ALLOW),
@@ -74,7 +73,7 @@ class Player(commands.GroupCog):
             f"Your privacy policy has been set to **{policy.name}**.", ephemeral=True
         )
 
-    @donation.command(name="policy")
+    @policy.command()
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Accept all donations", value=DonationPolicy.ALWAYS_ACCEPT),
@@ -87,7 +86,7 @@ class Player(commands.GroupCog):
             ),
         ]
     )
-    async def donation_policy(self, interaction: discord.Interaction, policy: DonationPolicy):
+    async def donation(self, interaction: discord.Interaction, policy: DonationPolicy):
         """
         Change how you want to receive donations from /balls give
 
@@ -128,14 +127,14 @@ class Player(commands.GroupCog):
             return
         await player.save()  # do not save if the input is invalid
 
-    @mention.command(name="policy")
+    @policy.command()
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Accept all mentions", value=MentionPolicy.ALLOW),
             app_commands.Choice(name="Deny all mentions", value=MentionPolicy.DENY),
         ]
     )
-    async def mention_policy(self, interaction: discord.Interaction, policy: MentionPolicy):
+    async def mention(self, interaction: discord.Interaction, policy: MentionPolicy):
         """
         Set your mention policy.
 
@@ -151,14 +150,14 @@ class Player(commands.GroupCog):
             f"Your mention policy has been set to **{policy.name.lower()}**.", ephemeral=True
         )
 
-    @friend.command(name="policy")
+    @policy.command()
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Accept all friend requests", value=FriendPolicy.ALLOW),
             app_commands.Choice(name="Deny all friend requests", value=FriendPolicy.DENY),
         ]
     )
-    async def friend_policy(self, interaction: discord.Interaction, policy: FriendPolicy):
+    async def friend(self, interaction: discord.Interaction, policy: FriendPolicy):
         """
         Set your friend policy.
 
