@@ -262,26 +262,13 @@ class Trade(commands.GroupCog):
                 f"No {settings.plural_collectible_name} found.", ephemeral=True
             )
             return
-
-        # round balls to closest 25 for display purposes
         balls = [x for x in balls if x.is_tradeable]
-        balls = balls[: len(balls) - (len(balls) % 25)]
-
-        if len(balls) < 25:
-            await interaction.followup.send(
-                f"You have less than 25 {settings.plural_collectible_name}, "
-                "you can use the add command instead.",
-                ephemeral=True,
-            )
-            return
 
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(
             content=f"Select the {settings.plural_collectible_name} you want to add "
             "to your proposal, note that the display will wipe on pagination however "
-            f"the selected {settings.plural_collectible_name} will remain.\n"
-            f"{settings.plural_collectible_name.title()} were rounded down to closest 25 for "
-            "display purposes, final page may be missing entries."
+            f"the selected {settings.plural_collectible_name} will remain."
         )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
