@@ -84,7 +84,6 @@ class Settings:
     you_caught_phrase: str = ""
     new_completion_phrase: str = ""
     caught_already_phrase: str = ""
-    mention_user: bool = True
 
     max_favorites: int = 50
     max_attack_bonus: int = 20
@@ -140,7 +139,6 @@ def read_settings(path: "Path"):
         "This is a **new {collectible_name}** that has been added to your completion!",
     )
     settings.caught_already_phrase = content.get("caught-already", "I was caught already!")
-    settings.mention_user = bool(content.get("mention-user", True))
 
     settings.about_description = content["about"]["description"]
     settings.github_link = content["about"]["github-link"]
@@ -226,10 +224,6 @@ new-completion-phrase: This is a **new {collectible_name}** that has been added 
 # override the phrase "I was caught already!"
 caught-already-phrase: I was caught already!
 
-# this is an option if it should mention the user in those phrases or not
-# it will only show up first then the phrase
-mention-user: true
-
 # maximum amount of favorites that are allowed
 max-favorites: 50
 
@@ -287,6 +281,11 @@ def update_settings(path: "Path"):
     add_max_attack = "max-attack-bonus" not in content
     add_max_health = "max-health-bonus" not in content
     add_plural_collectible = "plural-collectible-name" not in content
+    add_wild_phrase = "wild-phrase:" not in content
+    add_wrong_name_phrase = "wrong-name-phrase:" not in content
+    add_you_caught_phrase = "you-caught-phrase:" not in content
+    add_new_completion_phrase = "new-completion-phrase:" not in content
+    add_caught_already_phrase = "caught-already-phrase:" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -328,11 +327,45 @@ max-attack-bonus: 20
 # this cannot be smaller than 0, enter a positive number
 max-health-bonus: 20
 """
+
     if add_plural_collectible:
         content += """
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "countryballs" in the bot
 plural-collectible-name: countryballs
+"""
+
+    if add_wild_phrase:
+        content += """
+# Override the phrase 'A wild {collectible_name} appeared!'
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+wild-phrase: A wild {collectible_name} appeared!
+"""
+
+    if add_wrong_name_phrase:
+        content += """
+# Override the phrase 'Wrong name!'
+wrong-name-phrase: Wrong name!
+"""
+
+    if add_you_caught_phrase:
+        content += """
+# Override the phrase 'You caught {ball_name}!'
+# NOTE THAT you MUST include {ball_name} somewhere in the phrase
+you-caught-phrase: You caught {ball_name}!
+"""
+
+    if add_new_completion_phrase:
+        content += """
+# Override the phrase 'This is a **new {collectible_name}** that has been added to your completion!'
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+new-completion-phrase: This is a **new {collectible_name}** that has been added to your completion!
+"""
+
+    if add_caught_already_phrase:
+        content += """
+# Override the phrase 'I was caught already!'
+caught-already-phrase: I was caught already!
 """
 
     if any((add_owners, add_config_ref)):
