@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 
+@app_commands.guild_only()
 class Trade(commands.GroupCog):
     """
     Trade countryballs with other players.
@@ -113,6 +114,14 @@ class Trade(commands.GroupCog):
         if user.id == interaction.user.id:
             await interaction.response.send_message(
                 "You cannot trade with yourself.", ephemeral=True
+            )
+            return
+        player1, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        player2, _ = await Player.get_or_create(discord_id=user.id)
+        blocked = await player1.is_blocked(player2)
+        if blocked:
+            await interaction.response.send_message(
+                "You cannot begin a trade with a user that has blocked you.", ephemeral=True
             )
             return
 
@@ -258,29 +267,16 @@ class Trade(commands.GroupCog):
         balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
         if not balls:
             await interaction.followup.send(
-                f"No {settings.collectible_name}s found.", ephemeral=True
+                f"No {settings.plural_collectible_name} found.", ephemeral=True
             )
             return
-
-        # round balls to closest 25 for display purposes
         balls = [x for x in balls if x.is_tradeable]
-        balls = balls[: len(balls) - (len(balls) % 25)]
-
-        if len(balls) < 25:
-            await interaction.followup.send(
-                f"You have less than 25 {settings.collectible_name}s, "
-                "you can use the add command instead.",
-                ephemeral=True,
-            )
-            return
 
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(
-            content=f"Select the {settings.collectible_name}s you want to add to your proposal,"
-            " note that the display will wipe on pagination however "
-            f"the selected {settings.collectible_name}s will remain.\n"
-            f"{settings.collectible_name.title()}s were rounded down to closest 25 for "
-            "display purposes, final page may be missing entries."
+            content=f"Select the {settings.plural_collectible_name} you want to add "
+            "to your proposal, note that the display will wipe on pagination however "
+            f"the selected {settings.plural_collectible_name} will remain."
         )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})

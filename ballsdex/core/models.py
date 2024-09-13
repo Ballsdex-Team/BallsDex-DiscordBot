@@ -10,6 +10,7 @@ import discord
 from discord.utils import format_dt
 from fastapi_admin.models import AbstractAdmin
 from tortoise import exceptions, fields, models, signals, timezone, validators
+from tortoise.expressions import Q
 
 from ballsdex.core.image_generator.image_gen import draw_card
 
@@ -33,6 +34,19 @@ async def lower_catch_names(
     if instance.catch_names:
         instance.catch_names = ";".join(
             [x.strip() for x in instance.catch_names.split(";")]
+        ).lower()
+
+
+async def lower_translations(
+    model: Type[Ball],
+    instance: Ball,
+    created: bool,
+    using_db: "BaseDBAsyncClient | None" = None,
+    update_fields: Iterable[str] | None = None,
+):
+    if instance.translations:
+        instance.translations = ";".join(
+            [x.strip() for x in instance.translations.split(";")]
         ).lower()
 
 
@@ -61,6 +75,10 @@ class GuildConfig(models.Model):
     )
     enabled = fields.BooleanField(
         description="Whether the bot will spawn countryballs in this guild", default=True
+    )
+    silent = fields.BooleanField(
+        description="Whether the responses of guesses get sent as ephemeral or not",
+        default=False,
     )
 
 
@@ -117,6 +135,11 @@ class Ball(models.Model):
         default=None,
         description="Additional possible names for catching this ball, separated by semicolons",
     )
+    translations = fields.TextField(
+        null=True,
+        default=None,
+        description="Translations for the country name, separated by semicolons",
+    )
     regime: fields.ForeignKeyRelation[Regime] = fields.ForeignKeyField(
         "models.Regime", description="Political regime of this country", on_delete=fields.CASCADE
     )
@@ -165,6 +188,7 @@ class Ball(models.Model):
 
 
 Ball.register_listener(signals.Signals.pre_save, lower_catch_names)
+Ball.register_listener(signals.Signals.pre_save, lower_translations)
 
 
 class BallInstance(models.Model):
@@ -363,12 +387,19 @@ class DonationPolicy(IntEnum):
     ALWAYS_ACCEPT = 1
     REQUEST_APPROVAL = 2
     ALWAYS_DENY = 3
+    FRIENDS_ONLY = 4
 
 
 class PrivacyPolicy(IntEnum):
     ALLOW = 1
     DENY = 2
     SAME_SERVER = 3
+    FRIENDS = 4
+
+
+class MentionPolicy(IntEnum):
+    ALLOW = 1
+    DENY = 2
 
 
 class Player(models.Model):
@@ -385,10 +416,28 @@ class Player(models.Model):
         description="How you want to handle privacy",
         default=PrivacyPolicy.DENY,
     )
+    mention_policy = fields.IntEnumField(
+        MentionPolicy,
+        description="How you want to handle mentions",
+        default=MentionPolicy.ALLOW,
+    )
     balls: fields.BackwardFKRelation[BallInstance]
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+    async def is_friend(self, other_player: "Player") -> bool:
+        return await Friendship.filter(
+            (Q(player1=self) & Q(player2=other_player))
+            | (Q(player1=other_player) & Q(player2=self))
+        ).exists()
+
+    async def is_blocked(self, other_player: "Player") -> bool:
+        return await Block.filter((Q(player1=self) & Q(player2=other_player))).exists()
+
+    @property
+    def can_be_mentioned(self) -> bool:
+        return self.mention_policy == MentionPolicy.ALLOW
 
 
 class BlacklistedID(models.Model):
@@ -460,6 +509,34 @@ class TradeObject(models.Model):
     player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
         "models.Player", related_name="tradeobjects"
     )
+
+    def __str__(self) -> str:
+        return str(self.pk)
+
+
+class Friendship(models.Model):
+    id: int
+    player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="friend1"
+    )
+    player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="friend2"
+    )
+    since = fields.DatetimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return str(self.pk)
+
+
+class Block(models.Model):
+    id: int
+    player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="block1"
+    )
+    player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="block2"
+    )
+    date = fields.DatetimeField(auto_now_add=True)
 
     def __str__(self) -> str:
         return str(self.pk)

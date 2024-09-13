@@ -28,7 +28,8 @@ class CountryBallsSpawner(commands.Cog):
                 continue
             self.spawn_manager.cache[config.guild_id] = config.spawn_channel
             i += 1
-        log.info(f"Loaded {i} guilds in cache")
+        grammar = "" if i == 1 else "s"
+        log.info(f"Loaded {i} guild{grammar} in cache.")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
