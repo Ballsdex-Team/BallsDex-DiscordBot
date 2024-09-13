@@ -186,12 +186,18 @@ class Player(commands.GroupCog):
             return
 
         blocked = await player1.is_blocked(player2)
+        player2_blocked = await player2.is_blocked(player1)
 
         if blocked:
             player_unblock = self.block_remove.extras.get("mention", "/player block remove")
             await interaction.response.send_message(
                 "You cannot add a blocked user. To unblock, use " f"{player_unblock}.",
                 ephemeral=True,
+            )
+            return
+        if player2_blocked:
+            await interaction.response.send_message(
+                "This user has blocked you, you cannot add them as a friend.", ephemeral=True
             )
             return
 
