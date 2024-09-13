@@ -9,7 +9,14 @@ from discord.utils import format_dt
 from tortoise.exceptions import DoesNotExist
 from tortoise.expressions import Q
 
-from ballsdex.core.models import BallInstance, Block, DonationPolicy, Friendship, MentionPolicy
+from ballsdex.core.models import (
+    BallInstance,
+    Block,
+    DonationPolicy,
+    FriendPolicy,
+    Friendship,
+    MentionPolicy,
+)
 from ballsdex.core.models import Player as PlayerModel
 from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -143,6 +150,30 @@ class Player(commands.GroupCog):
             f"Your mention policy has been set to **{policy.name.lower()}**.", ephemeral=True
         )
 
+    @friend.command(name="policy")
+    @app_commands.choices(
+        policy=[
+            app_commands.Choice(name="Accept all friend requests", value=MentionPolicy.ALLOW),
+            app_commands.Choice(name="Deny all friend requests", value=MentionPolicy.DENY),
+        ]
+    )
+    async def friend_policy(self, interaction: discord.Interaction, policy: FriendPolicy):
+        """
+        Set your friend policy.
+
+        Parameters
+        ----------
+        policy: FriendPolicy
+            The new policy for friend requests.
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player.friend_policy = policy
+        await player.save()
+        await interaction.response.send_message(
+            f"Your friend request policy has been set to **{policy.name.lower()}**.",
+            ephemeral=True,
+        )
+
     @app_commands.command()
     async def delete(self, interaction: discord.Interaction):
         """
@@ -182,6 +213,11 @@ class Player(commands.GroupCog):
         if player2.discord_id in self.bot.blacklist:
             await interaction.response.send_message(
                 "You cannot add a blacklisted user as a friend.", ephemeral=True
+            )
+            return
+        if player2.friend_policy == FriendPolicy.DENY:
+            await interaction.response.send_message(
+                "This user isn't accepting friend requests.", ephemeral=True
             )
             return
 
