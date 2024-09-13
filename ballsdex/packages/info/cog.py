@@ -15,6 +15,7 @@ from discord.ext import commands
 from ballsdex import __version__ as ballsdex_version
 from ballsdex.core.models import Ball
 from ballsdex.core.models import balls as countryballs
+from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.tortoise import row_count_estimate
 from ballsdex.settings import settings
 
@@ -159,6 +160,10 @@ class Info(commands.Cog):
                 content += f"{mention_app_command(app_command)}: {translated}\n"
             if not content:
                 continue
-            embed.add_field(name=cog.qualified_name, value=content, inline=False)
+            pages = pagify(content, page_length=1024)
+            for i, page in enumerate(pages):
+                embed.add_field(
+                    name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False
+                )
 
         await interaction.response.send_message(embed=embed)
