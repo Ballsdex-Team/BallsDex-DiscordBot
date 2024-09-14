@@ -34,7 +34,7 @@ class Player(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
-        if not self.bot.intents.members:
+        if not self.bot.intents.members and self.__cog_app_commands_group__:
             privacy_command = self.__cog_app_commands_group__.get_command("privacy")
             if privacy_command:
                 privacy_command.parameters[0]._Parameter__parent.choices.pop()  # type: ignore
