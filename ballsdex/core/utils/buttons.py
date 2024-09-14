@@ -50,14 +50,19 @@ class ConfirmChoiceView(View):
     async def confirm_button(self, interaction: discord.Interaction, button: Button):
         for item in self.children:
             item.disabled = True  # type: ignore
+
+        if interaction.message:
+            content = interaction.message.content or ""
+        else:
+            content = ""
+
         if not self.accept_message:
             await interaction.response.edit_message(
-                content=interaction.message.content + "\nConfirmed", view=self  # type: ignore
+                content=content + "\nConfirmed", view=self
             )
         else:
             await interaction.response.edit_message(
-                content=interaction.message.content + f"\n{self.accept_message}",
-                view=self,  # type: ignore
+                content=content + f"\n{self.accept_message}", view=self
             )
         self.value = True
         self.stop()
@@ -69,14 +74,19 @@ class ConfirmChoiceView(View):
     async def cancel_button(self, interaction: discord.Interaction, button: Button):
         for item in self.children:
             item.disabled = True  # type: ignore
+
+        if interaction.message:
+            content = interaction.message.content or ""
+        else:
+            content = ""
+
         if not self.cancel_message:
             await interaction.response.edit_message(
-                content=interaction.message.content + "\nCancelled", view=self  # type: ignore
+                content=content + "\nCancelled", view=self
             )
         else:
             await interaction.response.edit_message(
-                content=interaction.message.content + f"\n{self.cancel_message}",
-                view=self,  # type: ignore
+                content=content + f"\n{self.cancel_message}", view=self
             )
         self.value = False
         self.stop()
