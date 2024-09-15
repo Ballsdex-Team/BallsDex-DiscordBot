@@ -219,13 +219,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             special_txt = special if special else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {special_txt}{ball_txt} "
+                    f"You don't have any {special_txt} {ball_txt} "
                     f"{settings.plural_collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
                     f"{user_obj.name} doesn't have any "
-                    f"{special_txt}{ball_txt} {settings.plural_collectible_name} yet."
+                    f"{special_txt} {ball_txt} {settings.plural_collectible_name} yet."
                 )
             return
         if reverse:
