@@ -111,7 +111,7 @@ class Player(commands.GroupCog):
         elif policy.value == DonationPolicy.FRIENDS_ONLY:
             await interaction.response.send_message(
                 "Setting updated, you will now only receive donated "
-                f"{settings.collectible_name}s from players you have "
+                f"{settings.plural_collectible_name} from players you have "
                 "added as friends in the bot.",
                 ephemeral=True,
             )
