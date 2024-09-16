@@ -379,6 +379,8 @@ class CountryballsSelector(Pages):
         for ball in balls:
             if ball.is_tradeable is False:
                 continue
+            if ball.is_locked():
+                continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = "❤️ " if ball.favorite else ""
             shiny = "✨ " if ball.shiny else ""
