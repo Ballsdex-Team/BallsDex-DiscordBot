@@ -92,7 +92,7 @@ class Config(commands.GroupCog):
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=False)
             await interaction.response.send_message(
                 f"{settings.bot_name} is now disabled in this server. Commands will still be "
-                f"available, but the spawn of new {settings.plural_collectible_name}"
+                f"available, but the spawn of new {settings.plural_collectible_name} "
                 "is suspended.\nTo re-enable the spawn, use the same command."
             )
         else:

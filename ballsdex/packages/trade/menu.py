@@ -172,8 +172,8 @@ class TradeMenu:
         self.embed.title = f"{settings.plural_collectible_name.title()} trading"
         self.embed.color = discord.Colour.blurple()
         self.embed.description = (
-            f"Add or remove {settings.collectible_name}s you want to propose to the other player "
-            f"using the {add_command} and {remove_command} commands.\n"
+            f"Add or remove {settings.plural_collectible_name} you want to propose "
+            f"to the other player using the {add_command} and {remove_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*This trade will timeout "
