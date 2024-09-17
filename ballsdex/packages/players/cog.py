@@ -194,7 +194,7 @@ class Player(commands.GroupCog):
     async def friend_add(self, interaction: discord.Interaction, user: discord.User):
         """
         Add another user as a friend.
-        
+
         Parameters
         ----------
         user: discord.User
