@@ -375,7 +375,7 @@ class Player(commands.GroupCog):
             view = ConfirmChoiceView(
                 interaction,
                 accept_message="User has been blocked.",
-                cancel_message=f"Request cancelled, {user.name} is still your friend."
+                cancel_message=f"Request cancelled, {user.name} is still your friend.",
             )
             await interaction.followup.send(
                 "This user is your friend, are you sure you want to block them?",
