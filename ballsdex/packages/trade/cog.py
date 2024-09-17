@@ -185,7 +185,7 @@ class Trade(commands.GroupCog):
             view = ConfirmChoiceView(
                 interaction,
                 accept_message=f"{settings.collectible_name.title()} added.",
-                cancel_message="This request has been cancelled."
+                cancel_message="This request has been cancelled.",
             )
             await interaction.followup.send(
                 f"This {settings.collectible_name} is a favorite, "
