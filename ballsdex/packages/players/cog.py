@@ -194,6 +194,11 @@ class Player(commands.GroupCog):
     async def friend_add(self, interaction: discord.Interaction, user: discord.User):
         """
         Add another user as a friend.
+        
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to add as a friend.
         """
         player1, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
