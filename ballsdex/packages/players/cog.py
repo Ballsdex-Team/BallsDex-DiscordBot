@@ -476,9 +476,7 @@ class Player(commands.GroupCog):
                 "balls"
             )
         except DoesNotExist:
-            await interaction.followup.send(
-                "You haven't got any info to show!", ephemeral=True
-            )
+            await interaction.followup.send("You haven't got any info to show!", ephemeral=True)
             return
         ball = await BallInstance.filter(player=player).prefetch_related("special", "trade_player")
 
