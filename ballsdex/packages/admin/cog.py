@@ -27,7 +27,12 @@ from ballsdex.core.models import (
     TradeObject,
 )
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.enums import DONATION_POLICY_MAP, PRIVATE_POLICY_MAP
+from ballsdex.core.utils.enums import (
+    DONATION_POLICY_MAP,
+    FRIEND_POLICY_MAP,
+    MENTION_POLICY_MAP,
+    PRIVATE_POLICY_MAP,
+)
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.core.utils.transformers import (
@@ -1697,7 +1702,9 @@ class Admin(commands.GroupCog):
             title=f"{user} ({user.id})",
             description=(
                 f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
-                f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}"
+                f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
+                f"**Mention Policy:** {MENTION_POLICY_MAP[player.mention_policy]}\n"
+                f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}"
             ),
             color=discord.Color.blurple(),
         )
