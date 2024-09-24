@@ -218,15 +218,24 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
             special_txt = special if special else ""
+
+            if special_txt and ball_txt:
+                combined = f"{special_txt} {ball_txt}"
+            elif special_txt:
+                combined = special_txt
+            elif ball_txt:
+                combined = ball_txt
+            else:
+                combined = ""
+
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {special_txt}{ball_txt} "
-                    f"{settings.plural_collectible_name} yet."
+                    f"You don't have any {combined} {settings.plural_collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any "
-                    f"{special_txt}{ball_txt} {settings.plural_collectible_name} yet."
+                    f"{user_obj.name} doesn't have any {combined} "
+                    f"{settings.plural_collectible_name} yet."
                 )
             return
         if reverse:
