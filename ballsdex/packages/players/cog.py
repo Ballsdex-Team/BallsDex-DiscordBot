@@ -20,6 +20,12 @@ from ballsdex.core.models import (
 from ballsdex.core.models import Player as PlayerModel
 from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.enums import (
+    DONATION_POLICY_MAP,
+    FRIEND_POLICY_MAP,
+    MENTION_POLICY_MAP,
+    PRIVATE_POLICY_MAP,
+)
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.settings import settings
 
@@ -460,9 +466,9 @@ class Player(commands.GroupCog):
         await pages.start(ephemeral=True)
 
     @app_commands.command()
-    async def stats(self, interaction: discord.Interaction):
+    async def info(self, interaction: discord.Interaction):
         """
-        View your statistics in the bot!
+        Display some of your info in the bot!
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
         try:
@@ -470,9 +476,7 @@ class Player(commands.GroupCog):
                 "balls"
             )
         except DoesNotExist:
-            await interaction.followup.send(
-                "You haven't got any statistics to show!", ephemeral=True
-            )
+            await interaction.followup.send("You haven't got any info to show!", ephemeral=True)
             return
         ball = await BallInstance.filter(player=player).prefetch_related("special", "trade_player")
 
@@ -498,13 +502,28 @@ class Player(commands.GroupCog):
         trades = await Trade.filter(
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
         ).count()
+        friends = await Friendship.filter(
+            Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
+        ).count()
+
+        blocks = await Block.filter(
+            Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
+        ).count()
 
         embed = discord.Embed(
-            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Stats**",
+            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**",
             color=discord.Color.blurple(),
         )
         embed.description = (
-            "Here are your current statistics in the bot!\n\n"
+            "Here are your statistics and settings in the bot!\n"
+            "## Player Info\n"
+            f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
+            f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
+            f"**Mention Policy:** {MENTION_POLICY_MAP[player.mention_policy]}\n"
+            f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}\n"
+            f"**Amount of Friends:** {friends}\n"
+            f"**Amount of Blocked Users:** {blocks}\n"
+            "## Player Stats\n"
             f"**Completion:** {completion_percentage}\n"
             f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned):,}\n"
             f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned):,}\n"
