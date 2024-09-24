@@ -40,6 +40,7 @@ class Player(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
+        self.active_friend_requests = {}
         if not self.bot.intents.members and self.__cog_app_commands_group__:
             privacy_command = self.__cog_app_commands_group__.get_command("privacy")
             if privacy_command:
@@ -249,25 +250,30 @@ class Player(commands.GroupCog):
                 "You are already friends with this user!", ephemeral=True
             )
             return
-        else:
-            await interaction.response.defer(thinking=True)
-            view = ConfirmChoiceView(interaction, user=user)
-            await interaction.followup.send(
-                f"{user.mention}, {interaction.user} has sent you a friend request!",
-                view=view,
-                allowed_mentions=discord.AllowedMentions(users=player2.can_be_mentioned),
+
+        if self.active_friend_requests.get((player1.discord_id, player2.discord_id), False):
+            await interaction.response.send_message(
+                "You already have an active friend request to this user!", ephemeral=True
             )
-            await view.wait()
+            return
 
-            if not view.value:
-                return
+        await interaction.response.defer(thinking=True)
+        view = ConfirmChoiceView(interaction, user=user)
+        await interaction.followup.send(
+            f"{user.mention}, {interaction.user} has sent you a friend request!",
+            view=view,
+            allowed_mentions=discord.AllowedMentions(users=player2.can_be_mentioned),
+        )
 
-        friended = await player1.is_friend(player2)
-        if friended:
-            await interaction.followup.send("You are already friends with this user!")
+        self.active_friend_requests[(player1.discord_id, player2.discord_id)] = True
+        await view.wait()
+
+        if not view.value:
+            self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
             return
 
         await Friendship.create(player1=player1, player2=player2)
+        self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
 
     @friend.command(name="remove")
     async def friend_remove(self, interaction: discord.Interaction, user: discord.User):
