@@ -26,6 +26,7 @@ from ballsdex.core.utils.transformers import (
     SpecialEnabledTransform,
     TradeCommandType,
 )
+from ballsdex.core.utils.utils import is_staff
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.settings import settings
 
@@ -179,7 +180,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction_player = await Player.get(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
-        if blocked:
+        if blocked and not is_staff(interaction):
             await interaction.followup.send(
                 "You cannot view the list of a user that has you blocked.", ephemeral=True
             )
@@ -217,15 +218,24 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
             special_txt = special if special else ""
+
+            if special_txt and ball_txt:
+                combined = f"{special_txt} {ball_txt}"
+            elif special_txt:
+                combined = special_txt
+            elif ball_txt:
+                combined = ball_txt
+            else:
+                combined = ""
+
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {special_txt}{ball_txt} "
-                    f"{settings.plural_collectible_name} yet."
+                    f"You don't have any {combined} {settings.plural_collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any "
-                    f"{special_txt}{ball_txt} {settings.plural_collectible_name} yet."
+                    f"{user_obj.name} doesn't have any {combined} "
+                    f"{settings.plural_collectible_name} yet."
                 )
             return
         if reverse:
@@ -275,7 +285,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
             interaction_player = await Player.get(discord_id=interaction.user.id)
             blocked = await player.is_blocked(interaction_player)
-            if blocked:
+            if blocked and not is_staff(interaction):
                 await interaction.followup.send(
                     "You cannot view the completion of a user that has blocked you.",
                     ephemeral=True,
@@ -433,7 +443,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         interaction_player = await Player.get(discord_id=interaction.user.id)
         blocked = await player.is_blocked(interaction_player)
-        if blocked:
+        if blocked and not is_staff(interaction):
             await interaction.followup.send(
                 f"You cannot view the last caught {settings.collectible_name} "
                 "of a user that has blocked you.",
@@ -702,10 +712,8 @@ async def inventory_privacy(
     interacting_player = await Player.get(discord_id=interaction.user.id)
     if interaction.user.id == player.discord_id:
         return True
-    if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
-        roles = settings.admin_role_ids + settings.root_role_ids
-        if any(role.id in roles for role in interaction.user.roles):  # type: ignore
-            return True
+    if is_staff(interaction):
+        return True
     if privacy_policy == PrivacyPolicy.DENY:
         await interaction.followup.send(
             "This user has set their inventory to private.", ephemeral=True
