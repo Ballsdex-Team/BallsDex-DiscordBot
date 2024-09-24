@@ -66,7 +66,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         if self.ball.catched:
             message = f"{interaction.user.mention} {settings.caught_already_phrase}"
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 message,
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
                 ephemeral=config.silent,
@@ -107,7 +107,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
             message = f"{interaction.user.mention} {settings.wrong_name_phrase}"
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 message,
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
                 ephemeral=config.silent,
