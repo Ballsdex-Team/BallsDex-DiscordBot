@@ -106,7 +106,7 @@
         },
         "you-caught-phrase": {
             "type": "string",
-            "description": "The phrase used when a user catch a ball",
+            "description": "The phrase used when a user catch a collectible",
             "example": "You caught {ball_name}!"
         },
         "new-comp-phrase": {
@@ -116,8 +116,13 @@
         },
         "caught-already-phrase": {
             "type": "string",
-            "description": "The phrase used when a ball is caught already",
+            "description": "The phrase used when a collectible is caught already",
             "example": "I was caught already!"
+        },
+        "shiny-phrase": {
+            "type": "string",
+            "description": "The phrase used when the caught collectible is a shiny",
+            "example": "✨ ***It's a shiny {settings.collectible_name}!*** ✨"
         },
         "admin-command": {
             "type": "object",

@@ -66,6 +66,8 @@ class Settings:
         The phrase used when a user caught a new collectible
     caught_already_phrase: str
         The phrase used when the collectible is caught already
+    shiny_phrase: str
+        The phrase used when the caught collectible is a shiny
     """
 
     bot_token: str = ""
@@ -82,6 +84,7 @@ class Settings:
     you_caught_phrase: str = ""
     new_completion_phrase: str = ""
     caught_already_phrase: str = ""
+    shiny_phrase: str = ""
 
     max_favorites: int = 50
     max_attack_bonus: int = 20
@@ -136,7 +139,11 @@ def read_settings(path: "Path"):
         "new-completion-phrase",
         "This is a **new {collectible_name}** that has been added to your completion!",
     )
-    settings.caught_already_phrase = content.get("caught-already", "I was caught already!")
+    settings.caught_already_phrase = content.get("caught-already-phrase", "I was caught already!")
+    settings.shiny_phrase = content.get(
+        "shiny-phrase",
+        "✨ ***It's a shiny {collectible_name}!*** ✨",
+    )
 
     settings.about_description = content["about"]["description"]
     settings.github_link = content["about"]["github-link"]
@@ -222,6 +229,10 @@ new-completion-phrase: This is a **new {collectible_name}** that has been added 
 # override the phrase "I was caught already!"
 caught-already-phrase: I was caught already!
 
+# override the phrase "✨ ***It's a shiny {settings.collectible_name}!*** ✨"
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+shiny-phrase: ✨ ***It's a shiny {settings.collectible_name}!***
+
 # maximum amount of favorites that are allowed
 max-favorites: 50
 
@@ -284,6 +295,7 @@ def update_settings(path: "Path"):
     add_you_caught_phrase = "you-caught-phrase:" not in content
     add_new_completion_phrase = "new-completion-phrase:" not in content
     add_caught_already_phrase = "caught-already-phrase:" not in content
+    add_shiny_phrase = "shiny-phrase" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -365,6 +377,13 @@ new-completion-phrase: This is a **new {collectible_name}** that has been added 
         content += """
 # Override the phrase 'I was caught already!'
 caught-already-phrase: I was caught already!
+"""
+
+    if add_shiny_phrase:
+        content += """
+# override the phrase "✨ ***It's a shiny {settings.collectible_name}!*** ✨"
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+shiny-phrase: ✨ ***It's a shiny {settings.collectible_name}!***
 """
 
     if any((add_owners, add_config_ref)):
