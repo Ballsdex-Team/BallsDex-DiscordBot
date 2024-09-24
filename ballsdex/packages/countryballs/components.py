@@ -109,8 +109,6 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             message = f"{interaction.user.mention} {settings.wrong_name_phrase}"
             await interaction.response.send_message(
                 message,
-            await interaction.followup.send(
-                f"{interaction.user.mention} Wrong name!",
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
                 ephemeral=config.silent,
             )
