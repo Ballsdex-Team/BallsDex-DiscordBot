@@ -71,6 +71,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
                 ephemeral=config.silent,
             )
+            return
+
         if self.ball.model.catch_names:
             possible_names = (self.ball.name.lower(), *self.ball.model.catch_names.split(";"))
         else:
