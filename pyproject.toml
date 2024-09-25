@@ -27,7 +27,7 @@ tortoise-cli = "^0.1.2"
 rich = "^13.8.0"
 python-dateutil = "^2.9.0"
 Pillow = "^10.4.0"
-aerich = "^0.7.2"
+aerich = "^0.6.3"
 pyyaml = "^6.0.2"
 cachetools = "^5.5.0"
 
