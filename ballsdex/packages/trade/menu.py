@@ -470,7 +470,7 @@ class CountryballsSelector(Pages):
                     view=view,
                     ephemeral=True,
                 )
-                view.wait()
+                await view.wait()
                 if not view.value:
                     return
             trader.proposal.append(ball)
