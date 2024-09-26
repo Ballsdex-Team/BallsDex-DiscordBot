@@ -250,33 +250,25 @@ class Player(commands.GroupCog):
                 "You are already friends with this user!", ephemeral=True
             )
             return
-        else:
-            view = ConfirmChoiceView(
-                interaction,
-                user=user,
-                accept_message="Friend request accepted!",
-                cancel_message="Friend request declined.",
-            )
-            await interaction.response.defer(thinking=True)
-            await interaction.followup.send(
-                f"{user.mention}, {interaction.user} has sent you a friend request!",
-                view=view,
-                allowed_mentions=discord.AllowedMentions(users=player2.can_be_mentioned),
 
-        if self.active_friend_requests.get((player1.discord_id, player2.discord_id), False):
+        if self.active_friend_requests.get((player1.discord_id, player2.discord_id), True):
             await interaction.response.send_message(
                 "You already have an active friend request to this user!", ephemeral=True
             )
             return
 
         await interaction.response.defer(thinking=True)
-        view = ConfirmChoiceView(interaction, user=user)
+        view = ConfirmChoiceView(
+            interaction,
+            user=user,
+            accept_message="Friend request accepted!",
+            cancel_message="Friend request declined.",
+        )
         await interaction.followup.send(
             f"{user.mention}, {interaction.user} has sent you a friend request!",
             view=view,
             allowed_mentions=discord.AllowedMentions(users=player2.can_be_mentioned),
         )
-
         self.active_friend_requests[(player1.discord_id, player2.discord_id)] = True
         await view.wait()
 
