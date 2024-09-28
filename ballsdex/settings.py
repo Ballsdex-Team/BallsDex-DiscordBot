@@ -381,9 +381,9 @@ caught-already-phrase: I was caught already!
 
     if add_shiny_phrase:
         content += """
-# override the phrase "✨ ***It's a shiny {settings.collectible_name}!*** ✨"
+# override the phrase "✨ ***It's a shiny {collectible_name}!*** ✨"
 # NOTE THAT you MUST include {collectible_name} somewhere in the phrase
-shiny-phrase: ✨ ***It's a shiny {settings.collectible_name}!***
+shiny-phrase: ✨ ***It's a shiny {collectible_name}!***
 """
 
     if any((add_owners, add_config_ref)):
