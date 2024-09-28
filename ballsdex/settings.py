@@ -229,9 +229,9 @@ new-completion-phrase: This is a **new {collectible_name}** that has been added 
 # override the phrase "I was caught already!"
 caught-already-phrase: I was caught already!
 
-# override the phrase "✨ ***It's a shiny {settings.collectible_name}!*** ✨"
+# override the phrase "✨ ***It's a shiny {collectible_name}!*** ✨"
 # NOTE THAT you MUST include {collectible_name} somewhere in the phrase
-shiny-phrase: ✨ ***It's a shiny {settings.collectible_name}!***
+shiny-phrase: ✨ ***It's a shiny {collectible_name}!***
 
 # maximum amount of favorites that are allowed
 max-favorites: 50
