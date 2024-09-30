@@ -226,5 +226,6 @@ class Info(commands.Cog):
         )
 
         embed.set_footer(text="We hope you enjoy the bot!")
-        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+        if self.bot.user and self.bot.user.display_avatar:
+            embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         await interaction.response.send_message(embed=embed, ephemeral=True)
