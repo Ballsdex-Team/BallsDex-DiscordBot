@@ -9,7 +9,7 @@ license = "MIT"
 python = "^3.12"
 
 # asyncio
-uvloop = { version = "^0.19.0", markers = "sys_platform != 'win32'" }
+uvloop = { version = "^0.20.0", markers = "sys_platform != 'win32'" }
 
 # discord
 "discord.py" = "^2.4.0"
@@ -17,26 +17,26 @@ uvloop = { version = "^0.19.0", markers = "sys_platform != 'win32'" }
 # fastapi
 fastapi = "^0.111.0"
 fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "ebea3bf71689caa583fe55aa25db899cf8eeae31"}
-uvicorn = "^0.30.1"
+uvicorn = "^0.30.6"
 
 # database ORM
 tortoise-orm = {extras = ["asyncpg"], version = "^0.21.4"}
 tortoise-cli = "^0.1.2"
 
 # misc
-rich = "^13.7.1"
+rich = "^13.8.0"
 python-dateutil = "^2.9.0"
 Pillow = "^10.4.0"
 aerich = "^0.6.3"
-pyyaml = "^6.0.1"
-cachetools = "^5.3.3"
+pyyaml = "^6.0.2"
+cachetools = "^5.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.1"
-black = {version = "^24.4.2", allow-prereleases = true}
+black = {version = "^24.8.0", allow-prereleases = true}
 flake8-pyproject = "^1.2.3"
 pyright = "^1.1.335"
-isort = "^5.12.0"
+isort = "^5.13.2"
 
 
 [tool.poetry.group.metrics.dependencies]
