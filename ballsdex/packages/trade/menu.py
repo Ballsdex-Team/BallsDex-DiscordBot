@@ -11,6 +11,7 @@ from discord.utils import format_dt, utcnow
 
 from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
 from ballsdex.core.utils import menus
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
@@ -456,6 +457,22 @@ class CountryballsSelector(Pages):
                     f"{settings.collectible_name.title()} #{ball.pk:0X} is not tradeable.",
                     ephemeral=True,
                 )
+            if await ball.is_locked():
+                return await interaction.followup.send(
+                    f"{settings.collectible_name.title()} #{ball.pk:0X} is locked for trade.",
+                    ephemeral=True,
+                )
+            view = ConfirmChoiceView(interaction)
+            if ball.favorite:
+                await interaction.followup.send(
+                    f"One or more of the {settings.plural_collectible_name} is favorited, "
+                    "are you sure you want to add it to the trade?",
+                    view=view,
+                    ephemeral=True,
+                )
+                await view.wait()
+                if not view.value:
+                    return
             trader.proposal.append(ball)
             await ball.lock_for_trade()
         grammar = (
