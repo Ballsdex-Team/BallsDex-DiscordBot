@@ -178,10 +178,9 @@ class Info(commands.Cog):
         trade_begin = Trade.begin.extras.get("mention", "/trade begin")
         trade_add = Trade.add.extras.get("mention", "/trade add")
         config_channel = Config.channel.extras.get("mention", "/config channel")
- 
+
         embed = discord.Embed(
-            title=f"{settings.bot_name.title()} Tutorial", 
-            color=discord.Color.blurple()
+            title=f"{settings.bot_name.title()} Tutorial", color=discord.Color.blurple()
         )
 
         embed.add_field(
