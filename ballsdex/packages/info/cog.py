@@ -209,7 +209,9 @@ class Info(commands.Cog):
                 "activity. If there's high activity, they will spawn more quickly. To catch them,"
                 " tap the blue 'Catch Me' button when one spawns, then guess the name of the "
                 f"{settings.collectible_name}, and if your guess is correct, the "
-                f"{settings.collectible_name} will be added to your inventory!"
+                f"{settings.collectible_name} will be added to your inventory! Keep in mind, "
+                f"{settings.plural_collectible_name} are unable of being caught if "
+                "three minutes pass from the time it spawned."
             ),
             inline=False,
         )
