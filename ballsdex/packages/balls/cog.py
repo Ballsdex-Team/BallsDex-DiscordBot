@@ -1,7 +1,7 @@
 import enum
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
@@ -9,15 +9,7 @@ from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
 
-from ballsdex.core.models import (
-    BallInstance,
-    DonationPolicy,
-    Player,
-    PrivacyPolicy,
-    Trade,
-    TradeObject,
-    balls,
-)
+from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import (
@@ -26,7 +18,7 @@ from ballsdex.core.utils.transformers import (
     SpecialEnabledTransform,
     TradeCommandType,
 )
-from ballsdex.core.utils.utils import is_staff
+from ballsdex.core.utils.utils import inventory_privacy, is_staff
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.settings import settings
 
@@ -700,46 +692,3 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"You have {balls} {special_str}{shiny_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
         )
-
-
-async def inventory_privacy(
-    bot: "BallsDexBot",
-    interaction: discord.Interaction,
-    player: Player,
-    user_obj: Union[discord.User, discord.Member],
-):
-    privacy_policy = player.privacy_policy
-    interacting_player = await Player.get(discord_id=interaction.user.id)
-    if interaction.user.id == player.discord_id:
-        return True
-    if is_staff(interaction):
-        return True
-    if privacy_policy == PrivacyPolicy.DENY:
-        await interaction.followup.send(
-            "This user has set their inventory to private.", ephemeral=True
-        )
-        return False
-    elif privacy_policy == PrivacyPolicy.FRIENDS:
-        if not await interacting_player.is_friend(player):
-            await interaction.followup.send(
-                "This users inventory can only be viewed from users they have added as friends.",
-                ephemeral=True,
-            )
-            return False
-    elif privacy_policy == PrivacyPolicy.SAME_SERVER:
-        if not bot.intents.members:
-            await interaction.followup.send(
-                "This user has their policy set to `Same Server`, "
-                "however I do not have the `members` intent to check this.",
-                ephemeral=True,
-            )
-            return False
-        if interaction.guild is None:
-            await interaction.followup.send(
-                "This user has set their inventory to private.", ephemeral=True
-            )
-            return False
-        elif interaction.guild.get_member(user_obj.id) is None:
-            await interaction.followup.send("This user is not in the server.", ephemeral=True)
-            return False
-    return True
