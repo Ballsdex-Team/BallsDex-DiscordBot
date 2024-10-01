@@ -9,8 +9,8 @@ class ConfirmChoiceView(View):
         self,
         interaction: discord.Interaction,
         user: Optional[discord.User] = None,
-        accept_message: Optional[str] = None,
-        cancel_message: Optional[str] = None,
+        accept_message: str = "Confirmed",
+        cancel_message: str = "Cancelled",
     ):
         super().__init__(timeout=90)
         self.value = None
@@ -56,12 +56,8 @@ class ConfirmChoiceView(View):
         else:
             content = ""
 
-        if not self.accept_message:
-            await interaction.response.edit_message(content=content + "\nConfirmed", view=self)
-        else:
-            await interaction.response.edit_message(
-                content=content + f"\n{self.accept_message}", view=self
-            )
+        await interaction.response.edit_message(content=f"{content}\n{self.accept_message}", view=self)
+
         self.value = True
         self.stop()
 
@@ -78,11 +74,7 @@ class ConfirmChoiceView(View):
         else:
             content = ""
 
-        if not self.cancel_message:
-            await interaction.response.edit_message(content=content + "\nCancelled", view=self)
-        else:
-            await interaction.response.edit_message(
-                content=content + f"\n{self.cancel_message}", view=self
-            )
+        await interaction.response.edit_message(content=f"{content}\n{self.cancel_message}", view=self)
+
         self.value = False
         self.stop()
