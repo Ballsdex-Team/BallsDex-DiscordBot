@@ -56,7 +56,9 @@ class ConfirmChoiceView(View):
         else:
             content = ""
 
-        await interaction.response.edit_message(content=f"{content}\n{self.accept_message}", view=self)
+        await interaction.response.edit_message(
+            content=f"{content}\n{self.accept_message}", view=self
+        )
 
         self.value = True
         self.stop()
@@ -74,7 +76,9 @@ class ConfirmChoiceView(View):
         else:
             content = ""
 
-        await interaction.response.edit_message(content=f"{content}\n{self.cancel_message}", view=self)
+        await interaction.response.edit_message(
+            content=f"{content}\n{self.cancel_message}", view=self
+        )
 
         self.value = False
         self.stop()
