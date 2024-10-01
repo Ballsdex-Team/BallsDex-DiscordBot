@@ -56,14 +56,16 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         # TODO: use lock
-        player, created = await Player.get_or_create(discord_id=interaction.user.id)
+        await interaction.response.defer(thinking=True)
+
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
         try:
             config = await GuildConfig.get(guild_id=interaction.guild_id)
         except DoesNotExist:
             config = await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
 
         if self.ball.catched:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{interaction.user.mention} I was caught already!",
                 ephemeral=config.silent,
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
@@ -79,7 +81,6 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         if self.name.value.lower().strip() in possible_names:
             self.ball.catched = True
-            await interaction.response.defer(thinking=True)
             ball, has_caught_before = await self.catch_ball(
                 interaction.client, cast(discord.Member, interaction.user)
             )
@@ -103,7 +104,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{interaction.user.mention} Wrong name!",
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
                 ephemeral=config.silent,
