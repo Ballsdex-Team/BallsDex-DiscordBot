@@ -80,14 +80,18 @@ class Config(commands.GroupCog):
     @app_commands.command()
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.checks.bot_has_permissions(send_messages=True)
-    async def disable(self, interaction: discord.Interaction):
+    async def toggle(self, interaction: discord.Interaction, enabled: bool | None = None):
         """
-        Disable or enable countryballs spawning.
+        Toggle the bot on or off in your server.
         """
-        guild = cast(discord.Guild, interaction.guild)  # guild-only command
-        config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
-        if config.enabled:
-            config.enabled = False  # type: ignore
+        guild = cast(discord.Guild, interaction.guild)
+        config, _ = await GuildConfig.get_or_create(guild_id=guild.id)
+
+        if enabled is None:
+            config.enabled = not config.enabled
+
+        if not enabled:
+            config.enabled = False
             await config.save()
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=False)
             await interaction.response.send_message(
@@ -96,23 +100,10 @@ class Config(commands.GroupCog):
                 "is suspended.\nTo re-enable the spawn, use the same command."
             )
         else:
-            config.enabled = True  # type: ignore
+            config.enabled = True
             await config.save()
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=True)
-            if config.spawn_channel and (channel := guild.get_channel(config.spawn_channel)):
-                if channel:
-                    await interaction.response.send_message(
-                        f"{settings.bot_name} is now enabled in this server, "
-                        f"{settings.plural_collectible_name} will start spawning "
-                        f"soon in {channel.mention}."
-                    )
-                else:
-                    await interaction.response.send_message(
-                        "The spawning channel specified in the configuration is not available.",
-                        ephemeral=True,
-                    )
-            else:
-                await interaction.response.send_message(
-                    f"{settings.bot_name} is now enabled in this server, however there is no "
-                    "spawning channel set. Please configure one with `/config channel`."
-                )
+            await interaction.response.send_message(
+                f"{settings.bot_name} is now enabled in this server. "
+                f"The spawn of new {settings.plural_collectible_name} will resume."
+            )
