@@ -56,6 +56,18 @@ class Settings:
         List of roles that have full access to the /admin command
     admin_role_ids: list[int]
         List of roles that have partial access to the /admin command (only blacklist and guilds)
+    wild_phrase: str
+        The phrase used when a collectible spawns
+    wrong_name_phrase: str
+        The phrase used when a user enters the wrong name for that collectible
+    you_caught_phrase: str
+        The phrase used when a user catch a ball
+    new_completion_phrase: str = ""
+        The phrase used when a user caught a new collectible
+    caught_already_phrase: str
+        The phrase used when the collectible is caught already
+    shiny_phrase: str
+        The phrase used when the caught collectible is a shiny
     """
 
     bot_token: str = ""
@@ -67,6 +79,12 @@ class Settings:
     plural_collectible_name: str = "countryballs"
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
+    wild_phrase: str = ""
+    wrong_name_phrase: str = ""
+    you_caught_phrase: str = ""
+    new_completion_phrase: str = ""
+    caught_already_phrase: str = ""
+    shiny_phrase: str = ""
 
     max_favorites: int = 50
     max_attack_bonus: int = 20
@@ -114,6 +132,18 @@ def read_settings(path: "Path"):
     )
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
+    settings.wild_phrase = content.get("wild-phrase", "A wild {collectible_name}")
+    settings.wrong_name_phrase = content.get("wrong-name-phrase", "Wrong name!")
+    settings.you_caught_phrase = content.get("you-caught-phrase", "You caught {ball_name}!")
+    settings.new_completion_phrase = content.get(
+        "new-completion-phrase",
+        "This is a **new {collectible_name}** that has been added to your completion!",
+    )
+    settings.caught_already_phrase = content.get("caught-already-phrase", "I was caught already!")
+    settings.shiny_phrase = content.get(
+        "shiny-phrase",
+        "✨ ***It's a shiny {collectible_name}!*** ✨",
+    )
 
     settings.about_description = content["about"]["description"]
     settings.github_link = content["about"]["github-link"]
@@ -180,6 +210,29 @@ bot-name: BallsDex
 # this is /balls by default, but you can change it for /animals or /rocks for example
 players-group-cog-name: balls
 
+# override the phrase "A wild {collectible_name} appeared!
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+wild-phrase: A wild {collectible_name} appeared!
+
+# override the phrase "Wrong name!"
+wrong-name-phrase: Wrong name!
+
+# override the phrase "You caught {ball_name}!"
+# NOTE THAT you MUST include {ball_name} somewhere in the phrase
+you-caught-phrase: You caught {ball_name}!
+
+# ↓↓↓↓↓↓↓↓↓↓↓↓↓↓ override the phrase ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+# "This is a **new {collectible_name}** that has been added to your completion!"
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+new-completion-phrase: This is a **new {collectible_name}** that has been added to your completion!
+
+# override the phrase "I was caught already!"
+caught-already-phrase: I was caught already!
+
+# override the phrase "✨ ***It's a shiny {collectible_name}!*** ✨"
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+shiny-phrase: ✨ ***It's a shiny {collectible_name}!***
+
 # maximum amount of favorites that are allowed
 max-favorites: 50
 
@@ -237,6 +290,12 @@ def update_settings(path: "Path"):
     add_max_attack = "max-attack-bonus" not in content
     add_max_health = "max-health-bonus" not in content
     add_plural_collectible = "plural-collectible-name" not in content
+    add_wild_phrase = "wild-phrase:" not in content
+    add_wrong_name_phrase = "wrong-name-phrase:" not in content
+    add_you_caught_phrase = "you-caught-phrase:" not in content
+    add_new_completion_phrase = "new-completion-phrase:" not in content
+    add_caught_already_phrase = "caught-already-phrase:" not in content
+    add_shiny_phrase = "shiny-phrase" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -278,11 +337,53 @@ max-attack-bonus: 20
 # this cannot be smaller than 0, enter a positive number
 max-health-bonus: 20
 """
+
     if add_plural_collectible:
         content += """
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "countryballs" in the bot
 plural-collectible-name: countryballs
+"""
+
+    if add_wild_phrase:
+        content += """
+# Override the phrase 'A wild {collectible_name} appeared!'
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+wild-phrase: A wild {collectible_name} appeared!
+"""
+
+    if add_wrong_name_phrase:
+        content += """
+# Override the phrase 'Wrong name!'
+wrong-name-phrase: Wrong name!
+"""
+
+    if add_you_caught_phrase:
+        content += """
+# Override the phrase 'You caught {ball_name}!'
+# NOTE THAT you MUST include {ball_name} somewhere in the phrase
+you-caught-phrase: You caught {ball_name}!
+"""
+
+    if add_new_completion_phrase:
+        content += """
+# ↓↓↓↓↓↓↓↓↓↓↓↓↓↓ override the phrase ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+# 'This is a **new {collectible_name}** that has been added to your completion!'
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+new-completion-phrase: This is a **new {collectible_name}** that has been added to your completion!
+"""
+
+    if add_caught_already_phrase:
+        content += """
+# Override the phrase 'I was caught already!'
+caught-already-phrase: I was caught already!
+"""
+
+    if add_shiny_phrase:
+        content += """
+# override the phrase "✨ ***It's a shiny {collectible_name}!*** ✨"
+# NOTE THAT you MUST include {collectible_name} somewhere in the phrase
+shiny-phrase: ✨ ***It's a shiny {collectible_name}!***
 """
 
     if any((add_owners, add_config_ref)):

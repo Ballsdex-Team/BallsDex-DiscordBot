@@ -65,10 +65,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             config = await GuildConfig.create(guild_id=interaction.guild_id, spawn_channel=None)
 
         if self.ball.catched:
+            message = f"{interaction.user.mention} {settings.caught_already_phrase}"
             await interaction.followup.send(
-                f"{interaction.user.mention} I was caught already!",
-                ephemeral=config.silent,
+                message,
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                ephemeral=config.silent,
             )
             return
 
@@ -87,25 +88,29 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
             special = ""
             if ball.shiny:
-                special += f"✨ ***It's a shiny {settings.collectible_name}!*** ✨\n"
+                special += settings.shiny_phrase.format(collectible_name=settings.collectible_name)
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
             if has_caught_before:
-                special += (
-                    f"This is a **new {settings.collectible_name}** "
-                    "that has been added to your completion!"
+                special += settings.new_completion_phrase.format(
+                    collectible_name=settings.collectible_name
                 )
+            message = (
+                f"{interaction.user.mention} "
+                f"{settings.you_caught_phrase.format(ball_name=self.ball.name)}"
+                f" `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
+                f"{special}"
+            )
             await interaction.followup.send(
-                f"{interaction.user.mention} You caught **{self.ball.name}!** "
-                f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
-                f"{special}",
+                message,
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
             )
             self.button.disabled = True
             await interaction.followup.edit_message(self.ball.message.id, view=self.button.view)
         else:
+            message = f"{interaction.user.mention} {settings.wrong_name_phrase}"
             await interaction.followup.send(
-                f"{interaction.user.mention} Wrong name!",
+                message,
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
                 ephemeral=config.silent,
             )
@@ -174,7 +179,9 @@ class CatchButton(Button):
 
     async def callback(self, interaction: discord.Interaction):
         if self.ball.catched:
-            await interaction.response.send_message("I was caught already!", ephemeral=True)
+            await interaction.response.send_message(
+                f"{settings.caught_already_phrase}", ephemeral=True
+            )
         else:
             await interaction.response.send_modal(CountryballNamePrompt(self.ball, self))
 
