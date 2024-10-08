@@ -564,7 +564,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
         if countryball.favorite:
-            view = ConfirmChoiceView(interaction)
+            view = ConfirmChoiceView(
+                interaction,
+                accept_message=f"{settings.collectible_name.title()} donated.",
+                cancel_message="This request has been cancelled.",
+            )
             await interaction.response.send_message(
                 f"This {settings.collectible_name} is a favorite, "
                 "are you sure you want to donate it?",

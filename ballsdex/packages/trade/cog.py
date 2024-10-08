@@ -182,7 +182,11 @@ class Trade(commands.GroupCog):
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
         if countryball.favorite:
-            view = ConfirmChoiceView(interaction)
+            view = ConfirmChoiceView(
+                interaction,
+                accept_message=f"{settings.collectible_name.title()} added.",
+                cancel_message="This request has been cancelled.",
+            )
             await interaction.followup.send(
                 f"This {settings.collectible_name} is a favorite, "
                 "are you sure you want to trade it?",

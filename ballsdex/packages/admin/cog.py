@@ -1162,7 +1162,11 @@ class Admin(commands.GroupCog):
                 f"Are you sure you want to delete {percentage}% of "
                 f"{user}'s {settings.plural_collectible_name}?"
             )
-        view = ConfirmChoiceView(interaction)
+        view = ConfirmChoiceView(
+            interaction,
+            accept_message=f"Confirmed, deleting the {settings.plural_collectible_name}...",
+            cancel_message="Request cancelled.",
+        )
         await interaction.followup.send(
             text,
             view=view,
