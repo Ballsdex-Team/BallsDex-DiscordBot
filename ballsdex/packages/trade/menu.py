@@ -532,15 +532,14 @@ class TradeViewMenu(Pages):
         for player in players:
             user_obj = player.user
             plural_check = (
-                f"{settings.collectible_name}" if len(player.proposal) == 1
+                f"{settings.collectible_name}"
+                if len(player.proposal) == 1
                 else f"{settings.plural_collectible_name}"
             )
             options.append(
                 discord.SelectOption(
                     label=f"{user_obj.display_name}",
-                    description=(
-                        f"ID: {user_obj.id} | {len(player.proposal)} {plural_check}"
-                    ),
+                    description=(f"ID: {user_obj.id} | {len(player.proposal)} {plural_check}"),
                     value=f"{user_obj.id}",
                 )
             )
