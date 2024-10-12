@@ -1156,7 +1156,9 @@ class Admin(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         if not percentage or percentage == 100:
-            text = f"Are you sure you want to delete all {user}'s {settings.plural_collectible_name}?"
+            text = (
+                f"Are you sure you want to delete all {user}'s {settings.plural_collectible_name}?"
+            )
         else:
             text = (
                 f"Are you sure you want to delete {percentage}% of "
