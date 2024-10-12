@@ -1,9 +1,9 @@
 import datetime
-from cachetools import TTLCache
 from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
+from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
