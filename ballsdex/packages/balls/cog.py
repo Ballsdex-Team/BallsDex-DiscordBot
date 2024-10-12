@@ -174,7 +174,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         blocked = await player.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
             await interaction.followup.send(
-                "You cannot view the list of a user that has you blocked.", ephemeral=True
+                "You cannot view the list of a user that has blocked you.", ephemeral=True
             )
             return
         blocked2 = await interaction_player.is_blocked(player)
