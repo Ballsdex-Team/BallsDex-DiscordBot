@@ -1148,15 +1148,15 @@ class Admin(commands.GroupCog):
                 "The user you gave does not exist.", ephemeral=True
             )
             return
-        if percentage and not 0 < percentage < 100:
+        if percentage and not 0 < percentage <= 101:
             await interaction.response.send_message(
-                "The percentage must be between 1 and 99.", ephemeral=True
+                "The percentage must be between 1 and 100.", ephemeral=True
             )
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        if not percentage:
-            text = f"Are you sure you want to delete {user}'s {settings.plural_collectible_name}?"
+        if not percentage or percentage == 100:
+            text = f"Are you sure you want to delete all {user}'s {settings.plural_collectible_name}?"
         else:
             text = (
                 f"Are you sure you want to delete {percentage}% of "
