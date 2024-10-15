@@ -1,0 +1,6 @@
+* text eol=lf
+
+# binary file excludsions
+*.png binary
+*.tff binary
+*.ttf binary

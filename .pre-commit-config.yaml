@@ -4,7 +4,7 @@ files: .*\.py$
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
         exclude: settings\.py
@@ -13,12 +13,15 @@ repos:
         files: ""
       - id: debug-statements
         files: .*\.py$
+      - id: mixed-line-ending
+        args:
+          - --fix=lf
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.11.0
+    rev: 24.8.0
     hooks:
       - id: black
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
         args:
@@ -40,6 +43,6 @@ repos:
           - aerich==0.6.3
           - redis
   - repo: https://github.com/csachs/pyproject-flake8
-    rev: v6.1.0
+    rev: v7.0.0
     hooks:
       - id: pyproject-flake8

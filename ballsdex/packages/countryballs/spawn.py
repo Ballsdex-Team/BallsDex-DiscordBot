@@ -70,7 +70,7 @@ class SpawnCooldown:
             amount = 1
             if message.guild.member_count < 5 or message.guild.member_count > 1000:  # type: ignore
                 amount /= 2
-            if len(message.content) < 5:
+            if message._state.intents.message_content and len(message.content) < 5:
                 amount /= 2
             if len(set(x.author_id for x in self.message_cache)) < 4 or (
                 len(list(filter(lambda x: x.author_id == message.author.id, self.message_cache)))
