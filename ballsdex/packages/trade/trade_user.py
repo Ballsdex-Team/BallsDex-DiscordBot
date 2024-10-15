@@ -34,4 +34,5 @@ class TradingUser:
     async def from_trade_model(cls, trade: "Trade", player: Player, bot: "BallsDexBot"):
         proposal = await trade.tradeobjects.filter(player=player).prefetch_related("ballinstance")
         user = await bot.fetch_user(player.discord_id)
-        return cls(user, player, [x.ballinstance for x in proposal])
+        coins = trade.player1_coins if player == trade.player1 else trade.player2_coins
+        return cls(user, player, [x.ballinstance for x in proposal], coins=coins)
