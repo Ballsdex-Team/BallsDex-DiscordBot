@@ -83,9 +83,7 @@ class Admin(commands.GroupCog):
     logs = app_commands.Group(name="logs", description="Bot logs management")
     history = app_commands.Group(name="history", description="Trade history management")
     info = app_commands.Group(name="info", description="Information Commands")
-    coins = app_commands.Group(
-        name=settings.currency_name, description="Coins management"
-    )
+    coins = app_commands.Group(name=settings.currency_name, description="Coins management")
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -1635,7 +1633,7 @@ class Admin(commands.GroupCog):
         interaction: discord.Interaction,
         user: discord.User | None = None,
         user_id: str | None = None,
-        amount: int = 0
+        amount: int = 0,
     ):
         """
         Add coins to a user.
@@ -1657,12 +1655,12 @@ class Admin(commands.GroupCog):
 
         if amount < 0:
             await interaction.response.send_message(
-                f"The amount of {settings.currency_name} "
-                "to add cannot be negative.", ephemeral=True
+                f"The amount of {settings.currency_name} " "to add cannot be negative.",
+                ephemeral=True,
             )
             return
 
-        if user is None:
+        if user_id is not None:
             try:
                 user = await self.bot.fetch_user(int(user_id))
             except ValueError:
@@ -1676,16 +1674,18 @@ class Admin(commands.GroupCog):
                 )
                 return
 
-            player, created = await Player.get_or_create(discord_id=user.id)
-            await player.add_coins(amount)
-            await interaction.response.send_message(
-                f"Added {amount} {settings.currency_name} to {user.name}.", ephemeral=True
-            )
-            
-            await log_action(
-                f"{interaction.user} added {amount} {settings.currency_name} to {user.name} ({user.id}).",
-                self.bot,
-            )
+        assert user
+        player, created = await Player.get_or_create(discord_id=user.id)
+        await player.add_coins(amount)
+        await interaction.response.send_message(
+            f"Added {amount} {settings.currency_name} to {user.name}.", ephemeral=True
+        )
+
+        await log_action(
+            f"{interaction.user} added {amount} {settings.currency_name} "
+            f"to {user.name} ({user.id}).",
+            self.bot,
+        )
 
     @coins.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -1694,7 +1694,7 @@ class Admin(commands.GroupCog):
         interaction: discord.Interaction,
         user: discord.User | None = None,
         user_id: str | None = None,
-        amount: int = 0
+        amount: int = 0,
     ):
         """
         Remove coins from a user.
@@ -1716,12 +1716,12 @@ class Admin(commands.GroupCog):
 
         if amount < 0:
             await interaction.response.send_message(
-                f"The amount of {settings.currency_name} " 
-                "to remove cannot be negative.", ephemeral=True
+                f"The amount of {settings.currency_name} " "to remove cannot be negative.",
+                ephemeral=True,
             )
             return
 
-        if user is None:
+        if user_id is not None:
             try:
                 user = await self.bot.fetch_user(int(user_id))
             except ValueError:
@@ -1735,13 +1735,15 @@ class Admin(commands.GroupCog):
                 )
                 return
 
-            player, created = await Player.get_or_create(discord_id=user.id)
-            await player.add_coins(amount)
-            await interaction.response.send_message(
-                f"Removed {amount} {settings.currency_name} to {user.name}.", ephemeral=True
-            )
-            
-            await log_action(
-                f"{interaction.user} removed {amount} {settings.currency_name} to {user.name} ({user.id}).",
-                self.bot,
-            )
+        assert user
+        player, created = await Player.get_or_create(discord_id=user.id)
+        await player.add_coins(amount)
+        await interaction.response.send_message(
+            f"Removed {amount} {settings.currency_name} to {user.name}.", ephemeral=True
+        )
+
+        await log_action(
+            f"{interaction.user} removed {amount} {settings.currency_name} "
+            f"to {user.name} ({user.id}).",
+            self.bot,
+        )
