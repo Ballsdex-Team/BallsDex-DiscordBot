@@ -6,6 +6,7 @@ from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.trade.trade_user import TradingUser
+from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -123,7 +124,10 @@ def fill_trade_embed_fields(
             f"{_get_prefix_emote(trader1)} {trader1.user.name}"
             f" {trader1.user.id if is_admin else ''}"
         ),
-        value=trader1_proposal[0],
+        value=(
+            f"**{trader1.coins} {settings.currency_name}**\n\n"
+            f"{trader1.proposal[0] if trader1.proposal else 'Empty'}"
+        ),
         inline=True,
     )
     embed.add_field(
@@ -131,7 +135,10 @@ def fill_trade_embed_fields(
             f"{_get_prefix_emote(trader2)} {trader2.user.name}"
             f" {trader2.user.id if is_admin else ''}"
         ),
-        value=trader2_proposal[0],
+        value=(
+            f"**{trader2.coins} {settings.currency_name}**\n\n"
+            f"{trader2.proposal[0] if trader2.proposal else 'Empty'}"
+        ),
         inline=True,
     )
 

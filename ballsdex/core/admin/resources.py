@@ -303,6 +303,7 @@ class PlayerResource(Model):
         "balls",
         "donation_policy",
         "privacy_policy",
+        "coins",
     ]
 
 

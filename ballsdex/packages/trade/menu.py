@@ -79,6 +79,11 @@ class TradeView(View):
             for countryball in trader.proposal:
                 await countryball.unlock()
             trader.proposal.clear()
+
+            if trader.coins > 0:
+                await trader.player.add_coins(trader.coins)
+                trader.coins = 0
+
             await interaction.response.send_message("Proposal cleared.", ephemeral=True)
 
     @button(
@@ -153,6 +158,8 @@ class TradeMenu:
         self.channel: discord.TextChannel = cast(discord.TextChannel, interaction.channel)
         self.trader1 = trader1
         self.trader2 = trader2
+        self.initial_coins_trader1 = trader1.coins
+        self.initial_coins_trader2 = trader2.coins
         self.embed = discord.Embed()
         self.task: asyncio.Task | None = None
         self.current_view: TradeView | ConfirmView = TradeView(self)
@@ -168,6 +175,8 @@ class TradeMenu:
     def _generate_embed(self):
         add_command = self.cog.add.extras.get("mention", "`/trade add`")
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
+        add_coins_command = self.cog.coins_add.extras.get("mention", "`/trade coins_add`")
+        remove_coins_command = self.cog.coins_remove.extras.get("mention", "`/trade coins_remove`")
         view_command = self.cog.view.extras.get("mention", "`/trade view`")
 
         self.embed.title = f"{settings.plural_collectible_name.title()} trading"
@@ -175,6 +184,8 @@ class TradeMenu:
         self.embed.description = (
             f"Add or remove {settings.plural_collectible_name} you want to propose "
             f"to the other player using the {add_command} and {remove_command} commands.\n"
+            "You can also add or remove coins using the "
+            f"{add_coins_command} and {remove_coins_command} commands.\n"
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*This trade will timeout "
@@ -189,7 +200,7 @@ class TradeMenu:
 
     async def update_message_loop(self):
         """
-        A loop task that updates each 5 second the menu with the new content.
+        A loop task that updates each 5 seconds the menu with the new content.
         """
 
         assert self.task
@@ -240,6 +251,12 @@ class TradeMenu:
         for countryball in self.trader1.proposal + self.trader2.proposal:
             await countryball.unlock()
 
+        self.trader1.player.coins += self.trader1.coins
+        self.trader2.player.coins += self.trader2.coins
+
+        await self.trader1.player.save()
+        await self.trader2.player.save()
+
         self.current_view.stop()
         for item in self.current_view.children:
             item.disabled = True  # type: ignore
@@ -277,12 +294,30 @@ class TradeMenu:
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
 
-        trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
+        trade = await Trade.create(
+            player1=self.trader1.player,
+            player2=self.trader2.player,
+            player1_coins=self.trader1.coins,
+            player2_coins=self.trader2.coins,
+        )
+
+        if (
+            self.trader1.player.coins < self.trader1.coins
+            or self.trader2.player.coins < self.trader2.coins
+        ):
+            raise InvalidTradeOperation()
+
+        self.trader1.player.coins -= self.trader1.coins
+        self.trader2.player.coins += self.trader1.coins
+        self.trader2.player.coins -= self.trader2.coins
+        self.trader1.player.coins += self.trader2.coins
+
+        await self.trader1.player.save()
+        await self.trader2.player.save()
 
         for countryball in self.trader1.proposal:
             await countryball.refresh_from_db()
             if countryball.player.discord_id != self.trader1.player.discord_id:
-                # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
             countryball.player = self.trader2.player
             countryball.trade_player = self.trader1.player
@@ -293,6 +328,7 @@ class TradeMenu:
             )
 
         for countryball in self.trader2.proposal:
+            await countryball.refresh_from_db()
             if countryball.player.discord_id != self.trader2.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
@@ -334,6 +370,7 @@ class TradeMenu:
                 log.warning(f"Illegal trade operation between {self.trader1=} and {self.trader2=}")
                 self.embed.description = (
                     f":warning: An attempt to modify the {settings.plural_collectible_name} "
+                    f"or {settings.currency_name} "
                     "during the trade was detected and the trade was cancelled."
                 )
                 self.embed.colour = discord.Colour.red()

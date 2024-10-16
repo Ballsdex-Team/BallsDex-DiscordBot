@@ -46,6 +46,16 @@ class Player(commands.GroupCog):
             if privacy_command:
                 privacy_command.parameters[0]._Parameter__parent.choices.pop()  # type: ignore
 
+    @app_commands.command()
+    async def balance(self, interaction: discord.Interaction):
+        """
+        Check your balance.
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        await interaction.response.send_message(
+            f"You have {player.coins} {settings.currency_name}.", ephemeral=True
+        )
+
     friend = app_commands.Group(name="friend", description="Friend commands")
     blocked = app_commands.Group(name="block", description="Block commands")
     policy = app_commands.Group(name="policy", description="Policy commands")

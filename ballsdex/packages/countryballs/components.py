@@ -146,6 +146,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             server_id=user.guild.id,
             spawned_time=self.ball.time,
         )
+        coins = self.ball.model.coin_amount
+        await player.add_coins(coins)
         if user.id in bot.catch_log:
             log.info(
                 f"{user} caught {settings.collectible_name}"

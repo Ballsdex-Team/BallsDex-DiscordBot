@@ -37,6 +37,9 @@ class Trade(commands.GroupCog):
         self.bot = bot
         self.trades: dict[int, dict[int, list[TradeMenu]]] = defaultdict(lambda: defaultdict(list))
 
+    coins = app_commands.Group(
+        name=settings.currency_name, description="Trade with other players using coins"
+    )
     bulk = app_commands.Group(name="bulk", description="Bulk Commands")
 
     def get_trade(
@@ -80,7 +83,6 @@ class Trade(commands.GroupCog):
                 or trade.trader1.cancelled
                 or trade.trader2.cancelled
             ):
-                # remove what was supposed to have been removed
                 to_remove.append(trade)
                 continue
             try:
@@ -96,7 +98,35 @@ class Trade(commands.GroupCog):
 
         for trade in to_remove:
             self.trades[guild.id][channel.id].remove(trade)
-        return (trade, trader)
+        return trade, trader
+
+    async def check_trade_errors(
+        self, interaction: discord.Interaction, amount: Optional[int] = None
+    ) -> tuple[Optional[TradeMenu], Optional[TradingUser]]:
+        """
+        Helper function to check for trade errors.
+        """
+        trade, trader = self.get_trade(interaction)
+
+        if trader is None:
+            await interaction.response.send_message(
+                "Unable to find ongoing trade.", ephemeral=True
+            )
+            return None, None
+
+        if trader.locked:
+            await interaction.response.send_message(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return None, None
+
+        if amount is not None and amount <= 0:
+            await interaction.response.send_message("The amount must be positive.", ephemeral=True)
+            return None, None
+
+        return trade, trader
 
     @app_commands.command()
     async def begin(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
@@ -180,7 +210,9 @@ class Trade(commands.GroupCog):
                 f"You cannot trade this {settings.collectible_name}.", ephemeral=True
             )
             return
+
         await interaction.response.defer(ephemeral=True, thinking=True)
+
         if countryball.favorite:
             view = ConfirmChoiceView(
                 interaction,
@@ -197,17 +229,10 @@ class Trade(commands.GroupCog):
             if not view.value:
                 return
 
-        trade, trader = self.get_trade(interaction)
+        trade, trader = await self.check_trade_errors(interaction)
         if not trade or not trader:
-            await interaction.followup.send("You do not have an ongoing trade.", ephemeral=True)
             return
-        if trader.locked:
-            await interaction.followup.send(
-                "You have locked your proposal, it cannot be edited! "
-                "You can click the cancel button to stop the trade instead.",
-                ephemeral=True,
-            )
-            return
+
         if countryball in trader.proposal:
             await interaction.followup.send(
                 f"You already have this {settings.collectible_name} in your proposal.",
@@ -306,24 +331,16 @@ class Trade(commands.GroupCog):
         if not countryball:
             return
 
-        trade, trader = self.get_trade(interaction)
+        trade, trader = await self.check_trade_errors(interaction)
         if not trade or not trader:
-            await interaction.response.send_message(
-                "You do not have an ongoing trade.", ephemeral=True
-            )
             return
-        if trader.locked:
-            await interaction.response.send_message(
-                "You have locked your proposal, it cannot be edited! "
-                "You can click the cancel button to stop the trade instead.",
-                ephemeral=True,
-            )
-            return
+
         if countryball not in trader.proposal:
             await interaction.response.send_message(
                 f"That {settings.collectible_name} is not in your proposal.", ephemeral=True
             )
             return
+
         trader.proposal.remove(countryball)
         await interaction.response.send_message(
             f"{countryball.countryball.country} removed.", ephemeral=True
@@ -335,11 +352,8 @@ class Trade(commands.GroupCog):
         """
         Cancel the ongoing trade.
         """
-        trade, trader = self.get_trade(interaction)
+        trade, trader = await self.check_trade_errors(interaction)
         if not trade or not trader:
-            await interaction.response.send_message(
-                "You do not have an ongoing trade.", ephemeral=True
-            )
             return
 
         await trade.user_cancel(trader)
@@ -412,6 +426,64 @@ class Trade(commands.GroupCog):
         source = TradeViewFormat(history, interaction.user.name, self.bot)
         pages = Pages(source=source, interaction=interaction)
         await pages.start()
+
+    @coins.command(name="add")
+    async def coins_add(self, interaction: discord.Interaction, amount: int):
+        """
+        Add coins to your trade proposal
+        """
+        trade, trader = await self.check_trade_errors(interaction)
+        if not trade or not trader:
+            return
+
+        if trade:
+            if amount > await trader.fetch_player_coins():
+                await interaction.response.send_message(
+                    f"You don't have enough {settings.currency_name} to add that amount."
+                )
+            else:
+                await trader.add_coins(amount)
+                await interaction.response.send_message(
+                    f"Added {amount} {settings.currency_name} to your proposal."
+                    f"Total in proposal: {trader.coins} {settings.currency_name}.",
+                    ephemeral=True,
+                )
+
+    @coins.command(name="remove")
+    async def coins_remove(self, interaction: discord.Interaction, amount: int):
+        """
+        Remove coins from your trade proposal
+        """
+        trade, trader = await self.check_trade_errors(interaction)
+        if not trade or not trader:
+            return
+
+        if trader.locked:
+            await interaction.response.send_message(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return
+
+        if amount <= 0:
+            await interaction.response.send_message(
+                "The amount to remove must be positive.", ephemeral=True
+            )
+            return
+        if trade and trader:
+            if amount > trader.coins:
+                await interaction.response.send_message(
+                    f"You can't remove more {settings.currency_name} than are in your proposal.",
+                    ephemeral=True,
+                )
+                return
+            await trader.remove_coins(amount)
+            await interaction.response.send_message(
+                f"Removed {amount} {settings.currency_name} from your proposal. "
+                f"Remaining in proposal: {trader.coins} {settings.currency_name}.",
+                ephemeral=True,
+            )
 
     @app_commands.command()
     async def view(
