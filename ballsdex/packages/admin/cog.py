@@ -551,7 +551,6 @@ class Admin(commands.GroupCog):
         countryball: BallTransform,
         user: discord.User,
         special: SpecialTransform | None = None,
-        shiny: bool | None = None,
         health_bonus: int | None = None,
         attack_bonus: int | None = None,
     ):
@@ -563,8 +562,6 @@ class Admin(commands.GroupCog):
         countryball: Ball
         user: discord.User
         special: Special | None
-        shiny: bool
-            Omit this to make it random.
         health_bonus: int | None
             Omit this to make it random.
         attack_bonus: int | None
@@ -579,7 +576,6 @@ class Admin(commands.GroupCog):
         instance = await BallInstance.create(
             ball=countryball,
             player=player,
-            shiny=(shiny if shiny is not None else random.randint(1, 2048) == 1),
             attack_bonus=(
                 attack_bonus
                 if attack_bonus is not None
@@ -596,13 +592,11 @@ class Admin(commands.GroupCog):
             f"`{countryball.country}` {settings.collectible_name} was successfully given to "
             f"`{user}`.\nSpecial: `{special.name if special else None}` • ATK: "
             f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
-            f"• Shiny: `{instance.shiny}`"
         )
         await log_action(
             f"{interaction.user} gave {settings.collectible_name} "
             f"{countryball.country} to {user}. (Special={special.name if special else None} "
-            f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d} "
-            f"shiny={instance.shiny}).",
+            f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
             self.bot,
         )
 
@@ -1040,7 +1034,6 @@ class Admin(commands.GroupCog):
             f"**Attack bonus:** {ball.attack_bonus}\n"
             f"**Health bonus:** {ball.health_bonus}\n"
             f"**Health:** {ball.health}\n"
-            f"**Shiny:** {ball.shiny}\n"
             f"**Special:** {ball.special.name if ball.special else None}\n"
             f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
             f"**Spawned at:** {spawned_time}\n"
@@ -1200,7 +1193,6 @@ class Admin(commands.GroupCog):
         interaction: discord.Interaction,
         user: discord.User | None = None,
         countryball: BallTransform | None = None,
-        shiny: bool | None = None,
         special: SpecialTransform | None = None,
     ):
         """
@@ -1211,7 +1203,6 @@ class Admin(commands.GroupCog):
         user: discord.User
             The user you want to count the countryballs of.
         countryball: Ball
-        shiny: bool
         special: Special
         """
         if interaction.response.is_done():
@@ -1219,8 +1210,6 @@ class Admin(commands.GroupCog):
         filters = {}
         if countryball:
             filters["ball"] = countryball
-        if shiny is not None:
-            filters["shiny"] = shiny
         if special:
             filters["special"] = special
         if user:
@@ -1231,15 +1220,14 @@ class Admin(commands.GroupCog):
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
-        shiny_str = "shiny " if shiny else ""
         if user:
             await interaction.followup.send(
-                f"{user} has {balls} {special_str}{shiny_str}"
+                f"{user} has {balls} {special_str}"
                 f"{country}{settings.collectible_name}{plural}."
             )
         else:
             await interaction.followup.send(
-                f"There {verb} {balls} {special_str}{shiny_str}"
+                f"There {verb} {balls} {special_str}"
                 f"{country}{settings.collectible_name}{plural}."
             )
 
