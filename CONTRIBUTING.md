@@ -22,7 +22,7 @@ Export the appropriate environment variables as described in the
 
 ### Installing the dependencies
 
-1. Get Python 3.12 and pip.
+1. Get Python 3.13 and pip.
 2. Install poetry with `pip install poetry`.
 3. Run `poetry install`.
 4. You may run commands inside the virtualenv with `poetry run ...`, or use `poetry shell`.
