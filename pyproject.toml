@@ -6,7 +6,7 @@ authors = ["laggron42 <laggron42@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = ">=3.12, <=3.13"
 
 # asyncio
 uvloop = { version = "^0.21.0", markers = "sys_platform != 'win32'" }
