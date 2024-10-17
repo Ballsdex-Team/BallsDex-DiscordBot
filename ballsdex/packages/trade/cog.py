@@ -121,6 +121,12 @@ class Trade(commands.GroupCog):
         blocked = await player1.is_blocked(player2)
         if blocked:
             await interaction.response.send_message(
+                "You cannot begin a trade with a user that you have blocked.", ephemeral=True
+            )
+            return
+        blocked2 = await player2.is_blocked(player1)
+        if blocked2:
+            await interaction.response.send_message(
                 "You cannot begin a trade with a user that has blocked you.", ephemeral=True
             )
             return
