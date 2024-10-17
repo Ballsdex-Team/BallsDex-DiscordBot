@@ -299,9 +299,12 @@ def main():
 
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
-        loop.add_signal_handler(
-            SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))
-        )
+        try:
+            loop.add_signal_handler(
+                SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))
+            )
+        except NotImplementedError:
+            log.warning("Cannot add signal handler for SIGTERM.")
 
         log.info("Initialized bot, connecting to Discord...")
         future = loop.create_task(bot.start(token))
