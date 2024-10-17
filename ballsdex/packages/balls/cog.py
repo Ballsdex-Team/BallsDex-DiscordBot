@@ -174,7 +174,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         blocked = await player.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
             await interaction.followup.send(
-                "You cannot view the list of a user that has you blocked.", ephemeral=True
+                "You cannot view the list of a user that has blocked you.", ephemeral=True
+            )
+            return
+        blocked2 = await interaction_player.is_blocked(player)
+        if blocked2 and not is_staff(interaction):
+            await interaction.followup.send(
+                "You cannot view the list of a user that you have blocked.", ephemeral=True
             )
             return
 
@@ -280,6 +286,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             if blocked and not is_staff(interaction):
                 await interaction.followup.send(
                     "You cannot view the completion of a user that has blocked you.",
+                    ephemeral=True,
+                )
+                return
+            blocked2 = await interaction_player.is_blocked(player)
+            if blocked2 and not is_staff(interaction):
+                await interaction.followup.send(
+                    "You cannot view the completion of a user that you have blocked.",
                     ephemeral=True,
                 )
                 return
@@ -439,6 +452,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             await interaction.followup.send(
                 f"You cannot view the last caught {settings.collectible_name} "
                 "of a user that has blocked you.",
+                ephemeral=True,
+            )
+            return
+        blocked2 = await interaction_player.is_blocked(player)
+        if blocked2 and not is_staff(interaction):
+            await interaction.followup.send(
+                f"You cannot view the last caught {settings.collectible_name} "
+                "of a user that you have blocked.",
                 ephemeral=True,
             )
             return
@@ -611,7 +632,18 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         blocked = await new_player.is_blocked(old_player)
         if blocked:
             await interaction.followup.send(
-                "You cannot interact with a user that has blocked you.", ephemeral=True
+                f"You cannot donate a {settings.collectible_name} to "
+                "a user that has blocked you.",
+                ephemeral=True,
+            )
+            await countryball.unlock()
+            return
+        blocked2 = await new_player.is_blocked(old_player)
+        if blocked2:
+            await interaction.followup.send(
+                f"You cannot donate a {settings.collectible_name} to "
+                "a user that you have blocked.",
+                ephemeral=True,
             )
             await countryball.unlock()
             return
