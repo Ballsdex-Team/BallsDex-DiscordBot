@@ -179,9 +179,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         await player.fetch_related("balls")
-        filters = {"ball__id": countryball.pk} if countryball else {}
+        filters = (
+            {"ball__id": countryball.pk, "deleted": False} if countryball else {"deleted": False}
+        )
         if special:
-            filters["special"] = special
+            filters["special"] = special  # type: ignore
         if sort:
             if sort == SortingChoices.duplicates:
                 countryballs = await player.balls.filter(**filters)
@@ -291,7 +293,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
 
         # Set of ball IDs owned by the player
-        filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
+        filters = {"player__discord_id": user_obj.id, "ball__enabled": True, "deleted": False}
         if special:
             filters["special"] = special
             bot_countryballs = {
@@ -497,7 +499,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 if settings.max_favorites == 1
                 else f"{settings.plural_collectible_name}"
             )
-            if await player.balls.filter(favorite=True).count() >= settings.max_favorites:
+            if (
+                await player.balls.filter(favorite=True, deleted=False).count()
+                >= settings.max_favorites
+            ):
                 await interaction.response.send_message(
                     f"You cannot set more than {settings.max_favorites} favorite {grammar}.",
                     ephemeral=True,
@@ -676,6 +681,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         assert interaction.guild
         filters = {}
+        filters["deleted"] = False
         if countryball:
             filters["ball"] = countryball
         if shiny is not None:
