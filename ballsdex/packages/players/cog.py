@@ -324,6 +324,7 @@ class Player(commands.GroupCog):
         friendships = (
             await Friendship.filter(Q(player1=player) | Q(player2=player))
             .select_related("player1", "player2")
+            .order_by("since")
             .all()
         )
 
@@ -445,7 +446,10 @@ class Player(commands.GroupCog):
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
 
         blocked_relations = (
-            await Block.filter(player1=player).select_related("player1", "player2").all()
+            await Block.filter(player1=player)
+            .select_related("player1", "player2")
+            .order_by("date")
+            .all()
         )
 
         if not blocked_relations:

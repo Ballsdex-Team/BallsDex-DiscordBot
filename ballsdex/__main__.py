@@ -40,6 +40,7 @@ class CLIFlags(argparse.Namespace):
     config_file: Path
     reset_settings: bool
     disable_rich: bool
+    disable_message_content: bool
     debug: bool
     dev: bool
 
@@ -58,6 +59,11 @@ def parse_cli_flags(arguments: list[str]) -> CLIFlags:
         help="Reset the config file with the latest default configuration",
     )
     parser.add_argument("--disable-rich", action="store_true", help="Disable rich log format")
+    parser.add_argument(
+        "--disable-message-content",
+        action="store_true",
+        help="Disable usage of message content intent through the bot",
+    )
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
     args = parser.parse_args(arguments, namespace=CLIFlags())
@@ -288,6 +294,7 @@ def main():
             command_prefix=when_mentioned_or(prefix),
             dev=cli_flags.dev,  # type: ignore
             shard_count=settings.shard_count,
+            disable_messsage_content=cli_flags.disable_message_content,
         )
 
         exc_handler = functools.partial(global_exception_handler, bot)
