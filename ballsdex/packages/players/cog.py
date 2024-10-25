@@ -324,6 +324,7 @@ class Player(commands.GroupCog):
         friendships = (
             await Friendship.filter(Q(player1=player) | Q(player2=player))
             .select_related("player1", "player2")
+            .order_by("since")
             .all()
         )
 
@@ -379,6 +380,12 @@ class Player(commands.GroupCog):
         blocked = await player1.is_blocked(player2)
         if blocked:
             await interaction.followup.send("You have already blocked this user.", ephemeral=True)
+            return
+        if self.active_friend_requests[(player1.discord_id, player2.discord_id)]:
+            await interaction.followup.send(
+                "You cannot block a user to whom you have sent an active friend request.",
+                ephemeral=True,
+            )
             return
 
         friended = await player1.is_friend(player2)
@@ -445,7 +452,10 @@ class Player(commands.GroupCog):
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
 
         blocked_relations = (
-            await Block.filter(player1=player).select_related("player1", "player2").all()
+            await Block.filter(player1=player)
+            .select_related("player1", "player2")
+            .order_by("date")
+            .all()
         )
 
         if not blocked_relations:
