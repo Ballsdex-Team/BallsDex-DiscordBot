@@ -197,7 +197,8 @@ class Info(commands.Cog):
             value=(
                 f"To enable the spawning of {settings.plural_collectible_name}, you "
                 "need to configure the bot. To do that, you need to run the command "
-                f"{config_channel}. You must have the `Manage Guild` permission to use this command."
+                f"{config_channel}. You must have the `Manage Guild` "
+                "permission to use this command."
             ),
             inline=False,
         )
