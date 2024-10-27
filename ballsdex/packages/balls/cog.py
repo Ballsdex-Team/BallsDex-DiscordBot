@@ -707,7 +707,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The countryball you want to dispose of."""
         if not ball:
             return
-        if ball.countryball.enabled or not ball.is_tradeable:
+        if not ball.countryball.enabled or not ball.is_tradeable:
             await interaction.response.send_message(
                 f"You cannot dispose of this {settings.collectible_name}.", ephemeral=True
             )
