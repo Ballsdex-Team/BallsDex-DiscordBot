@@ -437,10 +437,17 @@ class Trade(commands.GroupCog):
             return
 
         if trade:
+            if amount < 0:
+                await interaction.response.send_message(
+                    "You cannot add a number below 0 as the amount.", ephemeral=True
+                )
+                return
             if amount > await trader.fetch_player_coins():
                 await interaction.response.send_message(
-                    f"You don't have enough {settings.currency_name} to add that amount."
+                    f"You don't have enough {settings.currency_name} to add that amount.",
+                    ephemeral=True,
                 )
+                return
             else:
                 await trader.add_coins(amount)
                 await interaction.response.send_message(
