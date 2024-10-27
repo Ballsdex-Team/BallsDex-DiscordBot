@@ -715,7 +715,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer()
         coins = ball.countryball.coin_amount // 2
         view = ConfirmChoiceView(interaction)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"Are you sure you want to dispose of the {settings.collectible_name} "
             f"{ball.description(include_emoji=True, bot=self.bot)} "
             f"for {coins} {settings.currency_name}?",
