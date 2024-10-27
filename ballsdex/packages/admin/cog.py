@@ -1718,7 +1718,7 @@ class Admin(commands.GroupCog):
         )
         embed.add_field(
             name=f"Unique {settings.plural_collectible_name} caught ({days} days):",
-            value=len(set(total_user_balls)),
+            value=len(set([ball.countryball for ball in total_user_balls])),
         )
         embed.add_field(
             name=f"Total servers with {settings.plural_collectible_name} caught ({days} days):",
