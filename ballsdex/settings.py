@@ -137,6 +137,7 @@ def read_settings(path: "Path"):
     settings.max_favorites = content.get("max-favorites", 50)
 
     settings.rarities = content.get("rarities", {})
+    settings.currency_name = content["currency-name"]
     settings.max_attack_bonus = content.get("max-attack-bonus", 20)
     settings.max_health_bonus = content.get("max-health-bonus", 20)
     log.info("Settings loaded.")
