@@ -451,7 +451,7 @@ class Trade(commands.GroupCog):
             else:
                 await trader.add_coins(amount)
                 await interaction.response.send_message(
-                    f"Added {amount} {settings.currency_name} to your proposal."
+                    f"Added {amount} {settings.currency_name} to your proposal. "
                     f"Total in proposal: {trader.coins} {settings.currency_name}.",
                     ephemeral=True,
                 )
