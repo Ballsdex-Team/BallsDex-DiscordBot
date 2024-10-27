@@ -186,7 +186,9 @@ bot-name: BallsDex
 # this is /balls by default, but you can change it for /animals or /rocks for example
 players-group-cog-name: balls
 
+# currency name, coins by default
 currency-name: coins
+
 # maximum amount of favorites that are allowed
 max-favorites: 50
 
