@@ -122,10 +122,6 @@ class Trade(commands.GroupCog):
             )
             return None, None
 
-        if amount is not None and amount <= 0:
-            await interaction.response.send_message("The amount must be positive.", ephemeral=True)
-            return None, None
-
         return trade, trader
 
     @app_commands.command()
@@ -436,25 +432,24 @@ class Trade(commands.GroupCog):
         if not trade or not trader:
             return
 
-        if trade:
-            if amount < 0:
-                await interaction.response.send_message(
-                    "You cannot add a number below 0 as the amount.", ephemeral=True
-                )
-                return
-            if amount > await trader.fetch_player_coins():
-                await interaction.response.send_message(
-                    f"You don't have enough {settings.currency_name} to add that amount.",
-                    ephemeral=True,
-                )
-                return
-            else:
-                await trader.add_coins(amount)
-                await interaction.response.send_message(
-                    f"Added {amount} {settings.currency_name} to your proposal. "
-                    f"Total in proposal: {trader.coins} {settings.currency_name}.",
-                    ephemeral=True,
-                )
+        if amount < 1:
+            await interaction.response.send_message(
+                "`amount` must be superior or equal to 1.", ephemeral=True
+            )
+            return
+        if amount > await trader.fetch_player_coins():
+            await interaction.response.send_message(
+                f"You don't have enough {settings.currency_name} to add that amount.",
+                ephemeral=True,
+            )
+            return
+        else:
+            await trader.add_coins(amount)
+            await interaction.response.send_message(
+                f"Added {amount} {settings.currency_name} to your proposal. "
+                f"Total in proposal: {trader.coins} {settings.currency_name}.",
+                ephemeral=True,
+            )
 
     @coins.command(name="remove")
     async def coins_remove(self, interaction: discord.Interaction, amount: int):
@@ -465,17 +460,9 @@ class Trade(commands.GroupCog):
         if not trade or not trader:
             return
 
-        if trader.locked:
+        if amount < 1:
             await interaction.response.send_message(
-                "You have locked your proposal, it cannot be edited! "
-                "You can click the cancel button to stop the trade instead.",
-                ephemeral=True,
-            )
-            return
-
-        if amount <= 0:
-            await interaction.response.send_message(
-                "The amount to remove must be positive.", ephemeral=True
+                "`amount` must be superior or equal to 1.", ephemeral=True
             )
             return
         if trade and trader:
