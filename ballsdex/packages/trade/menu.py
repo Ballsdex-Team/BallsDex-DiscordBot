@@ -53,14 +53,15 @@ class TradeView(View):
                 "You have already locked your proposal!", ephemeral=True
             )
             return
+        await interaction.response.defer(thinking=True, ephemeral=True)
         await self.trade.lock(trader)
         if self.trade.trader1.locked and self.trade.trader2.locked:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "Your proposal has been locked. Now confirm again to end the trade.",
                 ephemeral=True,
             )
         else:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "Your proposal has been locked. "
                 "You can wait for the other user to lock their proposal.",
                 ephemeral=True,
@@ -95,7 +96,7 @@ class ConfirmView(View):
     def __init__(self, trade: TradeMenu):
         super().__init__(timeout=90)
         self.trade = trade
-        self.cooldown_duration = timedelta(seconds=15)
+        self.cooldown_duration = timedelta(seconds=5)
 
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
         try:
@@ -112,26 +113,6 @@ class ConfirmView(View):
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
     async def accept_button(self, interaction: discord.Interaction, button: Button):
-        if self.trade.lock_time:
-            time_since_lock = datetime.now() - self.trade.lock_time
-        else:
-            time_since_lock = self.cooldown_duration
-
-        if time_since_lock < self.cooldown_duration:
-            seconds = (self.cooldown_duration - time_since_lock).total_seconds()
-            remaining_time = format_dt(datetime.now() + timedelta(seconds=seconds), style="R")
-            message = (
-                f"You can accept the trade once the cooldown ends in {remaining_time}. "
-                "Use this time to review both your proposal and the other user's."
-            )
-
-            if interaction.response.is_done():
-                await interaction.followup.send(message, ephemeral=True)
-            else:
-                await interaction.response.send_message(message, ephemeral=True)
-
-            return
-
         trader = self.trade._get_trader(interaction.user)
         if trader.accepted:
             await interaction.response.send_message(
@@ -178,7 +159,6 @@ class TradeMenu:
         self.task: asyncio.Task | None = None
         self.current_view: TradeView | ConfirmView = TradeView(self)
         self.message: discord.Message
-        self.lock_time = None
 
     def _get_trader(self, user: discord.User | discord.Member) -> TradingUser:
         if user.id == self.trader1.user.id:
@@ -285,9 +265,21 @@ class TradeMenu:
             self.embed.description = (
                 "Both users locked their propositions! Now confirm to conclude this trade."
             )
-            self.lock_time = datetime.now()
+            self.embed.set_footer(
+                text=(
+                    "Please review the trade proposals. A 5-second cooldown is mandatory "
+                    "between locking and accepting this trade."
+                )
+            )
             self.current_view = ConfirmView(self)
+
+            self.current_view.accept_button.disabled = True
             await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+            await asyncio.sleep(5)
+            self.current_view.accept_button.disabled = False
+            await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+        else:
+            pass
 
     async def user_cancel(self, trader: TradingUser):
         """
