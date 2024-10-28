@@ -36,7 +36,7 @@ class Trade(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
-        self.trades = TTLCache(maxsize=999999, ttl=1800)
+        self.trades: TTLCache[int, dict[int, list[TradeMenu]]] = TTLCache(maxsize=999999, ttl=1800)
 
     bulk = app_commands.Group(name="bulk", description="Bulk Commands")
 
