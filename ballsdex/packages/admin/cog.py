@@ -1142,7 +1142,7 @@ class Admin(commands.GroupCog):
         percentage: int | None
             The percentage of countryballs to delete, if not all. Used for sanctions.
         """
-        player = await Player.get(discord_id=user.id)
+        player = await Player.get_or_none(discord_id=user.id)
         if not player:
             await interaction.response.send_message(
                 "The user you gave does not exist.", ephemeral=True
@@ -1718,7 +1718,7 @@ class Admin(commands.GroupCog):
         )
         embed.add_field(
             name=f"Unique {settings.plural_collectible_name} caught ({days} days):",
-            value=len(set(total_user_balls)),
+            value=len(set([ball.countryball for ball in total_user_balls])),
         )
         embed.add_field(
             name=f"Total servers with {settings.plural_collectible_name} caught ({days} days):",
