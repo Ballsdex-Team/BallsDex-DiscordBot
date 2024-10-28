@@ -1142,7 +1142,7 @@ class Admin(commands.GroupCog):
         percentage: int | None
             The percentage of countryballs to delete, if not all. Used for sanctions.
         """
-        player = await Player.get(discord_id=user.id)
+        player = await Player.get_or_none(discord_id=user.id)
         if not player:
             await interaction.response.send_message(
                 "The user you gave does not exist.", ephemeral=True
