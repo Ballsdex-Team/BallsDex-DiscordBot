@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
+from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
@@ -35,7 +36,7 @@ class Trade(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
-        self.trades: dict[int, dict[int, list[TradeMenu]]] = defaultdict(lambda: defaultdict(list))
+        self.trades: TTLCache[int, dict[int, list[TradeMenu]]] = TTLCache(maxsize=999999, ttl=1800)
 
     bulk = app_commands.Group(name="bulk", description="Bulk Commands")
 
@@ -70,7 +71,7 @@ class Trade(commands.GroupCog):
             raise TypeError("Missing interaction or channel")
 
         if guild.id not in self.trades:
-            return (None, None)
+            self.trades[guild.id] = defaultdict(list)
         if channel.id not in self.trades[guild.id]:
             return (None, None)
         to_remove: list[TradeMenu] = []
