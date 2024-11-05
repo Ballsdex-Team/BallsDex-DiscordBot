@@ -6,18 +6,19 @@ authors = ["laggron42 <laggron42@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12, <=3.13"
 
 # asyncio
-uvloop = { version = "^0.20.0", markers = "sys_platform != 'win32'" }
+uvloop = { version = "^0.21.0", markers = "sys_platform != 'win32'" }
 
 # discord
 "discord.py" = "^2.4.0"
+audioop-lts = {version = "^0.2.1", python = ">=3.13" }
 
 # fastapi
-fastapi = "^0.111.0"
-fastapi-admin = {git = "https://github.com/fastapi-admin/fastapi-admin", rev = "ebea3bf71689caa583fe55aa25db899cf8eeae31"}
-uvicorn = "^0.30.6"
+fastapi = "^0.115.4"
+fastapi-admin = {git = "https://github.com/Ballsdex-Team/fastapi-admin", branch = "ballsdex"}
+uvicorn = "^0.32.0"
 
 # database ORM
 tortoise-orm = {extras = ["asyncpg"], version = "^0.21.4"}
