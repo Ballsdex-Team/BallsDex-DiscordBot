@@ -163,7 +163,10 @@ class EconomyResource(Model):
 
 class Emoji(displays.Display):
     async def render(self, request: Request, value: Any):
-        return f'<img src="https://cdn.discordapp.com/emojis/{value}.png?size=40" title="ID: {value}" />'
+        return (
+            f'<img src="https://cdn.discordapp.com/emojis/{value}.png?size=40" '
+            f'title="ID: {value}" />'
+        )
 
 
 @app.register
