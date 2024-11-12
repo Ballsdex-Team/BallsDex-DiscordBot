@@ -366,6 +366,7 @@ class Trade(commands.GroupCog):
         trade_user: discord.User | None = None,
         days: Optional[int] = None,
         countryball: BallEnabledTransform | None = None,
+        special: SpecialEnabledTransform | None = None,
     ):
         """
         Show the history of your trades.
@@ -380,6 +381,8 @@ class Trade(commands.GroupCog):
             Retrieve trade history from last x days.
         countryball: BallEnabledTransform | None
             The countryball you want to filter the trade history by.
+        special: SpecialEnabledTransform | None
+            The special you want to filter the trade history by.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
@@ -407,9 +410,14 @@ class Trade(commands.GroupCog):
 
         if countryball:
             queryset = queryset.filter(Q(tradeobjects__ballinstance__ball=countryball)).distinct()
+        if special:
+            queryset = queryset.filter(Q(tradeobjects__ballinstance__special=special)).distinct()
 
         history = await queryset.order_by(sorting.value).prefetch_related(
-            "player1", "player2", "tradeobjects__ballinstance__ball"
+            "player1",
+            "player2",
+            "tradeobjects__ballinstance__ball",
+            "tradeobjects__ballinstance__special",
         )
 
         if not history:
