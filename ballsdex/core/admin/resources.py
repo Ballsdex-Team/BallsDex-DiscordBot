@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import Any, List
 
 from fastapi_admin.app import app
 from fastapi_admin.enums import Method
@@ -161,6 +161,14 @@ class EconomyResource(Model):
     ]
 
 
+class Emoji(displays.Display):
+    async def render(self, request: Request, value: Any):
+        return (
+            f'<img src="https://cdn.discordapp.com/emojis/{value}.png?size=40" '
+            f'title="ID: {value}" />'
+        )
+
+
 @app.register
 class BallResource(Model):
     label = "Ball"
@@ -196,7 +204,8 @@ class BallResource(Model):
         "tradeable",
         Field(
             name="emoji_id",
-            label="Emoji ID",
+            label="Emoji",
+            display=Emoji(),
         ),
         Field(
             name="wild_card",
