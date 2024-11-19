@@ -5,7 +5,7 @@ from datetime import datetime
 
 import discord
 
-from ballsdex.core.models import Ball, balls
+from ballsdex.core.models import Ball, Special, balls
 from ballsdex.packages.countryballs.components import CatchView
 from ballsdex.settings import settings
 
@@ -19,6 +19,10 @@ class CountryBall:
         self.message: discord.Message = discord.utils.MISSING
         self.catched = False
         self.time = datetime.now()
+        self.shiny: bool | None = None
+        self.special: Special | None = None
+        self.atk_bonus: int | None = None
+        self.hp_bonus: int | None = None
 
     @classmethod
     async def get_random(cls):
