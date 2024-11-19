@@ -354,6 +354,7 @@ class BlacklistedIDResource(Model):
     fields = [
         "discord_id",
         "reason",
+        "date",
     ]
 
 
@@ -380,4 +381,5 @@ class BlacklistedGuildIDResource(Model):
     fields = [
         "discord_id",
         "reason",
+        "date",
     ]
