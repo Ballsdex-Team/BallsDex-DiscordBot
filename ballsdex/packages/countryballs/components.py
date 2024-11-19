@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ui import Button, Modal, TextInput, View, button
-from prometheus_client import Counter
 from tortoise.exceptions import DoesNotExist
 from tortoise.timezone import now as datetime_now
 
+from ballsdex.core.metrics import caught_balls
 from ballsdex.core.models import BallInstance, GuildConfig, Player, specials
 from ballsdex.settings import settings
 
@@ -20,9 +20,6 @@ if TYPE_CHECKING:
     from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.countryballs.components")
-caught_balls = Counter(
-    "caught_cb", "Caught countryballs", ["country", "shiny", "special", "guild_size"]
-)
 
 
 class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name}!"):
