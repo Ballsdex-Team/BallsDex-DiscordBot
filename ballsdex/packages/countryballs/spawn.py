@@ -1,14 +1,19 @@
 import asyncio
 import logging
 import random
+from abc import abstractmethod
 from collections import deque, namedtuple
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import cast
+from typing import TYPE_CHECKING
 
 import discord
+from discord.utils import format_dt
 
-from ballsdex.packages.countryballs.countryball import CountryBall
+from ballsdex.settings import settings
+
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
@@ -17,11 +22,61 @@ SPAWN_CHANCE_RANGE = (40, 55)
 CachedMessage = namedtuple("CachedMessage", ["content", "author_id"])
 
 
+class BaseSpawnManager:
+    """
+    A class instancied on cog load that will include the logic determining when a countryball
+    should be spawned. You can implement your own version and configure it in config.yml.
+
+    Be careful with optimization and memory footprint, this will be called very often and should
+    not slow down the bot or cause memory leaks.
+    """
+
+    def __init__(self, bot: "BallsDexBot"):
+        self.bot = bot
+
+    @abstractmethod
+    async def handle_message(self, message: discord.Message) -> bool:
+        """
+        Handle a message event and determine if a countryball should be spawned next.
+
+        Parameters
+        ----------
+        message: discord.Message
+            The message that triggered the event
+
+        Returns
+        -------
+        bool
+            `True` if a countryball should be spawned, else `False`.
+
+            If a countryball should spawn, do not forget to cleanup induced context to avoid
+            infinite spawns.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def admin_explain(
+        self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild
+    ):
+        """
+        Invoked by "/admin cooldown", this function should provide insights of the cooldown
+        system for admins.
+
+        Parameters
+        ----------
+        interaction: discord.Interaction[BallsDexBot]
+            The interaction of the slash command
+        guild: discord.Guild
+            The guild that is targeted for the insights
+        """
+        raise NotImplementedError
+
+
 @dataclass
 class SpawnCooldown:
     """
-    Represents the spawn internal system per guild. Contains the counters that will determine
-    if a countryball should be spawned next or not.
+    Represents the default spawn internal system per guild. Contains the counters that will
+    determine if a countryball should be spawned next or not.
 
     Attributes
     ----------
@@ -83,15 +138,15 @@ class SpawnCooldown:
         return True
 
 
-@dataclass
-class SpawnManager:
-    cooldowns: dict[int, SpawnCooldown] = field(default_factory=dict)
-    cache: dict[int, int] = field(default_factory=dict)
+class SpawnManager(BaseSpawnManager):
+    def __init__(self, bot: "BallsDexBot"):
+        super().__init__(bot)
+        self.cooldowns: dict[int, SpawnCooldown] = {}
 
-    async def handle_message(self, message: discord.Message):
+    async def handle_message(self, message: discord.Message) -> bool:
         guild = message.guild
         if not guild:
-            return
+            return False
 
         cooldown = self.cooldowns.get(guild.id, None)
         if not cooldown:
@@ -101,7 +156,7 @@ class SpawnManager:
         delta = (message.created_at - cooldown.time).total_seconds()
         # change how the threshold varies according to the member count, while nuking farm servers
         if not guild.member_count:
-            return
+            return False
         elif guild.member_count < 5:
             multiplier = 0.1
         elif guild.member_count < 100:
@@ -114,26 +169,119 @@ class SpawnManager:
 
         # manager cannot be increased more than once per 5 seconds
         if not await cooldown.increase(message):
-            return
+            return False
 
         # normal increase, need to reach goal
         if cooldown.amount <= chance:
-            return
+            return False
 
         # at this point, the goal is reached
         if delta < 600:
             # wait for at least 10 minutes before spawning
-            return
+            return False
 
         # spawn countryball
         cooldown.reset(message.created_at)
-        await self.spawn_countryball(guild)
+        return True
 
-    async def spawn_countryball(self, guild: discord.Guild):
-        channel = guild.get_channel(self.cache[guild.id])
-        if not channel:
-            log.warning(f"Lost channel {self.cache[guild.id]} for guild {guild.name}.")
-            del self.cache[guild.id]
+    async def admin_explain(
+        self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild
+    ):
+        cooldown = self.cooldowns.get(guild.id)
+        if not cooldown:
+            await interaction.response.send_message(
+                "No spawn manager could be found for that guild. Spawn may have been disabled.",
+                ephemeral=True,
+            )
             return
-        ball = await CountryBall.get_random()
-        await ball.spawn(cast(discord.TextChannel, channel))
+
+        if not guild.member_count:
+            await interaction.response.send_message(
+                "`member_count` data not returned for this guild, spawn cannot work."
+            )
+            return
+
+        embed = discord.Embed()
+        embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else None)
+        embed.colour = discord.Colour.orange()
+
+        delta = (interaction.created_at - cooldown.time).total_seconds()
+        # change how the threshold varies according to the member count, while nuking farm servers
+        if guild.member_count < 5:
+            multiplier = 0.1
+            range = "1-4"
+        elif guild.member_count < 100:
+            multiplier = 0.8
+            range = "5-99"
+        elif guild.member_count < 1000:
+            multiplier = 0.5
+            range = "100-999"
+        else:
+            multiplier = 0.2
+            range = "1000+"
+
+        penalities: list[str] = []
+        if guild.member_count < 5 or guild.member_count > 1000:
+            penalities.append("Server has less than 5 or more than 1000 members")
+        if any(len(x.content) < 5 for x in cooldown.message_cache):
+            penalities.append("Some cached messages are less than 5 characters long")
+
+        authors_set = set(x.author_id for x in cooldown.message_cache)
+        low_chatters = len(authors_set) < 4
+        # check if one author has more than 40% of messages in cache
+        major_chatter = any(
+            (
+                len(list(filter(lambda x: x.author_id == author, cooldown.message_cache)))
+                / cooldown.message_cache.maxlen  # type: ignore
+                > 0.4
+            )
+            for author in authors_set
+        )
+        # this mess is needed since either conditions make up to a single penality
+        if low_chatters:
+            if not major_chatter:
+                penalities.append("Message cache has less than 4 chatters")
+            else:
+                penalities.append(
+                    "Message cache has less than 4 chatters **and** "
+                    "one user has more than 40% of messages within message cache"
+                )
+        elif major_chatter:
+            if not low_chatters:
+                penalities.append("One user has more than 40% of messages within cache")
+
+        penality_multiplier = 0.5 ** len(penalities)
+        if penalities:
+            embed.add_field(
+                name="\N{WARNING SIGN}\N{VARIATION SELECTOR-16} Penalities",
+                value="Each penality divides the progress by 2\n\n- " + "\n- ".join(penalities),
+            )
+
+        chance = cooldown.chance - multiplier * (delta // 60)
+
+        embed.description = (
+            f"Manager initiated **{format_dt(cooldown.time, style='R')}**\n"
+            f"Initial number of points to reach: **{cooldown.chance}**\n"
+            f"Message cache length: **{len(cooldown.message_cache)}**\n\n"
+            f"Time-based multiplier: **x{multiplier}** *({range} members)*\n"
+            "*This affects how much the number of points to reach reduces over time*\n"
+            f"Penality multiplier: **x{penality_multiplier}**\n"
+            "*This affects how much a message sent increases the number of points*\n\n"
+            f"__Current count: **{cooldown.amount}/{chance}**__\n\n"
+        )
+
+        informations: list[str] = []
+        if cooldown.lock.locked():
+            informations.append("The manager is currently on cooldown.")
+        if delta < 600:
+            informations.append(
+                f"The manager is less than 10 minutes old, {settings.plural_collectible_name} "
+                "cannot spawn at the moment."
+            )
+        if informations:
+            embed.add_field(
+                name="\N{INFORMATION SOURCE}\N{VARIATION SELECTOR-16} Informations",
+                value="- " + "\n- ".join(informations),
+            )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)

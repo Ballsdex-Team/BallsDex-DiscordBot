@@ -6,11 +6,11 @@ import random
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord.ui import Button, Modal, TextInput, View
-from prometheus_client import Counter
+from discord.ui import Button, Modal, TextInput, View, button
 from tortoise.exceptions import DoesNotExist
 from tortoise.timezone import now as datetime_now
 
+from ballsdex.core.metrics import caught_balls
 from ballsdex.core.models import BallInstance, GuildConfig, Player, specials
 from ballsdex.settings import settings
 
@@ -20,9 +20,6 @@ if TYPE_CHECKING:
     from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.countryballs.components")
-caught_balls = Counter(
-    "caught_cb", "Caught countryballs", ["country", "shiny", "special", "guild_size"]
-)
 
 
 class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name}!"):
@@ -32,7 +29,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         placeholder="Your guess",
     )
 
-    def __init__(self, ball: "CountryBall", button: CatchButton):
+    def __init__(self, ball: "CountryBall", button: Button):
         super().__init__()
         self.ball = ball
         self.button = button
@@ -116,14 +113,18 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         player, created = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
-        bonus_attack = random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
-        bonus_health = random.randint(-settings.max_health_bonus, settings.max_health_bonus)
-        shiny = random.randint(1, 2048) == 1
+        bonus_attack = self.ball.atk_bonus or random.randint(
+            -settings.max_attack_bonus, settings.max_attack_bonus
+        )
+        bonus_health = self.ball.hp_bonus or random.randint(
+            -settings.max_health_bonus, settings.max_health_bonus
+        )
+        shiny = self.ball.shiny or random.randint(1, 2048) == 1
 
         # check if we can spawn cards with a special background
-        special: "Special | None" = None
+        special: "Special | None" = None if shiny else self.ball.special
         population = [x for x in specials.values() if x.start_date <= datetime_now() <= x.end_date]
-        if not shiny and population:
+        if not special and not shiny and population:
             # Here we try to determine what should be the chance of having a common card
             # since the rarity field is a value between 0 and 1, 1 being no common
             # and 0 only common, we get the remaining value by doing (1-rarity)
@@ -167,32 +168,25 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         return ball, is_new
 
 
-class CatchButton(Button):
-    def __init__(self, ball: "CountryBall"):
-        super().__init__(style=discord.ButtonStyle.primary, label="Catch me!")
-        self.ball = ball
-
-    async def callback(self, interaction: discord.Interaction):
-        if self.ball.catched:
-            await interaction.response.send_message("I was caught already!", ephemeral=True)
-        else:
-            await interaction.response.send_modal(CountryballNamePrompt(self.ball, self))
-
-
 class CatchView(View):
     def __init__(self, ball: "CountryBall"):
         super().__init__()
         self.ball = ball
-        self.button = CatchButton(ball)
-        self.add_item(self.button)
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
 
     async def on_timeout(self):
-        self.button.disabled = True
+        self.catch_button.disabled = True
         if self.ball.message:
             try:
                 await self.ball.message.edit(view=self)
             except discord.HTTPException:
                 pass
+
+    @button(style=discord.ButtonStyle.primary, label="Catch me!")
+    async def catch_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        if self.ball.catched:
+            await interaction.response.send_message("I was caught already!", ephemeral=True)
+        else:
+            await interaction.response.send_modal(CountryballNamePrompt(self.ball, button))
