@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
+from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
@@ -35,7 +36,7 @@ class Trade(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
-        self.trades: dict[int, dict[int, list[TradeMenu]]] = defaultdict(lambda: defaultdict(list))
+        self.trades: TTLCache[int, dict[int, list[TradeMenu]]] = TTLCache(maxsize=999999, ttl=1800)
 
     bulk = app_commands.Group(name="bulk", description="Bulk Commands")
 
@@ -70,7 +71,7 @@ class Trade(commands.GroupCog):
             raise TypeError("Missing interaction or channel")
 
         if guild.id not in self.trades:
-            return (None, None)
+            self.trades[guild.id] = defaultdict(list)
         if channel.id not in self.trades[guild.id]:
             return (None, None)
         to_remove: list[TradeMenu] = []
@@ -120,6 +121,12 @@ class Trade(commands.GroupCog):
         player2, _ = await Player.get_or_create(discord_id=user.id)
         blocked = await player1.is_blocked(player2)
         if blocked:
+            await interaction.response.send_message(
+                "You cannot begin a trade with a user that you have blocked.", ephemeral=True
+            )
+            return
+        blocked2 = await player2.is_blocked(player1)
+        if blocked2:
             await interaction.response.send_message(
                 "You cannot begin a trade with a user that has blocked you.", ephemeral=True
             )
@@ -182,7 +189,11 @@ class Trade(commands.GroupCog):
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
         if countryball.favorite:
-            view = ConfirmChoiceView(interaction)
+            view = ConfirmChoiceView(
+                interaction,
+                accept_message=f"{settings.collectible_name.title()} added.",
+                cancel_message="This request has been cancelled.",
+            )
             await interaction.followup.send(
                 f"This {settings.collectible_name} is a favorite, "
                 "are you sure you want to trade it?",

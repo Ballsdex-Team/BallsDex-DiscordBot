@@ -123,15 +123,26 @@ class BallsDexBot(commands.AutoShardedBot):
     BallsDex Discord bot
     """
 
-    def __init__(self, command_prefix: PrefixType[BallsDexBot], dev: bool = False, **options):
+    def __init__(
+        self,
+        command_prefix: PrefixType[BallsDexBot],
+        disable_messsage_content: bool = False,
+        dev: bool = False,
+        **options,
+    ):
         # An explaination for the used intents
         # guilds: needed for basically anything, the bot needs to know what guilds it has
         # and accordingly enable automatic spawning in the enabled ones
         # guild_messages: spawning is based on messages sent, content is not necessary
         # emojis_and_stickers: DB holds emoji IDs for the balls which are fetched from 3 servers
         intents = discord.Intents(
-            guilds=True, guild_messages=True, emojis_and_stickers=True, message_content=True
+            guilds=True,
+            guild_messages=True,
+            emojis_and_stickers=True,
+            message_content=not disable_messsage_content,
         )
+        if disable_messsage_content:
+            log.warning("Message content disabled, this will make spam detection harder")
 
         if settings.prometheus_enabled:
             trace = aiohttp.TraceConfig()
@@ -482,8 +493,8 @@ class BallsDexBot(commands.AutoShardedBot):
         log.error("Unknown error in interaction", exc_info=error)
 
     async def on_error(self, event_method: str, /, *args, **kwargs):
-        formatted_args = ", ".join(args)
-        formatted_kwargs = " ".join(f"{x}={y}" for x, y in kwargs.items())
+        formatted_args = ", ".join((repr(x) for x in args))
+        formatted_kwargs = " ".join(f"{x}={y:r}" for x, y in kwargs.items())
         log.error(
             f"Error in event {event_method}. Args: {formatted_args}. Kwargs: {formatted_kwargs}",
             exc_info=True,

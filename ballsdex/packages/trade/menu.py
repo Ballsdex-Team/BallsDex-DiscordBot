@@ -11,6 +11,7 @@ from discord.utils import format_dt, utcnow
 
 from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
 from ballsdex.core.utils import menus
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
@@ -456,6 +457,23 @@ class CountryballsSelector(Pages):
                     f"{settings.collectible_name.title()} #{ball.pk:0X} is not tradeable.",
                     ephemeral=True,
                 )
+            if await ball.is_locked():
+                return await interaction.followup.send(
+                    f"{settings.collectible_name.title()} #{ball.pk:0X} is locked "
+                    "for trade and won't be added to the proposal.",
+                    ephemeral=True,
+                )
+            view = ConfirmChoiceView(interaction)
+            if ball.favorite:
+                await interaction.followup.send(
+                    f"One or more of the {settings.plural_collectible_name} is favorited, "
+                    "are you sure you want to add it to the trade?",
+                    view=view,
+                    ephemeral=True,
+                )
+                await view.wait()
+                if not view.value:
+                    return
             trader.proposal.append(ball)
             await ball.lock_for_trade()
         grammar = (
@@ -513,13 +531,15 @@ class TradeViewMenu(Pages):
         options: List[discord.SelectOption] = []
         for player in players:
             user_obj = player.user
+            plural_check = (
+                f"{settings.collectible_name}"
+                if len(player.proposal) == 1
+                else f"{settings.plural_collectible_name}"
+            )
             options.append(
                 discord.SelectOption(
                     label=f"{user_obj.display_name}",
-                    description=(
-                        f"ID: {user_obj.id} | {len(player.proposal)} "
-                        f"{settings.plural_collectible_name}"
-                    ),
+                    description=(f"ID: {user_obj.id} | {len(player.proposal)} {plural_check}"),
                     value=f"{user_obj.id}",
                 )
             )
@@ -529,6 +549,7 @@ class TradeViewMenu(Pages):
     async def select_player_menu(
         self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
     ):
+        await interaction.response.defer(thinking=True)
         player = await Player.get(discord_id=int(item.values[0]))
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
@@ -546,6 +567,5 @@ class TradeViewMenu(Pages):
                 ephemeral=True,
             )
 
-        await interaction.response.defer(thinking=True)
         paginator = CountryballsViewer(interaction, ball_instances)
         await paginator.start()

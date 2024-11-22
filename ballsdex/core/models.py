@@ -429,7 +429,7 @@ class Player(models.Model):
     friend_policy = fields.IntEnumField(
         FriendPolicy,
         description="How you want to handle friend requests",
-        default=MentionPolicy.ALLOW,
+        default=FriendPolicy.ALLOW,
     )
     balls: fields.BackwardFKRelation[BallInstance]
 
