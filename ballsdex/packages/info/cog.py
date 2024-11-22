@@ -15,6 +15,7 @@ from discord.ext import commands
 from ballsdex import __version__ as ballsdex_version
 from ballsdex.core.models import Ball
 from ballsdex.core.models import balls as countryballs
+from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.tortoise import row_count_estimate
 from ballsdex.settings import settings
 
@@ -114,9 +115,9 @@ class Info(commands.Cog):
             f"{' '.join(str(x) for x in balls)}\n"
             f"{settings.about_description}\n"
             f"*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\n\n"
-            f"**{balls_count:,}** {settings.collectible_name}s to collect\n"
+            f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
             f"**{players_count:,}** players that caught "
-            f"**{balls_instances_count:,}** {settings.collectible_name}s\n"
+            f"**{balls_instances_count:,}** {settings.plural_collectible_name}\n"
             f"**{len(self.bot.guilds):,}** servers playing\n\n"
             f"{dex_credits}\n\n"
             "Consider supporting El Laggron on "
@@ -159,6 +160,10 @@ class Info(commands.Cog):
                 content += f"{mention_app_command(app_command)}: {translated}\n"
             if not content:
                 continue
-            embed.add_field(name=cog.qualified_name, value=content, inline=False)
+            pages = pagify(content, page_length=1024)
+            for i, page in enumerate(pages):
+                embed.add_field(
+                    name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False
+                )
 
         await interaction.response.send_message(embed=embed)

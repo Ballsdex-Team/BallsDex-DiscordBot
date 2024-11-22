@@ -1,21 +1,34 @@
+from typing import Optional
+
 import discord
 from discord.ui import Button, View
 
 
 class ConfirmChoiceView(View):
-    def __init__(self, interaction: discord.Interaction):
+    def __init__(
+        self,
+        interaction: discord.Interaction,
+        user: Optional[discord.User] = None,
+        accept_message: str = "Confirmed",
+        cancel_message: str = "Cancelled",
+    ):
         super().__init__(timeout=90)
         self.value = None
         self.interaction = interaction
+        self.user = user or interaction.user
         self.interaction_response: discord.Interaction
+        self.accept_message = accept_message
+        self.cancel_message = cancel_message
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         self.interaction_response = interaction
-        if interaction.user != self.interaction.user:
+
+        if interaction.user != self.user:
             await interaction.response.send_message(
-                "Only the original author can use this.", ephemeral=True
+                "You cannot interact with this view.", ephemeral=True
             )
             return False
+
         if self.value is not None:
             await interaction.response.send_message(
                 "You've already made a choice.", ephemeral=True
@@ -37,9 +50,16 @@ class ConfirmChoiceView(View):
     async def confirm_button(self, interaction: discord.Interaction, button: Button):
         for item in self.children:
             item.disabled = True  # type: ignore
+
+        if interaction.message:
+            content = interaction.message.content or ""
+        else:
+            content = ""
+
         await interaction.response.edit_message(
-            content=interaction.message.content + "\nConfirmed", view=self  # type: ignore
+            content=f"{content}\n{self.accept_message}", view=self
         )
+
         self.value = True
         self.stop()
 
@@ -50,8 +70,15 @@ class ConfirmChoiceView(View):
     async def cancel_button(self, interaction: discord.Interaction, button: Button):
         for item in self.children:
             item.disabled = True  # type: ignore
+
+        if interaction.message:
+            content = interaction.message.content or ""
+        else:
+            content = ""
+
         await interaction.response.edit_message(
-            content=interaction.message.content + "\nCancelled", view=self  # type: ignore
+            content=f"{content}\n{self.cancel_message}", view=self
         )
+
         self.value = False
         self.stop()

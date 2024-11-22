@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
+from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 
+@app_commands.guild_only()
 class Trade(commands.GroupCog):
     """
     Trade countryballs with other players.
@@ -34,7 +36,7 @@ class Trade(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
-        self.trades: dict[int, dict[int, list[TradeMenu]]] = defaultdict(lambda: defaultdict(list))
+        self.trades: TTLCache[int, dict[int, list[TradeMenu]]] = TTLCache(maxsize=999999, ttl=1800)
 
     bulk = app_commands.Group(name="bulk", description="Bulk Commands")
 
@@ -69,7 +71,7 @@ class Trade(commands.GroupCog):
             raise TypeError("Missing interaction or channel")
 
         if guild.id not in self.trades:
-            return (None, None)
+            self.trades[guild.id] = defaultdict(list)
         if channel.id not in self.trades[guild.id]:
             return (None, None)
         to_remove: list[TradeMenu] = []
@@ -113,6 +115,20 @@ class Trade(commands.GroupCog):
         if user.id == interaction.user.id:
             await interaction.response.send_message(
                 "You cannot trade with yourself.", ephemeral=True
+            )
+            return
+        player1, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        player2, _ = await Player.get_or_create(discord_id=user.id)
+        blocked = await player1.is_blocked(player2)
+        if blocked:
+            await interaction.response.send_message(
+                "You cannot begin a trade with a user that you have blocked.", ephemeral=True
+            )
+            return
+        blocked2 = await player2.is_blocked(player1)
+        if blocked2:
+            await interaction.response.send_message(
+                "You cannot begin a trade with a user that has blocked you.", ephemeral=True
             )
             return
 
@@ -173,7 +189,11 @@ class Trade(commands.GroupCog):
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
         if countryball.favorite:
-            view = ConfirmChoiceView(interaction)
+            view = ConfirmChoiceView(
+                interaction,
+                accept_message=f"{settings.collectible_name.title()} added.",
+                cancel_message="This request has been cancelled.",
+            )
             await interaction.followup.send(
                 f"This {settings.collectible_name} is a favorite, "
                 "are you sure you want to trade it?",
@@ -258,29 +278,16 @@ class Trade(commands.GroupCog):
         balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
         if not balls:
             await interaction.followup.send(
-                f"No {settings.collectible_name}s found.", ephemeral=True
+                f"No {settings.plural_collectible_name} found.", ephemeral=True
             )
             return
-
-        # round balls to closest 25 for display purposes
         balls = [x for x in balls if x.is_tradeable]
-        balls = balls[: len(balls) - (len(balls) % 25)]
-
-        if len(balls) < 25:
-            await interaction.followup.send(
-                f"You have less than 25 {settings.collectible_name}s, "
-                "you can use the add command instead.",
-                ephemeral=True,
-            )
-            return
 
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(
-            content=f"Select the {settings.collectible_name}s you want to add to your proposal,"
-            " note that the display will wipe on pagination however "
-            f"the selected {settings.collectible_name}s will remain.\n"
-            f"{settings.collectible_name.title()}s were rounded down to closest 25 for "
-            "display purposes, final page may be missing entries."
+            content=f"Select the {settings.plural_collectible_name} you want to add "
+            "to your proposal, note that the display will wipe on pagination however "
+            f"the selected {settings.plural_collectible_name} will remain."
         )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})

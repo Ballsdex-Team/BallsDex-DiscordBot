@@ -123,15 +123,26 @@ class BallsDexBot(commands.AutoShardedBot):
     BallsDex Discord bot
     """
 
-    def __init__(self, command_prefix: PrefixType[BallsDexBot], dev: bool = False, **options):
+    def __init__(
+        self,
+        command_prefix: PrefixType[BallsDexBot],
+        disable_messsage_content: bool = False,
+        dev: bool = False,
+        **options,
+    ):
         # An explaination for the used intents
         # guilds: needed for basically anything, the bot needs to know what guilds it has
         # and accordingly enable automatic spawning in the enabled ones
         # guild_messages: spawning is based on messages sent, content is not necessary
         # emojis_and_stickers: DB holds emoji IDs for the balls which are fetched from 3 servers
         intents = discord.Intents(
-            guilds=True, guild_messages=True, emojis_and_stickers=True, message_content=True
+            guilds=True,
+            guild_messages=True,
+            emojis_and_stickers=True,
+            message_content=not disable_messsage_content,
         )
+        if disable_messsage_content:
+            log.warning("Message content disabled, this will make spam detection harder")
 
         if settings.prometheus_enabled:
             trace = aiohttp.TraceConfig()
@@ -221,7 +232,7 @@ class BallsDexBot(commands.AutoShardedBot):
             self.blacklist_guild.add(blacklisted_id.discord_id)
         table.add_row("Blacklisted guilds", str(len(self.blacklist_guild)))
 
-        log.info("Cache loaded, summary displayed below")
+        log.info("Cache loaded, summary displayed below:")
         console = Console()
         console.print(table)
 
@@ -283,8 +294,9 @@ class BallsDexBot(commands.AutoShardedBot):
             )
 
         await self.load_cache()
+        grammar = "" if len(self.blacklist) == 1 else "s"
         if self.blacklist:
-            log.info(f"{len(self.blacklist)} blacklisted users.")
+            log.info(f"{len(self.blacklist)} blacklisted user{grammar}.")
 
         log.info("Loading packages...")
         await self.add_cog(Core(self))
@@ -305,8 +317,9 @@ class BallsDexBot(commands.AutoShardedBot):
             log.info("No package loaded.")
 
         synced_commands = await self.tree.sync()
+        grammar = "" if synced_commands == 1 else "s"
         if synced_commands:
-            log.info(f"Synced {len(synced_commands)} commands.")
+            log.info(f"Synced {len(synced_commands)} command{grammar}.")
             try:
                 self.assign_ids_to_app_commands(synced_commands)
             except Exception:
@@ -320,7 +333,10 @@ class BallsDexBot(commands.AutoShardedBot):
                 if not guild:
                     continue
                 synced_commands = await self.tree.sync(guild=guild)
-                log.info(f"Synced {len(synced_commands)} admin commands for guild {guild.id}.")
+                grammar = "" if len(synced_commands) == 1 else "s"
+                log.info(
+                    f"Synced {len(synced_commands)} admin command{grammar} for guild {guild.id}."
+                )
 
         if settings.prometheus_enabled:
             try:
@@ -385,10 +401,6 @@ class BallsDexBot(commands.AutoShardedBot):
                     f"The bot is missing the permissions: `{missing_perms}`."
                     " Give the bot those permissions for the command to work as expected."
                 )
-                log.warning(
-                    f"Missing bot permissions for command {context.command.name}: {missing_perms}",
-                    exc_info=exception,
-                )
                 return
 
             if isinstance(exception, commands.MissingPermissions):
@@ -429,11 +441,6 @@ class BallsDexBot(commands.AutoShardedBot):
                 await send(
                     f"The bot is missing the permissions: `{missing_perms}`."
                     " Give the bot those permissions for the command to work as expected."
-                )
-                command_name = getattr(interaction.command, "name", "unknown")
-                log.warning(
-                    f"Missing bot permissions for command {command_name}: {missing_perms}",
-                    exc_info=error,
                 )
                 return
 
@@ -486,8 +493,8 @@ class BallsDexBot(commands.AutoShardedBot):
         log.error("Unknown error in interaction", exc_info=error)
 
     async def on_error(self, event_method: str, /, *args, **kwargs):
-        formatted_args = ", ".join(args)
-        formatted_kwargs = " ".join(f"{x}={y}" for x, y in kwargs.items())
+        formatted_args = ", ".join((repr(x) for x in args))
+        formatted_kwargs = " ".join(f"{x}={y:r}" for x, y in kwargs.items())
         log.error(
             f"Error in event {event_method}. Args: {formatted_args}. Kwargs: {formatted_kwargs}",
             exc_info=True,
