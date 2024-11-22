@@ -6,12 +6,16 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from aiohttp import web
-from prometheus_client import CONTENT_TYPE_LATEST, Gauge, Histogram, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.core.metrics")
+
+caught_balls = Counter(
+    "caught_cb", "Caught countryballs", ["country", "shiny", "special", "guild_size"]
+)
 
 
 class PrometheusServer:
