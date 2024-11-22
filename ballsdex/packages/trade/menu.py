@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
@@ -96,7 +96,7 @@ class ConfirmView(View):
     def __init__(self, trade: TradeMenu):
         super().__init__(timeout=90)
         self.trade = trade
-        self.cooldown_duration = timedelta(seconds=5)
+        self.cooldown_duration = timedelta(seconds=10)
 
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
         try:
@@ -114,6 +114,16 @@ class ConfirmView(View):
     )
     async def accept_button(self, interaction: discord.Interaction, button: Button):
         trader = self.trade._get_trader(interaction.user)
+        elapsed = datetime.now(timezone.utc) - self.trade.cooldown_start_time
+        if elapsed < self.cooldown_duration:
+            remaining_time = datetime.now(timezone.utc) + (self.cooldown_duration - elapsed)
+            remaining = format_dt(remaining_time, style="R")
+            await interaction.response.send_message(
+                f"This trade can only be approved {remaining}, please use this "
+                "time to double check the items to prevent any unwanted trades.",
+                ephemeral=True,
+            )
+            return
         if trader.accepted:
             await interaction.response.send_message(
                 "You have already accepted this trade.", ephemeral=True
@@ -159,6 +169,7 @@ class TradeMenu:
         self.task: asyncio.Task | None = None
         self.current_view: TradeView | ConfirmView = TradeView(self)
         self.message: discord.Message
+        self.cooldown_start_time: datetime | None = None
 
     def _get_trader(self, user: discord.User | discord.Member) -> TradingUser:
         if user.id == self.trader1.user.id:
@@ -265,21 +276,9 @@ class TradeMenu:
             self.embed.description = (
                 "Both users locked their propositions! Now confirm to conclude this trade."
             )
-            self.embed.set_footer(
-                text=(
-                    "Please review the trade proposals. A 5-second cooldown is mandatory "
-                    "between locking and accepting this trade."
-                )
-            )
+            self.cooldown_start_time = datetime.now(timezone.utc)
             self.current_view = ConfirmView(self)
-
-            self.current_view.accept_button.disabled = True
             await self.message.edit(content=None, embed=self.embed, view=self.current_view)
-            await asyncio.sleep(5)
-            self.current_view.accept_button.disabled = False
-            await self.message.edit(content=None, embed=self.embed, view=self.current_view)
-        else:
-            pass
 
     async def user_cancel(self, trader: TradingUser):
         """
