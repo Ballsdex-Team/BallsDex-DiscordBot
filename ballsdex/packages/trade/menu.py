@@ -114,6 +114,9 @@ class ConfirmView(View):
     )
     async def accept_button(self, interaction: discord.Interaction, button: Button):
         trader = self.trade._get_trader(interaction.user)
+        if self.trade.cooldown_start_time is None:
+            return
+
         elapsed = datetime.now(timezone.utc) - self.trade.cooldown_start_time
         if elapsed < self.cooldown_duration:
             remaining_time = datetime.now(timezone.utc) + (self.cooldown_duration - elapsed)
