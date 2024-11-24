@@ -165,7 +165,7 @@ class SpawnManager(BaseSpawnManager):
             time_multiplier = 0.5
         else:
             time_multiplier = 0.2
-            
+
         # manager cannot be increased more than once per 10 seconds
         if not await cooldown.increase(message):
             return False
