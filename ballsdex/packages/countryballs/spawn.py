@@ -175,7 +175,7 @@ class SpawnManager(BaseSpawnManager):
             return False
 
         # at this point, the goal is reached
-        if delta < 600:
+        if delta_t < 600:
             # wait for at least 10 minutes before spawning
             return False
 
@@ -256,17 +256,17 @@ class SpawnManager(BaseSpawnManager):
                 value="Each penality divides the progress by 2\n\n- " + "\n- ".join(penalities),
             )
 
-        chance = cooldown.chance - multiplier * (delta // 60)
+        chance = cooldown.threshold - multiplier * (delta // 60)
 
         embed.description = (
             f"Manager initiated **{format_dt(cooldown.time, style='R')}**\n"
-            f"Initial number of points to reach: **{cooldown.chance}**\n"
+            f"Initial number of points to reach: **{cooldown.threshold}**\n"
             f"Message cache length: **{len(cooldown.message_cache)}**\n\n"
             f"Time-based multiplier: **x{multiplier}** *({range} members)*\n"
             "*This affects how much the number of points to reach reduces over time*\n"
             f"Penality multiplier: **x{penality_multiplier}**\n"
             "*This affects how much a message sent increases the number of points*\n\n"
-            f"__Current count: **{cooldown.amount}/{chance}**__\n\n"
+            f"__Current count: **{cooldown.amount}/{threshold}**__\n\n"
         )
 
         informations: list[str] = []
