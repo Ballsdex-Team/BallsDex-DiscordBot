@@ -86,7 +86,8 @@ class SpawnCooldown:
         A number starting at 0, incrementing with the messages until reaching `threshold`. At this
         point, a ball will be spawned next.
     threshold: int
-        The number `scaled_message_count` has to reach for spawn. Determined randomly with `SPAWN_CHANCE_RANGE`
+        The number `scaled_message_count` has to reach for spawn.
+        Determined randomly with `SPAWN_CHANCE_RANGE`
     lock: asyncio.Lock
         Used to ratelimit messages and ignore fast spam
     message_cache: ~collections.deque[CachedMessage]
