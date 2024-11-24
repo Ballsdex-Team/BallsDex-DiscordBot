@@ -1148,7 +1148,7 @@ class Admin(commands.GroupCog):
                 "The user you gave does not exist.", ephemeral=True
             )
             return
-        if percentage and not 0 < percentage <= 101:
+        if percentage and not 0 < percentage <= 100:
             await interaction.response.send_message(
                 "The percentage must be between 1 and 100.", ephemeral=True
             )
