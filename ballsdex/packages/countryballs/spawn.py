@@ -266,7 +266,7 @@ class SpawnManager(BaseSpawnManager):
             "*This affects how much the number of points to reach reduces over time*\n"
             f"Penality multiplier: **x{penality_multiplier}**\n"
             "*This affects how much a message sent increases the number of points*\n\n"
-            f"__Current count: **{cooldown.amount}/{threshold}**__\n\n"
+            f"__Current count: **{cooldown.threshold}/{chance}**__\n\n"
         )
 
         informations: list[str] = []
