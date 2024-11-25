@@ -185,8 +185,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
             .annotate(
                 searchable=RawSQL(
                     "to_hex(ballinstance.id) || ' ' || ballinstance__ball.country || "
-                    "' ' || ballinstance__ball.catch_names || "
-                    " ' ' || ballinstance__ball.translations",
+                    "' ' || ballinstance__ball.catch_names"
                 )
             )
             .filter(searchable__icontains=value.replace(".", ""))
