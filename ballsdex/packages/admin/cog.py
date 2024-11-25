@@ -1039,7 +1039,11 @@ class Admin(commands.GroupCog):
     @balls.command(name="reset")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_reset(
-        self, interaction: discord.Interaction, user: discord.User, percentage: int | None = None
+        self,
+        interaction: discord.Interaction,
+        user: discord.User,
+        percentage: int | None = None,
+        hard: bool = False,
     ):
         """
         Reset a player's countryballs.
@@ -1050,6 +1054,8 @@ class Admin(commands.GroupCog):
             The user you want to reset the countryballs of.
         percentage: int | None
             The percentage of countryballs to delete, if not all. Used for sanctions.
+        hard: bool
+            If true, the countryballs are deleted permanently. Otherwise, they are soft deleted.
         """
         player = await Player.get_or_none(discord_id=user.id)
         if not player:
@@ -1085,23 +1091,27 @@ class Admin(commands.GroupCog):
         if not view.value:
             return
         if percentage:
-            balls = await BallInstance.filter(
-                player=player
-            )  # TODO: Do we delete perm or soft delete here?
+            balls = await BallInstance.filter(player=player)
             to_delete = random.sample(balls, int(len(balls) * (percentage / 100)))
             for ball in to_delete:
-                await ball.delete()
+                if hard:
+                    await ball.delete()
+                else:
+                    ball.deleted = True
+                    await ball.save()
             count = len(to_delete)
         else:
-            count = await BallInstance.filter(
-                player=player
-            ).delete()  # TODO: Do we delete perm or soft delete here?
+            if hard:
+                count = await BallInstance.filter(player=player).delete()
+            else:
+                count = await BallInstance.filter(player=player).update(deleted=True)
         await interaction.followup.send(
-            f"{count} {settings.plural_collectible_name} from {user} have been deleted.",
+            f"{count} {settings.plural_collectible_name} from {user} have been "
+            f"{'soft ' if not hard else ''}deleted.",
             ephemeral=True,
         )
         await log_action(
-            f"{interaction.user} deleted {percentage or 100}% of "
+            f"{interaction.user} {'soft ' if not hard else ''}deleted {percentage or 100}% of "
             f"{player}'s {settings.plural_collectible_name}.",
             self.bot,
         )
