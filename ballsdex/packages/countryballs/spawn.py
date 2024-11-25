@@ -81,12 +81,13 @@ class SpawnCooldown:
     Attributes
     ----------
     time: datetime
-        Time when the object was initialized. Block spawning when it's been less than two minutes
-    amount: float
-        A number starting at 0, incrementing with the messages until reaching `chance`. At this
+        Time when the object was initialized. Block spawning when it's been less than ten minutes
+    scaled_message_count: float
+        A number starting at 0, incrementing with the messages until reaching `threshold`. At this
         point, a ball will be spawned next.
-    chance: int
-        The number `amount` has to reach for spawn. Determined randomly with `SPAWN_CHANCE_RANGE`
+    threshold: int
+        The number `scaled_message_count` has to reach for spawn.
+        Determined randomly with `SPAWN_CHANCE_RANGE`
     lock: asyncio.Lock
         Used to ratelimit messages and ignore fast spam
     message_cache: ~collections.deque[CachedMessage]
@@ -96,14 +97,14 @@ class SpawnCooldown:
 
     time: datetime
     # initialize partially started, to reduce the dead time after starting the bot
-    amount: float = field(default=SPAWN_CHANCE_RANGE[0] // 2)
-    chance: int = field(default_factory=lambda: random.randint(*SPAWN_CHANCE_RANGE))
+    scaled_message_count: float = field(default=SPAWN_CHANCE_RANGE[0] // 2)
+    threshold: int = field(default_factory=lambda: random.randint(*SPAWN_CHANCE_RANGE))
     lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
     message_cache: deque[CachedMessage] = field(default_factory=lambda: deque(maxlen=100))
 
     def reset(self, time: datetime):
-        self.amount = 1.0
-        self.chance = random.randint(*SPAWN_CHANCE_RANGE)
+        self.scaled_message_count = 1.0
+        self.threshold = random.randint(*SPAWN_CHANCE_RANGE)
         try:
             self.lock.release()
         except RuntimeError:  # lock is not acquired
@@ -122,18 +123,18 @@ class SpawnCooldown:
             return False
 
         async with self.lock:
-            amount = 1
+            message_multiplier = 1
             if message.guild.member_count < 5 or message.guild.member_count > 1000:  # type: ignore
-                amount /= 2
+                message_multiplier /= 2
             if message._state.intents.message_content and len(message.content) < 5:
-                amount /= 2
+                message_multiplier /= 2
             if len(set(x.author_id for x in self.message_cache)) < 4 or (
                 len(list(filter(lambda x: x.author_id == message.author.id, self.message_cache)))
                 / self.message_cache.maxlen  # type: ignore
                 > 0.4
             ):
-                amount /= 2
-            self.amount += amount
+                message_multiplier /= 2
+            self.scaled_message_count += message_multiplier
             await asyncio.sleep(10)
         return True
 
@@ -153,30 +154,29 @@ class SpawnManager(BaseSpawnManager):
             cooldown = SpawnCooldown(message.created_at)
             self.cooldowns[guild.id] = cooldown
 
-        delta = (message.created_at - cooldown.time).total_seconds()
+        delta_t = (message.created_at - cooldown.time).total_seconds()
         # change how the threshold varies according to the member count, while nuking farm servers
         if not guild.member_count:
             return False
         elif guild.member_count < 5:
-            multiplier = 0.1
+            time_multiplier = 0.1
         elif guild.member_count < 100:
-            multiplier = 0.8
+            time_multiplier = 0.8
         elif guild.member_count < 1000:
-            multiplier = 0.5
+            time_multiplier = 0.5
         else:
-            multiplier = 0.2
-        chance = cooldown.chance - multiplier * (delta // 60)
+            time_multiplier = 0.2
 
-        # manager cannot be increased more than once per 5 seconds
+        # manager cannot be increased more than once per 10 seconds
         if not await cooldown.increase(message):
             return False
 
         # normal increase, need to reach goal
-        if cooldown.amount <= chance:
+        if cooldown.scaled_message_count + time_multiplier * (delta_t // 60) <= cooldown.threshold:
             return False
 
         # at this point, the goal is reached
-        if delta < 600:
+        if delta_t < 600:
             # wait for at least 10 minutes before spawning
             return False
 
@@ -257,17 +257,17 @@ class SpawnManager(BaseSpawnManager):
                 value="Each penality divides the progress by 2\n\n- " + "\n- ".join(penalities),
             )
 
-        chance = cooldown.chance - multiplier * (delta // 60)
+        chance = cooldown.threshold - multiplier * (delta // 60)
 
         embed.description = (
             f"Manager initiated **{format_dt(cooldown.time, style='R')}**\n"
-            f"Initial number of points to reach: **{cooldown.chance}**\n"
+            f"Initial number of points to reach: **{cooldown.threshold}**\n"
             f"Message cache length: **{len(cooldown.message_cache)}**\n\n"
             f"Time-based multiplier: **x{multiplier}** *({range} members)*\n"
             "*This affects how much the number of points to reach reduces over time*\n"
             f"Penality multiplier: **x{penality_multiplier}**\n"
             "*This affects how much a message sent increases the number of points*\n\n"
-            f"__Current count: **{cooldown.amount}/{chance}**__\n\n"
+            f"__Current count: **{cooldown.threshold}/{chance}**__\n\n"
         )
 
         informations: list[str] = []
