@@ -235,13 +235,13 @@ owners:
 
 # list of packages that will be loaded
 packages:
-  - admin
-  - balls
-  - config
-  - countryballs
-  - info
-  - players
-  - trade
+  - ballsdex.packages.admin
+  - ballsdex.packages.balls
+  - ballsdex.packages.config
+  - ballsdex.packages.countryballs
+  - ballsdex.packages.info
+  - ballsdex.packages.players
+  - ballsdex.packages.trade
 
 # prometheus metrics collection, leave disabled if you don't know what this is
 prometheus:
@@ -317,13 +317,13 @@ plural-collectible-name: countryballs
         content += """
 # list of packages that will be loaded
 packages:
-  - admin
-  - balls
-  - config
-  - countryballs
-  - info
-  - players
-  - trade
+  - ballsdex.packages.admin
+  - ballsdex.packages.balls
+  - ballsdex.packages.config
+  - ballsdex.packages.countryballs
+  - ballsdex.packages.info
+  - ballsdex.packages.players
+  - ballsdex.packages.trade
 """
 
     if add_spawn_manager:

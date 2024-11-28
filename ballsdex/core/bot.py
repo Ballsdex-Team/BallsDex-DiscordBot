@@ -303,12 +303,14 @@ class BallsDexBot(commands.AutoShardedBot):
 
         loaded_packages = []
         for package in settings.packages:
+            package_name = package.split(".")[-1]
+
             try:
-                await self.load_extension("ballsdex.packages." + package)
+                await self.load_extension(package)
             except Exception:
-                log.error(f"Failed to load package {package}", exc_info=True)
+                log.error(f"Failed to load package {package_name}", exc_info=True)
             else:
-                loaded_packages.append(package)
+                loaded_packages.append(package_name)
         if loaded_packages:
             log.info(f"Packages loaded: {', '.join(loaded_packages)}")
         else:
