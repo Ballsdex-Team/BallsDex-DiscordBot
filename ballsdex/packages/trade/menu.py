@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
@@ -53,14 +53,15 @@ class TradeView(View):
                 "You have already locked your proposal!", ephemeral=True
             )
             return
+        await interaction.response.defer(thinking=True, ephemeral=True)
         await self.trade.lock(trader)
         if self.trade.trader1.locked and self.trade.trader2.locked:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "Your proposal has been locked. Now confirm again to end the trade.",
                 ephemeral=True,
             )
         else:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "Your proposal has been locked. "
                 "You can wait for the other user to lock their proposal.",
                 ephemeral=True,
@@ -95,6 +96,7 @@ class ConfirmView(View):
     def __init__(self, trade: TradeMenu):
         super().__init__(timeout=90)
         self.trade = trade
+        self.cooldown_duration = timedelta(seconds=10)
 
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
         try:
@@ -112,6 +114,19 @@ class ConfirmView(View):
     )
     async def accept_button(self, interaction: discord.Interaction, button: Button):
         trader = self.trade._get_trader(interaction.user)
+        if self.trade.cooldown_start_time is None:
+            return
+
+        elapsed = datetime.now(timezone.utc) - self.trade.cooldown_start_time
+        if elapsed < self.cooldown_duration:
+            remaining_time = datetime.now(timezone.utc) + (self.cooldown_duration - elapsed)
+            remaining = format_dt(remaining_time, style="R")
+            await interaction.response.send_message(
+                f"This trade can only be approved {remaining}, please use this "
+                "time to double check the items to prevent any unwanted trades.",
+                ephemeral=True,
+            )
+            return
         if trader.accepted:
             await interaction.response.send_message(
                 "You have already accepted this trade.", ephemeral=True
@@ -157,6 +172,7 @@ class TradeMenu:
         self.task: asyncio.Task | None = None
         self.current_view: TradeView | ConfirmView = TradeView(self)
         self.message: discord.Message
+        self.cooldown_start_time: datetime | None = None
 
     def _get_trader(self, user: discord.User | discord.Member) -> TradingUser:
         if user.id == self.trader1.user.id:
@@ -263,6 +279,7 @@ class TradeMenu:
             self.embed.description = (
                 "Both users locked their propositions! Now confirm to conclude this trade."
             )
+            self.cooldown_start_time = datetime.now(timezone.utc)
             self.current_view = ConfirmView(self)
             await self.message.edit(content=None, embed=self.embed, view=self.current_view)
 

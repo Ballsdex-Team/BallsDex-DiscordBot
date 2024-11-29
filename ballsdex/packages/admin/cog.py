@@ -186,7 +186,7 @@ class Admin(commands.GroupCog):
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def cooldown(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         guild_id: str | None = None,
     ):
         """
@@ -207,7 +207,7 @@ class Admin(commands.GroupCog):
                 return
         else:
             guild = interaction.guild
-        if not guild or not guild.member_count:
+        if not guild:
             await interaction.response.send_message(
                 "The given guild could not be found.", ephemeral=True
             )
@@ -216,98 +216,7 @@ class Admin(commands.GroupCog):
         spawn_manager = cast(
             "CountryBallsSpawner", self.bot.get_cog("CountryBallsSpawner")
         ).spawn_manager
-        cooldown = spawn_manager.cooldowns.get(guild.id)
-        if not cooldown:
-            await interaction.response.send_message(
-                "No spawn manager could be found for that guild. Spawn may have been disabled.",
-                ephemeral=True,
-            )
-            return
-
-        embed = discord.Embed()
-        embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else None)
-        embed.colour = discord.Colour.orange()
-
-        delta = (interaction.created_at - cooldown.time).total_seconds()
-        # change how the threshold varies according to the member count, while nuking farm servers
-        if guild.member_count < 5:
-            multiplier = 0.1
-            range = "1-4"
-        elif guild.member_count < 100:
-            multiplier = 0.8
-            range = "5-99"
-        elif guild.member_count < 1000:
-            multiplier = 0.5
-            range = "100-999"
-        else:
-            multiplier = 0.2
-            range = "1000+"
-
-        penalities: list[str] = []
-        if guild.member_count < 5 or guild.member_count > 1000:
-            penalities.append("Server has less than 5 or more than 1000 members")
-        if any(len(x.content) < 5 for x in cooldown.message_cache):
-            penalities.append("Some cached messages are less than 5 characters long")
-
-        authors_set = set(x.author_id for x in cooldown.message_cache)
-        low_chatters = len(authors_set) < 4
-        # check if one author has more than 40% of messages in cache
-        major_chatter = any(
-            (
-                len(list(filter(lambda x: x.author_id == author, cooldown.message_cache)))
-                / cooldown.message_cache.maxlen  # type: ignore
-                > 0.4
-            )
-            for author in authors_set
-        )
-        # this mess is needed since either conditions make up to a single penality
-        if low_chatters:
-            if not major_chatter:
-                penalities.append("Message cache has less than 4 chatters")
-            else:
-                penalities.append(
-                    "Message cache has less than 4 chatters **and** "
-                    "one user has more than 40% of messages within message cache"
-                )
-        elif major_chatter:
-            if not low_chatters:
-                penalities.append("One user has more than 40% of messages within cache")
-
-        penality_multiplier = 0.5 ** len(penalities)
-        if penalities:
-            embed.add_field(
-                name="\N{WARNING SIGN}\N{VARIATION SELECTOR-16} Penalities",
-                value="Each penality divides the progress by 2\n\n- " + "\n- ".join(penalities),
-            )
-
-        chance = cooldown.chance - multiplier * (delta // 60)
-
-        embed.description = (
-            f"Manager initiated **{format_dt(cooldown.time, style='R')}**\n"
-            f"Initial number of points to reach: **{cooldown.chance}**\n"
-            f"Message cache length: **{len(cooldown.message_cache)}**\n\n"
-            f"Time-based multiplier: **x{multiplier}** *({range} members)*\n"
-            "*This affects how much the number of points to reach reduces over time*\n"
-            f"Penality multiplier: **x{penality_multiplier}**\n"
-            "*This affects how much a message sent increases the number of points*\n\n"
-            f"__Current count: **{cooldown.amount}/{chance}**__\n\n"
-        )
-
-        informations: list[str] = []
-        if cooldown.lock.locked():
-            informations.append("The manager is currently on cooldown.")
-        if delta < 600:
-            informations.append(
-                f"The manager is less than 10 minutes old, {settings.plural_collectible_name} "
-                "cannot spawn at the moment."
-            )
-        if informations:
-            embed.add_field(
-                name="\N{INFORMATION SOURCE}\N{VARIATION SELECTOR-16} Informations",
-                value="- " + "\n- ".join(informations),
-            )
-
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await spawn_manager.admin_explain(interaction, guild)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)

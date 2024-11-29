@@ -12,7 +12,7 @@
         "players-group-cog-name",
         "admin-command",
         "prometheus",
-        "owners",
+        "owners"
     ],
     "properties": {
         "discord-token": {
