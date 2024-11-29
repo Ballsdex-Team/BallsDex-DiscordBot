@@ -493,8 +493,8 @@ class BallsDexBot(commands.AutoShardedBot):
         log.error("Unknown error in interaction", exc_info=error)
 
     async def on_error(self, event_method: str, /, *args, **kwargs):
-        formatted_args = ", ".join(args)
-        formatted_kwargs = " ".join(f"{x}={y}" for x, y in kwargs.items())
+        formatted_args = ", ".join((repr(x) for x in args))
+        formatted_kwargs = " ".join(f"{x}={y:r}" for x, y in kwargs.items())
         log.error(
             f"Error in event {event_method}. Args: {formatted_args}. Kwargs: {formatted_kwargs}",
             exc_info=True,

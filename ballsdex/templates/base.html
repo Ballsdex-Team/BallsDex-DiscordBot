@@ -31,12 +31,87 @@
             gtag('config', 'G-T7MFB9RV5E');
         </script>
     {% endblock %}
+    <style>
+        .theme-toggle {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(10%);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 5px 10px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-toggle label {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .theme-toggle input[type="checkbox"] {
+            width: 40px;
+            height: 20px;
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: #ddd;
+            outline: none;
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .theme-toggle input[type="checkbox"]:checked {
+            background-color: #4caf50;
+        }
+
+        .theme-toggle input[type="checkbox"]::before {
+            content: '';
+            width: 16px;
+            height: 16px;
+            background-color: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle input[type="checkbox"]:checked::before {
+            transform: translateX(20px);
+        }
+    </style>
     <title>{{ title }}</title>
 </head>
 {% block outer_body %}
     <body>
-    {% block body %}
-    {% endblock %}
+        <div class="theme-toggle">
+            <label for="themeSwitch">🌙</label>
+            <input class="form-check-input" type="checkbox" id="themeSwitch">
+            <label for="themeSwitch">☀️</label>
+        </div>
+        
+        {% block body %}
+        {% endblock %}
+        
+        <script>
+            const themeSwitch = document.getElementById('themeSwitch');
+            const body = document.body;
+
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            body.setAttribute('data-bs-theme', savedTheme);
+            themeSwitch.checked = savedTheme === 'light';
+
+            themeSwitch.addEventListener('change', () => {
+                const newTheme = themeSwitch.checked ? 'light' : 'dark';
+                body.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+        </script>
     </body>
 {% endblock %}
 </html>
