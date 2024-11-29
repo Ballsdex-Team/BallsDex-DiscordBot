@@ -381,12 +381,13 @@ class Player(commands.GroupCog):
         if blocked:
             await interaction.followup.send("You have already blocked this user.", ephemeral=True)
             return
-        if self.active_friend_requests[(player1.discord_id, player2.discord_id)]:
-            await interaction.followup.send(
-                "You cannot block a user to whom you have sent an active friend request.",
-                ephemeral=True,
-            )
-            return
+        if (player1.discord_id, player2.discord_id) in self.active_friend_requests:
+            if self.active_friend_requests[(player1.discord_id, player2.discord_id)]:
+                await interaction.followup.send(
+                    "You cannot block a user to whom you have sent an active friend request.",
+                    ephemeral=True,
+                )
+                return
 
         friended = await player1.is_friend(player2)
         if friended:
