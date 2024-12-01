@@ -262,7 +262,8 @@ class TradeMenu:
 
         fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
         self.embed.description = f"**{reason}**"
-        await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+        if getattr(self, "message", None):
+            await self.message.edit(content=None, embed=self.embed, view=self.current_view)
 
     async def lock(self, trader: TradingUser):
         """
