@@ -85,6 +85,12 @@ class GuildConfig(models.Model):
 class Regime(models.Model):
     name = fields.CharField(max_length=64)
     background = fields.CharField(max_length=200, description="1428x2000 PNG image")
+    template = fields.CharField(
+        max_length=64,
+        null=True,
+        default=None,
+        help="Key to a custom template definition in the templates.yml file.",
+    )
 
     def __str__(self):
         return self.name
@@ -106,12 +112,18 @@ class Special(models.Model):
         null=True,
         default=None,
     )
-    start_date = fields.DatetimeField()
-    end_date = fields.DatetimeField()
+    start_date = fields.DatetimeField(null=True, default=None)
+    end_date = fields.DatetimeField(null=True, default=None)
     rarity = fields.FloatField(
         description="Value between 0 and 1, chances of using this special background."
     )
     background = fields.CharField(max_length=200, description="1428x2000 PNG image", null=True)
+    template = fields.CharField(
+        max_length=64,
+        null=True,
+        default=None,
+        help="Key to a custom template definition in the templates.yml file.",
+    )
     emoji = fields.CharField(
         max_length=20,
         description="Either a unicode character or a discord emoji ID",
@@ -205,7 +217,6 @@ class BallInstance(models.Model):
     server_id = fields.BigIntField(
         description="Discord server ID where this ball was caught", null=True
     )
-    shiny = fields.BooleanField(default=False)
     special: fields.ForeignKeyRelation[Special] | None = fields.ForeignKeyField(
         "models.Special", null=True, default=None, on_delete=fields.SET_NULL
     )
@@ -266,8 +277,6 @@ class BallInstance(models.Model):
             emotes += "🔒"
         if self.favorite and not is_trade:
             emotes += "❤️"
-        if self.shiny:
-            emotes += "✨"
         if emotes:
             emotes += " "
         if self.specialcard:
