@@ -303,7 +303,7 @@ class BallsDexBot(commands.AutoShardedBot):
 
         loaded_packages = []
         for package in settings.packages:
-            package_name = package.split(".")[-1]
+            package_name = package.replace("ballsdex.packages.", "")
 
             try:
                 await self.load_extension(package)
@@ -327,7 +327,7 @@ class BallsDexBot(commands.AutoShardedBot):
         else:
             log.info("No command to sync.")
 
-        if "admin" in settings.packages:
+        if "ballsdex.packages.admin" in settings.packages:
             for guild_id in settings.admin_guild_ids:
                 guild = self.get_guild(guild_id)
                 if not guild:

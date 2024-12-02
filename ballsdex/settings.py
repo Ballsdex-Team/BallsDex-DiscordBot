@@ -143,7 +143,15 @@ def read_settings(path: "Path"):
     settings.max_attack_bonus = content.get("max-attack-bonus", 20)
     settings.max_health_bonus = content.get("max-health-bonus", 20)
 
-    settings.packages = content["packages"] or []
+    settings.packages = content.get("packages") or [
+        "ballsdex.packages.admin",
+        "ballsdex.packages.balls",
+        "ballsdex.packages.config",
+        "ballsdex.packages.countryballs",
+        "ballsdex.packages.info",
+        "ballsdex.packages.players",
+        "ballsdex.packages.trade",
+    ]
 
     settings.spawn_manager = content.get(
         "spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager"
@@ -263,7 +271,7 @@ def update_settings(path: "Path"):
     add_max_attack = "max-attack-bonus" not in content
     add_max_health = "max-health-bonus" not in content
     add_plural_collectible = "plural-collectible-name" not in content
-    add_packages = "packages" not in content
+    add_packages = "packages:" not in content
     add_spawn_manager = "spawn-manager" not in content
 
     for line in content.splitlines():
