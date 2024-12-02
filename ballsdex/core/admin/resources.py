@@ -267,7 +267,6 @@ class BallInstanceResource(Model):
         ),
         filters.ForeignKey(model=Ball, name="ball", label="Ball"),
         filters.ForeignKey(model=Special, name="special", label="Special"),
-        filters.Date(name="catch_date", label="Catch date"),
         filters.Boolean(name="favorite", label="Favorite"),
         filters.Search(
             name="player__discord_id",
