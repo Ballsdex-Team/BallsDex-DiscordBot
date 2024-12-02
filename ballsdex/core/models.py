@@ -85,12 +85,6 @@ class GuildConfig(models.Model):
 class Regime(models.Model):
     name = fields.CharField(max_length=64)
     background = fields.CharField(max_length=200, description="1428x2000 PNG image")
-    template = fields.CharField(
-        max_length=64,
-        null=True,
-        default=None,
-        help="Key to a custom template definition in the templates.yml file.",
-    )
 
     def __str__(self):
         return self.name
@@ -118,12 +112,6 @@ class Special(models.Model):
         description="Value between 0 and 1, chances of using this special background."
     )
     background = fields.CharField(max_length=200, description="1428x2000 PNG image", null=True)
-    template = fields.CharField(
-        max_length=64,
-        null=True,
-        default=None,
-        help="Key to a custom template definition in the templates.yml file.",
-    )
     emoji = fields.CharField(
         max_length=20,
         description="Either a unicode character or a discord emoji ID",
