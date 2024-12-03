@@ -46,8 +46,6 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
 
-PACKAGES = ["config", "players", "countryballs", "info", "admin", "trade", "balls"]
-
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
     return ctx.bot.is_owner(ctx.author)
@@ -304,13 +302,15 @@ class BallsDexBot(commands.AutoShardedBot):
             await self.add_cog(Dev())
 
         loaded_packages = []
-        for package in PACKAGES:
+        for package in settings.packages:
+            package_name = package.replace("ballsdex.packages.", "")
+
             try:
-                await self.load_extension("ballsdex.packages." + package)
+                await self.load_extension(package)
             except Exception:
-                log.error(f"Failed to load package {package}", exc_info=True)
+                log.error(f"Failed to load package {package_name}", exc_info=True)
             else:
-                loaded_packages.append(package)
+                loaded_packages.append(package_name)
         if loaded_packages:
             log.info(f"Packages loaded: {', '.join(loaded_packages)}")
         else:
@@ -327,7 +327,7 @@ class BallsDexBot(commands.AutoShardedBot):
         else:
             log.info("No command to sync.")
 
-        if "admin" in PACKAGES:
+        if "ballsdex.packages.admin" in settings.packages:
             for guild_id in settings.admin_guild_ids:
                 guild = self.get_guild(guild_id)
                 if not guild:
