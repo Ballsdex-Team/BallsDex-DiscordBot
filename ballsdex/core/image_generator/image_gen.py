@@ -30,10 +30,7 @@ def draw_card(ball_instance: "BallInstance"):
     ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
 
-    if ball_instance.shiny:
-        image = Image.open(str(SOURCES_PATH / "shiny.png"))
-        ball_health = (255, 255, 255, 255)
-    elif special_image := ball_instance.special_card:
+    if special_image := ball_instance.special_card:
         image = Image.open("." + special_image)
     else:
         image = Image.open("." + ball.cached_regime.background)
