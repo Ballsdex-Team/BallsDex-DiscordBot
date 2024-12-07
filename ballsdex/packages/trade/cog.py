@@ -12,6 +12,7 @@ from tortoise.expressions import Q
 from ballsdex.core.models import BallInstance, Player
 from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.enums import SortingChoices
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
@@ -240,6 +241,7 @@ class Trade(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
+        sort: SortingChoices | None = None,
         shiny: bool | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -275,7 +277,28 @@ class Trade(commands.GroupCog):
         if special:
             filters["special"] = special
         filters["player__discord_id"] = interaction.user.id
-        balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
+        if sort:
+            if sort == SortingChoices.duplicates:
+                balls = await BallInstance.filter(**filters)
+                count = defaultdict(int)
+                for ball in balls:
+                    count[ball.countryball.pk] += 1
+                balls.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
+            elif sort == SortingChoices.stats_bonus:
+                balls = await BallInstance.filter(**filters)
+                balls.sort(key=lambda x: x.health_bonus + x.attack_bonus, reverse=True)
+            elif sort == SortingChoices.health or sort == SortingChoices.attack:
+                balls = await BallInstance.filter(**filters)
+                balls.sort(key=lambda x: getattr(x, sort.value), reverse=True)
+            elif sort == SortingChoices.total_stats:
+                balls = await BallInstance.filter(**filters)
+                balls.sort(key=lambda x: x.health + x.attack, reverse=True)
+            elif sort == SortingChoices.rarity:
+                balls = await BallInstance.filter(**filters).order_by(sort.value, "ball__country")
+            else:
+                balls = await BallInstance.filter(**filters).order_by(sort.value)
+        else:
+            balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
         if not balls:
             await interaction.followup.send(
                 f"No {settings.plural_collectible_name} found.", ephemeral=True

@@ -1,4 +1,3 @@
-import enum
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
@@ -11,6 +10,7 @@ from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.enums import SortingChoices
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
@@ -97,23 +97,6 @@ class DonationRequest(View):
             view=self,
         )
         await self.countryball.unlock()
-
-
-class SortingChoices(enum.Enum):
-    alphabetic = "ball__country"
-    catch_date = "-catch_date"
-    rarity = "ball__rarity"
-    special = "special__id"
-    health = "health"
-    attack = "attack"
-    health_bonus = "-health_bonus"
-    attack_bonus = "-attack_bonus"
-    stats_bonus = "stats"
-    total_stats = "total_stats"
-
-    # manual sorts are not sorted by SQL queries but by our code
-    # this may be do-able with SQL still, but I don't have much experience ngl
-    duplicates = "manualsort-duplicates"
 
 
 class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
