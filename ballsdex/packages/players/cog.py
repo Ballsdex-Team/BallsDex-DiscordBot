@@ -193,8 +193,12 @@ class Player(commands.GroupCog):
         await view.wait()
         if view.value is None or not view.value:
             return
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        await player.delete()
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        balls = await BallInstance.filter(player__discord_id=interaction.user.id)
+        for ball in balls:
+            ball.deleted = True
+            await ball.save()
+        await interaction.followup.send("Your player data has been deleted.", ephemeral=True)
 
     @friend.command(name="add")
     async def friend_add(self, interaction: discord.Interaction, user: discord.User):
@@ -631,7 +635,7 @@ async def get_items_csv(player: PlayerModel) -> BytesIO:
     """
     Get a CSV file with all items of the player.
     """
-    balls = await BallInstance.filter(player=player).prefetch_related(
+    balls = await BallInstance.filter(player=player, deleted=True).prefetch_related(
         "ball", "trade_player", "special"
     )
     txt = (

@@ -268,6 +268,7 @@ class Trade(commands.GroupCog):
             )
             return
         filters = {}
+        filters["deleted"] = False
         if countryball:
             filters["ball"] = countryball
         if shiny:
