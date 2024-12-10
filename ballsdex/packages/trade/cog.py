@@ -13,6 +13,7 @@ from ballsdex.core.models import BallInstance, Player
 from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.sorting import SortingChoices, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
@@ -240,6 +241,7 @@ class Trade(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
+        sort: SortingChoices | None = None,
         shiny: bool | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -250,6 +252,8 @@ class Trade(commands.GroupCog):
         ----------
         countryball: Ball
             The countryball you would like to filter the results to
+        sort: SortingChoices
+            Choose how countryballs are sorted. Can be used to show duplicates.
         shiny: bool
             Filter the results to shinies
         special: Special
@@ -267,15 +271,16 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        filters = {}
+        query = BallInstance.filter(player__discord_id=interaction.user.id)
         if countryball:
-            filters["ball"] = countryball
+            query = query.filter(ball=countryball)
         if shiny:
-            filters["shiny"] = shiny
+            query = query.filter(shiny=shiny)
         if special:
-            filters["special"] = special
-        filters["player__discord_id"] = interaction.user.id
-        balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
+            query = query.filter(special=special)
+        if sort:
+            query = sort_balls(sort, query)
+        balls = await query
         if not balls:
             await interaction.followup.send(
                 f"No {settings.plural_collectible_name} found.", ephemeral=True
