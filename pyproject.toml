@@ -6,7 +6,7 @@ authors = ["laggron42 <laggron42@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.12, <=3.13"
+python = ">=3.12, <3.14"
 
 # asyncio
 uvloop = { version = "^0.21.0", markers = "sys_platform != 'win32'" }
@@ -21,7 +21,7 @@ fastapi-admin = {git = "https://github.com/Ballsdex-Team/fastapi-admin", branch 
 uvicorn = "^0.32.0"
 
 # database ORM
-tortoise-orm = {extras = ["asyncpg"], version = "^0.21.4"}
+tortoise-orm = {extras = ["asyncpg"], version = "^0.22.2"}
 tortoise-cli = "^0.1.2"
 
 # misc
