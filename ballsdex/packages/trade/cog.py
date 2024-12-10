@@ -167,7 +167,6 @@ class Trade(commands.GroupCog):
         interaction: discord.Interaction,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Add a countryball to the ongoing trade.
@@ -178,8 +177,6 @@ class Trade(commands.GroupCog):
             The countryball you want to add to your proposal
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -242,7 +239,6 @@ class Trade(commands.GroupCog):
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
         sort: SortingChoices | None = None,
-        shiny: bool | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
         """
@@ -254,8 +250,6 @@ class Trade(commands.GroupCog):
             The countryball you would like to filter the results to
         sort: SortingChoices
             Choose how countryballs are sorted. Can be used to show duplicates.
-        shiny: bool
-            Filter the results to shinies
         special: Special
             Filter the results to a special event
         """
@@ -274,8 +268,6 @@ class Trade(commands.GroupCog):
         query = BallInstance.filter(player__discord_id=interaction.user.id)
         if countryball:
             query = query.filter(ball=countryball)
-        if shiny:
-            query = query.filter(shiny=shiny)
         if special:
             query = query.filter(special=special)
         if sort:
@@ -301,7 +293,6 @@ class Trade(commands.GroupCog):
         interaction: discord.Interaction,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Remove a countryball from what you proposed in the ongoing trade.
@@ -312,8 +303,6 @@ class Trade(commands.GroupCog):
             The countryball you want to remove from your proposal
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
