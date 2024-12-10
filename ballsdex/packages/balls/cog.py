@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from typing import TYPE_CHECKING
 
 import discord
@@ -10,8 +9,8 @@ from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.enums import SortingChoices
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
+from ballsdex.core.utils.sorting import SortingChoices, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
@@ -162,33 +161,15 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         await player.fetch_related("balls")
-        filters = {"ball__id": countryball.pk} if countryball else {}
+        query = player.balls.all()
+        if countryball:
+            query = query.filter(ball__id=countryball.pk)
         if special:
-            filters["special"] = special
+            query = query.filter(special=special)
         if sort:
-            if sort == SortingChoices.duplicates:
-                countryballs = await player.balls.filter(**filters)
-                count = defaultdict(int)
-                for ball in countryballs:
-                    count[ball.countryball.pk] += 1
-                countryballs.sort(key=lambda m: (-count[m.countryball.pk], m.countryball.pk))
-            elif sort == SortingChoices.stats_bonus:
-                countryballs = await player.balls.filter(**filters)
-                countryballs.sort(key=lambda x: x.health_bonus + x.attack_bonus, reverse=True)
-            elif sort == SortingChoices.health or sort == SortingChoices.attack:
-                countryballs = await player.balls.filter(**filters)
-                countryballs.sort(key=lambda x: getattr(x, sort.value), reverse=True)
-            elif sort == SortingChoices.total_stats:
-                countryballs = await player.balls.filter(**filters)
-                countryballs.sort(key=lambda x: x.health + x.attack, reverse=True)
-            elif sort == SortingChoices.rarity:
-                countryballs = await player.balls.filter(**filters).order_by(
-                    sort.value, "ball__country"
-                )
-            else:
-                countryballs = await player.balls.filter(**filters).order_by(sort.value)
+            countryballs = await sort_balls(sort, query)
         else:
-            countryballs = await player.balls.filter(**filters).order_by("-favorite", "-shiny")
+            countryballs = await query.order_by("-favorite", "-shiny")
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
