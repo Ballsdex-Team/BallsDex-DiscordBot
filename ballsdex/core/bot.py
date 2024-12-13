@@ -318,7 +318,7 @@ class BallsDexBot(commands.AutoShardedBot):
 
         synced_cogs = await self.tree.sync()
         grammar = "" if synced_cogs == 1 else "s"
-        if synced_commands:
+        if synced_cogs:
             log.info(f"Synced {len(synced_cogs)} cog{grammar}.")
             try:
                 self.assign_ids_to_app_commands(synced_cogs)
