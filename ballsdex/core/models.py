@@ -285,6 +285,8 @@ class BallInstance(models.Model):
             emotes += " "
         if self.specialcard:
             emotes += self.special_emoji(bot)
+        if self.extra_data.get("card"):  # type: ignore
+            emotes += "🖼️"
         country = (
             self.countryball.country
             if isinstance(self.countryball, Ball)
