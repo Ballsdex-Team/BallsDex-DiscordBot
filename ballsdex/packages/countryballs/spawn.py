@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import deque, namedtuple
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import discord
 from discord.utils import format_dt
@@ -35,7 +35,7 @@ class BaseSpawnManager:
         self.bot = bot
 
     @abstractmethod
-    async def handle_message(self, message: discord.Message) -> bool:
+    async def handle_message(self, message: discord.Message) -> bool | tuple[Literal[True], str]:
         """
         Handle a message event and determine if a countryball should be spawned next.
 
@@ -46,11 +46,15 @@ class BaseSpawnManager:
 
         Returns
         -------
-        bool
+        bool | tuple[Literal[True], str]
             `True` if a countryball should be spawned, else `False`.
 
             If a countryball should spawn, do not forget to cleanup induced context to avoid
             infinite spawns.
+
+            You can also return a tuple (True, msg) to indicate which spawn algorithm has been
+            used, which is then reported to prometheus. This is useful for comparing the results
+            of your algorithms using A/B testing.
         """
         raise NotImplementedError
 

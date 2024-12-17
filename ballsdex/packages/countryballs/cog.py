@@ -55,14 +55,23 @@ class CountryBallsSpawner(commands.Cog):
         if guild.id in self.bot.blacklist_guild:
             return
 
-        if await self.spawn_manager.handle_message(message):
-            channel = guild.get_channel(self.cache[guild.id])
-            if not channel:
-                log.warning(f"Lost channel {self.cache[guild.id]} for guild {guild.name}.")
-                del self.cache[guild.id]
-                return
-            ball = await CountryBall.get_random()
-            await ball.spawn(cast(discord.TextChannel, channel))
+        result = await self.spawn_manager.handle_message(message)
+        if result is False:
+            return
+
+        if isinstance(result, tuple):
+            result, algo = result
+        else:
+            algo = settings.spawn_manager
+
+        channel = guild.get_channel(self.cache[guild.id])
+        if not channel:
+            log.warning(f"Lost channel {self.cache[guild.id]} for guild {guild.name}.")
+            del self.cache[guild.id]
+            return
+        ball = await CountryBall.get_random()
+        ball.algo = algo
+        await ball.spawn(cast(discord.TextChannel, channel))
 
     @commands.Cog.listener()
     async def on_ballsdex_settings_change(

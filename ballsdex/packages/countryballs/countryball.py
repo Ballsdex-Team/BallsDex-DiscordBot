@@ -16,6 +16,7 @@ class CountryBall:
     def __init__(self, model: Ball):
         self.name = model.country
         self.model = model
+        self.algo: str | None = None
         self.message: discord.Message = discord.utils.MISSING
         self.catched = False
         self.time = datetime.now()
