@@ -266,13 +266,6 @@ class TradeMenu:
 
         for countryball in self.trader1.proposal + self.trader2.proposal:
             await countryball.unlock()
-
-        self.trader1.player.coins += self.trader1.coins
-        self.trader2.player.coins += self.trader2.coins
-
-        await self.trader1.player.save()
-        await self.trader2.player.save()
-
         self.current_view.stop()
         for item in self.current_view.children:
             item.disabled = True  # type: ignore

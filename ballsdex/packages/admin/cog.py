@@ -1665,7 +1665,7 @@ class Admin(commands.GroupCog):
 
         assert user
         player, created = await Player.get_or_create(discord_id=user.id)
-        await player.add_coins(amount)
+        await player.remove_coins(amount)
         await interaction.response.send_message(
             f"Removed {amount} {settings.currency_name} to {user.name}.", ephemeral=True
         )
