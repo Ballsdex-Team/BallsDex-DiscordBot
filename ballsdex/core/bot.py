@@ -93,16 +93,20 @@ async def on_request_end(
 
 
 class CommandTree(app_commands.CommandTree):
+    disable_time_check: bool = False
+
     async def interaction_check(self, interaction: discord.Interaction[BallsDexBot], /) -> bool:
         # checking if the moment we receive this interaction isn't too late already
         # there is a 3 seconds limit for initial response, taking a little margin into account
         # https://discord.com/developers/docs/interactions/receiving-and-responding#responding-to-an-interaction
-        delta = datetime.now(tz=interaction.created_at.tzinfo) - interaction.created_at
-        if delta.total_seconds() >= 2.8:
-            log.warning(
-                f"Skipping interaction {interaction.id}, running {delta.total_seconds()}s late."
-            )
-            return False
+        if not self.disable_time_check:
+            delta = datetime.now(tz=interaction.created_at.tzinfo) - interaction.created_at
+            if delta.total_seconds() >= 2.8:
+                log.warning(
+                    f"Skipping interaction {interaction.id}, "
+                    f"running {delta.total_seconds()}s late."
+                )
+                return False
 
         bot = interaction.client
         if not bot.is_ready():
@@ -125,6 +129,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self,
         command_prefix: PrefixType[BallsDexBot],
         disable_messsage_content: bool = False,
+        disable_time_check: bool = False,
         dev: bool = False,
         **options,
     ):
@@ -149,6 +154,7 @@ class BallsDexBot(commands.AutoShardedBot):
             options["http_trace"] = trace
 
         super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
+        self.tree.disable_time_check = disable_time_check  # type: ignore
 
         self.dev = dev
         self.prometheus_server: PrometheusServer | None = None

@@ -41,6 +41,7 @@ class CLIFlags(argparse.Namespace):
     reset_settings: bool
     disable_rich: bool
     disable_message_content: bool
+    disable_time_check: bool
     debug: bool
     dev: bool
 
@@ -63,6 +64,12 @@ def parse_cli_flags(arguments: list[str]) -> CLIFlags:
         "--disable-message-content",
         action="store_true",
         help="Disable usage of message content intent through the bot",
+    )
+    parser.add_argument(
+        "--disable-time-check",
+        action="store_true",
+        help="Disables the 3 seconds delay check on interactions. Use this if you're getting a "
+        "lot of skipped interactions warning due to your PC's internal clock.",
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
@@ -295,6 +302,7 @@ def main():
             dev=cli_flags.dev,  # type: ignore
             shard_count=settings.shard_count,
             disable_messsage_content=cli_flags.disable_message_content,
+            disable_time_check=cli_flags.disable_time_check,
         )
 
         exc_handler = functools.partial(global_exception_handler, bot)
