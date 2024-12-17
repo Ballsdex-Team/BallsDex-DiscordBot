@@ -7,7 +7,7 @@ DONATION_POLICY_MAP = {
     4: "Accept donations from friends only",
 }
 
-PRIVATE_POLICY_MAP = {1: "Public", 2: "Private", 3: "Mutual Servers"}
+PRIVATE_POLICY_MAP = {1: "Public", 2: "Private", 3: "Mutual Servers", 4: "Friends"}
 
 
 class RarityTiers(enum.Enum):
