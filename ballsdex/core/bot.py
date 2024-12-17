@@ -46,8 +46,6 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
 
-PACKAGES = ["config", "players", "countryballs", "info", "admin", "trade", "balls"]
-
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
     return ctx.bot.is_owner(ctx.author)
@@ -95,16 +93,20 @@ async def on_request_end(
 
 
 class CommandTree(app_commands.CommandTree):
+    disable_time_check: bool = False
+
     async def interaction_check(self, interaction: discord.Interaction[BallsDexBot], /) -> bool:
         # checking if the moment we receive this interaction isn't too late already
         # there is a 3 seconds limit for initial response, taking a little margin into account
         # https://discord.com/developers/docs/interactions/receiving-and-responding#responding-to-an-interaction
-        delta = datetime.now(tz=interaction.created_at.tzinfo) - interaction.created_at
-        if delta.total_seconds() >= 2.8:
-            log.warning(
-                f"Skipping interaction {interaction.id}, running {delta.total_seconds()}s late."
-            )
-            return False
+        if not self.disable_time_check:
+            delta = datetime.now(tz=interaction.created_at.tzinfo) - interaction.created_at
+            if delta.total_seconds() >= 2.8:
+                log.warning(
+                    f"Skipping interaction {interaction.id}, "
+                    f"running {delta.total_seconds()}s late."
+                )
+                return False
 
         bot = interaction.client
         if not bot.is_ready():
@@ -127,6 +129,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self,
         command_prefix: PrefixType[BallsDexBot],
         disable_messsage_content: bool = False,
+        disable_time_check: bool = False,
         dev: bool = False,
         **options,
     ):
@@ -151,6 +154,7 @@ class BallsDexBot(commands.AutoShardedBot):
             options["http_trace"] = trace
 
         super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
+        self.tree.disable_time_check = disable_time_check  # type: ignore
 
         self.dev = dev
         self.prometheus_server: PrometheusServer | None = None
@@ -304,13 +308,15 @@ class BallsDexBot(commands.AutoShardedBot):
             await self.add_cog(Dev())
 
         loaded_packages = []
-        for package in PACKAGES:
+        for package in settings.packages:
+            package_name = package.replace("ballsdex.packages.", "")
+
             try:
-                await self.load_extension("ballsdex.packages." + package)
+                await self.load_extension(package)
             except Exception:
-                log.error(f"Failed to load package {package}", exc_info=True)
+                log.error(f"Failed to load package {package_name}", exc_info=True)
             else:
-                loaded_packages.append(package)
+                loaded_packages.append(package_name)
         if loaded_packages:
             log.info(f"Packages loaded: {', '.join(loaded_packages)}")
         else:
@@ -327,7 +333,7 @@ class BallsDexBot(commands.AutoShardedBot):
         else:
             log.info("No command to sync.")
 
-        if "admin" in PACKAGES:
+        if "ballsdex.packages.admin" in settings.packages:
             for guild_id in settings.admin_guild_ids:
                 guild = self.get_guild(guild_id)
                 if not guild:
@@ -493,8 +499,8 @@ class BallsDexBot(commands.AutoShardedBot):
         log.error("Unknown error in interaction", exc_info=error)
 
     async def on_error(self, event_method: str, /, *args, **kwargs):
-        formatted_args = ", ".join(args)
-        formatted_kwargs = " ".join(f"{x}={y}" for x, y in kwargs.items())
+        formatted_args = ", ".join((repr(x) for x in args))
+        formatted_kwargs = " ".join(f"{x}={y:r}" for x, y in kwargs.items())
         log.error(
             f"Error in event {event_method}. Args: {formatted_args}. Kwargs: {formatted_kwargs}",
             exc_info=True,

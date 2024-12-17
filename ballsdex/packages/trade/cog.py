@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
+from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
@@ -12,6 +13,7 @@ from ballsdex.core.models import BallInstance, Player
 from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.sorting import SortingChoices, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
@@ -35,7 +37,7 @@ class Trade(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
-        self.trades: dict[int, dict[int, list[TradeMenu]]] = defaultdict(lambda: defaultdict(list))
+        self.trades: TTLCache[int, dict[int, list[TradeMenu]]] = TTLCache(maxsize=999999, ttl=1800)
 
     coins = app_commands.Group(
         name=settings.currency_name, description="Trade with other players using coins"
@@ -73,7 +75,7 @@ class Trade(commands.GroupCog):
             raise TypeError("Missing interaction or channel")
 
         if guild.id not in self.trades:
-            return (None, None)
+            self.trades[guild.id] = defaultdict(list)
         if channel.id not in self.trades[guild.id]:
             return (None, None)
         to_remove: list[TradeMenu] = []
@@ -260,6 +262,7 @@ class Trade(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
+        sort: SortingChoices | None = None,
         shiny: bool | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -270,6 +273,8 @@ class Trade(commands.GroupCog):
         ----------
         countryball: Ball
             The countryball you would like to filter the results to
+        sort: SortingChoices
+            Choose how countryballs are sorted. Can be used to show duplicates.
         shiny: bool
             Filter the results to shinies
         special: Special
@@ -287,15 +292,16 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        filters = {}
+        query = BallInstance.filter(player__discord_id=interaction.user.id)
         if countryball:
-            filters["ball"] = countryball
+            query = query.filter(ball=countryball)
         if shiny:
-            filters["shiny"] = shiny
+            query = query.filter(shiny=shiny)
         if special:
-            filters["special"] = special
-        filters["player__discord_id"] = interaction.user.id
-        balls = await BallInstance.filter(**filters).prefetch_related("ball", "player")
+            query = query.filter(special=special)
+        if sort:
+            query = sort_balls(sort, query)
+        balls = await query
         if not balls:
             await interaction.followup.send(
                 f"No {settings.plural_collectible_name} found.", ephemeral=True
@@ -375,6 +381,7 @@ class Trade(commands.GroupCog):
         trade_user: discord.User | None = None,
         days: Optional[int] = None,
         countryball: BallEnabledTransform | None = None,
+        special: SpecialEnabledTransform | None = None,
     ):
         """
         Show the history of your trades.
@@ -389,6 +396,8 @@ class Trade(commands.GroupCog):
             Retrieve trade history from last x days.
         countryball: BallEnabledTransform | None
             The countryball you want to filter the trade history by.
+        special: SpecialEnabledTransform | None
+            The special you want to filter the trade history by.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
@@ -416,9 +425,14 @@ class Trade(commands.GroupCog):
 
         if countryball:
             queryset = queryset.filter(Q(tradeobjects__ballinstance__ball=countryball)).distinct()
+        if special:
+            queryset = queryset.filter(Q(tradeobjects__ballinstance__special=special)).distinct()
 
         history = await queryset.order_by(sorting.value).prefetch_related(
-            "player1", "player2", "tradeobjects__ballinstance__ball"
+            "player1",
+            "player2",
+            "tradeobjects__ballinstance__ball",
+            "tradeobjects__ballinstance__special",
         )
 
         if not history:

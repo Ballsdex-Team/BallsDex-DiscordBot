@@ -187,7 +187,7 @@ class Admin(commands.GroupCog):
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def cooldown(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         guild_id: str | None = None,
     ):
         """
@@ -208,7 +208,7 @@ class Admin(commands.GroupCog):
                 return
         else:
             guild = interaction.guild
-        if not guild or not guild.member_count:
+        if not guild:
             await interaction.response.send_message(
                 "The given guild could not be found.", ephemeral=True
             )
@@ -217,137 +217,23 @@ class Admin(commands.GroupCog):
         spawn_manager = cast(
             "CountryBallsSpawner", self.bot.get_cog("CountryBallsSpawner")
         ).spawn_manager
-        cooldown = spawn_manager.cooldowns.get(guild.id)
-        if not cooldown:
-            await interaction.response.send_message(
-                "No spawn manager could be found for that guild. Spawn may have been disabled.",
-                ephemeral=True,
-            )
-            return
-
-        embed = discord.Embed()
-        embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else None)
-        embed.colour = discord.Colour.orange()
-
-        delta = (interaction.created_at - cooldown.time).total_seconds()
-        # change how the threshold varies according to the member count, while nuking farm servers
-        if guild.member_count < 5:
-            multiplier = 0.1
-            range = "1-4"
-        elif guild.member_count < 100:
-            multiplier = 0.8
-            range = "5-99"
-        elif guild.member_count < 1000:
-            multiplier = 0.5
-            range = "100-999"
-        else:
-            multiplier = 0.2
-            range = "1000+"
-
-        penalities: list[str] = []
-        if guild.member_count < 5 or guild.member_count > 1000:
-            penalities.append("Server has less than 5 or more than 1000 members")
-        if any(len(x.content) < 5 for x in cooldown.message_cache):
-            penalities.append("Some cached messages are less than 5 characters long")
-
-        authors_set = set(x.author_id for x in cooldown.message_cache)
-        low_chatters = len(authors_set) < 4
-        # check if one author has more than 40% of messages in cache
-        major_chatter = any(
-            (
-                len(list(filter(lambda x: x.author_id == author, cooldown.message_cache)))
-                / cooldown.message_cache.maxlen  # type: ignore
-                > 0.4
-            )
-            for author in authors_set
-        )
-        # this mess is needed since either conditions make up to a single penality
-        if low_chatters:
-            if not major_chatter:
-                penalities.append("Message cache has less than 4 chatters")
-            else:
-                penalities.append(
-                    "Message cache has less than 4 chatters **and** "
-                    "one user has more than 40% of messages within message cache"
-                )
-        elif major_chatter:
-            if not low_chatters:
-                penalities.append("One user has more than 40% of messages within cache")
-
-        penality_multiplier = 0.5 ** len(penalities)
-        if penalities:
-            embed.add_field(
-                name="\N{WARNING SIGN}\N{VARIATION SELECTOR-16} Penalities",
-                value="Each penality divides the progress by 2\n\n- " + "\n- ".join(penalities),
-            )
-
-        chance = cooldown.chance - multiplier * (delta // 60)
-
-        embed.description = (
-            f"Manager initiated **{format_dt(cooldown.time, style='R')}**\n"
-            f"Initial number of points to reach: **{cooldown.chance}**\n"
-            f"Message cache length: **{len(cooldown.message_cache)}**\n\n"
-            f"Time-based multiplier: **x{multiplier}** *({range} members)*\n"
-            "*This affects how much the number of points to reach reduces over time*\n"
-            f"Penality multiplier: **x{penality_multiplier}**\n"
-            "*This affects how much a message sent increases the number of points*\n\n"
-            f"__Current count: **{cooldown.amount}/{chance}**__\n\n"
-        )
-
-        informations: list[str] = []
-        if cooldown.lock.locked():
-            informations.append("The manager is currently on cooldown.")
-        if delta < 600:
-            informations.append(
-                f"The manager is less than 10 minutes old, {settings.plural_collectible_name} "
-                "cannot spawn at the moment."
-            )
-        if informations:
-            embed.add_field(
-                name="\N{INFORMATION SOURCE}\N{VARIATION SELECTOR-16} Informations",
-                value="- " + "\n- ".join(informations),
-            )
-
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await spawn_manager.admin_explain(interaction, guild)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def guilds(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        user: discord.User | None = None,
-        user_id: str | None = None,
+        user: discord.User,
     ):
         """
-        Shows the guilds shared with the specified user. Provide either user or user_id
+        Shows the guilds shared with the specified user. Provide either user or user_id.
 
         Parameters
         ----------
-        user: discord.User | None
+        user: discord.User
             The user you want to check, if available in the current server.
-        user_id: str | None
-            The ID of the user you want to check, if it's not in the current server.
         """
-        if (user and user_id) or (not user and not user_id):
-            await interaction.response.send_message(
-                "You must provide either `user` or `user_id`.", ephemeral=True
-            )
-            return
-
-        if not user:
-            try:
-                user = await self.bot.fetch_user(int(user_id))  # type: ignore
-            except ValueError:
-                await interaction.response.send_message(
-                    "The user ID you gave is not valid.", ephemeral=True
-                )
-                return
-            except discord.NotFound:
-                await interaction.response.send_message(
-                    "The given user ID could not be found.", ephemeral=True
-                )
-                return
-
         if self.bot.intents.members:
             guilds = user.mutual_guilds
         else:
@@ -612,8 +498,7 @@ class Admin(commands.GroupCog):
     async def blacklist_add(
         self,
         interaction: discord.Interaction,
-        user: discord.User | None = None,
-        user_id: str | None = None,
+        user: discord.User,
         reason: str | None = None,
     ):
         """
@@ -621,36 +506,16 @@ class Admin(commands.GroupCog):
 
         Parameters
         ----------
-        user: discord.User | None
+        user: discord.User
             The user you want to blacklist, if available in the current server.
-        user_id: str | None
-            The ID of the user you want to blacklist, if it's not in the current server.
         reason: str | None
         """
-        if (user and user_id) or (not user and not user_id):
-            await interaction.response.send_message(
-                "You must provide either `user` or `user_id`.", ephemeral=True
-            )
-            return
         if user == interaction.user:
             await interaction.response.send_message(
                 "You cannot blacklist yourself!", ephemeral=True
             )
             return
 
-        if not user:
-            try:
-                user = await self.bot.fetch_user(int(user_id))  # type: ignore
-            except ValueError:
-                await interaction.response.send_message(
-                    "The user ID you gave is not valid.", ephemeral=True
-                )
-                return
-            except discord.NotFound:
-                await interaction.response.send_message(
-                    "The given user ID could not be found.", ephemeral=True
-                )
-                return
         try:
             await BlacklistedID.create(
                 discord_id=user.id, reason=reason, moderator_id=interaction.user.id
@@ -676,8 +541,7 @@ class Admin(commands.GroupCog):
     async def blacklist_remove(
         self,
         interaction: discord.Interaction,
-        user: discord.User | None = None,
-        user_id: str | None = None,
+        user: discord.User,
         reason: str | None = None,
     ):
         """
@@ -685,33 +549,11 @@ class Admin(commands.GroupCog):
 
         Parameters
         ----------
-        user: discord.User | None
+        user: discord.User
             The user you want to unblacklist, if available in the current server.
-        user_id: str | None
-            The ID of the user you want to unblacklist, if it's not in the current server.
         reason: str | None
             The reason for unblacklisting the user.
         """
-        if (user and user_id) or (not user and not user_id):
-            await interaction.response.send_message(
-                "You must provide either `user` or `user_id`.", ephemeral=True
-            )
-            return
-
-        if not user:
-            try:
-                user = await self.bot.fetch_user(int(user_id))  # type: ignore
-            except ValueError:
-                await interaction.response.send_message(
-                    "The user ID you gave is not valid.", ephemeral=True
-                )
-                return
-            except discord.NotFound:
-                await interaction.response.send_message(
-                    "The given user ID could not be found.", ephemeral=True
-                )
-                return
-
         try:
             blacklisted = await BlacklistedID.get(discord_id=user.id)
         except DoesNotExist:
@@ -735,43 +577,15 @@ class Admin(commands.GroupCog):
         )
 
     @blacklist.command(name="info")
-    async def blacklist_info(
-        self,
-        interaction: discord.Interaction,
-        user: discord.User | None = None,
-        user_id: str | None = None,
-    ):
+    async def blacklist_info(self, interaction: discord.Interaction, user: discord.User):
         """
         Check if a user is blacklisted and show the corresponding reason.
 
         Parameters
         ----------
-        user: discord.User | None
+        user: discord.User
             The user you want to check, if available in the current server.
-        user_id: str | None
-            The ID of the user you want to check, if it's not in the current server.
         """
-        if (user and user_id) or (not user and not user_id):
-            await interaction.response.send_message(
-                "You must provide either `user` or `user_id`.", ephemeral=True
-            )
-            return
-
-        if not user:
-            try:
-                user = await self.bot.fetch_user(int(user_id))  # type: ignore
-            except ValueError:
-                await interaction.response.send_message(
-                    "The user ID you gave is not valid.", ephemeral=True
-                )
-                return
-            except discord.NotFound:
-                await interaction.response.send_message(
-                    "The given user ID could not be found.", ephemeral=True
-                )
-                return
-        # We assume that we have a valid discord.User object at this point.
-
         try:
             blacklisted = await BlacklistedID.get(discord_id=user.id)
         except DoesNotExist:
