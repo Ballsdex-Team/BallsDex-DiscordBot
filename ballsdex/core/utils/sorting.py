@@ -56,8 +56,8 @@ def sort_balls(
         # Use the sorting name as the annotation key to avoid issues when this function
         # is called multiple times. Using the same annotation name twice will error.
         return queryset.annotate(
-            **{sort.value: F(f"{sort.value}_bonus") + F(f"ball__{sort.value}")}
-        ).order_by(f"-{sort.value}")
+            **{f"{sort.value}_sort": F(f"{sort.value}_bonus") + F(f"ball__{sort.value}")}
+        ).order_by(f"-{sort.value}_sort")
     elif sort == SortingChoices.total_stats:
         return queryset.annotate(
             stats=F("health_bonus") + F("ball__health") + F("attack_bonus") + F("ball__attack")
