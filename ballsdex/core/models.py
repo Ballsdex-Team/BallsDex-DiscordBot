@@ -13,6 +13,8 @@ from tortoise import exceptions, fields, models, signals, timezone, validators
 from tortoise.expressions import Q
 
 from ballsdex.core.image_generator.image_gen import draw_card
+from ballsdex.core.utils.enums import RarityTiers
+from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
@@ -198,6 +200,26 @@ class Ball(models.Model):
     @property
     def cached_economy(self) -> Economy | None:
         return economies.get(self.economy_id, self.economy)
+
+    @property
+    def rarity_tier(self) -> RarityTiers:
+        rarity_scale = settings.rarities
+        if self.rarity <= rarity_scale["legendary"]["rarity"]:
+            return RarityTiers.legendary
+        elif self.rarity <= rarity_scale["epic"]["rarity"]:
+            return RarityTiers.epic
+        elif self.rarity <= rarity_scale["rare"]["rarity"]:
+            return RarityTiers.rare
+        elif self.rarity <= rarity_scale["uncommon"]["rarity"]:
+            return RarityTiers.uncommon
+        else:
+            return RarityTiers.common
+
+    @property
+    def coin_amount(self) -> int:
+        rarity_scale = settings.rarities
+        ball_rarity = self.rarity_tier
+        return rarity_scale[ball_rarity.name].get("coins", 0)
 
 
 Ball.register_listener(signals.Signals.pre_save, lower_catch_names)
@@ -424,6 +446,7 @@ class Player(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
+    coins = fields.IntField(default=0)
     donation_policy = fields.IntEnumField(
         DonationPolicy,
         description="How you want to handle donations",
@@ -448,6 +471,16 @@ class Player(models.Model):
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+    async def add_coins(self, amount: int):
+        self.coins += amount
+        await self.save(update_fields=("coins",))
+
+    async def remove_coins(self, amount: int):
+        if self.coins < amount:
+            raise ValueError("Not enough coins")
+        self.coins -= amount
+        await self.save(update_fields=("coins",))
 
     async def is_friend(self, other_player: "Player") -> bool:
         return await Friendship.filter(
@@ -515,6 +548,8 @@ class Trade(models.Model):
     )
     date = fields.DatetimeField(auto_now_add=True)
     tradeobjects: fields.ReverseRelation[TradeObject]
+    player1_coins = fields.IntField(default=0)
+    player2_coins = fields.IntField(default=0)
 
     def __str__(self) -> str:
         return str(self.pk)

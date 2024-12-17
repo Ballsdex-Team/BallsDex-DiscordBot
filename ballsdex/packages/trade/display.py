@@ -141,7 +141,7 @@ def fill_trade_embed_fields(
         # to do this, we add a 3rd empty field on each line (since 3 fields per line)
         i = 1
         while i < len(trader1_proposal) or i < len(trader2_proposal):
-            embed.add_field(name="\u200B", value="\u200B", inline=True)  # empty
+            embed.add_field(name="\u200B", value="\u200B", inline=True)
 
             if i < len(trader1_proposal):
                 embed.add_field(name="\u200B", value=trader1_proposal[i], inline=True)
@@ -154,7 +154,7 @@ def fill_trade_embed_fields(
                 embed.add_field(name="\u200B", value="\u200B", inline=True)
             i += 1
 
-        # always add an empty field at the end, otherwise the alignment is off
+        # always add an empty field at the end for alignment
         embed.add_field(name="\u200B", value="\u200B", inline=True)
 
     if len(embed) > 6000:

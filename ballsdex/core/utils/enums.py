@@ -9,6 +9,15 @@ DONATION_POLICY_MAP = {
 
 PRIVATE_POLICY_MAP = {1: "Public", 2: "Private", 3: "Mutual Servers", 4: "Friends"}
 
+
+class RarityTiers(enum.Enum):
+    legendary = "Legendary"
+    epic = "Epic"
+    rare = "Rare"
+    uncommon = "Uncommon"
+    common = "Common"
+
+
 MENTION_POLICY_MAP = {1: "Allow all mentions", 2: "Deny all mentions"}
 
 FRIEND_POLICY_MAP = {1: "Allow all friend requests", 2: "Deny all friend requests"}
