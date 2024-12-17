@@ -109,6 +109,7 @@ class SpecialResource(Model):
         "emoji",
         "tradeable",
         "hidden",
+        "credits",
     ]
 
     async def get_actions(self, request: Request) -> List[Action]:
