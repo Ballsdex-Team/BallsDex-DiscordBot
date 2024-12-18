@@ -165,8 +165,6 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
 
         if (special := getattr(interaction.namespace, "special", None)) and special.isdigit():
             balls_queryset = balls_queryset.filter(special_id=int(special))
-        if (shiny := getattr(interaction.namespace, "shiny", None)) and shiny is not None:
-            balls_queryset = balls_queryset.filter(shiny=shiny)
 
         if interaction.command and (trade_type := interaction.command.extras.get("trade", None)):
             if trade_type == TradeCommandType.PICK:
