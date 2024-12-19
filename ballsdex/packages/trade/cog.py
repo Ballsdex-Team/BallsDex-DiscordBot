@@ -367,7 +367,9 @@ class Trade(commands.GroupCog):
     async def history(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        sorting: app_commands.Choice[str],
+        sorting: app_commands.Choice[str] = app_commands.Choice(
+            name="Most Recent", value="-date"
+        )
         trade_user: discord.User | None = None,
         days: Optional[int] = None,
         countryball: BallEnabledTransform | None = None,
@@ -378,7 +380,7 @@ class Trade(commands.GroupCog):
 
         Parameters
         ----------
-        sorting: str
+        sorting: str | None
             The sorting order of the trades
         trade_user: discord.User | None
             The user you want to see your trade history with
