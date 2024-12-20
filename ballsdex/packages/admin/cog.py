@@ -1318,7 +1318,7 @@ class Admin(commands.GroupCog):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         countryball_id: str,
-        sorting: app_commands.Choice[str],
+        sorting: app_commands.Choice[str] | None = None,
         days: Optional[int] = None,
     ):
         """
@@ -1328,11 +1328,12 @@ class Admin(commands.GroupCog):
         ----------
         countryball_id: str
             The ID of the countryball you want to check the history of.
-        sorting: str
+        sorting: str | None
             The sorting method you want to use.
         days: Optional[int]
             Retrieve ball history from last x days.
         """
+        sort_value = sorting.value if sorting else "-date"
 
         try:
             pk = int(countryball_id, 16)
@@ -1365,7 +1366,7 @@ class Admin(commands.GroupCog):
             queryset = queryset.filter(
                 tradeobjects__ballinstance_id=pk, date__range=(start_date, end_date)
             )
-        trades = await queryset.order_by(sorting.value).prefetch_related("player1", "player2")
+        trades = await queryset.order_by(sort_value).prefetch_related("player1", "player2")
 
         if not trades:
             await interaction.followup.send("No history found.", ephemeral=True)
