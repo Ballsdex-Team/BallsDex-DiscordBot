@@ -668,7 +668,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             app_commands.Choice(
                 name=f"{settings.collectible_name}", value=f"{settings.collectible_name}"
             ),
-            app_commands.Choice(name="Special", value="specials"),
+            app_commands.Choice(name="special", value="specials"),
         ]
     )
     async def duplicate(
