@@ -6,6 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
+from tortoise.functions import Count
 
 from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -660,3 +661,102 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"You have {balls} {special_str}{shiny_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
         )
+
+    @app_commands.command()
+    @app_commands.choices(
+        type=[
+            app_commands.Choice(
+                name=f"{settings.collectible_name}", value=f"{settings.collectible_name}"
+            ),
+            app_commands.Choice(name="Special", value="specials"),
+        ]
+    )
+    async def duplicate(
+        self, interaction: discord.Interaction["BallsDexBot"], type: app_commands.Choice[str]
+    ):
+        """
+        Shows your most duplicated countryballs or specials.
+
+        Parameters
+        ----------
+        type : app_commands.Choice[str]
+            Type of duplicate to check (Countryball or Special).
+        """
+        await interaction.response.defer(ephemeral=True)
+        user_id = interaction.user.id
+        player, _ = await Player.get_or_create(discord_id=user_id)
+        await player.fetch_related("balls", "balls__special")
+
+        if type.value == settings.collectible_name:
+            results = (
+                await BallInstance.filter(player=player, ball__tradeable=True)
+                .annotate(count=Count("id"))
+                .group_by("ball__country", "ball__emoji_id")
+                .order_by("-count")
+                .limit(50)
+                .values("ball__country", "ball__emoji_id", "count")
+            )
+
+            if not results:
+                await interaction.followup.send(
+                    f"You don't have any {settings.collectible_name} in your inventory!",
+                    ephemeral=True,
+                )
+                return
+
+            entries = [
+                (
+                    f"{i + 1}. {item['ball__country']} "
+                    f"{self.bot.get_emoji(item['ball__emoji_id'])}",
+                    f"Count: {item['count']}",
+                )
+                for i, item in enumerate(results)
+            ]
+
+            source = FieldPageSource(entries, per_page=10, inline=False)
+            source.embed.title = f"Top {len(results)} Duplicate {settings.collectible_name}"
+            source.embed.color = discord.Color.blue()
+            source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
+            source.embed.set_footer(
+                text=f"Requested by {interaction.user}",
+                icon_url=interaction.user.display_avatar.url,
+            )
+
+            paginator = Pages(source, interaction=interaction)
+            await paginator.start(ephemeral=True)
+
+        elif type.value == "specials":
+            results = (
+                await BallInstance.filter(player=player, special_id__isnull=False)
+                .prefetch_related("special")
+                .annotate(count=Count("id"))
+                .group_by("special_id", "special__name", "special__emoji")
+                .order_by("-count")
+                .values("special_id", "special__name", "special__emoji", "count")
+            )
+
+            if not results:
+                await interaction.followup.send(
+                    "You don't have any special cards in your inventory!", ephemeral=True
+                )
+                return
+
+            entries = [
+                (
+                    f"{i + 1}. {item['special__name']} {item['special__emoji']}",
+                    f"Count: {item['count']}",
+                )
+                for i, item in enumerate(results)
+            ]
+
+            source = FieldPageSource(entries, per_page=5, inline=False)
+            source.embed.title = f"Top {len(results)} Duplicate Specials"
+            source.embed.color = discord.Color.purple()
+            source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
+            source.embed.set_footer(
+                text=f"Requested by {interaction.user}",
+                icon_url=interaction.user.display_avatar.url,
+            )
+
+            paginator = Pages(source, interaction=interaction)
+            await paginator.start(ephemeral=True)
