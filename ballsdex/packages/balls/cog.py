@@ -99,9 +99,9 @@ class DonationRequest(View):
         await self.countryball.unlock()
 
 
-    class DuplicateType(enum.Enum):
-        countryballs = "countryballs"
-        specials = "specials"
+class DuplicateType(enum.Enum):
+    countryballs = "countryballs"
+    specials = "specials"
 
 
 class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
