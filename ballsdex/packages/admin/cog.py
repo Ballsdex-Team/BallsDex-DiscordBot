@@ -3,7 +3,7 @@ import datetime
 import logging
 import random
 import re
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, cast
 
@@ -199,7 +199,19 @@ class Admin(commands.GroupCog):
         """
         if guild_id:
             try:
-                guild = self.bot.get_guild(int(guild_id))
+                if cog := self.bot.get_cog("IPC"):
+                    guild = await cog.handler(
+                        "get_guild", 1, {"guild_id": int(guild_id)}
+                    )
+                    Guild = namedtuple("Guild", "id name member_count")
+                    if not guild:
+                        await interaction.response.send_message(
+                            "The given guild could not be found.", ephemeral=True
+                        )
+                        return
+                    guild = Guild(*guild[0])
+                else:
+                    guild = self.bot.get_guild(int(guild_id))
             except ValueError:
                 await interaction.response.send_message(
                     "Invalid guild ID. Please make sure it's a number.", ephemeral=True
@@ -233,10 +245,20 @@ class Admin(commands.GroupCog):
         user: discord.User
             The user you want to check, if available in the current server.
         """
-        if self.bot.intents.members:
-            guilds = user.mutual_guilds
+        if cog := self.bot.get_cog("IPC"):
+            guild_results = await cog.handler(
+                "guilds", self.bot.cluster_count, {"user_id": user.id}
+            )
+            # guild_rests is a list of lists, join them into one list
+            guilds = []
+            Guild = namedtuple("Guild", "id name member_count")
+            for result in guild_results:
+                guilds.extend([Guild(*x) for x in result])
         else:
-            guilds = [x for x in self.bot.guilds if x.owner_id == user.id]
+            if self.bot.intents.members:
+                guilds = user.mutual_guilds
+            else:
+                guilds = [x for x in self.bot.guilds if x.owner_id == user.id]
 
         if not guilds:
             if self.bot.intents.members:
@@ -534,6 +556,9 @@ class Admin(commands.GroupCog):
             f" for the following reason: {reason}.",
             self.bot,
         )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -574,6 +599,9 @@ class Admin(commands.GroupCog):
             f"{interaction.user} removed blacklist for user {user} ({user.id}).\nReason: {reason}",
             self.bot,
         )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist.command(name="info")
     async def blacklist_info(self, interaction: discord.Interaction, user: discord.User):
@@ -698,6 +726,9 @@ class Admin(commands.GroupCog):
             f"for the following reason: {reason}.",
             self.bot,
         )
+        cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist_guild.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -755,6 +786,9 @@ class Admin(commands.GroupCog):
                 f"Reason: {reason}",
                 self.bot,
             )
+            cog = self.bot.get_cog("IPC")
+        if cog:
+            await cog.handler("blacklist_update", self.bot.cluster_count, {})
 
     @blacklist_guild.command(name="info")
     async def blacklist_info_guild(
