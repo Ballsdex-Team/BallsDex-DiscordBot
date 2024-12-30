@@ -33,11 +33,9 @@ class CountryBallsSpawner(commands.Cog):
 
     async def load_cache(self):
         i = 0
-        async for config in GuildConfig.all():
-            if not config.enabled:
-                continue
-            if not config.spawn_channel:
-                continue
+        async for config in GuildConfig.filter(enabled=True, spawn_channel__isnull=False).only(
+            "guild_id", "spawn_channel"
+        ):
             self.cache[config.guild_id] = config.spawn_channel
             i += 1
         grammar = "" if i == 1 else "s"
