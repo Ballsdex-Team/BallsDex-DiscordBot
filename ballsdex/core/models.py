@@ -76,6 +76,7 @@ class GuildConfig(models.Model):
     enabled = fields.BooleanField(
         description="Whether the bot will spawn countryballs in this guild", default=True
     )
+    # this option is currently disabled
     silent = fields.BooleanField(
         description="Whether the responses of guesses get sent as ephemeral or not",
         default=False,
