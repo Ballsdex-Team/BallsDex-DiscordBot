@@ -258,7 +258,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
-                if y.enabled and y.created_at < special.end_date
+                if y.enabled and (special.end_date is None or y.created_at < special.end_date)
             }
         if not bot_countryballs:
             await interaction.followup.send(

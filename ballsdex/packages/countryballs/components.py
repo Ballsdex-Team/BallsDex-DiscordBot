@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import math
 import random
+from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -107,7 +108,14 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         # check if we can spawn cards with a special background
         special = self.ball.special
-        population = [x for x in specials.values() if x.start_date <= datetime_now() <= x.end_date]
+        population = [
+            x
+            for x in specials.values()
+            # handle null start/end dates with infinity times
+            if (x.start_date or datetime.min.replace(tzinfo=None))
+            <= datetime_now()
+            <= (x.end_date or datetime.max.replace(tzinfo=None))
+        ]
         if not special and population:
             # Here we try to determine what should be the chance of having a common card
             # since the rarity field is a value between 0 and 1, 1 being no common
