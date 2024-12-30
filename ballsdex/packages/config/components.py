@@ -58,7 +58,7 @@ class AcceptTOSView(View):
         config.enabled = True
         await config.save()
         interaction.client.dispatch(
-            "ballsdex_settings_change", interaction.guild, channel=self.channel
+            "ballsdex_settings_change", interaction.guild, channel=self.channel, enabled=True
         )
         self.stop()
         if self.message:
