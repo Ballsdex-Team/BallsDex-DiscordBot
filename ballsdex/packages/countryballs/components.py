@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ui import Button, Modal, TextInput, View, button
+from tortoise.timezone import get_default_timezone
 from tortoise.timezone import now as datetime_now
 
 from ballsdex.core.metrics import caught_balls
@@ -112,9 +113,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             x
             for x in specials.values()
             # handle null start/end dates with infinity times
-            if (x.start_date or datetime.min.replace(tzinfo=None))
+            if (x.start_date or datetime.min.replace(tzinfo=get_default_timezone()))
             <= datetime_now()
-            <= (x.end_date or datetime.max.replace(tzinfo=None))
+            <= (x.end_date or datetime.max.replace(tzinfo=get_default_timezone()))
         ]
         if not special and population:
             # Here we try to determine what should be the chance of having a common card
