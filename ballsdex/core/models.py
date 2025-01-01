@@ -107,8 +107,8 @@ class Special(models.Model):
         null=True,
         default=None,
     )
-    start_date = fields.DatetimeField()
-    end_date = fields.DatetimeField()
+    start_date = fields.DatetimeField(null=True, default=None)
+    end_date = fields.DatetimeField(null=True, default=None)
     rarity = fields.FloatField(
         description="Value between 0 and 1, chances of using this special background."
     )
@@ -219,7 +219,6 @@ class BallInstance(models.Model):
     server_id = fields.BigIntField(
         description="Discord server ID where this ball was caught", null=True
     )
-    shiny = fields.BooleanField(default=False)
     special: fields.ForeignKeyRelation[Special] | None = fields.ForeignKeyField(
         "models.Special", null=True, default=None, on_delete=fields.SET_NULL
     )
@@ -280,8 +279,6 @@ class BallInstance(models.Model):
             emotes += "🔒"
         if self.favorite and not is_trade:
             emotes += "❤️"
-        if self.shiny:
-            emotes += "✨"
         if emotes:
             emotes += " "
         if self.specialcard:
