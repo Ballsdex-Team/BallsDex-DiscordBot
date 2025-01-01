@@ -1,3 +1,4 @@
+import enum
 import logging
 from typing import TYPE_CHECKING
 
@@ -6,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
+from tortoise.functions import Count
 
 from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -96,6 +98,11 @@ class DonationRequest(View):
             view=self,
         )
         await self.countryball.unlock()
+
+
+class DuplicateType(enum.Enum):
+    countryballs = "countryballs"
+    specials = "specials"
 
 
 class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
@@ -639,3 +646,71 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             f"You have {balls} {special_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
         )
+
+    @app_commands.command()
+    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    async def duplicate(
+        self, interaction: discord.Interaction["BallsDexBot"], type: DuplicateType
+    ):
+        """
+        Shows your most duplicated countryballs or specials.
+
+        Parameters
+        ----------
+        type: DuplicateType
+            Type of duplicate to check (countryballs or specials).
+        """
+        await interaction.response.defer(ephemeral=True)
+        user_id = interaction.user.id
+        player, _ = await Player.get_or_create(discord_id=user_id)
+        await player.fetch_related("balls")
+        is_special = type.value == "specials"
+        queryset = BallInstance.filter(player=player)
+
+        if type.value == "specials":
+            queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
+            annotations = {
+                "name": "special__name",
+                "emoji": "special__emoji",
+            }
+            limit = 5
+            title = "specials"
+        else:
+            queryset = queryset.filter(ball__tradeable=True)
+            annotations = {
+                "name": "ball__country",
+                "emoji": "ball__emoji_id",
+            }
+            limit = 50
+            title = settings.plural_collectible_name
+
+        queryset = (
+            queryset.annotate(count=Count("id"))
+            .group_by(*annotations.values())
+            .order_by("-count")
+            .limit(limit)
+            .values(*annotations.values(), "count")
+        )
+        results = await queryset
+
+        if not results:
+            await interaction.followup.send(
+                f"You don't have any {type.value} duplicates in your inventory!",
+                ephemeral=True,
+            )
+            return
+
+        entries = [
+            (
+                f"{i + 1}. {item[annotations['name']]} "
+                f"{self.bot.get_emoji(item[annotations['emoji']]) or item[annotations['emoji']]}",
+                f"Count: {item['count']}",
+            )
+            for i, item in enumerate(results)
+        ]
+        source = FieldPageSource(entries, per_page=5 if is_special else 10, inline=False)
+        source.embed.title = f"Top {len(results)} duplicate {title}"
+        source.embed.color = discord.Color.purple() if is_special else discord.Color.blue()
+        source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
+        paginator = Pages(source, interaction=interaction)
+        await paginator.start(ephemeral=True)
