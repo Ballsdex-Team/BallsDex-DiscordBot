@@ -176,7 +176,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if sort:
             countryballs = await sort_balls(sort, query)
         else:
-            countryballs = await query.order_by("-favorite", "-shiny")
+            countryballs = await query.order_by("-favorite")
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
@@ -219,7 +219,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Show your current completion of the BallsDex.
@@ -230,12 +229,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user whose completion you want to view, if not yours.
         special: Special
             The special you want to see the completion of
-        shiny: bool
-            Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
-        extra_text = "shiny " if shiny else "" + f"{special.name} " if special else ""
+        extra_text = f"{special.name} " if special else ""
         if user is not None:
             try:
                 player = await Player.get(discord_id=user_obj.id)
@@ -268,7 +265,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
-                if y.enabled and y.created_at < special.end_date
+                if y.enabled and (special.end_date is None or y.created_at < special.end_date)
             }
         if not bot_countryballs:
             await interaction.followup.send(
@@ -278,8 +275,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
 
-        if shiny is not None:
-            filters["shiny"] = shiny
         owned_countryballs = set(
             x[0]
             for x in await BallInstance.filter(**filters)
@@ -338,9 +333,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
         special_str = f" ({special.name})" if special else ""
-        shiny_str = " shiny" if shiny else ""
         source.embed.description = (
-            f"{settings.bot_name}{special_str}{shiny_str} progression: "
+            f"{settings.bot_name}{special_str} progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
@@ -356,7 +350,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Display info from a specific countryball.
@@ -367,8 +360,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The countryball you want to inspect
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -438,7 +429,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Set favorite countryballs.
@@ -449,8 +439,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The countryball you want to set/unset as favorite
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -501,7 +489,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user: discord.User,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Give a countryball to a user.
@@ -514,8 +501,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The countryball you're giving away
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -626,7 +611,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
         current_server: bool = False,
     ):
         """
@@ -638,8 +622,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The countryball you want to count
         special: Special
             The special you want to count
-        shiny: bool
-            Whether you want to count shiny countryballs
         current_server: bool
             Only count countryballs caught in the current server
         """
@@ -649,8 +631,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         filters = {}
         if countryball:
             filters["ball"] = countryball
-        if shiny is not None:
-            filters["shiny"] = shiny
         if special:
             filters["special"] = special
         if current_server:
@@ -660,11 +640,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         balls = await BallInstance.filter(**filters).count()
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
-        shiny_str = "shiny " if shiny else ""
         special_str = f"{special.name} " if special else ""
         guild = f" caught in {interaction.guild.name}" if current_server else ""
         await interaction.followup.send(
-            f"You have {balls} {special_str}{shiny_str}"
+            f"You have {balls} {special_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
         )
 

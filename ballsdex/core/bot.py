@@ -130,6 +130,7 @@ class BallsDexBot(commands.AutoShardedBot):
         command_prefix: PrefixType[BallsDexBot],
         disable_messsage_content: bool = False,
         disable_time_check: bool = False,
+        skip_tree_sync: bool = False,
         dev: bool = False,
         **options,
     ):
@@ -155,6 +156,7 @@ class BallsDexBot(commands.AutoShardedBot):
 
         super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
         self.tree.disable_time_check = disable_time_check  # type: ignore
+        self.skip_tree_sync = skip_tree_sync
 
         self.dev = dev
         self.prometheus_server: PrometheusServer | None = None
@@ -322,18 +324,17 @@ class BallsDexBot(commands.AutoShardedBot):
         else:
             log.info("No package loaded.")
 
-        synced_commands = await self.tree.sync()
-        grammar = "" if synced_commands == 1 else "s"
-        if synced_commands:
-            log.info(f"Synced {len(synced_commands)} command{grammar}.")
+        if not self.skip_tree_sync:
+            synced_commands = await self.tree.sync()
+            log.info(f"Synced {len(synced_commands)} commands.")
             try:
                 self.assign_ids_to_app_commands(synced_commands)
             except Exception:
                 log.error("Failed to assign IDs to app commands", exc_info=True)
         else:
-            log.info("No command to sync.")
+            log.warning("Skipping command synchronization.")
 
-        if "ballsdex.packages.admin" in settings.packages:
+        if not self.skip_tree_sync and "ballsdex.packages.admin" in settings.packages:
             for guild_id in settings.admin_guild_ids:
                 guild = self.get_guild(guild_id)
                 if not guild:
@@ -494,6 +495,12 @@ class BallsDexBot(commands.AutoShardedBot):
                 "An error occured when running the command. Contact support if this persists."
             )
             return
+
+        if isinstance(
+            error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)
+        ):
+            await send("Commands desynchronizeded, contact support to fix this.")
+            log.error(error.args[0])
 
         await send("An error occured when running the command. Contact support if this persists.")
         log.error("Unknown error in interaction", exc_info=error)

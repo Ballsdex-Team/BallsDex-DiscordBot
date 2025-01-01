@@ -17,13 +17,11 @@ class AcceptTOSView(View):
         interaction: discord.Interaction,
         channel: discord.TextChannel,
         new_player: discord.Member,
-        silent: bool = False,
     ):
         super().__init__()
         self.original_interaction = interaction
         self.channel = channel
         self.new_player = new_player
-        self.silent = silent
         self.message: Optional[discord.Message] = None
 
         self.add_item(
@@ -57,10 +55,10 @@ class AcceptTOSView(View):
     async def accept_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
         config.spawn_channel = self.channel.id  # type: ignore
-        config.silent = self.silent
+        config.enabled = True
         await config.save()
         interaction.client.dispatch(
-            "ballsdex_settings_change", interaction.guild, channel=self.channel
+            "ballsdex_settings_change", interaction.guild, channel=self.channel, enabled=True
         )
         self.stop()
         if self.message:

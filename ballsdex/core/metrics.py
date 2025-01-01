@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.core.metrics")
 
 caught_balls = Counter(
-    "caught_cb", "Caught countryballs", ["country", "shiny", "special", "guild_size", "spawn_algo"]
+    "caught_cb", "Caught countryballs", ["country", "special", "guild_size", "spawn_algo"]
 )
 
 
