@@ -712,9 +712,5 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         source.embed.title = f"Top {len(results)} duplicate {title}"
         source.embed.color = discord.Color.purple() if is_special else discord.Color.blue()
         source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
-        source.embed.set_footer(
-            text=f"Requested by {interaction.user}",
-            icon_url=interaction.user.display_avatar.url,
-        )
         paginator = Pages(source, interaction=interaction)
         await paginator.start(ephemeral=True)
