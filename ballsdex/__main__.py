@@ -40,6 +40,9 @@ class CLIFlags(argparse.Namespace):
     config_file: Path
     reset_settings: bool
     disable_rich: bool
+    disable_message_content: bool
+    disable_time_check: bool
+    skip_tree_sync: bool
     debug: bool
     dev: bool
 
@@ -58,6 +61,24 @@ def parse_cli_flags(arguments: list[str]) -> CLIFlags:
         help="Reset the config file with the latest default configuration",
     )
     parser.add_argument("--disable-rich", action="store_true", help="Disable rich log format")
+    parser.add_argument(
+        "--disable-message-content",
+        action="store_true",
+        help="Disable usage of message content intent through the bot",
+    )
+    parser.add_argument(
+        "--disable-time-check",
+        action="store_true",
+        help="Disables the 3 seconds delay check on interactions. Use this if you're getting a "
+        "lot of skipped interactions warning due to your PC's internal clock.",
+    )
+    parser.add_argument(
+        "--skip-tree-sync",
+        action="store_true",
+        help="Does not sync application commands to Discord. Significant startup speedup and "
+        "avoids ratelimits, but risks of having desynced commands after updates. This is always "
+        "enabled with clustering.",
+    )
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
     args = parser.parse_args(arguments, namespace=CLIFlags())
@@ -288,13 +309,19 @@ def main():
             command_prefix=when_mentioned_or(prefix),
             dev=cli_flags.dev,  # type: ignore
             shard_count=settings.shard_count,
+            disable_messsage_content=cli_flags.disable_message_content,
+            disable_time_check=cli_flags.disable_time_check,
+            skip_tree_sync=cli_flags.skip_tree_sync,
         )
 
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
-        loop.add_signal_handler(
-            SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))
-        )
+        try:
+            loop.add_signal_handler(
+                SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))
+            )
+        except NotImplementedError:
+            log.warning("Cannot add signal handler for SIGTERM.")
 
         log.info("Initialized bot, connecting to Discord...")
         future = loop.create_task(bot.start(token))

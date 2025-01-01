@@ -76,6 +76,7 @@ class GuildConfig(models.Model):
     enabled = fields.BooleanField(
         description="Whether the bot will spawn countryballs in this guild", default=True
     )
+    # this option is currently disabled
     silent = fields.BooleanField(
         description="Whether the responses of guesses get sent as ephemeral or not",
         default=False,
@@ -106,8 +107,8 @@ class Special(models.Model):
         null=True,
         default=None,
     )
-    start_date = fields.DatetimeField()
-    end_date = fields.DatetimeField()
+    start_date = fields.DatetimeField(null=True, default=None)
+    end_date = fields.DatetimeField(null=True, default=None)
     rarity = fields.FloatField(
         description="Value between 0 and 1, chances of using this special background."
     )
@@ -131,8 +132,14 @@ class Ball(models.Model):
     regime_id: int
     economy_id: int
 
-    country = fields.CharField(max_length=48, unique=True)
-    short_name = fields.CharField(max_length=12, null=True, default=None)
+    country = fields.CharField(max_length=48, unique=True, description="Name of this countryball")
+    short_name = fields.CharField(
+        max_length=12,
+        null=True,
+        default=None,
+        description="Alternative shorter name to be used in card design, "
+        "12 characters max, optional",
+    )
     catch_names = fields.TextField(
         null=True,
         default=None,
@@ -154,9 +161,16 @@ class Ball(models.Model):
     )
     health = fields.IntField(description="Ball health stat")
     attack = fields.IntField(description="Ball attack stat")
-    rarity = fields.FloatField(description="Rarity of this ball")
-    enabled = fields.BooleanField(default=True)
-    tradeable = fields.BooleanField(default=True)
+    rarity = fields.FloatField(
+        description="Rarity of this ball. "
+        "Higher number means more likely to spawn, 0 is unspawnable."
+    )
+    enabled = fields.BooleanField(
+        default=True, description="Disabled balls will never spawn or show up in completion."
+    )
+    tradeable = fields.BooleanField(
+        default=True, description="Controls whether this ball can be traded or donated."
+    )
     emoji_id = fields.BigIntField(
         description="Emoji ID for this ball", validators=[DiscordSnowflakeValidator()]
     )
@@ -168,10 +182,10 @@ class Ball(models.Model):
     )
     credits = fields.CharField(max_length=64, description="Author of the collection artwork")
     capacity_name = fields.CharField(
-        max_length=64, description="Name of the countryball's capacity"
+        max_length=64, description="Name of the countryball's ability"
     )
     capacity_description = fields.CharField(
-        max_length=256, description="Description of the countryball's capacity"
+        max_length=256, description="Description of the countryball's ability"
     )
     capacity_logic = fields.JSONField(description="Effect of this capacity", default={})
     created_at = fields.DatetimeField(auto_now_add=True, null=True)
@@ -208,7 +222,6 @@ class BallInstance(models.Model):
     server_id = fields.BigIntField(
         description="Discord server ID where this ball was caught", null=True
     )
-    shiny = fields.BooleanField(default=False)
     special: fields.ForeignKeyRelation[Special] | None = fields.ForeignKeyField(
         "models.Special", null=True, default=None, on_delete=fields.SET_NULL
     )
@@ -269,8 +282,6 @@ class BallInstance(models.Model):
             emotes += "🔒"
         if self.favorite and not is_trade:
             emotes += "❤️"
-        if self.shiny:
-            emotes += "✨"
         if emotes:
             emotes += " "
         if self.specialcard:

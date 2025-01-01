@@ -56,6 +56,10 @@ class Settings:
         List of roles that have full access to the /admin command
     admin_role_ids: list[int]
         List of roles that have partial access to the /admin command (only blacklist and guilds)
+    packages: list[str]
+        List of packages the bot will load upon startup
+    spawn_manager: str
+        Python path to a class implementing `BaseSpawnManager`, handling cooldowns and anti-cheat
     """
 
     bot_token: str = ""
@@ -89,10 +93,14 @@ class Settings:
     team_owners: bool = False
     co_owners: list[int] = field(default_factory=list)
 
+    packages: list[str] = field(default_factory=list)
+
     # metrics and prometheus
     prometheus_enabled: bool = False
     prometheus_host: str = "0.0.0.0"
     prometheus_port: int = 15260
+
+    spawn_manager: str = "ballsdex.packages.countryballs.spawn.SpawnManager"
 
 
 settings = Settings()
@@ -134,6 +142,20 @@ def read_settings(path: "Path"):
     settings.max_favorites = content.get("max-favorites", 50)
     settings.max_attack_bonus = content.get("max-attack-bonus", 20)
     settings.max_health_bonus = content.get("max-health-bonus", 20)
+
+    settings.packages = content.get("packages") or [
+        "ballsdex.packages.admin",
+        "ballsdex.packages.balls",
+        "ballsdex.packages.config",
+        "ballsdex.packages.countryballs",
+        "ballsdex.packages.info",
+        "ballsdex.packages.players",
+        "ballsdex.packages.trade",
+    ]
+
+    settings.spawn_manager = content.get(
+        "spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager"
+    )
     log.info("Settings loaded.")
 
 
@@ -219,11 +241,23 @@ owners:
   # a list of IDs that must be considered owners in addition to the application/team owner
   co-owners:
 
+# list of packages that will be loaded
+packages:
+  - ballsdex.packages.admin
+  - ballsdex.packages.balls
+  - ballsdex.packages.config
+  - ballsdex.packages.countryballs
+  - ballsdex.packages.info
+  - ballsdex.packages.players
+  - ballsdex.packages.trade
+
 # prometheus metrics collection, leave disabled if you don't know what this is
 prometheus:
   enabled: false
   host: "0.0.0.0"
   port: 15260
+
+spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
   """  # noqa: W291
     )
 
@@ -237,6 +271,8 @@ def update_settings(path: "Path"):
     add_max_attack = "max-attack-bonus" not in content
     add_max_health = "max-health-bonus" not in content
     add_plural_collectible = "plural-collectible-name" not in content
+    add_packages = "packages:" not in content
+    add_spawn_manager = "spawn-manager" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -285,5 +321,35 @@ max-health-bonus: 20
 plural-collectible-name: countryballs
 """
 
-    if any((add_owners, add_config_ref)):
+    if add_packages:
+        content += """
+# list of packages that will be loaded
+packages:
+  - ballsdex.packages.admin
+  - ballsdex.packages.balls
+  - ballsdex.packages.config
+  - ballsdex.packages.countryballs
+  - ballsdex.packages.info
+  - ballsdex.packages.players
+  - ballsdex.packages.trade
+"""
+
+    if add_spawn_manager:
+        content += """
+# define a custom spawn manager implementation
+spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
+"""
+
+    if any(
+        (
+            add_owners,
+            add_config_ref,
+            add_max_favorites,
+            add_max_attack,
+            add_max_health,
+            add_plural_collectible,
+            add_packages,
+            add_spawn_manager,
+        )
+    ):
         path.write_text(content)

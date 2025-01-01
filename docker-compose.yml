@@ -67,7 +67,7 @@ services:
     restart: always
     user: postgres:postgres
     volumes:
-      - /var/opt/pgbackups:/backups
+      - ./pgbackups:/backups
     depends_on:
       - postgres-db
     networks:

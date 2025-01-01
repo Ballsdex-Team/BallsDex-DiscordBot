@@ -31,10 +31,7 @@ def draw_card(ball_instance: "BallInstance"):
     ball_health = (237, 115, 101, 255)
     ball_credits = ball.credits
 
-    if ball_instance.shiny:
-        image = Image.open(str(SOURCES_PATH / "shiny.png"))
-        ball_health = (255, 255, 255, 255)
-    elif special_image := ball_instance.special_card:
+    if special_image := ball_instance.special_card:
         image = Image.open("." + special_image)
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             ball_credits += f" • {ball_instance.specialcard.credits}"

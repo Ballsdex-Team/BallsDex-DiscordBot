@@ -20,6 +20,12 @@ from ballsdex.core.models import (
 from ballsdex.core.models import Player as PlayerModel
 from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.enums import (
+    DONATION_POLICY_MAP,
+    FRIEND_POLICY_MAP,
+    MENTION_POLICY_MAP,
+    PRIVATE_POLICY_MAP,
+)
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.settings import settings
 
@@ -34,6 +40,7 @@ class Player(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
+        self.active_friend_requests = {}
         if not self.bot.intents.members and self.__cog_app_commands_group__:
             privacy_command = self.__cog_app_commands_group__.get_command("privacy")
             if privacy_command:
@@ -243,25 +250,34 @@ class Player(commands.GroupCog):
                 "You are already friends with this user!", ephemeral=True
             )
             return
-        else:
-            await interaction.response.defer(thinking=True)
-            view = ConfirmChoiceView(interaction, user=user)
-            await interaction.followup.send(
-                f"{user.mention}, {interaction.user} has sent you a friend request!",
-                view=view,
-                allowed_mentions=discord.AllowedMentions(users=player2.can_be_mentioned),
+
+        if self.active_friend_requests.get((player1.discord_id, player2.discord_id), False):
+            await interaction.response.send_message(
+                "You already have an active friend request to this user!", ephemeral=True
             )
-            await view.wait()
+            return
 
-            if not view.value:
-                return
+        await interaction.response.defer(thinking=True)
+        view = ConfirmChoiceView(
+            interaction,
+            user=user,
+            accept_message="Friend request accepted!",
+            cancel_message="Friend request declined.",
+        )
+        await interaction.followup.send(
+            f"{user.mention}, {interaction.user} has sent you a friend request!",
+            view=view,
+            allowed_mentions=discord.AllowedMentions(users=player2.can_be_mentioned),
+        )
+        self.active_friend_requests[(player1.discord_id, player2.discord_id)] = True
+        await view.wait()
 
-        friended = await player1.is_friend(player2)
-        if friended:
-            await interaction.followup.send("You are already friends with this user!")
+        if not view.value:
+            self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
             return
 
         await Friendship.create(player1=player1, player2=player2)
+        self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
 
     @friend.command(name="remove")
     async def friend_remove(self, interaction: discord.Interaction, user: discord.User):
@@ -308,6 +324,7 @@ class Player(commands.GroupCog):
         friendships = (
             await Friendship.filter(Q(player1=player) | Q(player2=player))
             .select_related("player1", "player2")
+            .order_by("since")
             .all()
         )
 
@@ -364,10 +381,20 @@ class Player(commands.GroupCog):
         if blocked:
             await interaction.followup.send("You have already blocked this user.", ephemeral=True)
             return
+        if self.active_friend_requests.get((player1.discord_id, player2.discord_id)):
+            await interaction.followup.send(
+                "You cannot block a user to whom you have sent an active friend request.",
+                ephemeral=True,
+            )
+            return
 
         friended = await player1.is_friend(player2)
         if friended:
-            view = ConfirmChoiceView(interaction)
+            view = ConfirmChoiceView(
+                interaction,
+                accept_message="User has been blocked.",
+                cancel_message=f"Request cancelled, {user.name} is still your friend.",
+            )
             await interaction.followup.send(
                 "This user is your friend, are you sure you want to block them?",
                 view=view,
@@ -425,7 +452,10 @@ class Player(commands.GroupCog):
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
 
         blocked_relations = (
-            await Block.filter(player1=player).select_related("player1", "player2").all()
+            await Block.filter(player1=player)
+            .select_related("player1", "player2")
+            .order_by("date")
+            .all()
         )
 
         if not blocked_relations:
@@ -460,9 +490,9 @@ class Player(commands.GroupCog):
         await pages.start(ephemeral=True)
 
     @app_commands.command()
-    async def stats(self, interaction: discord.Interaction):
+    async def info(self, interaction: discord.Interaction):
         """
-        View your statistics in the bot!
+        Display some of your info in the bot!
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
         try:
@@ -470,9 +500,7 @@ class Player(commands.GroupCog):
                 "balls"
             )
         except DoesNotExist:
-            await interaction.followup.send(
-                "You haven't got any statistics to show!", ephemeral=True
-            )
+            await interaction.followup.send("You haven't got any info to show!", ephemeral=True)
             return
         ball = await BallInstance.filter(player=player).prefetch_related("special", "trade_player")
 
@@ -493,22 +521,35 @@ class Player(commands.GroupCog):
             completion_percentage = "0.0%"
         caught_owned = [x for x in ball if x.trade_player is None]
         balls_owned = [x for x in ball]
-        shiny = [x for x in ball if x.shiny is True]
         special = [x for x in ball if x.special is not None]
         trades = await Trade.filter(
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
         ).count()
+        friends = await Friendship.filter(
+            Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
+        ).count()
+
+        blocks = await Block.filter(
+            Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
+        ).count()
 
         embed = discord.Embed(
-            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Stats**",
+            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**",
             color=discord.Color.blurple(),
         )
         embed.description = (
-            "Here are your current statistics in the bot!\n\n"
+            "Here are your statistics and settings in the bot!\n"
+            "## Player Info\n"
+            f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
+            f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
+            f"**Mention Policy:** {MENTION_POLICY_MAP[player.mention_policy]}\n"
+            f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}\n"
+            f"**Amount of Friends:** {friends}\n"
+            f"**Amount of Blocked Users:** {blocks}\n"
+            "## Player Stats\n"
             f"**Completion:** {completion_percentage}\n"
             f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned):,}\n"
             f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned):,}\n"
-            f"**Shiny {settings.collectible_name.title()}s:** {len(shiny):,}\n"
             f"**Special {settings.collectible_name.title()}s:** {len(special):,}\n"
             f"**Trades Completed:** {trades:,}"
         )
@@ -593,13 +634,13 @@ async def get_items_csv(player: PlayerModel) -> BytesIO:
     )
     txt = (
         f"id,hex id,{settings.collectible_name},catch date,trade_player"
-        ",special,shiny,attack,attack bonus,hp,hp_bonus\n"
+        ",special,attack,attack bonus,hp,hp_bonus\n"
     )
     for ball in balls:
         txt += (
             f"{ball.id},{ball.id:0X},{ball.ball.country},{ball.catch_date},"  # type: ignore
             f"{ball.trade_player.discord_id if ball.trade_player else 'None'},{ball.special},"
-            f"{ball.shiny},{ball.attack},{ball.attack_bonus},{ball.health},{ball.health_bonus}\n"
+            f"{ball.attack},{ball.attack_bonus},{ball.health},{ball.health_bonus}\n"
         )
     return BytesIO(txt.encode("utf-8"))
 

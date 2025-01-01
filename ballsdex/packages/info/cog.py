@@ -19,6 +19,8 @@ from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.tortoise import row_count_estimate
 from ballsdex.settings import settings
 
+from .license import LicenseInfo
+
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
@@ -134,7 +136,7 @@ class Info(commands.Cog):
             text=f"Python {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}"
         )
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, view=LicenseInfo())
 
     @app_commands.command()
     async def help(self, interaction: discord.Interaction):
