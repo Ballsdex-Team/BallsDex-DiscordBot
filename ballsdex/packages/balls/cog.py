@@ -637,6 +637,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         """
         if interaction.response.is_done():
             return
+
         assert interaction.guild
         filters = {}
         if countryball:
@@ -646,12 +647,15 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
+
         await interaction.response.defer(ephemeral=True, thinking=True)
+
         balls = await BallInstance.filter(**filters).count()
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
         guild = f" caught in {interaction.guild.name}" if current_server else ""
+
         await interaction.followup.send(
             f"You have {balls} {special_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
