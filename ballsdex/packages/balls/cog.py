@@ -676,7 +676,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await player.fetch_related("balls")
         is_special = type.value == "specials"
         queryset = BallInstance.filter(player=player)
-        
+
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
             annotations = {"name": "special__name", "emoji": "special__emoji"}
@@ -702,8 +702,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         entries = [
             (
                 f"{i + 1}. {item[annotations['name']]} "
-                f"{self.bot.get_emoji(item[annotations['emoji']]) or item[annotations['emoji']]}", 
-                f"Count: {item['count']}"
+                f"{self.bot.get_emoji(item[annotations['emoji']]) or item[annotations['emoji']]}",
+                f"Count: {item['count']}",
             )
             for i, item in enumerate(results)
         ]
