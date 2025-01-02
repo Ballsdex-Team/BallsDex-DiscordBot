@@ -251,6 +251,14 @@ class Player(commands.GroupCog):
             )
             return
 
+        if self.active_friend_requests.get((player2.discord_id, player1.discord_id), False):
+            await interaction.response.send_message(
+                "That user has already sent you a friend request! "
+                "Please accept or decline it before sending a new request.",
+                ephemeral=True,
+            )
+            return
+
         if self.active_friend_requests.get((player1.discord_id, player2.discord_id), False):
             await interaction.response.send_message(
                 "You already have an active friend request to this user!", ephemeral=True
