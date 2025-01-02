@@ -158,14 +158,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if user is not None:
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
-        try:
-            interaction_player = await Player.get(discord_id=interaction.user.id)
-        except DoesNotExist:
-            await interaction.followup.send(
-                "You need to start playing before interacting with others.",
-                ephemeral=True,
-            )
-            return
+
+        interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
@@ -250,14 +244,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
                 return
 
-            try:
-                interaction_player = await Player.get(discord_id=interaction.user.id)
-            except DoesNotExist:
-                await interaction.followup.send(
-                    "You need to start playing before interacting with others.",
-                    ephemeral=True,
-                )
-                return
+            interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
             blocked = await player.is_blocked(interaction_player)
             if blocked and not is_staff(interaction):
@@ -410,14 +397,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
-        try:
-            interaction_player = await Player.get(discord_id=interaction.user.id)
-        except DoesNotExist:
-            await interaction.followup.send(
-                "You need to start playing before interacting with others.",
-                ephemeral=True,
-            )
-            return
+        interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
@@ -480,6 +460,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                     f"You don't have any {settings.plural_collectible_name} yet.", ephemeral=True
                 )
                 return
+
             grammar = (
                 f"{settings.collectible_name}"
                 if settings.max_favorites == 1
