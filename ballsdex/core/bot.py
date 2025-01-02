@@ -45,7 +45,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
-startup_time = None
 
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
@@ -166,6 +165,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self.add_check(owner_check)  # Only owners are able to use text commands
 
         self._shutdown = 0
+        self.startup_time: datetime | None = None
         self.blacklist: set[int] = set()
         self.blacklist_guild: set[int] = set()
         self.catch_log: set[int] = set()
@@ -279,7 +279,8 @@ class BallsDexBot(commands.AutoShardedBot):
         if self.cogs != {}:
             return  # bot is reconnecting, no need to setup again
 
-        self.startup_time = datetime.now()
+        if self.startup_time is None:
+            self.startup_time = datetime.now()
 
         assert self.user
         log.info(f"Successfully logged in as {self.user} ({self.user.id})!")
