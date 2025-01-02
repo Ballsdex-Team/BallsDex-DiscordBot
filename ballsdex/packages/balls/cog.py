@@ -474,9 +474,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if not countryball.favorite:
             try:
-                player = await Player.get(discord_id=interaction.user.id).prefetch_related(
-                    "balls"
-                )
+                player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
             except DoesNotExist:
                 await interaction.response.send_message(
                     f"You don't have any {settings.plural_collectible_name} yet.", ephemeral=True
