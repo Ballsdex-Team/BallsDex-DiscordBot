@@ -77,10 +77,11 @@ class Info(commands.Cog):
         players_count = await row_count_estimate("player")
         balls_instances_count = await row_count_estimate("ballinstance")
 
-        uptime_duration = datetime.now() - self.bot.startup_time
-        days, remainder = divmod(int(uptime_duration.total_seconds()), 86400)
-        hours, remainder = divmod(remainder, 3600)
-        minutes, seconds = divmod(remainder, 60)
+        if self.bot.startup_time is not None:
+            uptime_duration = datetime.now() - self.bot.startup_time
+            days, remainder = divmod(int(uptime_duration.total_seconds()), 86400)
+            hours, remainder = divmod(remainder, 3600)
+            minutes, seconds = divmod(remainder, 60)
 
         assert self.bot.user
         assert self.bot.application
