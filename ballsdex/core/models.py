@@ -120,6 +120,9 @@ class Special(models.Model):
     )
     tradeable = fields.BooleanField(default=True)
     hidden = fields.BooleanField(default=False, description="Hides the event from user commands")
+    credits = fields.CharField(
+        max_length=64, description="Author of the special event artwork", null=True
+    )
 
     def __str__(self) -> str:
         return self.name

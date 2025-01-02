@@ -29,9 +29,12 @@ credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 def draw_card(ball_instance: "BallInstance"):
     ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
+    ball_credits = ball.credits
 
     if special_image := ball_instance.special_card:
         image = Image.open("." + special_image)
+        if ball_instance.specialcard and ball_instance.specialcard.credits:
+            ball_credits += f" • {ball_instance.specialcard.credits}"
     else:
         image = Image.open("." + ball.cached_regime.background)
     image = image.convert("RGBA")
@@ -85,7 +88,7 @@ def draw_card(ball_instance: "BallInstance"):
         (30, 1870),
         # Modifying the line below is breaking the licence as you are removing credits
         # If you don't want to receive a DMCA, just don't
-        "Created by El Laggron\n" f"Artwork author: {ball.credits}",
+        "Created by El Laggron\n" f"Artwork author: {ball_credits}",
         font=credits_font,
         fill=(0, 0, 0, 255),
         stroke_width=0,
