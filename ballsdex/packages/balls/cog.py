@@ -693,8 +693,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             limit = 50
 
         results = (
-            await queryset.annotate(count=Count("id")).group_by(*annotations.values()
-            ).order_by("-count").limit(limit).values(*annotations.values(), "count")
+            await queryset.annotate(count=Count("id"))
+            .group_by(*annotations.values())
+            .order_by("-count")
+            .limit(limit)
+            .values(*annotations.values(), "count")
         )
 
         if not results:
