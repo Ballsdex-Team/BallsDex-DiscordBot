@@ -11,9 +11,10 @@ if TYPE_CHECKING:
 
 def is_staff(interaction: discord.Interaction) -> bool:
     if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
-        roles = settings.admin_role_ids + settings.root_role_ids
-        if any(role.id in roles for role in interaction.user.roles):  # type: ignore
-            return True
+        if isinstance(interaction.user, discord.Member):
+            roles = settings.admin_role_ids + settings.root_role_ids
+            if any(role.id in roles for role in (interaction.user.roles or [])):
+                return True
     return False
 
 
