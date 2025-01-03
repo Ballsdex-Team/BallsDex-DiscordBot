@@ -40,6 +40,9 @@ class AcceptTOSView(View):
         )
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """
+        Validates whether the user interacting with a menu is authorized to do so.
+        """
         if interaction.user.id != self.new_player.id:
             await interaction.response.send_message(
                 "You are not allowed to interact with this menu.", ephemeral=True
@@ -53,6 +56,9 @@ class AcceptTOSView(View):
         emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}",
     )
     async def accept_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """
+        Handles the acceptance of the configuration embed.
+        """
         config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
         config.spawn_channel = self.channel.id  # type: ignore
         config.enabled = True
@@ -74,6 +80,9 @@ class AcceptTOSView(View):
         )
 
     async def on_timeout(self) -> None:
+        """
+        Handles the event when the menu times out due to inactivity.
+        """
         if self.message:
             for item in self.children:
                 if isinstance(item, discord.ui.Button):

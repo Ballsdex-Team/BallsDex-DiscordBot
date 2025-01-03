@@ -107,6 +107,9 @@ class SpawnCooldown:
     message_cache: deque[CachedMessage] = field(default_factory=lambda: deque(maxlen=100))
 
     def reset(self, time: datetime):
+        """
+        Resets the manager's state to default values.
+        """
         self.scaled_message_count = 1.0
         self.threshold = random.randint(*SPAWN_CHANCE_RANGE)
         try:
@@ -116,6 +119,10 @@ class SpawnCooldown:
         self.time = time
 
     async def increase(self, message: discord.Message) -> bool:
+        """
+        Increases the message count based on various conditions, affecting the 
+        spawn manager's behavior.
+        """
         # this is a deque, not a list
         # its property is that, once the max length is reached (100 for us),
         # the oldest element is removed, thus we only have the last 100 messages in memory
@@ -149,6 +156,10 @@ class SpawnManager(BaseSpawnManager):
         self.cooldowns: dict[int, SpawnCooldown] = {}
 
     async def handle_message(self, message: discord.Message) -> bool:
+        """
+        Handles a message by checking if spawn conditions are met and whether
+        a spawn should occur.
+        """
         guild = message.guild
         if not guild:
             return False
@@ -191,6 +202,10 @@ class SpawnManager(BaseSpawnManager):
     async def admin_explain(
         self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild
     ):
+        """
+        Provides an explanation to the admin regarding spawn conditions and 
+        the current state of the spawn manager for a guild.
+        """
         cooldown = self.cooldowns.get(guild.id)
         if not cooldown:
             await interaction.response.send_message(

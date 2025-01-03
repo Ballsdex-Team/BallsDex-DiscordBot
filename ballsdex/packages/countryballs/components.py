@@ -35,6 +35,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         self.button = button
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, /) -> None:
+        """
+        Gracefully handle the case where an error occurs.
+        """
         log.exception("An error occured in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
             await interaction.followup.send(
@@ -46,6 +49,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             )
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Handle the submitted guesses of users.
+        """
         # TODO: use lock
         await interaction.response.defer(thinking=True)
 
@@ -97,6 +103,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     async def catch_ball(
         self, bot: "BallsDexBot", user: discord.Member
     ) -> tuple[BallInstance, bool]:
+        """
+        This functions gives the countryball to the fastest user to catch.
+        """
         player, created = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
@@ -167,6 +176,9 @@ class CatchView(View):
         return await interaction.client.blacklist_check(interaction)
 
     async def on_timeout(self):
+        """
+        Handle the timeout of the view.
+        """
         self.catch_button.disabled = True
         if self.ball.message:
             try:
@@ -176,6 +188,9 @@ class CatchView(View):
 
     @button(style=discord.ButtonStyle.primary, label="Catch me!")
     async def catch_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        """
+        Format the 'Catch me!' button and handle the catching of the countryball.
+        """
         if self.ball.catched:
             await interaction.response.send_message("I was caught already!", ephemeral=True)
         else:

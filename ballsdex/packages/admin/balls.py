@@ -27,6 +27,11 @@ FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
 
 
 async def save_file(attachment: discord.Attachment) -> Path:
+    """
+    Saves an uploaded Discord attachment to the server's file system. 
+    Ensures that the file does not overwrite any existing files by appending
+    a numeric suffix to the filename if necessary.
+    """
     path = Path(f"./static/uploads/{attachment.filename}")
     match = FILENAME_RE.match(attachment.filename)
     if not match:

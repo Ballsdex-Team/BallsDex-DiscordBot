@@ -13,6 +13,12 @@ if TYPE_CHECKING:
 
 
 class CountryballsSource(menus.ListPageSource):
+    """
+    A data source for paginating a list of BallInstance objects.
+
+    This class provides logic for formatting and managing a paginated view 
+    of countryballs for display in Discord embeds.
+    """
     def __init__(self, entries: List[BallInstance]):
         super().__init__(entries, per_page=25)
 
@@ -22,6 +28,13 @@ class CountryballsSource(menus.ListPageSource):
 
 
 class CountryballsSelector(Pages):
+    """
+    A pagination menu for displaying and selecting countryballs.
+
+    This class uses the `Pages` paginator and integrates a dropdown menu 
+    for users to select a countryball.
+    """    
+
     def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[BallInstance]):
         self.bot = interaction.client
         source = CountryballsSource(balls)
@@ -29,6 +42,9 @@ class CountryballsSelector(Pages):
         self.add_item(self.select_ball_menu)
 
     def set_options(self, balls: List[BallInstance]):
+        """
+        Formats a page of countryballs and signals the selector to update.
+        """
         options: List[discord.SelectOption] = []
         for ball in balls:
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
@@ -50,6 +66,9 @@ class CountryballsSelector(Pages):
 
     @discord.ui.select()
     async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
+        """
+        Handles the selection of a countryball from the dropdown menu.
+        """
         await interaction.response.defer(thinking=True)
         ball_instance = await BallInstance.get(
             id=int(interaction.data.get("values")[0])  # type: ignore
@@ -57,11 +76,24 @@ class CountryballsSelector(Pages):
         await self.ball_selected(interaction, ball_instance)
 
     async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):
+        """
+        A placeholder method for handling selected countryballs.
+        """
         raise NotImplementedError()
 
 
 class CountryballsViewer(CountryballsSelector):
+    """
+    A specialized version of CountryballsSelector for viewing countryballs.
+
+    Overrides the `ball_selected` method to handle displaying information
+    about a selected countryball.
+    """
+
     async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):
+        """
+        Handles the display of a selected countryball.
+        """
         content, file = await ball_instance.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file)
         file.close()
