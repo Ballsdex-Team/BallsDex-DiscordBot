@@ -18,6 +18,9 @@ class BlacklistViewFormat(menus.ListPageSource):
         super().__init__(entries, per_page=1)
 
     async def format_page(self, menu: Pages, blacklist: BlacklistHistory) -> discord.Embed:
+        """
+        Formats an embed page to display blacklist history for a user.
+        """
         embed = discord.Embed(
             title=f"Blacklist History for {self.header}",
             description=f"Type: {blacklist.action_type}\nReason: {blacklist.reason}",

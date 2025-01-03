@@ -32,6 +32,10 @@ class CountryBallsSpawner(commands.Cog):
         self.spawn_manager = spawn_manager(bot)
 
     async def load_cache(self):
+        """
+        Loads the cache with guild spawn channel data for all enabled guilds 
+        with a non-null spawn channel.
+        """
         i = 0
         async for config in GuildConfig.filter(enabled=True, spawn_channel__isnull=False).only(
             "guild_id", "spawn_channel"

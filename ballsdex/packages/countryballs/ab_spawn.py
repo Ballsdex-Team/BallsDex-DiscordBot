@@ -49,6 +49,10 @@ class ABSpawner(BaseSpawnManager):
             return self.manager_b
 
     async def handle_message(self, message: "discord.Message") -> bool | tuple[Literal[True], str]:
+        """
+        Handles an incoming message, processes it through the manager, 
+        and returns the result along with a message.
+        """
         assert message.guild
         manager = self.get_manager(message.guild)
         result = await manager.handle_message(message)
@@ -64,6 +68,10 @@ class ABSpawner(BaseSpawnManager):
     async def admin_explain(
         self, interaction: "discord.Interaction[BallsDexBot]", guild: "discord.Guild"
     ):
+        """
+        Explains the server's manager assignment and sends a follow-up message 
+        to the admin with the relevant information.
+        """
         manager = self.get_manager(guild)
         await manager.admin_explain(interaction, guild)
         if manager == self.manager_a:

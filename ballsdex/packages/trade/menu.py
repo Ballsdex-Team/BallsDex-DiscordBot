@@ -30,6 +30,9 @@ class InvalidTradeOperation(Exception):
 
 
 class TradeView(View):
+    """
+    Handles the buttons appearing below the trade embed.
+    """
     def __init__(self, trade: TradeMenu):
         super().__init__(timeout=60 * 30)
         self.trade = trade
@@ -47,6 +50,9 @@ class TradeView(View):
 
     @button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
     async def lock(self, interaction: discord.Interaction, button: Button):
+        """
+        Format and handle the 'Lock proposal' button.
+        """
         trader = self.trade._get_trader(interaction.user)
         if trader.locked:
             await interaction.response.send_message(
@@ -69,6 +75,9 @@ class TradeView(View):
 
     @button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
     async def clear(self, interaction: discord.Interaction, button: Button):
+        """
+        Format and handle the 'Reset' button.
+        """
         trader = self.trade._get_trader(interaction.user)
         if trader.locked:
             await interaction.response.send_message(
@@ -88,11 +97,17 @@ class TradeView(View):
         style=discord.ButtonStyle.danger,
     )
     async def cancel(self, interaction: discord.Interaction, button: Button):
+        """
+        Format and handle the 'Cancel trade' button.
+        """
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
         await interaction.response.send_message("Trade has been cancelled.", ephemeral=True)
 
 
 class ConfirmView(View):
+    """
+    Handles the buttons below the trade embed on the last phase of a trade.
+    """
     def __init__(self, trade: TradeMenu):
         super().__init__(timeout=90)
         self.trade = trade
@@ -113,6 +128,9 @@ class ConfirmView(View):
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
     async def accept_button(self, interaction: discord.Interaction, button: Button):
+        """
+        Handle the 'Accept' button.
+        """
         trader = self.trade._get_trader(interaction.user)
         if self.trade.cooldown_start_time is None:
             return
@@ -151,6 +169,9 @@ class ConfirmView(View):
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
     )
     async def deny_button(self, interaction: discord.Interaction, button: Button):
+        """
+        Handle the 'Deny' button.
+        """
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
         await interaction.response.send_message("Trade has been cancelled.", ephemeral=True)
 
@@ -182,6 +203,9 @@ class TradeMenu:
         raise RuntimeError(f"User with ID {user.id} cannot be found in the trade")
 
     def _generate_embed(self):
+        """
+        Generate the trade embed with the initial content.
+        """
         add_command = self.cog.add.extras.get("mention", "`/trade add`")
         remove_command = self.cog.remove.extras.get("mention", "`/trade remove`")
         view_command = self.cog.view.extras.get("mention", "`/trade view`")
@@ -293,6 +317,9 @@ class TradeMenu:
         await self.cancel()
 
     async def perform_trade(self):
+        """
+        Perform the trade if possible, else handle the errors.
+        """
         valid_transferable_countryballs: list[BallInstance] = []
 
         trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
