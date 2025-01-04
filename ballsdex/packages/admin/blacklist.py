@@ -142,7 +142,7 @@ class Blacklist(app_commands.Group):
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_history(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction[BallsDexBot],
         user: discord.User | None = None,
         guild_id: str | None = None,
     ):
@@ -178,6 +178,11 @@ class Blacklist(app_commands.Group):
                 return
         elif user:
             _id = user.id
+        else:
+            await interaction.response.send_message(
+                "Unexpected error: _id could not be determined.", ephemeral=True
+            )
+            return
 
         history = await BlacklistHistory.filter(discord_id=_id).order_by("-date")
 
