@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List
 
 import discord
 
+from ballsdex.settings import settings
 from ballsdex.core.models import BallInstance
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
@@ -32,7 +33,7 @@ class CountryballsSelector(Pages):
         options: List[discord.SelectOption] = []
         for ball in balls:
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
-            favorite = "❤️ " if ball.favorite else ""
+            favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
             special = ball.special_emoji(self.bot, True)
             options.append(
                 discord.SelectOption(

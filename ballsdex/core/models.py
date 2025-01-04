@@ -12,6 +12,7 @@ from fastapi_admin.models import AbstractAdmin
 from tortoise import exceptions, fields, models, signals, timezone, validators
 from tortoise.expressions import Q
 
+from ballsdex.settings import settings
 from ballsdex.core.image_generator.image_gen import draw_card
 
 if TYPE_CHECKING:
@@ -281,7 +282,7 @@ class BallInstance(models.Model):
         if bot and self.pk in bot.locked_balls and not is_trade:  # type: ignore
             emotes += "🔒"
         if self.favorite and not is_trade:
-            emotes += "❤️"
+            emotes += f"{settings.favorited_collectible_emoji}"
         if emotes:
             emotes += " "
         if self.specialcard:
