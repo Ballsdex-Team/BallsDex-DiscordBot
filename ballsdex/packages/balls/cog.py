@@ -637,6 +637,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         """
         if interaction.response.is_done():
             return
+
         assert interaction.guild
         filters = {}
         if countryball:
@@ -646,12 +647,15 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
+
         await interaction.response.defer(ephemeral=True, thinking=True)
+
         balls = await BallInstance.filter(**filters).count()
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
         guild = f" caught in {interaction.guild.name}" if current_server else ""
+
         await interaction.followup.send(
             f"You have {balls} {special_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
@@ -670,43 +674,35 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         type: DuplicateType
             Type of duplicate to check (countryballs or specials).
         """
-        await interaction.response.defer(ephemeral=True)
-        user_id = interaction.user.id
-        player, _ = await Player.get_or_create(discord_id=user_id)
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
         await player.fetch_related("balls")
         is_special = type.value == "specials"
         queryset = BallInstance.filter(player=player)
 
-        if type.value == "specials":
+        if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
-            annotations = {
-                "name": "special__name",
-                "emoji": "special__emoji",
-            }
+            annotations = {"name": "special__name", "emoji": "special__emoji"}
+            title = "special"
             limit = 5
-            title = "specials"
         else:
             queryset = queryset.filter(ball__tradeable=True)
-            annotations = {
-                "name": "ball__country",
-                "emoji": "ball__emoji_id",
-            }
+            annotations = {"name": "ball__country", "emoji": "ball__emoji_id"}
+            title = settings.collectible_name
             limit = 50
-            title = settings.plural_collectible_name
 
-        queryset = (
-            queryset.annotate(count=Count("id"))
+        results = (
+            await queryset.annotate(count=Count("id"))
             .group_by(*annotations.values())
             .order_by("-count")
             .limit(limit)
             .values(*annotations.values(), "count")
         )
-        results = await queryset
 
         if not results:
             await interaction.followup.send(
-                f"You don't have any {type.value} duplicates in your inventory!",
-                ephemeral=True,
+                f"You don't have any {type.value} duplicates in your inventory.", ephemeral=True
             )
             return
 
@@ -718,9 +714,17 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             for i, item in enumerate(results)
         ]
+
+        embed_title = (
+            f"Top {len(results)} duplicate {title}s:"
+            if len(results) > 1
+            else f"Top {len(results)} duplicate {title}"
+        )
+
         source = FieldPageSource(entries, per_page=5 if is_special else 10, inline=False)
-        source.embed.title = f"Top {len(results)} duplicate {title}"
+        source.embed.title = embed_title
         source.embed.color = discord.Color.purple() if is_special else discord.Color.blue()
         source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
+
         paginator = Pages(source, interaction=interaction)
         await paginator.start(ephemeral=True)
