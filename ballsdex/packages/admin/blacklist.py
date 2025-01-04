@@ -140,22 +140,44 @@ class Blacklist(app_commands.Group):
 
     @app_commands.command(name="history")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def blacklist_history(self, interaction: discord.Interaction[BallsDexBot], user_id: str):
+    async def blacklist_history(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User | None = None,
+        guild_id: str | None = None,
+    ):
         """
         Show the history of a blacklisted user or guild.
 
         Parameters
         ----------
-        id: str
-            The ID of the user or guild you want to check.
+        user: discord.User
+            The ID of the user you want to check.
+        guild_id: str
+            The ID of the guild you want to check.
         """
-        try:
-            _id = int(user_id)
-        except ValueError:
+        if (user and guild_id) or (not user and not guild_id):
             await interaction.response.send_message(
-                "The ID you gave is not valid.", ephemeral=True
+                "You must provide either `user` or `guild_id`.", ephemeral=True
             )
             return
+
+        if guild_id:
+            try:
+                guild = await self.bot.fetch_guild(int(guild_id))  # type: ignore
+                _id = guild.id
+            except ValueError:
+                await interaction.response.send_message(
+                    "The guild ID you gave is not valid.", ephemeral=True
+                )
+                return
+            except discord.NotFound:
+                await interaction.response.send_message(
+                    "The given guild ID could not be found.", ephemeral=True
+                )
+                return
+        elif user:
+            _id = user.id
 
         history = await BlacklistHistory.filter(discord_id=_id).order_by("-date")
 
