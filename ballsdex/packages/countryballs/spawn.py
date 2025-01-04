@@ -120,7 +120,7 @@ class SpawnCooldown:
 
     async def increase(self, message: discord.Message) -> bool:
         """
-        Increases the message count based on various conditions, affecting the 
+        Increases the message count based on various conditions, affecting the
         spawn manager's behavior.
         """
         # this is a deque, not a list
@@ -203,7 +203,7 @@ class SpawnManager(BaseSpawnManager):
         self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild
     ):
         """
-        Provides an explanation to the admin regarding spawn conditions and 
+        Provides an explanation to the admin regarding spawn conditions and
         the current state of the spawn manager for a guild.
         """
         cooldown = self.cooldowns.get(guild.id)

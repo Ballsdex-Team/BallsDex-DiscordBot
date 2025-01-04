@@ -65,10 +65,10 @@ def _build_list_of_strings(
     trader: TradingUser, bot: "BallsDexBot", short: bool = False
 ) -> list[str]:
     """
-    Build a list of strings representing a trader's proposal, ensuring the total length 
+    Build a list of strings representing a trader's proposal, ensuring the total length
     does not exceed 1024 characters per field for Discord embeds.
 
-    This function avoids breaking a line in the middle of a description. The output is 
+    This function avoids breaking a line in the middle of a description. The output is
     split across multiple lines if necessary, ensuring no line exceeds the character limit.
     """
     # this builds a list of strings always lower than 1024 characters

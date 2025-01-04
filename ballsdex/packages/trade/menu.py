@@ -33,6 +33,7 @@ class TradeView(View):
     """
     Handles the buttons appearing below the trade embed.
     """
+
     def __init__(self, trade: TradeMenu):
         super().__init__(timeout=60 * 30)
         self.trade = trade
@@ -108,6 +109,7 @@ class ConfirmView(View):
     """
     Handles the buttons below the trade embed on the last phase of a trade.
     """
+
     def __init__(self, trade: TradeMenu):
         super().__init__(timeout=90)
         self.trade = trade

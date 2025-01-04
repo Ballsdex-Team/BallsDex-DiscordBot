@@ -33,7 +33,7 @@ class CountryBallsSpawner(commands.Cog):
 
     async def load_cache(self):
         """
-        Loads the cache with guild spawn channel data for all enabled guilds 
+        Loads the cache with guild spawn channel data for all enabled guilds
         with a non-null spawn channel.
         """
         i = 0

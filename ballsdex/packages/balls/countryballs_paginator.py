@@ -16,7 +16,7 @@ class CountryballsSource(menus.ListPageSource):
     """
     A data source for paginating a list of BallInstance objects.
 
-    This class provides logic for formatting and managing a paginated view 
+    This class provides logic for formatting and managing a paginated view
     of countryballs for display in Discord embeds.
     """
     def __init__(self, entries: List[BallInstance]):
@@ -31,9 +31,9 @@ class CountryballsSelector(Pages):
     """
     A pagination menu for displaying and selecting countryballs.
 
-    This class uses the `Pages` paginator and integrates a dropdown menu 
+    This class uses the `Pages` paginator and integrates a dropdown menu
     for users to select a countryball.
-    """    
+    """
 
     def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[BallInstance]):
         self.bot = interaction.client
