@@ -48,6 +48,9 @@ http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code
 
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
+    """
+    Checks who the owner of the bot is.
+    """
     return ctx.bot.is_owner(ctx.author)
 
 
@@ -55,6 +58,9 @@ class Translator(app_commands.Translator):
     async def translate(
         self, string: locale_str, locale: Locale, context: TranslationContextTypes
     ) -> str | None:
+        """
+        Translate the given string to the specified locale.
+        """
         return string.message.replace("countryball", settings.collectible_name).replace(
             "BallsDex", settings.bot_name
         )
@@ -175,6 +181,9 @@ class BallsDexBot(commands.AutoShardedBot):
         self.owner_ids: set
 
     async def start_prometheus_server(self):
+        """
+        Start the Prometheus server for metrics.
+        """
         self.prometheus_server = PrometheusServer(
             self, settings.prometheus_host, settings.prometheus_port
         )
@@ -183,6 +192,9 @@ class BallsDexBot(commands.AutoShardedBot):
     def assign_ids_to_app_groups(
         self, group: app_commands.Group, synced_commands: list[app_commands.AppCommandGroup]
     ):
+        """
+        Assign the IDs to the app commands in the group.
+        """
         for synced_command in synced_commands:
             bot_command = group.get_command(synced_command.name)
             if not bot_command:
@@ -194,6 +206,9 @@ class BallsDexBot(commands.AutoShardedBot):
                 )
 
     def assign_ids_to_app_commands(self, synced_commands: list[app_commands.AppCommand]):
+        """
+        Assign the IDs to the app commands.
+        """
         for synced_command in synced_commands:
             bot_command = self.tree.get_command(synced_command.name, type=synced_command.type)
             if not bot_command:
@@ -205,6 +220,9 @@ class BallsDexBot(commands.AutoShardedBot):
                 )
 
     async def load_cache(self):
+        """
+        Load the cache with database models and format a summary table.
+        """
         table = Table(box=box.SIMPLE)
         table.add_column("Model", style="cyan")
         table.add_column("Count", justify="right", style="green")
@@ -244,7 +262,9 @@ class BallsDexBot(commands.AutoShardedBot):
         console.print(table)
 
     async def gateway_healthy(self) -> bool:
-        """Check whether or not the gateway proxy is ready and healthy."""
+        """
+        Check whether or not the gateway proxy is ready and healthy.
+        """
         if settings.gateway_url is None:
             raise RuntimeError("This is only available on the production bot instance.")
 
@@ -261,6 +281,9 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
 
     async def setup_hook(self) -> None:
+        """
+        Setup the bot before starting up.
+        """
         await self.tree.set_translator(Translator())
         log.info("Starting up with %s shards...", self.shard_count)
         if settings.gateway_url is None:
@@ -361,6 +384,9 @@ class BallsDexBot(commands.AutoShardedBot):
         )
 
     async def blacklist_check(self, interaction: discord.Interaction) -> bool:
+        """
+        Check if the user or guild is blacklisted from the bot.
+        """
         if interaction.user.id in self.blacklist:
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
@@ -391,6 +417,9 @@ class BallsDexBot(commands.AutoShardedBot):
     async def on_command_error(
         self, context: commands.Context, exception: commands.errors.CommandError
     ):
+        """
+        Handle command errors, and give feedback to the user.
+        """
         if isinstance(exception, (commands.CommandNotFound, commands.DisabledCommand)):
             return
 
@@ -433,6 +462,9 @@ class BallsDexBot(commands.AutoShardedBot):
     async def on_application_command_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
     ):
+        """
+        Handle errors in application commands and give feedback to the user.
+        """
         async def send(content: str):
             if interaction.response.is_done():
                 await interaction.followup.send(content, ephemeral=True)

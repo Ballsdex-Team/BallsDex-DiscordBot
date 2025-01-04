@@ -65,6 +65,11 @@ class PrometheusServer:
         )
 
     async def collect_metrics(self):
+        """
+        This function collects various metrics about the bot's performance
+        and activity for Prometheus monitoring. It categorizes the guilds the bot is in based
+        on their member count, grouping them by powers of ten.
+        """
         guilds: dict[int, int] = defaultdict(int)
         for guild in self.bot.guilds:
             if not guild.member_count:
@@ -82,6 +87,9 @@ class PrometheusServer:
         self.asyncio_delay.observe((t2 - t1).total_seconds() - 1)
 
     async def get(self, request: web.Request) -> web.Response:
+        """
+        This function handles incoming HTTP GET requests to the Prometheus metrics endpoint.
+        """
         log.debug("Request received")
         await self.collect_metrics()
         response = web.Response(body=generate_latest())
@@ -89,17 +97,27 @@ class PrometheusServer:
         return response
 
     async def setup(self):
+        """
+        This function initializes and configures the Prometheus server.
+        """
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
         self.site = web.TCPSite(self.runner, host=self.host, port=self.port)
         self._inited = True
 
     async def run(self):
+        """
+        This function starts the Prometheus server after setting it up. It ensures the server is
+        non-blocking, allowing other operations to continue while the server runs.
+        """
         await self.setup()
         await self.site.start()  # this call isn't blocking
         log.info(f"Prometheus server started on http://{self.site._host}:{self.site._port}/")
 
     async def stop(self):
+        """
+        This function stops the Prometheus server gracefully.
+        """
         if self._inited:
             await self.site.stop()
             await self.runner.cleanup()

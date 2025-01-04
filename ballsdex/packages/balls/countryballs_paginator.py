@@ -19,6 +19,7 @@ class CountryballsSource(menus.ListPageSource):
     This class provides logic for formatting and managing a paginated view
     of countryballs for display in Discord embeds.
     """
+
     def __init__(self, entries: List[BallInstance]):
         super().__init__(entries, per_page=25)
 
