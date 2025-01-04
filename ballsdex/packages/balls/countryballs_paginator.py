@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, List
 
 import discord
 
-from ballsdex.settings import settings
 from ballsdex.core.models import BallInstance
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
+from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

@@ -12,8 +12,8 @@ from fastapi_admin.models import AbstractAdmin
 from tortoise import exceptions, fields, models, signals, timezone, validators
 from tortoise.expressions import Q
 
-from ballsdex.settings import settings
 from ballsdex.core.image_generator.image_gen import draw_card
+from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
