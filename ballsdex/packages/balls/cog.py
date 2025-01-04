@@ -33,6 +33,7 @@ class DonationRequest(View):
     """
     Formats the view for donation requests.
     """
+
     def __init__(
         self,
         bot: "BallsDexBot",

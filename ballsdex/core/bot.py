@@ -465,6 +465,7 @@ class BallsDexBot(commands.AutoShardedBot):
         """
         Handle errors in application commands and give feedback to the user.
         """
+
         async def send(content: str):
             if interaction.response.is_done():
                 await interaction.followup.send(content, ephemeral=True)

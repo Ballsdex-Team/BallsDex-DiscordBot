@@ -154,6 +154,7 @@ class SpawnManager(BaseSpawnManager):
     """
     The default spawn manager for countryballs.
     """
+
     def __init__(self, bot: "BallsDexBot"):
         super().__init__(bot)
         self.cooldowns: dict[int, SpawnCooldown] = {}
