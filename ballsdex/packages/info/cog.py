@@ -80,6 +80,8 @@ class Info(commands.Cog):
         if self.bot.startup_time is not None:
             uptime_duration = datetime.now() - self.bot.startup_time
             formatted_uptime = str(uptime_duration).split(".")[0]
+        else:
+            formatted_uptime = "N/A"
 
         assert self.bot.user
         assert self.bot.application
