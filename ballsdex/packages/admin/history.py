@@ -34,7 +34,7 @@ class History(app_commands.Group):
         days: int | None = None,
     ):
         """
-        Show the history of a user.
+        Show the trade history of a user.
 
         Parameters
         ----------
@@ -102,7 +102,7 @@ class History(app_commands.Group):
         days: int | None = None,
     ):
         """
-        Show the history of a countryball.
+        Show the trade history of a countryball.
 
         Parameters
         ----------
