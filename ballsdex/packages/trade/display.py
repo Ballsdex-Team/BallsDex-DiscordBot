@@ -36,8 +36,8 @@ class TradeViewFormat(menus.ListPageSource):
         fill_trade_embed_fields(
             embed,
             self.bot,
-            await TradingUser.from_trade_model(trade, trade.player1, self.bot),
-            await TradingUser.from_trade_model(trade, trade.player2, self.bot),
+            await TradingUser.from_trade_model(trade, trade.player1, self.bot, self.is_admin),
+            await TradingUser.from_trade_model(trade, trade.player2, self.bot, self.is_admin),
             is_admin=self.is_admin,
         )
         return embed
@@ -52,6 +52,14 @@ def _get_prefix_emote(trader: TradingUser) -> str:
         return "\N{LOCK}"
     else:
         return ""
+
+
+def _get_trader_name(trader: TradingUser, is_admin: bool = False) -> str:
+    if is_admin:
+        blacklisted = "\N{NO MOBILE PHONES} " if trader.blacklisted else ""
+        return f"{blacklisted}{_get_prefix_emote(trader)} {trader.user.name} ({trader.user.id})"
+    else:
+        return f"{_get_prefix_emote(trader)} {trader.user.name}"
 
 
 def _build_list_of_strings(
@@ -119,18 +127,12 @@ def fill_trade_embed_fields(
 
     # then display the text. first page is easy
     embed.add_field(
-        name=(
-            f"{_get_prefix_emote(trader1)} {trader1.user.name}"
-            f" {trader1.user.id if is_admin else ''}"
-        ),
+        name=_get_trader_name(trader1, is_admin),
         value=trader1_proposal[0],
         inline=True,
     )
     embed.add_field(
-        name=(
-            f"{_get_prefix_emote(trader2)} {trader2.user.name}"
-            f" {trader2.user.id if is_admin else ''}"
-        ),
+        name=_get_trader_name(trader2, is_admin),
         value=trader2_proposal[0],
         inline=True,
     )
@@ -163,10 +165,7 @@ def fill_trade_embed_fields(
         else:
             embed.clear_fields()
             embed.add_field(
-                name=(
-                    f"{_get_prefix_emote(trader1)} {trader1.user.name}"
-                    f" {trader1.user.id if is_admin else ''}"
-                ),
+                name=_get_trader_name(trader1, is_admin),
                 value=(
                     f"Trade too long, only showing last page:\n{trader1_proposal[-1]}"
                     f"\nTotal: {len(trader1.proposal)}"
@@ -174,10 +173,7 @@ def fill_trade_embed_fields(
                 inline=True,
             )
             embed.add_field(
-                name=(
-                    f"{_get_prefix_emote(trader2)} {trader2.user.name}"
-                    f" {trader2.user.id if is_admin else ''}"
-                ),
+                name=_get_trader_name(trader2, is_admin),
                 value=(
                     f"Trade too long, only showing last page:\n{trader2_proposal[-1]}\n"
                     f"Total: {len(trader2.proposal)}"
