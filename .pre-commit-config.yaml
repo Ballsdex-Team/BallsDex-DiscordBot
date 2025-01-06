@@ -42,6 +42,9 @@ repos:
           - git+https://github.com/fastapi-admin/fastapi-admin.git
           - aerich==0.6.3
           - redis
+          - django
+          - dj_database_url
+          - django-stubs
   - repo: https://github.com/csachs/pyproject-flake8
     rev: v7.0.0
     hooks:

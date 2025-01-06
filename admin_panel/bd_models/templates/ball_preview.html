@@ -1,0 +1,19 @@
+<table>
+    <tr>
+        <td style="vertical-align: middle; width: 40%;" id="card-content">
+            <div>Nothing to show</div>
+        </td>
+        <td>
+            <button id="generate-card" type="button" class="button" style="padding: 10px 15px;">Generate</button>
+        </td>
+    </tr>
+</table>
+
+<script>
+    const input = document.getElementById("generate-card");
+    const img = document.getElementById("card-content");
+
+    input.addEventListener("click", event => {
+        img.innerHTML = `<img src="/ball/generate/{{ ball_pk }}"" width=100%>`
+    })
+</script>
