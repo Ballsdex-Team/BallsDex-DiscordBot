@@ -22,21 +22,21 @@ async def render_image(request: HttpRequest, ball_pk: int) -> HttpResponse:
 
     if not Tortoise._inited:
         await init_tortoise(os.environ["BALLSDEXBOT_DB_URL"])
-        balls.clear()
-        for ball in await Ball.all():
-            balls[ball.pk] = ball
+    balls.clear()
+    for ball in await Ball.all():
+        balls[ball.pk] = ball
 
-        regimes.clear()
-        for regime in await Regime.all():
-            regimes[regime.pk] = regime
+    regimes.clear()
+    for regime in await Regime.all():
+        regimes[regime.pk] = regime
 
-        economies.clear()
-        for economy in await Economy.all():
-            economies[economy.pk] = economy
+    economies.clear()
+    for economy in await Economy.all():
+        economies[economy.pk] = economy
 
-        specials.clear()
-        for special in await Special.all():
-            specials[special.pk] = special
+    specials.clear()
+    for special in await Special.all():
+        specials[special.pk] = special
 
     ball = await Ball.get(pk=ball_pk)
     instance = BallInstance(ball=ball, count=1)

@@ -1,0 +1,23 @@
+#preview-sidebar {
+    flex: 0 0 30%;
+    order: 1;
+    background: var(--darkened-bg);
+    border-left: none;
+    margin: 0 0 0 30px;
+}
+
+#preview-sidebar h2 {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 5px 15px;
+    margin-bottom: 12px;
+    border-bottom: none;
+}
+
+#preview-content {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    margin: 10px;
+}
