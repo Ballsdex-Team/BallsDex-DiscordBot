@@ -5,6 +5,7 @@ from django.forms import Textarea
 from django.utils.safestring import mark_safe
 
 from .models import Ball, Economy, Regime, Special
+from .utils import transform_media
 
 if TYPE_CHECKING:
     from django.db.models import Field
@@ -13,12 +14,22 @@ if TYPE_CHECKING:
 
 @admin.register(Regime)
 class RegimeAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("name", "background_image")
+
+    @admin.display()
+    def background_image(self, obj: Regime):
+        return mark_safe(
+            f'<img src="/media/{transform_media(str(obj.background))}" height=60px />'
+        )
 
 
 @admin.register(Economy)
 class EconomyAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("name", "icon_image")
+
+    @admin.display()
+    def icon_image(self, obj: Economy):
+        return mark_safe(f'<img src="/media/{transform_media(str(obj.icon))}" height=30px />')
 
 
 @admin.register(Ball)
@@ -69,7 +80,6 @@ class BallAdmin(admin.ModelAdmin):
                 "fields": ["enabled", "tradeable", "short_name", "catch_names", "translations"],
             },
         ),
-        ("Preview", {"description": "Generate previews", "fields": ["preview"]}),
     ]
 
     list_display = ["country", "emoji", "rarity", "capacity_name", "health", "attack", "enabled"]

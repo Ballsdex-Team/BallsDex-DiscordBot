@@ -1,10 +1,11 @@
 from django.db import models
-from django.template.loader import render_to_string
 from django.utils.safestring import SafeText, mark_safe
+
+from .utils import transform_media
 
 
 def image_display(image_link: str) -> SafeText:
-    return mark_safe(f'<img src="{image_link}" width="80%" />')
+    return mark_safe(f'<img src="/media/{transform_media(image_link)}" width="80%" />')
 
 
 class Guildconfig(models.Model):
@@ -192,11 +193,6 @@ class Ball(models.Model):
         return image_display(str(self.wild_card))
 
     spawn_image.short_description = "Current spawn asset"
-
-    def preview(self):
-        return render_to_string("ball_preview.html", {"ball_pk": self.pk})
-
-    preview.short_description = "Card preview generator"
 
     class Meta:
         managed = False
