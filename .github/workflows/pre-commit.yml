@@ -27,6 +27,8 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.poetry/bin" >> $GITHUB_PATH
+      - name: Lock dependencies
+        run: poetry lock --no-update
       - name: Install dependencies
         run: poetry install --with=dev --no-interaction
       - name: Run black
