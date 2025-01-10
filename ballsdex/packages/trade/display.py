@@ -161,7 +161,9 @@ def fill_trade_embed_fields(
 
     if len(embed) > 6000:
         if not compact:
-            return fill_trade_embed_fields(embed, bot, trader1, trader2, compact=True)
+            return fill_trade_embed_fields(
+                embed, bot, trader1, trader2, compact=True, is_admin=is_admin
+            )
         else:
             embed.clear_fields()
             embed.add_field(
