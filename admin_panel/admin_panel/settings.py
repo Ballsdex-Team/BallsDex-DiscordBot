@@ -1,3 +1,4 @@
+import importlib.util
 from pathlib import Path
 
 import dj_database_url
@@ -16,6 +17,9 @@ SECRET_KEY = "django-insecure-2ri6p%3d(df5+bdiiekb&v9cz9j=68j1%2xn)x494%-%+y#2nv
 DEBUG = True
 
 ALLOWED_HOSTS = []
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 
 
 # Application definition
@@ -40,6 +44,10 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if DEBUG and importlib.util.find_spec("debug_toolbar") is not None:
+    INSTALLED_APPS.append("debug_toolbar")
+    MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
 ROOT_URLCONF = "admin_panel.urls"
 

@@ -24,6 +24,9 @@ uvicorn = "^0.32.0"
 tortoise-orm = {extras = ["asyncpg"], version = "^0.22.2"}
 tortoise-cli = "^0.1.2"
 
+# django admin panel
+django = "^5.1.4"
+
 # misc
 rich = "^13.8.0"
 python-dateutil = "^2.9.0"
@@ -38,6 +41,7 @@ black = {version = "^24.8.0", allow-prereleases = true}
 flake8-pyproject = "^1.2.3"
 pyright = "^1.1.335"
 isort = "^5.13.2"
+django-debug-toolbar = "^4.4.6"
 
 
 [tool.poetry.group.metrics.dependencies]

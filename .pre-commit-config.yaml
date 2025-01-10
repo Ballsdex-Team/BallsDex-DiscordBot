@@ -45,6 +45,7 @@ repos:
           - django
           - dj_database_url
           - django-stubs
+          - django-debug-toolbar
   - repo: https://github.com/csachs/pyproject-flake8
     rev: v7.0.0
     hooks:
