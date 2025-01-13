@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
 from django.contrib.messages import SUCCESS
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.forms import Textarea
 from django.utils.safestring import mark_safe
 from nonrelated_inlines.admin import NonrelatedTabularInline
@@ -231,23 +231,8 @@ class SpecialAdmin(admin.ModelAdmin):
         return super().formfield_for_dbfield(db_field, request, **kwargs)  # type: ignore
 
 
-class SearchByHexIDMixin:
-    search_help_text = "Search by hexadecimal ID"
-    search_fields = ("id",)  # field is ignored, but required for the text area to show up
-
-    def get_search_results(
-        self, request: "HttpRequest", queryset: "QuerySet[BallInstance]", search_term: str
-    ) -> "tuple[QuerySet[BallInstance], bool]":
-        if not search_term:
-            return super().get_search_results(request, queryset, search_term)  # type: ignore
-        try:
-            return queryset.filter(id=int(search_term, 16)), False
-        except ValueError:
-            return queryset.none(), False
-
-
 @admin.register(BallInstance)
-class BallInstanceAdmin(SearchByHexIDMixin, admin.ModelAdmin):
+class BallInstanceAdmin(admin.ModelAdmin):
     autocomplete_fields = ("player", "trade_player", "ball", "special")
     save_on_top = True
     fieldsets = [
@@ -263,11 +248,30 @@ class BallInstanceAdmin(SearchByHexIDMixin, admin.ModelAdmin):
     ]
 
     list_display = ("description", "ball__country", "player", "health_bonus", "attack_bonus")
-    list_select_related = ("ball", "special")
+    list_select_related = ("ball", "special", "player")
     # TODO: filter by special or ball (needs extension)
     list_filter = ("tradeable", "favorite")
     show_full_result_count = False
     paginator = ApproxCountPaginator
+
+    search_help_text = "Search by hexadecimal ID or Discord ID"
+    search_fields = ("id",)  # field is ignored, but required for the text area to show up
+
+    def get_search_results(
+        self, request: "HttpRequest", queryset: "QuerySet[BallInstance]", search_term: str
+    ) -> "tuple[QuerySet[BallInstance], bool]":
+        if not search_term:
+            return super().get_search_results(request, queryset, search_term)  # type: ignore
+        if search_term.isdigit() and 17 <= len(search_term) <= 22:
+            try:
+                player = Player.objects.get(discord_id=int(search_term))
+            except Player.DoesNotExist:
+                return queryset.none(), False
+            return queryset.filter(player=player), False
+        try:
+            return queryset.filter(id=int(search_term, 16)), False
+        except ValueError:
+            return queryset.none(), False
 
     def change_view(
         self,
@@ -282,15 +286,19 @@ class BallInstanceAdmin(SearchByHexIDMixin, admin.ModelAdmin):
             trade_ids = TradeObject.objects.filter(ballinstance=obj).values_list(
                 "trade_id", flat=True
             )
-            for trade in Trade.objects.filter(id__in=trade_ids).prefetch_related(
-                "player1",
-                "player2",
-                Prefetch(
-                    "tradeobject_set",
-                    queryset=TradeObject.objects.prefetch_related(
-                        "ballinstance", "ballinstance__ball", "player"
+            for trade in (
+                Trade.objects.filter(id__in=trade_ids)
+                .order_by("-date")
+                .prefetch_related(
+                    "player1",
+                    "player2",
+                    Prefetch(
+                        "tradeobject_set",
+                        queryset=TradeObject.objects.prefetch_related(
+                            "ballinstance", "ballinstance__ball", "player"
+                        ),
                     ),
-                ),
+                )
             ):
                 player1_proposal = [
                     x for x in trade.tradeobject_set.all() if x.player_id == trade.player1_id
@@ -309,11 +317,31 @@ class BallInstanceAdmin(SearchByHexIDMixin, admin.ModelAdmin):
 
 
 @admin.register(Trade)
-class TradeAdmin(SearchByHexIDMixin, admin.ModelAdmin):
+class TradeAdmin(admin.ModelAdmin):
     fields = ("player1", "player2", "date")
     list_display = ("__str__", "player1", "player1_items", "player2", "player2_items")
     readonly_fields = ("date",)
     autocomplete_fields = ("player1", "player2")
+
+    search_help_text = "Search by hexadecimal ID or Discord ID"
+    search_fields = ("id",)  # field is ignored, but required for the text area to show up
+    show_full_result_count = False
+
+    def get_search_results(
+        self, request: "HttpRequest", queryset: "QuerySet[BallInstance]", search_term: str
+    ) -> "tuple[QuerySet[BallInstance], bool]":
+        if not search_term:
+            return super().get_search_results(request, queryset, search_term)  # type: ignore
+        if search_term.isdigit() and 17 <= len(search_term) <= 22:
+            try:
+                player = Player.objects.get(discord_id=int(search_term))
+            except Player.DoesNotExist:
+                return queryset.none(), False
+            return queryset.filter(Q(player1=player) | Q(player2=player)), False
+        try:
+            return queryset.filter(id=int(search_term, 16)), False
+        except ValueError:
+            return queryset.none(), False
 
     def get_queryset(self, request: "HttpRequest") -> "QuerySet[Trade]":
         qs: "QuerySet[Trade]" = super().get_queryset(request)
@@ -321,10 +349,7 @@ class TradeAdmin(SearchByHexIDMixin, admin.ModelAdmin):
             "player1",
             "player2",
             Prefetch(
-                "tradeobject_set",
-                queryset=TradeObject.objects.prefetch_related(
-                    "ballinstance", "ballinstance__ball"
-                ),
+                "tradeobject_set", queryset=TradeObject.objects.prefetch_related("ballinstance")
             ),
         )
 
