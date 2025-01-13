@@ -6,7 +6,11 @@ from django.utils.functional import cached_property
 class ApproxCountPaginator(Paginator):
     @cached_property
     def count(self):
-        """Return the total number of objects, across all pages."""
+
+        # if this object isn't empty, then it's a paginator that has been applied filters or search
+        if self.object_list.query.where.children:  # type: ignore
+            return super().count
+
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT reltuples AS estimate FROM pg_class where relname = "
