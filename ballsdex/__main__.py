@@ -237,9 +237,12 @@ class RemoveWSBehindMsg(logging.Filter):
         return True
 
 
-async def init_tortoise(db_url: str):
+async def init_tortoise(db_url: str, *, skip_migrations: bool = False):
     log.debug(f"Database URL: {db_url}")
     await Tortoise.init(config=TORTOISE_ORM)
+
+    if skip_migrations:
+        return
 
     # migrations
     command = Command(TORTOISE_ORM, app="models")

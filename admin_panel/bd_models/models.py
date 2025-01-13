@@ -1,5 +1,13 @@
+from __future__ import annotations
+
+from datetime import timedelta
+from typing import cast
+
+from django.contrib import admin
+from django.core.cache import cache
 from django.db import models
 from django.utils.safestring import SafeText, mark_safe
+from django.utils.timezone import now
 
 from .utils import transform_media
 
@@ -65,8 +73,22 @@ class Player(models.Model):
         choices=FriendPolicy.choices, help_text="Open or close your friend requests"
     )
 
+    def is_blacklisted(self) -> bool:
+        blacklist = cast(
+            list[int],
+            cache.get_or_set(
+                "blacklist",
+                BlacklistedID.objects.all().values_list("discord_id", flat=True),
+                timeout=300,
+            ),
+        )
+        return self.discord_id in blacklist
+
     def __str__(self) -> str:
-        return str(self.discord_id)
+        return (
+            f"{'\N{NO MOBILE PHONES} ' if self.is_blacklisted() else ''}#"
+            f"{self.pk} ({self.discord_id})"
+        )
 
     class Meta:
         managed = False
@@ -153,7 +175,7 @@ class Ball(models.Model):
     capacity_description = models.CharField(
         max_length=256, help_text="Description of the countryball's capacity"
     )
-    capacity_logic = models.JSONField(help_text="Effect of this capacity", editable=False)
+    capacity_logic = models.JSONField(help_text="Effect of this capacity", blank=True)
     enabled = models.BooleanField(help_text="Enables spawning and show in completion")
     short_name = models.CharField(
         max_length=12,
@@ -175,24 +197,24 @@ class Ball(models.Model):
         null=True,
         help_text="Economical regime of this country",
     )
+    economy_id: int | None
     regime = models.ForeignKey(
         Regime, on_delete=models.CASCADE, help_text="Political regime of this country"
     )
+    regime_id: int
     created_at = models.DateTimeField(blank=True, null=True, auto_now_add=True, editable=False)
     translations = models.TextField(blank=True, null=True)
 
     def __str__(self) -> str:
         return self.country
 
+    @admin.display(description="Current collection card")
     def collection_image(self) -> SafeText:
         return image_display(str(self.collection_card))
 
-    collection_image.short_description = "Current collection card"
-
+    @admin.display(description="Current spawn asset")
     def spawn_image(self) -> SafeText:
         return image_display(str(self.wild_card))
-
-    spawn_image.short_description = "Current spawn asset"
 
     class Meta:
         managed = False
@@ -204,7 +226,9 @@ class BallInstance(models.Model):
     health_bonus = models.IntegerField()
     attack_bonus = models.IntegerField()
     ball = models.ForeignKey(Ball, on_delete=models.CASCADE)
+    ball_id: int
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    player_id: int
     trade_player = models.ForeignKey(
         Player,
         on_delete=models.SET_NULL,
@@ -212,17 +236,37 @@ class BallInstance(models.Model):
         blank=True,
         null=True,
     )
+    trade_player_id: int | None
     favorite = models.BooleanField()
     special = models.ForeignKey(Special, on_delete=models.SET_NULL, blank=True, null=True)
+    special_id: int | None
     server_id = models.BigIntegerField(
         blank=True, null=True, help_text="Discord server ID where this ball was caught"
     )
     tradeable = models.BooleanField()
-    extra_data = models.JSONField()
+    extra_data = models.JSONField(blank=True)
     locked = models.DateTimeField(
         blank=True, null=True, help_text="If the instance was locked for a trade and when"
     )
     spawned_time = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self) -> str:
+        text = ""
+        if self.locked and self.locked > now() - timedelta(minutes=30):
+            text += "🔒"
+        if self.favorite:
+            text += "❤️"
+        if text:
+            text += " "
+        if self.special:
+            text += self.special.emoji or ""
+        return f"{text}#{self.pk:0X} {self.ball.country}"
+
+    @admin.display(description="Countryball")
+    def description(self) -> SafeText:
+        text = str(self)
+        emoji = f'<img src="https://cdn.discordapp.com/emojis/{self.ball.emoji_id}.png?size=20" />'
+        return mark_safe(f"{emoji} {text} ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%")
 
     class Meta:
         managed = False
@@ -269,17 +313,26 @@ class BlacklistHistory(models.Model):
 class Trade(models.Model):
     date = models.DateTimeField(auto_now_add=True, editable=False)
     player1 = models.ForeignKey(Player, on_delete=models.CASCADE)
+    player1_id: int
     player2 = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="trade_player2_set")
+    player2_id: int
+    tradeobject_set: models.QuerySet[TradeObject]
+
+    def __str__(self) -> str:
+        return f"Trade #{self.pk:0X}"
 
     class Meta:
         managed = False
         db_table = "trade"
 
 
-class Tradeobject(models.Model):
+class TradeObject(models.Model):
     ballinstance = models.ForeignKey(BallInstance, on_delete=models.CASCADE)
+    ballinstance_id: int
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    player_id: int
     trade = models.ForeignKey(Trade, on_delete=models.CASCADE)
+    trade_id: int
 
     class Meta:
         managed = False
@@ -289,9 +342,11 @@ class Tradeobject(models.Model):
 class Friendship(models.Model):
     since = models.DateTimeField(auto_now_add=True, editable=False)
     player1 = models.ForeignKey(Player, on_delete=models.CASCADE)
+    player1_id: int
     player2 = models.ForeignKey(
         Player, on_delete=models.CASCADE, related_name="friendship_player2_set"
     )
+    player2_id: int
 
     class Meta:
         managed = False
@@ -301,7 +356,9 @@ class Friendship(models.Model):
 class Block(models.Model):
     date = models.DateTimeField(auto_now_add=True, editable=False)
     player1 = models.ForeignKey(Player, on_delete=models.CASCADE)
+    player1_id: int
     player2 = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="block_player2_set")
+    player2_id: int
 
     class Meta:
         managed = False

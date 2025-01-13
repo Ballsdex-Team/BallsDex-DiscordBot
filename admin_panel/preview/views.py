@@ -21,7 +21,7 @@ async def render_image(request: HttpRequest, ball_pk: int) -> HttpResponse:
     from ballsdex.core.image_generator.image_gen import draw_card
 
     if not Tortoise._inited:
-        await init_tortoise(os.environ["BALLSDEXBOT_DB_URL"])
+        await init_tortoise(os.environ["BALLSDEXBOT_DB_URL"], skip_migrations=True)
     balls.clear()
     for ball in await Ball.all():
         balls[ball.pk] = ball

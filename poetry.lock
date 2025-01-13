@@ -581,6 +581,20 @@ django = ">=4.2.9"
 sqlparse = ">=0.2"
 
 [[package]]
+name = "django-nonrelated-inlines"
+version = "0.2"
+description = "Django admin inlines for unrelated models"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "django-nonrelated-inlines-0.2.tar.gz", hash = "sha256:e123010a3ad18b049781d6688b3ff45b2441e69fd63802bec94c37cd36c83611"},
+    {file = "django_nonrelated_inlines-0.2-py3-none-any.whl", hash = "sha256:216a4513971c58568f450a2339064746624de718a946088534e86011b400ccc3"},
+]
+
+[package.dependencies]
+Django = ">=2.0"
+
+[[package]]
 name = "fastapi"
 version = "0.115.6"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
@@ -2319,4 +2333,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12, <3.14"
-content-hash = "d98eca1067acf4d235c5e3c92afe70e5571e816e7e2b440cdae87ca79119616d"
+content-hash = "e7eb44fe0a4aeb131015f74f445c1282824a8b4aac462e272f31b1ae7cb7f188"

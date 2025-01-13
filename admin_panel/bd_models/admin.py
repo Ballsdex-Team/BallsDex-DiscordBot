@@ -1,20 +1,75 @@
+import itertools
 from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
+from django.contrib.messages import SUCCESS
+from django.db.models import Prefetch
 from django.forms import Textarea
 from django.utils.safestring import mark_safe
+from nonrelated_inlines.admin import NonrelatedTabularInline
 
-from .models import Ball, Economy, Regime, Special
-from .utils import transform_media
+from .models import (
+    Ball,
+    BallInstance,
+    BlacklistedID,
+    BlacklistHistory,
+    Economy,
+    Player,
+    Regime,
+    Special,
+    Trade,
+    TradeObject,
+)
+from .utils import ApproxCountPaginator, transform_media
 
 if TYPE_CHECKING:
-    from django.db.models import Field
-    from django.http.request import HttpRequest
+    from django.db.models import Field, QuerySet
+    from django.http import HttpRequest, HttpResponse
+
+
+class BlacklistTabular(NonrelatedTabularInline):
+    model = BlacklistHistory
+    extra = 0
+    can_delete = False
+    verbose_name_plural = "Blacklist history"
+    fields = ("date", "reason", "moderator_id", "action_type")
+    readonly_fields = ("date", "moderator_id", "action_type")
+
+    def has_add_permission(self, request: "HttpRequest", obj: Any) -> bool:  # type: ignore
+        return False
+
+    def get_form_queryset(self, obj: Player):
+        return BlacklistHistory.objects.filter(discord_id=obj.discord_id)
+
+
+@admin.register(Player)
+class PlayerAdmin(admin.ModelAdmin):
+    save_on_top = True
+    list_display = ("discord_id", "pk")
+    search_fields = ("discord_id",)
+    search_help_text = "Search for a Discord ID"
+    actions = ("blacklist_users",)
+    inlines = (BlacklistTabular,)
+
+    # TODO: permissions and form
+    @admin.action(description="Blacklist users")
+    async def blacklist_users(self, request: "HttpRequest", queryset: "QuerySet[Player]"):
+        result = await BlacklistedID.objects.abulk_create(
+            (
+                BlacklistedID(
+                    discord_id=x.discord_id,
+                    reason=f"Blacklisted via admin panel by {request.user}",
+                )
+                for x in queryset
+            )
+        )
+        self.message_user(request, f"Successfully created {len(result)} blacklists", SUCCESS)
 
 
 @admin.register(Regime)
 class RegimeAdmin(admin.ModelAdmin):
     list_display = ("name", "background_image")
+    search_fields = ("name",)
 
     @admin.display()
     def background_image(self, obj: Regime):
@@ -26,6 +81,7 @@ class RegimeAdmin(admin.ModelAdmin):
 @admin.register(Economy)
 class EconomyAdmin(admin.ModelAdmin):
     list_display = ("name", "icon_image")
+    search_fields = ("name",)
 
     @admin.display()
     def icon_image(self, obj: Economy):
@@ -34,8 +90,9 @@ class EconomyAdmin(admin.ModelAdmin):
 
 @admin.register(Ball)
 class BallAdmin(admin.ModelAdmin):
-    raw_id_fields = ["regime", "economy"]
-    readonly_fields = ("collection_image", "spawn_image", "preview")
+    autocomplete_fields = ("regime", "economy")
+    readonly_fields = ("collection_image", "spawn_image")
+    save_on_top = True
     fieldsets = [
         (
             None,
@@ -77,7 +134,14 @@ class BallAdmin(admin.ModelAdmin):
             {
                 "description": "Advanced settings",
                 "classes": ["collapse"],
-                "fields": ["enabled", "tradeable", "short_name", "catch_names", "translations"],
+                "fields": [
+                    "enabled",
+                    "tradeable",
+                    "short_name",
+                    "catch_names",
+                    "translations",
+                    "capacity_logic",
+                ],
             },
         ),
     ]
@@ -116,6 +180,7 @@ class BallAdmin(admin.ModelAdmin):
 
 @admin.register(Special)
 class SpecialAdmin(admin.ModelAdmin):
+    save_on_top = True
     fieldsets = [
         (
             None,
@@ -164,3 +229,141 @@ class SpecialAdmin(admin.ModelAdmin):
         if db_field.name == "catch_phrase":
             kwargs["widget"] = Textarea()
         return super().formfield_for_dbfield(db_field, request, **kwargs)  # type: ignore
+
+
+class SearchByHexIDMixin:
+    search_help_text = "Search by hexadecimal ID"
+    search_fields = ("id",)  # field is ignored, but required for the text area to show up
+
+    def get_search_results(
+        self, request: "HttpRequest", queryset: "QuerySet[BallInstance]", search_term: str
+    ) -> "tuple[QuerySet[BallInstance], bool]":
+        if not search_term:
+            return super().get_search_results(request, queryset, search_term)  # type: ignore
+        try:
+            return queryset.filter(id=int(search_term, 16)), False
+        except ValueError:
+            return queryset.none(), False
+
+
+@admin.register(BallInstance)
+class BallInstanceAdmin(SearchByHexIDMixin, admin.ModelAdmin):
+    autocomplete_fields = ("player", "trade_player", "ball", "special")
+    save_on_top = True
+    fieldsets = [
+        (None, {"fields": ("ball", "health_bonus", "attack_bonus", "special")}),
+        ("Ownership", {"fields": ("player", "favorite", "catch_date", "trade_player")}),
+        (
+            "Advanced",
+            {
+                "classes": ("collapse",),
+                "fields": ("tradeable", "server_id", "spawned_time", "locked", "extra_data"),
+            },
+        ),
+    ]
+
+    list_display = ("description", "ball__country", "player", "health_bonus", "attack_bonus")
+    list_select_related = ("ball", "special")
+    # TODO: filter by special or ball (needs extension)
+    list_filter = ("tradeable", "favorite")
+    show_full_result_count = False
+    paginator = ApproxCountPaginator
+
+    def change_view(
+        self,
+        request: "HttpRequest",
+        object_id: str,
+        form_url: str = "",
+        extra_context: dict[str, Any] | None = None,
+    ) -> "HttpResponse":
+        obj = BallInstance.objects.prefetch_related("player").get(id=object_id)
+
+        def _get_trades():
+            trade_ids = TradeObject.objects.filter(ballinstance=obj).values_list(
+                "trade_id", flat=True
+            )
+            for trade in Trade.objects.filter(id__in=trade_ids).prefetch_related(
+                "player1",
+                "player2",
+                Prefetch(
+                    "tradeobject_set",
+                    queryset=TradeObject.objects.prefetch_related(
+                        "ballinstance", "ballinstance__ball", "player"
+                    ),
+                ),
+            ):
+                player1_proposal = [
+                    x for x in trade.tradeobject_set.all() if x.player_id == trade.player1_id
+                ]
+                player2_proposal = [
+                    x for x in trade.tradeobject_set.all() if x.player_id == trade.player2_id
+                ]
+                yield {
+                    "model": trade,
+                    "proposals": (player1_proposal, player2_proposal),
+                }
+
+        extra_context = extra_context or {}
+        extra_context["trades"] = list(_get_trades())
+        return super().change_view(request, object_id, form_url, extra_context)
+
+
+@admin.register(Trade)
+class TradeAdmin(SearchByHexIDMixin, admin.ModelAdmin):
+    fields = ("player1", "player2", "date")
+    list_display = ("__str__", "player1", "player1_items", "player2", "player2_items")
+    readonly_fields = ("date",)
+    autocomplete_fields = ("player1", "player2")
+
+    def get_queryset(self, request: "HttpRequest") -> "QuerySet[Trade]":
+        qs: "QuerySet[Trade]" = super().get_queryset(request)
+        return qs.prefetch_related(
+            "player1",
+            "player2",
+            Prefetch(
+                "tradeobject_set",
+                queryset=TradeObject.objects.prefetch_related(
+                    "ballinstance", "ballinstance__ball"
+                ),
+            ),
+        )
+
+    # It is important to use .all() and manually filter in python rather than using .filter.count
+    # since the property is already prefetched and cached. Using .filter forces a new query
+    def player1_items(self, obj: Trade):
+        return len([None for x in obj.tradeobject_set.all() if x.player_id == obj.player1_id])
+
+    def player2_items(self, obj: Trade):
+        return len([None for x in obj.tradeobject_set.all() if x.player_id == obj.player2_id])
+
+    # The Trade model object is needed in `change_view`, but the admin does not provide it yet
+    # at this time. To avoid making the same query twice and slowing down the page loading,
+    # the model is cached here
+    def get_object(self, request: "HttpRequest", object_id: str, from_field: None = None) -> Trade:
+        if not hasattr(request, "object"):
+            request.object = self.get_queryset(request).get(id=object_id)  # type: ignore
+        return request.object  # type: ignore
+
+    # This adds extra context to the template, needed for the display of TradeObject models
+    def change_view(
+        self,
+        request: "HttpRequest",
+        object_id: str,
+        form_url: str = "",
+        extra_context: dict[str, Any] | None = None,
+    ) -> "HttpResponse":
+        obj = self.get_object(request, object_id)
+
+        # force queryset evaluation now to avoid double evaluation (with the len below)
+        objects = list(obj.tradeobject_set.all())
+        player1_objects = [x for x in objects if x.player_id == obj.player1_id]
+        player2_objects = [x for x in objects if x.player_id == obj.player2_id]
+        objects = itertools.zip_longest(player1_objects, player2_objects)
+
+        extra_context = extra_context or {}
+        extra_context["player1"] = obj.player1
+        extra_context["player2"] = obj.player2
+        extra_context["trade_objects"] = objects
+        extra_context["player1_len"] = len(player1_objects)
+        extra_context["player2_len"] = len(player2_objects)
+        return super().change_view(request, object_id, form_url, extra_context)
