@@ -16,7 +16,7 @@ def image_display(image_link: str) -> SafeText:
     return mark_safe(f'<img src="/media/{transform_media(image_link)}" width="80%" />')
 
 
-class Guildconfig(models.Model):
+class GuildConfig(models.Model):
     guild_id = models.BigIntegerField(unique=True, help_text="Discord guild ID")
     spawn_channel = models.BigIntegerField(
         blank=True, null=True, help_text="Discord channel ID where balls will spawn"

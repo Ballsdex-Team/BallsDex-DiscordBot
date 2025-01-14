@@ -3,6 +3,10 @@ from pathlib import Path
 
 import dj_database_url
 
+from ballsdex.settings import read_settings
+
+read_settings(Path("../config.yml"))
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -30,6 +34,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "social_django",
     "admin_panel.apps.BallsdexAdminConfig",
     "bd_models",
     "preview",
@@ -48,6 +53,22 @@ MIDDLEWARE = [
 if DEBUG and importlib.util.find_spec("debug_toolbar") is not None:
     INSTALLED_APPS.append("debug_toolbar")
     MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
+    DEBUG_TOOLBAR_PANELS = [
+        "debug_toolbar.panels.history.HistoryPanel",
+        "debug_toolbar.panels.versions.VersionsPanel",
+        "debug_toolbar.panels.timer.TimerPanel",
+        "debug_toolbar.panels.settings.SettingsPanel",
+        "debug_toolbar.panels.headers.HeadersPanel",
+        "debug_toolbar.panels.request.RequestPanel",
+        "debug_toolbar.panels.sql.SQLPanel",
+        "debug_toolbar.panels.staticfiles.StaticFilesPanel",
+        "debug_toolbar.panels.templates.TemplatesPanel",
+        "debug_toolbar.panels.alerts.AlertsPanel",
+        # 'debug_toolbar.panels.cache.CachePanel',  # this is making the page huge
+        "debug_toolbar.panels.signals.SignalsPanel",
+        "debug_toolbar.panels.redirects.RedirectsPanel",
+        "debug_toolbar.panels.profiling.ProfilingPanel",
+    ]
 
 ROOT_URLCONF = "admin_panel.urls"
 
@@ -62,6 +83,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "social_django.context_processors.backends",
+                "social_django.context_processors.login_redirect",
             ],
         },
     },
@@ -120,3 +143,27 @@ MEDIA_ROOT = "media"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+DISCORD_WEBHOOK_URL = ""
+
+# Django social auth settings
+SOCIAL_AUTH_JSONFIELD_ENABLED = True
+AUTHENTICATION_BACKENDS = [
+    "social_core.backends.discord.DiscordOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+]
+SOCIAL_AUTH_PIPELINE = (
+    "social_core.pipeline.social_auth.social_details",
+    "social_core.pipeline.social_auth.social_uid",
+    "social_core.pipeline.social_auth.social_user",
+    "social_core.pipeline.user.get_username",
+    "social_core.pipeline.user.create_user",
+    "social_core.pipeline.social_auth.associate_user",
+    "social_core.pipeline.social_auth.load_extra_data",
+    "social_core.pipeline.user.user_details",
+    "admin_panel.pipeline.configure_status",
+)
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/admin/"
+SOCIAL_AUTH_DISCORD_KEY = ""
+SOCIAL_AUTH_DISCORD_SECRET = ""
+SOCIAL_AUTH_DISCORD_SCOPE = ["identify", "guilds", "guilds.members.read"]
