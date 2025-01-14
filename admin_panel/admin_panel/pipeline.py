@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
 import aiohttp
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from bd_models.models import (
     Ball,
     BallInstance,
@@ -48,18 +48,18 @@ class Status(Enum):
     OWNER = 4  # owns the application
 
 
-def get_permissions(permissions: perm_dict) -> list[Permission]:
+async def get_permissions(permissions: perm_dict) -> list[Permission]:
     """
     Returns the list of permissions objects from a dictionnary mapping models to permission codes.
     """
     result: list[Permission] = []
     for model, perms in permissions.items():
-        content_type = ContentType.objects.get_for_model(model)
+        content_type = await sync_to_async(ContentType.objects.get_for_model)(model)
         if perms == "*":
             perms = ["add", "change", "delete", "view"]
         for perm in perms:
             result.append(
-                Permission.objects.get(
+                await Permission.objects.aget(
                     content_type=content_type, codename=f"{perm}_{model._meta.model_name}"
                 )
             )
@@ -90,7 +90,7 @@ async def assign_status(request: "HttpRequest", response: dict, user: "User", st
                 Trade: ["view"],
                 TradeObject: ["view"],
             }
-            await group.permissions.aadd(*get_permissions(perms))
+            await group.permissions.aadd(*await get_permissions(perms))
         await user.groups.aadd(group)
         message = "You were assigned the Staff status because of your Discord roles."
     elif status == Status.ADMIN:
@@ -113,7 +113,7 @@ async def assign_status(request: "HttpRequest", response: dict, user: "User", st
                 Trade: ["view"],
                 TradeObject: ["view"],
             }
-            await group.permissions.aadd(*get_permissions(perms))
+            await group.permissions.aadd(*await get_permissions(perms))
         await user.groups.aadd(group)
         message = "You were assigned the Admin status because of your Discord roles."
     elif status == Status.TEAM_MEMBER:
