@@ -198,10 +198,10 @@ async def configure_status(
             # role is found later. If a "root" role is found, we can immediately stop and assign
             is_staff = False
             for role in member["roles"]:
-                if settings.root_role_ids and int(role["id"]) in settings.root_role_ids:
+                if settings.root_role_ids and int(role) in settings.root_role_ids:
                     await assign_status(request, response, user, Status.ADMIN)
                     return
-                elif settings.admin_role_ids and int(role["id"]) in settings.admin_role_ids:
+                elif settings.admin_role_ids and int(role) in settings.admin_role_ids:
                     is_staff = True
             if is_staff:
                 await assign_status(request, response, user, Status.STAFF)
