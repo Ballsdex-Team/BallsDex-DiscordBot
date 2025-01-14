@@ -156,7 +156,7 @@ async def configure_status(
     discord_id = int(uid)
 
     # check if user is a co-owner in config.yml (no API call required)
-    if discord_id in settings.co_owners:
+    if settings.co_owners and discord_id in settings.co_owners:
         await assign_status(request, response, user, Status.CO_OWNER)
         return
 
@@ -179,6 +179,10 @@ async def configure_status(
                 await assign_status(request, response, user, Status.TEAM_MEMBER)
                 return
 
+        # no admin guild configured, no roles, nothing to do
+        if not settings.admin_guild_ids or not (settings.admin_role_ids or settings.root_role_ids):
+            return
+
         # check if the user owns roles configured as root/admin in config.yml
         session.headers["Authorization"] = f"Bearer {response['access_token']}"
         async with session.get("users/@me/guilds") as resp:
@@ -194,10 +198,10 @@ async def configure_status(
             # role is found later. If a "root" role is found, we can immediately stop and assign
             is_staff = False
             for role in member["roles"]:
-                if int(role["id"]) in settings.root_role_ids:
+                if settings.root_role_ids and int(role["id"]) in settings.root_role_ids:
                     await assign_status(request, response, user, Status.ADMIN)
                     return
-                elif int(role["id"]) in settings.admin_role_ids:
+                elif settings.admin_role_ids and int(role["id"]) in settings.admin_role_ids:
                     is_staff = True
             if is_staff:
                 await assign_status(request, response, user, Status.STAFF)
