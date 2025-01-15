@@ -146,8 +146,10 @@ class Special(models.Model):
     background = models.ImageField(
         max_length=200, blank=True, null=True, help_text="1428x2000 PNG image"
     )
-    tradeable = models.BooleanField(help_text="Whether balls of this event can be traded")
-    hidden = models.BooleanField(help_text="Hides the event from user commands")
+    tradeable = models.BooleanField(
+        help_text="Whether balls of this event can be traded", default=True
+    )
+    hidden = models.BooleanField(help_text="Hides the event from user commands", default=False)
 
     def __str__(self) -> str:
         return self.name
@@ -175,8 +177,12 @@ class Ball(models.Model):
     capacity_description = models.CharField(
         max_length=256, help_text="Description of the countryball's capacity"
     )
-    capacity_logic = models.JSONField(help_text="Effect of this capacity", blank=True)
-    enabled = models.BooleanField(help_text="Enables spawning and show in completion")
+    capacity_logic = models.JSONField(
+        help_text="Effect of this capacity", blank=True, default=dict
+    )
+    enabled = models.BooleanField(
+        help_text="Enables spawning and show in completion", default=True
+    )
     short_name = models.CharField(
         max_length=12,
         blank=True,
@@ -189,7 +195,9 @@ class Ball(models.Model):
         null=True,
         help_text="Additional possible names for catching this ball, separated by semicolons",
     )
-    tradeable = models.BooleanField(help_text="Whether this ball can be traded with others")
+    tradeable = models.BooleanField(
+        help_text="Whether this ball can be traded with others", default=True
+    )
     economy = models.ForeignKey(
         Economy,
         on_delete=models.SET_NULL,
@@ -244,7 +252,7 @@ class BallInstance(models.Model):
         blank=True, null=True, help_text="Discord server ID where this ball was caught"
     )
     tradeable = models.BooleanField()
-    extra_data = models.JSONField(blank=True)
+    extra_data = models.JSONField(blank=True, default=dict)
     locked = models.DateTimeField(
         blank=True, null=True, help_text="If the instance was locked for a trade and when"
     )
