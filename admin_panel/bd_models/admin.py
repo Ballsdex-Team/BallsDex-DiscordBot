@@ -68,7 +68,7 @@ class PlayerAdmin(admin.ModelAdmin):
 
 @admin.register(Regime)
 class RegimeAdmin(admin.ModelAdmin):
-    list_display = ("name", "background_image")
+    list_display = ("name", "background_image", "pk")
     search_fields = ("name",)
 
     @admin.display()
@@ -80,7 +80,7 @@ class RegimeAdmin(admin.ModelAdmin):
 
 @admin.register(Economy)
 class EconomyAdmin(admin.ModelAdmin):
-    list_display = ("name", "icon_image")
+    list_display = ("name", "icon_image", "pk")
     search_fields = ("name",)
 
     @admin.display()
@@ -146,7 +146,16 @@ class BallAdmin(admin.ModelAdmin):
         ),
     ]
 
-    list_display = ["country", "emoji", "rarity", "capacity_name", "health", "attack", "enabled"]
+    list_display = [
+        "country",
+        "pk",
+        "emoji",
+        "rarity",
+        "capacity_name",
+        "health",
+        "attack",
+        "enabled",
+    ]
     list_editable = ["enabled", "rarity"]
     list_filter = ["enabled", "tradeable", "regime", "economy", "created_at"]
     ordering = ["-created_at"]
@@ -206,7 +215,7 @@ class SpecialAdmin(admin.ModelAdmin):
         ),
     ]
 
-    list_display = ["name", "emoji_display", "start_date", "end_date", "rarity", "hidden"]
+    list_display = ["name", "pk", "emoji_display", "start_date", "end_date", "rarity", "hidden"]
     list_editable = ["hidden", "rarity"]
     list_filter = ["hidden", "tradeable"]
 
