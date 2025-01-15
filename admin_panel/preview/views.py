@@ -40,7 +40,7 @@ async def render_image(request: HttpRequest, ball_pk: int) -> HttpResponse:
 
     ball = await Ball.get(pk=ball_pk)
     instance = BallInstance(ball=ball, count=1)
-    image = draw_card(instance)
+    image = draw_card(instance, media_path="./media/")
 
     response = HttpResponse(content_type="image/png")
     image.save(response, "PNG")  # type: ignore

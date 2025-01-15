@@ -28,6 +28,7 @@ pgbackups
 
 # static
 static
+media
 
 # cache
 .pytest_cache

@@ -27,7 +27,7 @@ repos:
           - black
           - --filter-files
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.335
+    rev: v1.1.390
     hooks:
       - id: pyright
         language_version: python3.13

@@ -44,7 +44,7 @@ cachetools = "^5.5.0"
 pre-commit = "^3.7.1"
 black = {version = "^24.8.0", allow-prereleases = true}
 flake8-pyproject = "^1.2.3"
-pyright = "^1.1.335"
+pyright = "^1.1.390"
 isort = "^5.13.2"
 django-debug-toolbar = "^4.4.6"
 
@@ -75,3 +75,5 @@ line_length = 99
 [tool.pyright]
 extraPaths = ["./admin_panel"]
 pythonVersion = "3.13"
+reportIncompatibleMethodOverride = "warning"
+reportIncompatibleVariableOverride = "warning"
