@@ -1,9 +1,13 @@
+import logging
 from typing import Literal, overload
 
 import aiohttp
 import discord
 from discord.utils import MISSING
-from django.conf import settings
+
+from ballsdex.settings import settings
+
+log = logging.getLogger(__name__)
 
 
 @overload
@@ -23,8 +27,11 @@ async def notify_admins(
 
     Set `wait` to `False` to ignore the resulting messsage, or failures to send it.
     """
+    if not settings.webhook_url:
+        log.warning(f"Discord webhook URL not configured, attempted to send: {message}")
+        return
     async with aiohttp.ClientSession() as session:
-        webhook = discord.Webhook.from_url(settings.DISCORD_WEBHOOK_URL, session=session)
+        webhook = discord.Webhook.from_url(settings.webhook_url, session=session)
         return await webhook.send(
             message, username="Ballsdex admin panel", wait=wait, **kwargs  # type: ignore
         )

@@ -67,6 +67,7 @@ line-length = 99
 [tool.flake8]
 ignore = "W503,E203,E999"
 max-line-length = 99
+exclude = "./admin_panel/admin_panel/settings/*"
 
 [tool.isort]
 profile = "black"
