@@ -74,3 +74,4 @@ line_length = 99
 
 [tool.pyright]
 extraPaths = ["./admin_panel"]
+pythonVersion = "3.13"

@@ -3,9 +3,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+admin_urls = admin.site.get_urls()
+admin_urls[1].default_args["extra_context"] = {  # type: ignore
+    "pwlogin": "django.contrib.auth.backends.ModelBackend" in settings.AUTHENTICATION_BACKENDS
+}
+
 urlpatterns = (
     [
-        path("admin/", admin.site.urls),
+        path("", (admin_urls, "admin", admin.site.name)),
         path("", include("preview.urls")),
         path("", include("social_django.urls", namespace="social")),
     ]

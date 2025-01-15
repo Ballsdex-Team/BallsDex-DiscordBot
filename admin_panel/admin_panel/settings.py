@@ -135,6 +135,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = "static"
+STATICFILES_DIRS = ["staticfiles"]
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = "media"
@@ -163,7 +164,7 @@ SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.user.user_details",
     "admin_panel.pipeline.configure_status",
 )
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/admin/"
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/"
 SOCIAL_AUTH_DISCORD_KEY = ""
 SOCIAL_AUTH_DISCORD_SECRET = ""
 SOCIAL_AUTH_DISCORD_SCOPE = ["identify", "guilds", "guilds.members.read"]
