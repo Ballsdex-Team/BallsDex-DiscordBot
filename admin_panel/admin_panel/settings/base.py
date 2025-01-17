@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "admin_auto_filters",
     "social_django",
     "admin_panel.apps.BallsdexAdminConfig",
     "bd_models",

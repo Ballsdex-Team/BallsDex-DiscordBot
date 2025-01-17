@@ -1,6 +1,7 @@
 import itertools
 from typing import TYPE_CHECKING, Any
 
+from admin_auto_filters.filters import AutocompleteFilter
 from django.contrib import admin, messages
 from django.contrib.messages import SUCCESS
 from django.db.models import Prefetch, Q
@@ -25,6 +26,21 @@ from .utils import ApproxCountPaginator, transform_media
 if TYPE_CHECKING:
     from django.db.models import Field, QuerySet
     from django.http import HttpRequest, HttpResponse
+
+
+class SpecialFilter(AutocompleteFilter):
+    title = "special"
+    field_name = "special"
+
+
+class BallFilter(AutocompleteFilter):
+    title = "countryball"
+    field_name = "ball"
+
+
+class PlayerFilter(AutocompleteFilter):
+    title = "player"
+    field_name = "player"
 
 
 class BlacklistTabular(NonrelatedTabularInline):
@@ -260,8 +276,8 @@ class BallInstanceAdmin(admin.ModelAdmin):
 
     list_display = ("description", "ball__country", "player", "health_bonus", "attack_bonus")
     list_select_related = ("ball", "special", "player")
-    # TODO: filter by special or ball (needs extension)
-    list_filter = ("tradeable", "favorite")
+    list_filter = (SpecialFilter, BallFilter, PlayerFilter, "tradeable", "favorite")
+    show_facets = admin.ShowFacets.NEVER  # hide filtered counts (considerable slowdown)
     show_full_result_count = False
     paginator = ApproxCountPaginator
 

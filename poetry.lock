@@ -832,6 +832,20 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
+name = "django-admin-autocomplete-filter"
+version = "0.7.1"
+description = "A simple Django app to render list filters in django admin using autocomplete widget"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django-admin-autocomplete-filter-0.7.1.tar.gz", hash = "sha256:5a8c9a7016e03104627b80b40811dcc567f26759971e4407f933951546367ba0"},
+    {file = "django_admin_autocomplete_filter-0.7.1-py3-none-any.whl", hash = "sha256:b2a71be2c4a68f828289eb51f71316dbdfac00a1843f53df1fbe4767aad2e3c0"},
+]
+
+[package.dependencies]
+django = ">=2.0"
+
+[[package]]
 name = "django-debug-toolbar"
 version = "4.4.6"
 description = "A configurable set of panels that display various debug information about the current request/response."
@@ -2931,4 +2945,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12, <3.14"
-content-hash = "ff2a23e05d8368ad566e770ff4346ada002d3eb166c134c58926f87e16d063db"
+content-hash = "93cf73ef81b6983202f5615d8c113d8717eaf41f2e2edc48f3eee27cecc9a389"

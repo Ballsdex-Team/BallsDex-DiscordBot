@@ -47,6 +47,7 @@ repos:
           - django-debug-toolbar
           - django-nonrelated-inlines
           - social-auth-app-django
+          - django-admin-autocomplete-filter
   - repo: https://github.com/csachs/pyproject-flake8
     rev: v7.0.0
     hooks:
