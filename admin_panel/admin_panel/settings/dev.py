@@ -8,6 +8,7 @@ DEBUG = True
 # adds django debug toolbar
 INSTALLED_APPS.append("debug_toolbar")
 MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
+MIDDLEWARE.append("pyinstrument.middleware.ProfilerMiddleware")
 DEBUG_TOOLBAR_PANELS = [
     "debug_toolbar.panels.history.HistoryPanel",
     "debug_toolbar.panels.versions.VersionsPanel",
@@ -22,5 +23,5 @@ DEBUG_TOOLBAR_PANELS = [
     # 'debug_toolbar.panels.cache.CachePanel',  # this is making the page huge
     "debug_toolbar.panels.signals.SignalsPanel",
     "debug_toolbar.panels.redirects.RedirectsPanel",
-    "debug_toolbar.panels.profiling.ProfilingPanel",
+    # "debug_toolbar.panels.profiling.ProfilingPanel",
 ]

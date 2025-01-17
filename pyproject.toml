@@ -47,6 +47,7 @@ flake8-pyproject = "^1.2.3"
 pyright = "^1.1.390"
 isort = "^5.13.2"
 django-debug-toolbar = "^4.4.6"
+pyinstrument = "^5.0.0"
 
 
 [tool.poetry.group.metrics.dependencies]
