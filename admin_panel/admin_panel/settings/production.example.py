@@ -11,6 +11,7 @@ DEBUG = False
 SECRET_KEY = None
 
 ALLOWED_HOSTS = [
+    "localhost",
     # place the domain of your website here
     # "ballsdex.com"
 ]
