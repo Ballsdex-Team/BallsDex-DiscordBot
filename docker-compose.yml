@@ -50,6 +50,7 @@ services:
     image: postgres
     restart: always
     hostname: postgres
+    shm_size: 1g
     environment:
       - *postgres-db
       - *postgres-user
