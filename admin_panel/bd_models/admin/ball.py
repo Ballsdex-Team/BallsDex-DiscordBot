@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.forms import Textarea
 from django.utils.safestring import mark_safe
 
-from ..models import Ball, Economy, Regime
+from ..models import Ball, BallInstance, Economy, Regime, TradeObject
 from ..utils import transform_media
 
 if TYPE_CHECKING:
@@ -133,3 +133,16 @@ class BallAdmin(admin.ModelAdmin):
         if db_field.name == "capacity_description":
             kwargs["widget"] = Textarea()
         return super().formfield_for_dbfield(db_field, request, **kwargs)  # type: ignore
+
+    def get_deleted_objects(
+        self, objs: "list[Ball]", request: "HttpRequest"
+    ) -> tuple[list[str], dict[str, int], set[Any], list[Any]]:
+        instances = BallInstance.objects.filter(ball_id__in=set(x.pk for x in objs))
+        if len(instances) < 500:
+            return super().get_deleted_objects(objs, request)  # type: ignore
+        model_count = {
+            "balls": len(objs),
+            "ball instances": len(instances),
+            "trade objects": TradeObject.objects.filter(ballinstance_id__in=instances).count(),
+        }
+        return ["Too long to display"], model_count, set(), []
