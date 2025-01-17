@@ -167,9 +167,11 @@ class BallAdmin(admin.ModelAdmin):
         "catch_names",
         "translations",
         "credits",
+        "pk",
     ]
     search_help_text = (
-        "Search for countryball name, abilitie name/content, credits, catch names or translations"
+        "Search for countryball name, ID, ability name/content, "
+        "credits, catch names or translations"
     )
 
     @admin.display(description="Emoji")
@@ -219,7 +221,7 @@ class SpecialAdmin(admin.ModelAdmin):
     list_editable = ["hidden", "rarity"]
     list_filter = ["hidden", "tradeable"]
 
-    search_fields = ["name", "catch_phrase"]
+    search_fields = ["name", "catch_phrase", "pk"]
 
     @admin.display(description="Emoji")
     def emoji_display(self, obj: Special):
