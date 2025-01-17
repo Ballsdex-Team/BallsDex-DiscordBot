@@ -9,7 +9,11 @@ from django.db import models
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
 
-from .utils import transform_media
+
+def transform_media(path: str) -> str:
+    return path.replace("/static/uploads/", "").replace(
+        "/ballsdex/core/image_generator/src/", "default/"
+    )
 
 
 def image_display(image_link: str) -> SafeText:

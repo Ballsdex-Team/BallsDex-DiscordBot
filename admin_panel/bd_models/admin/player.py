@@ -1,51 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from asgiref.sync import async_to_sync
 from django.contrib import admin, messages
-from django.db.models import Exists, OuterRef
 from django_admin_action_forms import action_with_form
-from nonrelated_inlines.admin import NonrelatedTabularInline
 
 from admin_panel.webhook import notify_admins
 
-from ..forms import BlacklistActionForm
+from ..forms import BlacklistActionForm, BlacklistedListFilter
 from ..models import BlacklistedID, BlacklistHistory, Player
+from ..utils import BlacklistTabular
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
     from django.http import HttpRequest
-
-
-class BlacklistedListFilter(admin.SimpleListFilter):
-    title = "blacklisted"
-    parameter_name = "blacklisted"
-
-    def lookups(self, request: "HttpRequest", model_admin: PlayerAdmin) -> list[tuple[Any, str]]:
-        return [(True, "True"), (False, "False")]
-
-    def queryset(self, request: "HttpRequest", queryset: "QuerySet[Player]") -> "QuerySet[Player]":
-        if self.value() is None:
-            return queryset
-        return queryset.annotate(
-            listed=Exists(BlacklistedID.objects.filter(discord_id=OuterRef("discord_id")))
-        ).filter(listed=self.value())
-
-
-class BlacklistTabular(NonrelatedTabularInline):
-    model = BlacklistHistory
-    extra = 0
-    can_delete = False
-    verbose_name_plural = "Blacklist history"
-    fields = ("date", "reason", "moderator_id", "action_type")
-    readonly_fields = ("date", "moderator_id", "action_type")
-
-    def has_add_permission(self, request: "HttpRequest", obj: Any) -> bool:  # type: ignore
-        return False
-
-    def get_form_queryset(self, obj: Player):
-        return BlacklistHistory.objects.filter(discord_id=obj.discord_id)
 
 
 @admin.register(Player)
@@ -97,6 +66,6 @@ class PlayerAdmin(admin.ModelAdmin):
             "This will be applied after reloading the bot's cache.",
         )
         async_to_sync(notify_admins)(
-            f"{request.user} blacklisted "
+            f"{request.user} blacklisted players "
             f'{", ".join([str(x.discord_id) for x in queryset])} for the reason: {data["reason"]}.'
         )

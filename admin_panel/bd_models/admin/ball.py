@@ -8,8 +8,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 
-from ..models import Ball, BallInstance, Economy, Regime, TradeObject
-from ..utils import transform_media
+from ..models import Ball, BallInstance, Economy, Regime, TradeObject, transform_media
 
 if TYPE_CHECKING:
     from django.db.models import Field, Model
