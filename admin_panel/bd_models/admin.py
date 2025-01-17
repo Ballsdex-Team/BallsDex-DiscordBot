@@ -1,7 +1,7 @@
 import itertools
 from typing import TYPE_CHECKING, Any
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.messages import SUCCESS
 from django.db.models import Prefetch, Q
 from django.forms import Textarea
@@ -282,6 +282,7 @@ class BallInstanceAdmin(admin.ModelAdmin):
         try:
             return queryset.filter(id=int(search_term, 16)), False
         except ValueError:
+            messages.error(request, "Invalid search query")
             return queryset.none(), False
 
     def change_view(
@@ -352,6 +353,7 @@ class TradeAdmin(admin.ModelAdmin):
         try:
             return queryset.filter(id=int(search_term, 16)), False
         except ValueError:
+            messages.error(request, "Invalid search query")
             return queryset.none(), False
 
     def get_queryset(self, request: "HttpRequest") -> "QuerySet[Trade]":
