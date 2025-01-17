@@ -17,8 +17,6 @@ COPY poetry.lock pyproject.toml /code/
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
 COPY . /code
-RUN mkdir -p /code/static
-RUN mkdir -p /code/static/uploads
 
 # wait for postgres to be ready
 CMD sleep 2
