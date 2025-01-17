@@ -832,6 +832,20 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
+name = "django-admin-action-forms"
+version = "1.3.0"
+description = "Extension for the Django admin panel that allows passing additional parameters to actions by creating intermediate pages with forms."
+optional = false
+python-versions = "*"
+files = [
+    {file = "django_admin_action_forms-1.3.0-py3-none-any.whl", hash = "sha256:e614303507f0d2bc3d47a14da3a1bcf0265f69e150c453e21a659bdf7677e0de"},
+    {file = "django_admin_action_forms-1.3.0.tar.gz", hash = "sha256:a9a802217be67b26ffef2f82da6b22fa57c80e44fa4c87c79750dcf71f9b5b0e"},
+]
+
+[package.dependencies]
+django = ">=3.2"
+
+[[package]]
 name = "django-admin-autocomplete-filter"
 version = "0.7.1"
 description = "A simple Django app to render list filters in django admin using autocomplete widget"
@@ -2945,4 +2959,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12, <3.14"
-content-hash = "93cf73ef81b6983202f5615d8c113d8717eaf41f2e2edc48f3eee27cecc9a389"
+content-hash = "eeec44796cdaa57263024692e6d2076d9fd155f833ff44dbdded7b06cf84b270"

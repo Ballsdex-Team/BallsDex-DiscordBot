@@ -10,6 +10,7 @@ admin_urls[1].default_args["extra_context"] = {  # type: ignore
 
 urlpatterns = (
     [
+        path("/action-forms/", include("django_admin_action_forms.urls")),
         path("", (admin_urls, "admin", admin.site.name)),
         path("", include("preview.urls")),
         path("", include("social_django.urls", namespace="social")),
