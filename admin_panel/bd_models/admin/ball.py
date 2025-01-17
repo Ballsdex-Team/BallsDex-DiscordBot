@@ -1,14 +1,18 @@
 from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
+from django.contrib.admin.utils import quote
 from django.forms import Textarea
+from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.utils.text import capfirst
 
 from ..models import Ball, BallInstance, Economy, Regime, TradeObject
 from ..utils import transform_media
 
 if TYPE_CHECKING:
-    from django.db.models import Field
+    from django.db.models import Field, Model
     from django.http import HttpRequest
 
 
@@ -21,6 +25,50 @@ class RegimeAdmin(admin.ModelAdmin):
     def background_image(self, obj: Regime):
         return mark_safe(
             f'<img src="/media/{transform_media(str(obj.background))}" height=60px />'
+        )
+
+    def get_deleted_objects(
+        self, objs: "list[Regime]", request: "HttpRequest"
+    ) -> tuple[list[Any], dict[str, int], set[Any], list[Any]]:
+        regime_ids = [x.pk for x in objs]
+        model_count = {
+            "regimes": len(regime_ids),
+            "balls": Ball.objects.filter(regime_id__in=regime_ids).count(),
+            "ball instances": BallInstance.objects.filter(ball__regime_id__in=regime_ids).count(),
+            "trade objects": TradeObject.objects.filter(
+                ballinstance__ball__regime_id__in=regime_ids
+            ).count(),
+        }
+
+        def format_callback(obj: "Model"):
+            opts = obj._meta
+            admin_url = reverse(
+                "%s:%s_%s_change" % (self.admin_site.name, opts.app_label, opts.model_name),
+                None,
+                (quote(obj.pk),),
+            )
+            # Display a link to the admin page.
+            return format_html(
+                '{}: <a href="{}">{}</a>', capfirst(opts.verbose_name), admin_url, obj
+            )
+
+        text = []
+        for regime in objs:
+            subtext = []
+            for ball in Ball.objects.filter(regime=regime):
+                subtext.append(format_callback(ball))
+            text.append(format_callback(regime))
+            text.append(subtext)
+
+        return (
+            [
+                "Displaying Ball related objects (instances and trade objects) "
+                "is too expensive and has been disabled.",
+                *text,
+            ],
+            model_count,
+            set(),
+            [],
         )
 
 
