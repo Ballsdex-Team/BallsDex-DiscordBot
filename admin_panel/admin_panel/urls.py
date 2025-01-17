@@ -18,7 +18,7 @@ urlpatterns = (
     + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 )
 
-if settings.DEBUG:
+if "debug_toolbar" in settings.INSTALLED_APPS:
     try:
         from debug_toolbar.toolbar import debug_toolbar_urls
     except ImportError:
