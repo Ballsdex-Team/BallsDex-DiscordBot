@@ -15,6 +15,7 @@ from .models import (
     BlacklistedID,
     BlacklistHistory,
     Economy,
+    GuildConfig,
     Player,
     Regime,
     Special,
@@ -421,3 +422,12 @@ class TradeAdmin(admin.ModelAdmin):
         extra_context["player1_len"] = len(player1_objects)
         extra_context["player2_len"] = len(player2_objects)
         return super().change_view(request, object_id, form_url, extra_context)
+
+
+@admin.register(GuildConfig)
+class GuildAdmin(admin.ModelAdmin):
+    list_display = ("guild_id", "spawn_channel", "enabled", "silent")
+    list_filter = ("enabled", "silent")
+
+    search_fields = ("guild_id", "spawn_channel")
+    search_help_text = "Search by guild ID or spawn channel ID"
