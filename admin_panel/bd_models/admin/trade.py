@@ -1,4 +1,5 @@
 import itertools
+import re
 from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin, messages
@@ -10,6 +11,8 @@ if TYPE_CHECKING:
     from django.db.models import QuerySet
     from django.http import HttpRequest, HttpResponse
 
+DUAL_ID_RE = re.compile(r"^[0-9]{17,20} [0-9]{17,20}$")
+
 
 @admin.register(Trade)
 class TradeAdmin(admin.ModelAdmin):
@@ -18,7 +21,10 @@ class TradeAdmin(admin.ModelAdmin):
     readonly_fields = ("date",)
     autocomplete_fields = ("player1", "player2")
 
-    search_help_text = "Search by hexadecimal ID or Discord ID"
+    search_help_text = (
+        "Search by hexadecimal ID of a trade, Discord ID of a player, "
+        "or two Discord IDs separated by a space for further filtering."
+    )
     search_fields = ("id",)  # field is ignored, but required for the text area to show up
     show_full_result_count = False
 
@@ -27,12 +33,31 @@ class TradeAdmin(admin.ModelAdmin):
     ) -> "tuple[QuerySet[BallInstance], bool]":
         if not search_term:
             return super().get_search_results(request, queryset, search_term)  # type: ignore
-        if search_term.isdigit() and 17 <= len(search_term) <= 22:
+        if search_term.isdigit() and 17 <= len(search_term) <= 20:
             try:
                 player = Player.objects.get(discord_id=int(search_term))
             except Player.DoesNotExist:
+                messages.error(request, "Player does not exist in the database.")
                 return queryset.none(), False
             return queryset.filter(Q(player1=player) | Q(player2=player)), False
+        elif DUAL_ID_RE.match(search_term.strip()):
+            id1, id2 = search_term.strip().split(" ")
+            try:
+                player1 = Player.objects.get(discord_id=int(id1))
+            except Player.DoesNotExist:
+                messages.error(request, f"First player ({id1}) does not exist")
+                return queryset.none(), False
+            try:
+                player2 = Player.objects.get(discord_id=int(id2))
+            except Player.DoesNotExist:
+                messages.error(request, f"Second player ({id2}) does not exist")
+                return queryset.none(), False
+            return (
+                queryset.filter(
+                    Q(player1=player1, player2=player2) | Q(player2=player1, player1=player2)
+                ),
+                False,
+            )
         try:
             return queryset.filter(id=int(search_term, 16)), False
         except ValueError:
