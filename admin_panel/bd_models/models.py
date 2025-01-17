@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, cast
+from typing import Any, Iterable, cast
 
 from django.contrib import admin
 from django.core.cache import cache
@@ -223,6 +223,23 @@ class Ball(models.Model):
     @admin.display(description="Current spawn asset")
     def spawn_image(self) -> SafeText:
         return image_display(str(self.wild_card))
+
+    def save(
+        self,
+        force_insert: bool = False,
+        force_update: bool = False,
+        using: str | None = None,
+        update_fields: Iterable[str] | None = None,
+    ) -> None:
+
+        def lower_catch_names(names: str | None) -> str | None:
+            if names:
+                return ";".join([x.strip() for x in names.split(";")]).lower()
+
+        self.catch_names = lower_catch_names(self.catch_names)
+        self.translations = lower_catch_names(self.translations)
+
+        return super().save(force_insert, force_update, using, update_fields)
 
     class Meta:
         managed = False
