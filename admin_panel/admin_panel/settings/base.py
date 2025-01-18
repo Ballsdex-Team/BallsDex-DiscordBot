@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "admin_auto_filters",
     "django_admin_action_forms",
+    "django_admin_inline_paginator",
     "social_django",
     "admin_panel.apps.BallsdexAdminConfig",
     "bd_models",

@@ -39,6 +39,7 @@ class BlacklistTabular(NonrelatedTabularInline):
     verbose_name_plural = "Blacklist history"
     fields = ("date", "reason", "moderator_id", "action_type")
     readonly_fields = ("date", "moderator_id", "action_type")
+    classes = ("collapse",)
 
     def has_add_permission(self, request: "HttpRequest", obj: "Player | GuildConfig") -> bool:
         return False

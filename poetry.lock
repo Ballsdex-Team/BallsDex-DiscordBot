@@ -860,6 +860,24 @@ files = [
 django = ">=2.0"
 
 [[package]]
+name = "django-admin-inline-paginator"
+version = "0.4.0"
+description = "The \"Django Admin Inline Paginator\" is simple way to paginate your inline in django admin"
+optional = false
+python-versions = ">=3.3"
+files = [
+    {file = "django-admin-inline-paginator-0.4.0.tar.gz", hash = "sha256:e1558b468d347e965c4d25be7f546da6682ea03d95098ae37b90c926edd491b1"},
+    {file = "django_admin_inline_paginator-0.4.0-py3-none-any.whl", hash = "sha256:63b2e13dca6b0933f4b7a4d3262c7cb31db8cda19ad005bcbc1c29bba0e95a1a"},
+]
+
+[package.dependencies]
+django = "*"
+
+[package.extras]
+code-quality = ["bandit", "isort", "xenon"]
+dev = ["django", "django-mock-queries", "pylint", "pytest", "pytest-cov", "pytest-pylint", "pytest-watch", "tox"]
+
+[[package]]
 name = "django-debug-toolbar"
 version = "4.4.6"
 description = "A configurable set of panels that display various debug information about the current request/response."
@@ -2959,4 +2977,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12, <3.14"
-content-hash = "eeec44796cdaa57263024692e6d2076d9fd155f833ff44dbdded7b06cf84b270"
+content-hash = "9476bb911854f0887a28b564894f3b8d94549c84f3afa22e77059c11497cbfa6"
