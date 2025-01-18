@@ -62,8 +62,9 @@ class GuildAdmin(admin.ModelAdmin):
 
         self.message_user(
             request,
-            f"Created blacklist for {queryset.count()} guild{"s" if queryset.count() > 1 else ""}. "
-            "This will be applied after reloading the bot's cache.",
+            f"Created blacklist for {queryset.count()} guild"
+            f"{"s" if queryset.count() > 1 else ""}. This will be applied after "
+            "reloading the bot's cache.",
         )
         async_to_sync(notify_admins)(
             f"{request.user} blacklisted guilds "
