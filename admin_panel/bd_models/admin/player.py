@@ -39,7 +39,7 @@ class BallInstanceTabular(TabularInlinePaginated):
         return "-"
 
     # adding a countryball cannot work from here since all fields are readonly
-    def has_add_permission(self, request: "HttpRequest", obj: "Player | GuildConfig") -> bool:
+    def has_add_permission(self, request: "HttpRequest", obj: "Player") -> bool:
         return False
 
     @admin.display(description="Server")
