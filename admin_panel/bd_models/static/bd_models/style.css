@@ -1,5 +1,5 @@
 #preview-sidebar {
-    flex: 1 2 auto;
+    flex-basis: 33%;
     order: 1;
     background: var(--darkened-bg);
     border-left: none;
