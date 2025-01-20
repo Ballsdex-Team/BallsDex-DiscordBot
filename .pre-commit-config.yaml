@@ -38,7 +38,6 @@ repos:
           - Pillow
           - prometheus_client
           - tortoise-orm
-          - git+https://github.com/fastapi-admin/fastapi-admin.git
           - aerich==0.6.3
           - redis
           - django

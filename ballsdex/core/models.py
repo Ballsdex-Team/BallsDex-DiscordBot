@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Iterable, Tuple, Type
 
 import discord
 from discord.utils import format_dt
-from fastapi_admin.models import AbstractAdmin
 from tortoise import exceptions, fields, models, signals, timezone, validators
 from tortoise.contrib.postgres.indexes import PostgreSQLIndex
 from tortoise.expressions import Q
@@ -55,16 +54,6 @@ class DiscordSnowflakeValidator(validators.Validator):
     def __call__(self, value: int):
         if not 17 <= len(str(value)) <= 19:
             raise exceptions.ValidationError("Discord IDs are between 17 and 19 characters long")
-
-
-class User(AbstractAdmin):
-    last_login = fields.DatetimeField(description="Last Login", default=datetime.now)
-    avatar = fields.CharField(max_length=200, default="")
-    intro = fields.TextField(default="")
-    created_at = fields.DatetimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.pk}#{self.username}"
 
 
 class GuildConfig(models.Model):
