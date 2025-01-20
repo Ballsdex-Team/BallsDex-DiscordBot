@@ -110,6 +110,7 @@ class Settings:
 
     # django admin panel
     webhook_url: str | None = None
+    admin_url: str | None = None
     client_id: str = ""
     client_secret: str = ""
 
@@ -168,9 +169,11 @@ def read_settings(path: "Path"):
         "spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager"
     )
 
-    settings.webhook_url = content.get("webhook-url")
-    settings.client_id = content.get("client-id")
-    settings.client_secret = content.get("client-secret")
+    if admin := content.get("admin-panel"):
+        settings.webhook_url = admin.get("webhook-url")
+        settings.client_id = admin.get("client-id")
+        settings.client_secret = admin.get("client-secret")
+        settings.admin_url = admin.get("url")
 
     log.info("Settings loaded.")
 
@@ -259,15 +262,20 @@ owners:
 
 
 # Admin panel related settings
+admin-panel:
 
-# to enable Discord login, fill this
-# the client ID of the Discord application
-client-id:
-# the client secret of the Discord application (this is not the bot token)
-client-secret:
+    # to enable Discord OAuth2 login, fill this
+    # client ID of the Discord application (not the bot's user ID)
+    client-id: 
+    # client secret of the Discord application (this is not the bot token)
+    client-secret: 
 
-# to get admin notifications from the admin panel, create a Discord webhook and paste the url
-webhook-url:
+    # to get admin notifications from the admin panel, create a Discord webhook and paste the url
+    webhook-url: 
+
+    # this will provide some hyperlinks to the admin panel when using /admin commands
+    # set to an empty string to disable those links entirely
+    url: http://localhost:8000
 
 # list of packages that will be loaded
 packages:
@@ -372,15 +380,21 @@ spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
     if add_django:
         content += """
 # Admin panel related settings
+admin-panel:
 
-# to enable Discord login, fill this
-# the client ID of the Discord application
-client-id:
-# the client secret of the Discord application (this is not the bot token)
-client-secret:
+    # to enable Discord OAuth2 login, fill this
+    # client ID of the Discord application (not the bot's user ID)
+    client-id:
+    # client secret of the Discord application (this is not the bot token)
+    client-secret:
 
-# to get admin notifications from the admin panel, create a Discord webhook and paste the url
-webhook-url:
+    # to get admin notifications from the admin panel, create a Discord webhook and paste the url
+    webhook-url:
+
+    # this will provide some hyperlinks to the admin panel when using /admin commands
+    # set to an empty string to disable those links entirely
+    url: http://localhost:8000
+
 """
 
     if any(
