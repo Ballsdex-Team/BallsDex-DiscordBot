@@ -255,6 +255,11 @@ class Balls(app_commands.Group):
             if ball.catch_date and ball.spawned_time
             else "N/A"
         )
+        admin_url = (
+            f"[View online](<{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/>)"
+            if settings.admin_url
+            else ""
+        )
         await interaction.response.send_message(
             f"**{settings.collectible_name.title()} ID:** {ball.pk}\n"
             f"**Player:** {ball.player}\n"
@@ -268,7 +273,7 @@ class Balls(app_commands.Group):
             f"**Spawned at:** {spawned_time}\n"
             f"**Catch time:** {catch_time} seconds\n"
             f"**Caught in:** {ball.server_id if ball.server_id else 'N/A'}\n"
-            f"**Traded:** {ball.trade_player}\n",
+            f"**Traded:** {ball.trade_player}\n{admin_url}",
             ephemeral=True,
         )
         await log_action(f"{interaction.user} got info for {ball}({ball.pk}).", interaction.client)
@@ -589,9 +594,14 @@ class Balls(app_commands.Group):
             if wild_card:
                 files.append(await wild_card.to_file())
             await interaction.client.load_cache()
+            admin_url = (
+                f"[View online](<{settings.admin_url}/bd_models/ball/{ball.pk}/change/>)\n"
+                if settings.admin_url
+                else ""
+            )
             await interaction.followup.send(
                 f"Successfully created a {settings.collectible_name} with ID {ball.pk}! "
-                "The internal cache was reloaded.\n"
+                f"The internal cache was reloaded.\n{admin_url}"
                 f"{missing_default}\n"
                 f"{name=} regime={regime.name} economy={economy.name if economy else None} "
                 f"{health=} {attack=} {rarity=} {enabled=} {tradeable=} emoji={emoji}",

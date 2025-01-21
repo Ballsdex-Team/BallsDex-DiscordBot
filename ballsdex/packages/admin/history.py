@@ -2,10 +2,11 @@ import datetime
 
 import discord
 from discord import app_commands
+from tortoise.exceptions import DoesNotExist
 from tortoise.expressions import Q
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import BallInstance, Trade
+from ballsdex.core.models import BallInstance, Player, Trade
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
@@ -55,15 +56,21 @@ class History(app_commands.Group):
             return
 
         queryset = Trade.all()
-        if user2:
-            queryset = queryset.filter(
-                (Q(player1__discord_id=user.id) & Q(player2__discord_id=user2.id))
-                | (Q(player1__discord_id=user2.id) & Q(player2__discord_id=user.id))
-            )
-        else:
-            queryset = queryset.filter(
-                Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
-            )
+        try:
+            player1 = await Player.get(discord_id=user.id)
+            if user2:
+                player2 = await Player.get(discord_id=user2.id)
+                query = f"?q={user.id}+{user2.id}"
+                queryset = queryset.filter(
+                    (Q(player1=player1) & Q(player2=player2))
+                    | (Q(player1=player2) & Q(player2=player1))
+                )
+            else:
+                query = f"?q={user.id}"
+                queryset = queryset.filter(Q(player1=player1) | Q(player2=player1))
+        except DoesNotExist:
+            await interaction.followup.send("One or more players are not registered by the bot.")
+            return
 
         if days is not None and days > 0:
             end_date = datetime.datetime.now()
@@ -82,7 +89,8 @@ class History(app_commands.Group):
                 f"History of {user.display_name} and {user2.display_name}:"
             )
 
-        source = TradeViewFormat(history, user.display_name, interaction.client, True)
+        url = f"{settings.admin_url}/bd_models/trade/{query}" if settings.admin_url else None
+        source = TradeViewFormat(history, user.display_name, interaction.client, True, url)
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
@@ -152,8 +160,13 @@ class History(app_commands.Group):
             await interaction.followup.send("No history found.", ephemeral=True)
             return
 
+        url = (
+            f"{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/"
+            if settings.admin_url
+            else None
+        )
         source = TradeViewFormat(
-            trades, f"{settings.collectible_name} {ball}", interaction.client, True
+            trades, f"{settings.collectible_name} {ball}", interaction.client, True, url
         )
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
@@ -188,6 +201,11 @@ class History(app_commands.Group):
             return
         embed = discord.Embed(
             title=f"Trade {trade.pk:0X}",
+            url=(
+                f"{settings.admin_url}/bd_models/trade/{trade.pk}/change/"
+                if settings.admin_url
+                else None
+            ),
             description=f"Trade ID: {trade.pk:0X}",
             timestamp=trade.date,
         )

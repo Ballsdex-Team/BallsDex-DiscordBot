@@ -29,22 +29,28 @@ services:
 
   admin-panel:
     image: ballsdex
+    build: .
     ports:
       - "8000:8000"
     networks:
       - internal
     environment:
       - *postgres-url
-      - "BALLSDEXBOT_REDIS_URL=redis://redis"
+      # if serving the admin panel online, copy the file "production.example.py" and uncomment
+      # - DJANGO_SETTINGS_MODULE="admin_panel.settings.production"
     depends_on:
       - postgres-db
-      - redis-cache
     volumes:
       - type: bind
         source: ./
         target: /code
     tty: true
-    command: poetry run uvicorn ballsdex.core.admin:_app --host 0.0.0.0
+    working_dir: /code/admin_panel
+    command: >
+      bash -c "
+      poetry run python3 manage.py migrate --no-input &&
+      poetry run python3 manage.py collectstatic --no-input &&
+      poetry run uvicorn admin_panel.asgi:application --host 0.0.0.0"
 
   postgres-db:
     image: postgres

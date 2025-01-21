@@ -16,14 +16,21 @@ dependencies = [
     "discord.py==2.4.0",
     "audioop-lts==0.2.1 ; python_version >= '3.13'",
 
-    # fastapi
-    "fastapi==0.115.4",
-    "fastapi-admin @ git+https://github.com/Ballsdex-Team/fastapi-admin@ballsdex",
-    "uvicorn==0.32.0",
-
     # database ORM
     "tortoise-orm[asyncpg] ==0.22.2",
     "tortoise-cli==0.1.2",
+
+    # django admin panel
+    "uvicorn[standard]==0.32.0",
+    "django==5.1.4",
+    "django-nonrelated-inlines==0.2",
+    "django-admin-autocomplete-filter==0.7.1",
+    "django-admin-action-forms==1.3.0",
+    "django-admin-inline-paginator==0.4.0",
+    "dj-database-url==2.3.0",
+    "social-auth-app-django==5.4.2",
+    "psycopg==3.2.3",
+    "psycopg-binary==3.2.3",
 
     # metrics
     "prometheus-client==0.20.0",
@@ -42,8 +49,10 @@ dev = [
     "pre-commit==3.7.1",
     "black==24.8.0",
     "flake8-pyproject==1.2.3",
-    "pyright==1.1.335",
+    "pyright==1.1.390",
     "isort==5.13.2",
+    "django-debug-toolbar==4.4.6",
+    "pyinstrument==5.0.0",
 ]
 
 [tool.poetry]
@@ -75,9 +84,16 @@ src_folder = "./ballsdex"
 line-length = 99
 
 [tool.flake8]
-ignore = "W503,E203"
+ignore = "W503,E203,E999"
 max-line-length = 99
+exclude = "./admin_panel/admin_panel/settings/*"
 
 [tool.isort]
 profile = "black"
 line_length = 99
+
+[tool.pyright]
+extraPaths = ["./admin_panel"]
+pythonVersion = "3.13"
+reportIncompatibleMethodOverride = "warning"
+reportIncompatibleVariableOverride = "warning"
