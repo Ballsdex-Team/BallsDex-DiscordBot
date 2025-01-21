@@ -60,8 +60,9 @@ def _check_reserved_names():
 
 
 def move_forwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+    if not OLD_STATIC.exists(follow_symlinks=False):
+        return
     assert MEDIA.is_dir(follow_symlinks=False)
-    assert OLD_STATIC.is_dir(follow_symlinks=False)
     assert CORE_SRC.is_dir(follow_symlinks=False)
     _check_reserved_names()
 
@@ -78,8 +79,9 @@ def move_forwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
 
 
 def move_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+    if not OLD_STATIC.exists(follow_symlinks=False):
+        return
     assert MEDIA.is_dir(follow_symlinks=False)
-    assert OLD_STATIC.is_dir(follow_symlinks=False)
 
     Ball.objects.update(
         **_replace_text("wild_card", reverse=True),
