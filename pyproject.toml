@@ -25,6 +25,9 @@ dependencies = [
     "tortoise-orm[asyncpg] ==0.22.2",
     "tortoise-cli==0.1.2",
 
+    # metrics
+    "prometheus-client==0.20.0",
+
     # misc
     "rich==13.8.0",
     "python-dateutil==2.9.0",
@@ -41,9 +44,6 @@ dev = [
     "flake8-pyproject==1.2.3",
     "pyright==1.1.335",
     "isort==5.13.2",
-]
-metrics = [
-    "prometheus-client==0.20.0",
 ]
 
 [tool.poetry]
