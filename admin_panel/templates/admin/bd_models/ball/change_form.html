@@ -10,6 +10,7 @@ for ball creation/edition form.
 {% load i18n admin_urls static admin_modify %}
 
 {% block content %}
+{% if request.resolver_match.url_name == "bd_models_ball_change" %}
 <link rel="stylesheet" href="{% static "admin/css/changelists.css" %}">
 <div id="content-main">
     {% block object-tools %}
@@ -66,4 +67,7 @@ for ball creation/edition form.
     {% include "generate_ball_preview.html" %}
 </div>
 </div>
+{% else %}
+    {{ block.super }}
+{% endif %}
 {% endblock %}
