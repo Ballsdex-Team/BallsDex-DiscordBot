@@ -59,11 +59,11 @@ class Blacklist(app_commands.Group):
         else:
             interaction.client.blacklist.add(user.id)
             await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
-        await log_action(
-            f"{interaction.user} blacklisted {user} ({user.id})"
-            f" for the following reason: {reason}.",
-            interaction.client,
-        )
+            await log_action(
+                f"{interaction.user} blacklisted {user} ({user.id})"
+                f" for the following reason: {reason}.",
+                interaction.client,
+            )
 
     @app_commands.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -100,10 +100,11 @@ class Blacklist(app_commands.Group):
             await interaction.response.send_message(
                 "User is now removed from blacklist.", ephemeral=True
             )
-        await log_action(
-            f"{interaction.user} removed blacklist for user {user} ({user.id}).\nReason: {reason}",
-            interaction.client,
-        )
+            await log_action(
+                f"{interaction.user} removed blacklist for user {user} ({user.id})."
+                f"\nReason: {reason}",
+                interaction.client,
+            )
 
     @app_commands.command(name="info")
     async def blacklist_info(
@@ -238,11 +239,11 @@ class BlacklistGuild(app_commands.Group):
         else:
             interaction.client.blacklist_guild.add(guild.id)
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
-        await log_action(
-            f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
-            f"for the following reason: {reason}.",
-            interaction.client,
-        )
+            await log_action(
+                f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
+                f"for the following reason: {reason}.",
+                interaction.client,
+            )
 
     @app_commands.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
