@@ -101,8 +101,7 @@ class Blacklist(app_commands.Group):
                 "User is now removed from blacklist.", ephemeral=True
             )
             await log_action(
-                f"{interaction.user} removed blacklist for user {user} ({user.id})."
-                f"\nReason: {reason}",
+                f"{interaction.user} removed blacklist for user {user} ({user.id}).\nReason: {reason}",
                 interaction.client,
             )
 
