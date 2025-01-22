@@ -8,6 +8,16 @@ DEBUG = False
 # Force python-social-auth (Discord OAuth2) to use https redirection
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
+# Correctly read the headers when using a proxy like nginx
+# Failing to configure this setting will result in CSRF errors in HTTPS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# DEBUG=False disables error logging in console, we want to keep them
+from django.utils.log import DEFAULT_LOGGING
+
+LOGGING = DEFAULT_LOGGING
+LOGGING["handlers"]["console"]["filters"].clear()
+
 # Generate a long random string here for your secret key. It is important to keep it secret,
 # leaking it could allow attackers to do privilege escalation.
 # A good way to generate a long key is to run "pwgen 64 1" on Linux
