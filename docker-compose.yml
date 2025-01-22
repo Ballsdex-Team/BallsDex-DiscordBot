@@ -90,20 +90,6 @@ services:
       - BACKUP_KEEP_MONTHS=6
       - HEALTHCHECK_PORT=3928
 
-  redis-cache:
-    image: redis:latest
-    restart: always
-    hostname: redis
-    # ports:
-    #   - "6379:6379"
-    networks:
-      - internal
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-    command: redis-server --save 20 1 --loglevel warning
-    volumes: 
-      - cache-data:/data
-
   # Uncomment to enable gateway proxy feature and
   # add "gateway-url: ws://gateway_proxy:5421" to your config.yaml
   # Also change tag corresponding to your platform if not x86-64
