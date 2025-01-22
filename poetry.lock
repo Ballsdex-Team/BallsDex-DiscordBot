@@ -851,6 +851,22 @@ code-quality = ["bandit", "isort", "xenon"]
 dev = ["django", "django-mock-queries", "pylint", "pytest", "pytest-cov", "pytest-pylint", "pytest-watch", "tox"]
 
 [[package]]
+name = "django-allow-cidr"
+version = "0.7.1"
+description = "A Django Middleware to enable use of CIDR IP ranges in ALLOWED_HOSTS."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "django-allow-cidr-0.7.1.tar.gz", hash = "sha256:382c5d7a9807279e3e96e4f4892b59163a2b30128c596902bf5f80e133e1ccbb"},
+    {file = "django_allow_cidr-0.7.1-py2.py3-none-any.whl", hash = "sha256:11126c5bb9df3a61ff9d97304856ba7e5b26d46c6d456709a6d9e28483bff47f"},
+]
+
+[package.dependencies]
+Django = ">=2.2"
+packaging = "*"
+
+[[package]]
 name = "django-debug-toolbar"
 version = "4.4.6"
 description = "A configurable set of panels that display various debug information about the current request/response."
@@ -1384,10 +1400,9 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 name = "packaging"
 version = "24.2"
 description = "Core utilities for Python packages"
-optional = true
+optional = false
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "extra == \"dev\""
 files = [
     {file = "packaging-24.2-py3-none-any.whl", hash = "sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759"},
     {file = "packaging-24.2.tar.gz", hash = "sha256:c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f"},
@@ -2866,4 +2881,4 @@ dev = ["black", "django-debug-toolbar", "flake8-pyproject", "isort", "pre-commit
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12, <3.14"
-content-hash = "99aa857190d75e7e57ca382147704e51ef7c10bbc2dfd68329e17a7a928791e6"
+content-hash = "814067ed08de57d6d242c43800d5df802dfa5efdc2814ac34e2c48bb6c42de41"
