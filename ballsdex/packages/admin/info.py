@@ -129,6 +129,26 @@ class Info(app_commands.Group):
             catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
             player=player,
         )
+        class recentlyCaughtButton(discord.ui.View):
+            @discord.ui.button(label='Recent Catches', style = discord.ButtonStyle.primary)
+            async def on_button_click(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+                await interaction.response.defer(ephemeral=True, thinking=True)
+                embed = discord.Embed(
+                    title=f"Catch times for {user.id} - last 30 catches",
+                )
+                recently_caught_balls = await BallInstance.filter(
+                    player=player,
+                ).order_by("-catch_date").limit(30)
+                ballInfo = ""
+                for ball in recently_caught_balls:
+                    catch_time = ball.catch_date - ball.spawned_time
+                    ballInfo = f"{ballInfo}{ball.description(short=True)} - {catch_time} - {ball.server_id}\n" 
+                embed.add_field(
+                    name="",
+                    value=ballInfo,
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
         embed = discord.Embed(
             title=f"{user} ({user.id})",
             url=url,
@@ -165,4 +185,4 @@ class Info(app_commands.Group):
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed,view=recentlyCaughtButton(), ephemeral=True)
