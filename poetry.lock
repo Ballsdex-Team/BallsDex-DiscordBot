@@ -2881,4 +2881,4 @@ dev = ["black", "django-debug-toolbar", "flake8-pyproject", "isort", "pre-commit
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12, <3.14"
-content-hash = "814067ed08de57d6d242c43800d5df802dfa5efdc2814ac34e2c48bb6c42de41"
+content-hash = "aefafb70ab183f751e1154b9ef0d1579cd26ebbf61469c07448d1910ea0349f0"
