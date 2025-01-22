@@ -25,3 +25,6 @@ DEBUG_TOOLBAR_PANELS = [
     "debug_toolbar.panels.redirects.RedirectsPanel",
     # "debug_toolbar.panels.profiling.ProfilingPanel",
 ]
+
+# Set DEBUG logging level
+LOGGING["loggers"]["root"]["level"] = "DEBUG"
