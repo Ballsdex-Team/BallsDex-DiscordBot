@@ -55,7 +55,7 @@ class CountryBall:
             return "".join(random.choices(source, k=15))
 
         extension = self.model.wild_card.split(".")[-1]
-        file_location = "." + self.model.wild_card
+        file_location = "./admin_panel/media/" + self.model.wild_card
         file_name = f"nt_{generate_random_name()}.{extension}"
         try:
             permissions = channel.permissions_for(channel.guild.me)
