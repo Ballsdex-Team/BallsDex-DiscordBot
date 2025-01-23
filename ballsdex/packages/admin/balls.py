@@ -173,7 +173,6 @@ class Balls(app_commands.Group):
         countryball: BallTransform,
         user: discord.User,
         special: SpecialTransform | None = None,
-        shiny: bool | None = None,
         health_bonus: int | None = None,
         attack_bonus: int | None = None,
     ):
@@ -185,8 +184,6 @@ class Balls(app_commands.Group):
         countryball: Ball
         user: discord.User
         special: Special | None
-        shiny: bool
-            Omit this to make it random.
         health_bonus: int | None
             Omit this to make it random.
         attack_bonus: int | None
@@ -201,7 +198,6 @@ class Balls(app_commands.Group):
         instance = await BallInstance.create(
             ball=countryball,
             player=player,
-            shiny=(shiny if shiny is not None else random.randint(1, 2048) == 1),
             attack_bonus=(
                 attack_bonus
                 if attack_bonus is not None
@@ -218,13 +214,11 @@ class Balls(app_commands.Group):
             f"`{countryball.country}` {settings.collectible_name} was successfully given to "
             f"`{user}`.\nSpecial: `{special.name if special else None}` • ATK: "
             f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
-            f"• Shiny: `{instance.shiny}`"
         )
         await log_action(
             f"{interaction.user} gave {settings.collectible_name} "
             f"{countryball.country} to {user}. (Special={special.name if special else None} "
-            f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d} "
-            f"shiny={instance.shiny}).",
+            f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
             interaction.client,
         )
 
@@ -261,6 +255,11 @@ class Balls(app_commands.Group):
             if ball.catch_date and ball.spawned_time
             else "N/A"
         )
+        admin_url = (
+            f"[View online](<{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/>)"
+            if settings.admin_url
+            else ""
+        )
         await interaction.response.send_message(
             f"**{settings.collectible_name.title()} ID:** {ball.pk}\n"
             f"**Player:** {ball.player}\n"
@@ -269,13 +268,12 @@ class Balls(app_commands.Group):
             f"**Attack bonus:** {ball.attack_bonus}\n"
             f"**Health bonus:** {ball.health_bonus}\n"
             f"**Health:** {ball.health}\n"
-            f"**Shiny:** {ball.shiny}\n"
             f"**Special:** {ball.special.name if ball.special else None}\n"
             f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
             f"**Spawned at:** {spawned_time}\n"
             f"**Catch time:** {catch_time} seconds\n"
             f"**Caught in:** {ball.server_id if ball.server_id else 'N/A'}\n"
-            f"**Traded:** {ball.trade_player}\n",
+            f"**Traded:** {ball.trade_player}\n{admin_url}",
             ephemeral=True,
         )
         await log_action(f"{interaction.user} got info for {ball}({ball.pk}).", interaction.client)
@@ -437,7 +435,6 @@ class Balls(app_commands.Group):
         interaction: discord.Interaction[BallsDexBot],
         user: discord.User | None = None,
         countryball: BallTransform | None = None,
-        shiny: bool | None = None,
         special: SpecialTransform | None = None,
     ):
         """
@@ -448,7 +445,6 @@ class Balls(app_commands.Group):
         user: discord.User
             The user you want to count the countryballs of.
         countryball: Ball
-        shiny: bool
         special: Special
         """
         if interaction.response.is_done():
@@ -456,8 +452,6 @@ class Balls(app_commands.Group):
         filters = {}
         if countryball:
             filters["ball"] = countryball
-        if shiny is not None:
-            filters["shiny"] = shiny
         if special:
             filters["special"] = special
         if user:
@@ -468,15 +462,14 @@ class Balls(app_commands.Group):
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
-        shiny_str = "shiny " if shiny else ""
         if user:
             await interaction.followup.send(
-                f"{user} has {balls} {special_str}{shiny_str}"
+                f"{user} has {balls} {special_str}"
                 f"{country}{settings.collectible_name}{plural}."
             )
         else:
             await interaction.followup.send(
-                f"There {verb} {balls} {special_str}{shiny_str}"
+                f"There {verb} {balls} {special_str}"
                 f"{country}{settings.collectible_name}{plural}."
             )
 
@@ -601,9 +594,14 @@ class Balls(app_commands.Group):
             if wild_card:
                 files.append(await wild_card.to_file())
             await interaction.client.load_cache()
+            admin_url = (
+                f"[View online](<{settings.admin_url}/bd_models/ball/{ball.pk}/change/>)\n"
+                if settings.admin_url
+                else ""
+            )
             await interaction.followup.send(
                 f"Successfully created a {settings.collectible_name} with ID {ball.pk}! "
-                "The internal cache was reloaded.\n"
+                f"The internal cache was reloaded.\n{admin_url}"
                 f"{missing_default}\n"
                 f"{name=} regime={regime.name} economy={economy.name if economy else None} "
                 f"{health=} {attack=} {rarity=} {enabled=} {tradeable=} emoji={emoji}",

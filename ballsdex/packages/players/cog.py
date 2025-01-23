@@ -251,6 +251,14 @@ class Player(commands.GroupCog):
             )
             return
 
+        if self.active_friend_requests.get((player2.discord_id, player1.discord_id), False):
+            await interaction.response.send_message(
+                "That user has already sent you a friend request! "
+                "Please accept or decline it before sending a new request.",
+                ephemeral=True,
+            )
+            return
+
         if self.active_friend_requests.get((player1.discord_id, player2.discord_id), False):
             await interaction.response.send_message(
                 "You already have an active friend request to this user!", ephemeral=True
@@ -521,7 +529,6 @@ class Player(commands.GroupCog):
             completion_percentage = "0.0%"
         caught_owned = [x for x in ball if x.trade_player is None]
         balls_owned = [x for x in ball]
-        shiny = [x for x in ball if x.shiny is True]
         special = [x for x in ball if x.special is not None]
         trades = await Trade.filter(
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
@@ -551,7 +558,6 @@ class Player(commands.GroupCog):
             f"**Completion:** {completion_percentage}\n"
             f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned):,}\n"
             f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned):,}\n"
-            f"**Shiny {settings.collectible_name.title()}s:** {len(shiny):,}\n"
             f"**Special {settings.collectible_name.title()}s:** {len(special):,}\n"
             f"**Trades Completed:** {trades:,}"
         )
@@ -636,13 +642,13 @@ async def get_items_csv(player: PlayerModel) -> BytesIO:
     )
     txt = (
         f"id,hex id,{settings.collectible_name},catch date,trade_player"
-        ",special,shiny,attack,attack bonus,hp,hp_bonus\n"
+        ",special,attack,attack bonus,hp,hp_bonus\n"
     )
     for ball in balls:
         txt += (
             f"{ball.id},{ball.id:0X},{ball.ball.country},{ball.catch_date},"  # type: ignore
             f"{ball.trade_player.discord_id if ball.trade_player else 'None'},{ball.special},"
-            f"{ball.shiny},{ball.attack},{ball.attack_bonus},{ball.health},{ball.health_bonus}\n"
+            f"{ball.attack},{ball.attack_bonus},{ball.health},{ball.health_bonus}\n"
         )
     return BytesIO(txt.encode("utf-8"))
 

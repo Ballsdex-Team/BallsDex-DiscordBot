@@ -167,7 +167,6 @@ class Trade(commands.GroupCog):
         interaction: discord.Interaction,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Add a countryball to the ongoing trade.
@@ -178,8 +177,6 @@ class Trade(commands.GroupCog):
             The countryball you want to add to your proposal
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -242,7 +239,6 @@ class Trade(commands.GroupCog):
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
         sort: SortingChoices | None = None,
-        shiny: bool | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
         """
@@ -254,8 +250,6 @@ class Trade(commands.GroupCog):
             The countryball you would like to filter the results to
         sort: SortingChoices
             Choose how countryballs are sorted. Can be used to show duplicates.
-        shiny: bool
-            Filter the results to shinies
         special: Special
             Filter the results to a special event
         """
@@ -274,8 +268,6 @@ class Trade(commands.GroupCog):
         query = BallInstance.filter(player__discord_id=interaction.user.id)
         if countryball:
             query = query.filter(ball=countryball)
-        if shiny:
-            query = query.filter(shiny=shiny)
         if special:
             query = query.filter(special=special)
         if sort:
@@ -301,7 +293,6 @@ class Trade(commands.GroupCog):
         interaction: discord.Interaction,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Remove a countryball from what you proposed in the ongoing trade.
@@ -312,8 +303,6 @@ class Trade(commands.GroupCog):
             The countryball you want to remove from your proposal
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -367,7 +356,7 @@ class Trade(commands.GroupCog):
     async def history(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        sorting: app_commands.Choice[str],
+        sorting: app_commands.Choice[str] | None = None,
         trade_user: discord.User | None = None,
         days: Optional[int] = None,
         countryball: BallEnabledTransform | None = None,
@@ -378,10 +367,10 @@ class Trade(commands.GroupCog):
 
         Parameters
         ----------
-        sorting: str
-            The sorting order of the trades
+        sorting: str | None
+            The sorting order of the trades.
         trade_user: discord.User | None
-            The user you want to see your trade history with
+            The user you want to see your trade history with.
         days: Optional[int]
             Retrieve trade history from last x days.
         countryball: BallEnabledTransform | None
@@ -391,6 +380,7 @@ class Trade(commands.GroupCog):
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         user = interaction.user
+        sort_value = sorting.value if sorting else "-date"
 
         if days is not None and days < 0:
             await interaction.followup.send(
@@ -418,7 +408,7 @@ class Trade(commands.GroupCog):
         if special:
             queryset = queryset.filter(Q(tradeobjects__ballinstance__special=special)).distinct()
 
-        history = await queryset.order_by(sorting.value).prefetch_related(
+        history = await queryset.order_by(sort_value).prefetch_related(
             "player1",
             "player2",
             "tradeobjects__ballinstance__ball",

@@ -1,0 +1,73 @@
+<!--
+This file has been copied from
+https://github.com/django/django/blob/8914b571eb5f93722b9741b1da9eb69347271b11/django/contrib/admin/templates/admin/change_form.html
+
+The entire "content" block has to be overwritten to add a sidebar containing the preview generator
+for ball creation/edition form.
+-->
+
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block content %}
+{% if request.resolver_match.url_name == "bd_models_ball_change" %}
+<link rel="stylesheet" href="{% static "admin/css/changelists.css" %}">
+<div id="content-main">
+    {% block object-tools %}
+    {% if change and not is_popup %}
+    <ul class="object-tools">
+        {% block object-tools-items %}
+        {% change_form_object_tools %}
+        {% endblock %}
+    </ul>
+    {% endif %}
+    {% endblock %}
+    <div class="module" id="changelist">
+    <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}{% if form_url %}action="{{ form_url }}" {% endif %}method="post" id="{{ opts.model_name }}_form" novalidate style="flex-basis:66%;min-width:0;">{% csrf_token %}{% block form_top %}{% endblock %}
+        <div>
+            {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
+            {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
+            {% if save_on_top %}{% block submit_buttons_top %}{% submit_row %}{% endblock %}{% endif %}
+            {% if errors %}
+            <p class="errornote">
+                {% blocktranslate count counter=errors|length %}Please correct the error below.{% plural %}Please
+                correct the errors below.{% endblocktranslate %}
+            </p>
+            {{ adminform.form.non_field_errors }}
+            {% endif %}
+
+            {% block field_sets %}
+            {% for fieldset in adminform %}
+            {% include "admin/includes/fieldset.html" with heading_level=2 prefix="fieldset" id_prefix=0 id_suffix=forloop.counter0 %}
+            {% endfor %}
+            {% endblock %}
+
+            {% block after_field_sets %}{% endblock %}
+
+            {% block inline_field_sets %}
+            {% for inline_admin_formset in inline_admin_formsets %}
+            {% include inline_admin_formset.opts.template %}
+            {% endfor %}
+            {% endblock %}
+
+            {% block after_related_objects %}{% endblock %}
+
+            {% block submit_buttons_bottom %}{% submit_row %}{% endblock %}
+
+            {% block admin_change_form_document_ready %}
+            <script id="django-admin-form-add-constants" src="{% static 'admin/js/change_form.js' %}" {% if adminform and add %} data-model-name="{{ opts.model_name }}" {% endif %} async>
+                </script>
+            {% endblock %}
+
+            {# JavaScript for prepopulated fields #}
+            {% prepopulated_fields_js %}
+
+        </div>
+    </form>
+    {% include "generate_ball_preview.html" %}
+</div>
+</div>
+{% else %}
+    {{ block.super }}
+{% endif %}
+{% endblock %}

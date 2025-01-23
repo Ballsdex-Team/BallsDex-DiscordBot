@@ -3,10 +3,12 @@ from __future__ import annotations
 import logging
 import math
 import random
+from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ui import Button, Modal, TextInput, View, button
+from tortoise.timezone import get_default_timezone
 from tortoise.timezone import now as datetime_now
 
 from ballsdex.core.metrics import caught_balls
@@ -15,7 +17,6 @@ from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
-    from ballsdex.core.models import Special
     from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.countryballs.components")
@@ -71,8 +72,6 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             )
 
             special = ""
-            if ball.shiny:
-                special += f"✨ ***It's a shiny {settings.collectible_name}!*** ✨\n"
             if ball.specialcard and ball.specialcard.catch_phrase:
                 special += f"*{ball.specialcard.catch_phrase}*\n"
             if has_caught_before:
@@ -107,12 +106,18 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         bonus_health = self.ball.hp_bonus or random.randint(
             -settings.max_health_bonus, settings.max_health_bonus
         )
-        shiny = self.ball.shiny or random.randint(1, 2048) == 1
 
         # check if we can spawn cards with a special background
-        special: "Special | None" = None if shiny else self.ball.special
-        population = [x for x in specials.values() if x.start_date <= datetime_now() <= x.end_date]
-        if not special and not shiny and population:
+        special = self.ball.special
+        population = [
+            x
+            for x in specials.values()
+            # handle null start/end dates with infinity times
+            if (x.start_date or datetime.min.replace(tzinfo=get_default_timezone()))
+            <= datetime_now()
+            <= (x.end_date or datetime.max.replace(tzinfo=get_default_timezone()))
+        ]
+        if not special and population:
             # Here we try to determine what should be the chance of having a common card
             # since the rarity field is a value between 0 and 1, 1 being no common
             # and 0 only common, we get the remaining value by doing (1-rarity)
@@ -128,7 +133,6 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         ball = await BallInstance.create(
             ball=self.ball.model,
             player=player,
-            shiny=shiny,
             special=special,
             attack_bonus=bonus_attack,
             health_bonus=bonus_health,
@@ -137,18 +141,15 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         )
         if user.id in bot.catch_log:
             log.info(
-                f"{user} caught {settings.collectible_name}"
-                f" {self.ball.model}, {shiny=} {special=}",
+                f"{user} caught {settings.collectible_name}" f" {self.ball.model}, {special=}",
             )
         else:
             log.debug(
-                f"{user} caught {settings.collectible_name}"
-                f" {self.ball.model}, {shiny=} {special=}",
+                f"{user} caught {settings.collectible_name}" f" {self.ball.model}, {special=}",
             )
         if user.guild.member_count:
             caught_balls.labels(
                 country=self.ball.model.country,
-                shiny=shiny,
                 special=special,
                 # observe the size of the server, rounded to the nearest power of 10
                 guild_size=10 ** math.ceil(math.log(max(user.guild.member_count - 1, 1), 10)),
