@@ -34,7 +34,7 @@ class History(app_commands.Group):
         days: int | None = None,
     ):
         """
-        Show the history of a user.
+        Show the trade history of a user.
 
         Parameters
         ----------
@@ -102,7 +102,7 @@ class History(app_commands.Group):
         days: int | None = None,
     ):
         """
-        Show the history of a countryball.
+        Show the trade history of a countryball.
 
         Parameters
         ----------
@@ -195,7 +195,8 @@ class History(app_commands.Group):
         fill_trade_embed_fields(
             embed,
             interaction.client,
-            await TradingUser.from_trade_model(trade, trade.player1, interaction.client),
-            await TradingUser.from_trade_model(trade, trade.player2, interaction.client),
+            await TradingUser.from_trade_model(trade, trade.player1, interaction.client, True),
+            await TradingUser.from_trade_model(trade, trade.player2, interaction.client, True),
+            is_admin=True,
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)

@@ -10,6 +10,7 @@ import discord
 from discord.utils import format_dt
 from fastapi_admin.models import AbstractAdmin
 from tortoise import exceptions, fields, models, signals, timezone, validators
+from tortoise.contrib.postgres.indexes import PostgreSQLIndex
 from tortoise.expressions import Q
 
 from ballsdex.core.image_generator.image_gen import draw_card
@@ -241,6 +242,11 @@ class BallInstance(models.Model):
 
     class Meta:
         unique_together = ("player", "id")
+        indexes = [
+            PostgreSQLIndex(fields=("ball_id",)),
+            PostgreSQLIndex(fields=("player_id",)),
+            PostgreSQLIndex(fields=("special_id",)),
+        ]
 
     @property
     def is_tradeable(self) -> bool:
@@ -520,6 +526,12 @@ class Trade(models.Model):
     def __str__(self) -> str:
         return str(self.pk)
 
+    class Meta:
+        indexes = [
+            PostgreSQLIndex(fields=("player1_id",)),
+            PostgreSQLIndex(fields=("player2_id",)),
+        ]
+
 
 class TradeObject(models.Model):
     trade_id: int
@@ -536,6 +548,13 @@ class TradeObject(models.Model):
 
     def __str__(self) -> str:
         return str(self.pk)
+
+    class Meta:
+        indexes = [
+            PostgreSQLIndex(fields=("ballinstance_id",)),
+            PostgreSQLIndex(fields=("player_id",)),
+            PostgreSQLIndex(fields=("trade_id",)),
+        ]
 
 
 class Friendship(models.Model):
