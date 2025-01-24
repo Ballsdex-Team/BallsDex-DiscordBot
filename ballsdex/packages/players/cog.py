@@ -290,8 +290,8 @@ class Player(commands.GroupCog):
                 )
                 return
 
-            await Friendship.create(player1=player1, player2=player2)
-            self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
+        await Friendship.create(player1=player1, player2=player2)
+        self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
 
     @friend.command(name="remove")
     async def friend_remove(self, interaction: discord.Interaction, user: discord.User):
