@@ -1,0 +1,45 @@
+{% extends "admin/change_form.html" %}
+
+{% block after_related_objects %}
+<div class="tabular inline-related" style="bottom:15px">
+<fieldset class="module">
+  <h2 id="tradeobject-heading" class="inline-heading">Trades</h2>
+   <table>
+     <thead><tr>
+       <th class="column-player1">Player 1</th>
+       <th class="column-player1-proposal">Player 1 proposal</th>
+       <th class="column-player2-proposal">Player 2 proposal</th>
+       <th class="column-player2">Player 2</th>
+       <th class="column-date">Date</th>
+     </tr></thead>
+
+     <tbody>
+     {% for trade in trades %}
+        <tr class="form-row has_original"
+             id="{{ inline_admin_formset.formset.prefix }}-{% if forloop.last and inline_admin_formset.has_add_permission %}empty{% else %}{{ forloop.counter0 }}{% endif %}">
+            <td>{% if trade.model.player1 == original.player %}<b>{% endif %}
+            <a href="{% url 'admin:bd_models_player_change' trade.model.player1.id %}">{{ trade.model.player1 }}</a>
+            {% if trade.model.player1 == original.player %}</b>{% endif %}</td>
+            {% for proposal in trade.proposals %}
+            <td><ul>
+              {% for item in proposal %}
+                {% if item.ballinstance == original %}<b>{% endif %}
+                <li><a href="{% url 'admin:bd_models_ballinstance_change' item.ballinstance.id %}">{{ item.ballinstance.description }}</a></li>
+                {% if item.ballinstance == original %}</b>{% endif %}
+              {% empty %}
+                <p>-</p>
+              {% endfor %}
+            </ul></td>
+            {% endfor %}
+            <td>{% if trade.model.player2 == original.player %}<b>{% endif %}
+            <a href="{% url 'admin:bd_models_player_change' trade.model.player2.id %}">{{ trade.model.player2 }}</a></td>
+            {% if trade.model.player2 == original.player %}</b>{% endif %}</td>
+            <td>{{ trade.model.date }}</td>
+        </tr>
+     {% endfor %}
+     </tbody>
+   </table>
+</fieldset>
+  </div>
+</div>
+{% endblock %}

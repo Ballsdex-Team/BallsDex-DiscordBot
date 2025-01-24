@@ -158,7 +158,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if user is not None:
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
-        interaction_player = await Player.get(discord_id=interaction.user.id)
+
+        interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
@@ -243,7 +244,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
                 return
 
-            interaction_player = await Player.get(discord_id=interaction.user.id)
+            interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+
             blocked = await player.is_blocked(interaction_player)
             if blocked and not is_staff(interaction):
                 await interaction.followup.send(
@@ -395,7 +397,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
-        interaction_player = await Player.get(discord_id=interaction.user.id)
+        interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+
         blocked = await player.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
             await interaction.followup.send(
@@ -450,7 +453,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         if not countryball.favorite:
-            player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
+            try:
+                player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
+            except DoesNotExist:
+                await interaction.response.send_message(
+                    f"You don't have any {settings.plural_collectible_name} yet.", ephemeral=True
+                )
+                return
+
             grammar = (
                 f"{settings.collectible_name}"
                 if settings.max_favorites == 1
