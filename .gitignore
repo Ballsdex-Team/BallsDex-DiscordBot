@@ -28,6 +28,7 @@ pgbackups
 
 # static
 static
+media
 
 # cache
 .pytest_cache
@@ -35,3 +36,4 @@ static
 # settings
 config.yml
 docker-compose.override.yml
+admin_panel/admin_panel/settings/production.py
