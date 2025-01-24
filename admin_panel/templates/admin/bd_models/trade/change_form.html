@@ -1,0 +1,42 @@
+{% extends "admin/change_form.html" %}
+
+{% block after_related_objects %}
+<div class="tabular inline-related" style="bottom:15px">
+<fieldset class="module">
+  <h2 id="tradeobject-heading" class="inline-heading">
+  Trade objects</h2>
+   <table>
+     <thead><tr>
+       <th class="column-player1">
+        <a href="{% url 'admin:bd_models_player_change' player1.id %}">
+        {{ player1 }}</a></th>
+       <th class="column-player2">
+        <a href="{% url 'admin:bd_models_player_change' player2.id %}">
+        {{ player2 }}</a></th>
+     </tr></thead>
+
+     <tbody>
+     {% for items in trade_objects %}
+        <tr class="form-row has_original"
+             id="{{ inline_admin_formset.formset.prefix }}-{% if forloop.last and inline_admin_formset.has_add_permission %}empty{% else %}{{ forloop.counter0 }}{% endif %}">
+            {% for item in items %}
+            <td>
+                {% if item %}
+                    <p><a href="{% url 'admin:bd_models_ballinstance_change' item.ballinstance.id %}">{{ item.ballinstance.description }}</a></p>
+                {% else %}
+                    <p>-</p>
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+     {% endfor %}
+     </tbody>
+     <thead><tr>
+      <th>Total items: {{ player1_len }}</th>
+      <th>Total items: {{ player2_len }}</th>
+    </tr></thead>
+   </table>
+</fieldset>
+  </div>
+</div>
+{% endblock %}
