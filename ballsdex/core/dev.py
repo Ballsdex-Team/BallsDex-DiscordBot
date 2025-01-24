@@ -53,12 +53,18 @@ https://github.com/Rapptz/RoboDanny/blob/master/cogs/repl.py
 
 
 def box(text: str, lang: str = "") -> str:
+    """
+    Formats a given text string inside a code block for Discord.
+    """
     return f"```{lang}\n{text}\n```"
 
 
 def text_to_file(
     text: str, filename: str = "file.txt", *, spoiler: bool = False, encoding: str = "utf-8"
 ) -> discord.File:
+    """
+    Converts a string of text into a Discord file object for attachment.
+    """
     file = BytesIO(text.encode(encoding))
     return discord.File(file, filename, spoiler=spoiler)
 
@@ -103,6 +109,9 @@ async def send_interactive(
     result = 0
 
     def predicate(m: discord.Message):
+        """
+        Evaluates whether a given Discord message satisfies specific criteria.
+        """
         nonlocal result
         if (ctx.author.id != m.author.id) or ctx.channel.id != m.channel.id:
             return False
@@ -163,7 +172,9 @@ START_CODE_BLOCK_RE = re.compile(r"^((```py(thon)?)(?=\s)|(```))")
 
 
 class Dev(commands.Cog):
-    """Various development focused utilities."""
+    """
+    Various development focused utilities.
+    """
 
     def __init__(self):
         super().__init__()
@@ -173,10 +184,17 @@ class Dev(commands.Cog):
 
     @staticmethod
     def async_compile(source, filename, mode):
+        """
+        Compiles the given source code into a code object that supports `await` expressions.
+        """
         return compile(source, filename, mode, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT, optimize=0)
 
     @staticmethod
     async def maybe_await(coro):
+        """
+        Resolves a coroutine or value, returning the final result. If the input is a coroutine,
+        it is awaited up to two times.
+        """
         for i in range(2):
             if inspect.isawaitable(coro):
                 coro = await coro
@@ -186,7 +204,9 @@ class Dev(commands.Cog):
 
     @staticmethod
     def cleanup_code(content):
-        """Automatically removes code blocks from the code."""
+        """
+        Automatically removes code blocks from the code.
+        """
         # remove ```py\n```
         if content.startswith("```") and content.endswith("```"):
             return START_CODE_BLOCK_RE.sub("", content)[:-3]
@@ -196,7 +216,8 @@ class Dev(commands.Cog):
 
     @classmethod
     def get_syntax_error(cls, e):
-        """Format a syntax error to send to the user.
+        """
+        Format a syntax error to send to the user.
 
         Returns a string representation of the error formatted as a codeblock.
         """
@@ -208,16 +229,24 @@ class Dev(commands.Cog):
 
     @staticmethod
     def get_pages(msg: str):
-        """Pagify the given message for output to the user."""
+        """
+        Pagify the given message for output to the user.
+        """
         return pagify(msg, delims=["\n", " "], priority=True, shorten_by=10)
 
     @staticmethod
     def sanitize_output(ctx: commands.Context, input_: str) -> str:
-        """Hides the bot's token from a string."""
+        """
+        Hides the bot's token from a string.
+        """
         token = ctx.bot.http.token
         return re.sub(re.escape(token), "[EXPUNGED]", input_, re.I)
 
     def get_environment(self, ctx: commands.Context) -> dict:
+        """
+        Constructs an execution environment for dynamic code evaluation. The environment includes
+        references to various bot-related objects, models, policies, and utility functions.
+        """
         env = {
             "bot": ctx.bot,
             "ctx": ctx,
@@ -263,7 +292,8 @@ class Dev(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def debug(self, ctx: commands.Context, *, code):
-        """Evaluate a statement of python code.
+        """
+        Evaluate a statement of python code.
 
         The bot will always respond with the return value of the code.
         If the return value of the code is a coroutine, it will be awaited,
@@ -305,7 +335,8 @@ class Dev(commands.Cog):
     @commands.command(name="eval")
     @commands.is_owner()
     async def _eval(self, ctx: commands.Context, *, body: str):
-        """Execute asynchronous code.
+        """
+        Execute asynchronous code.
 
         This command wraps code into the body of an async function and then
         calls and awaits it. The bot will respond with anything printed to
@@ -359,7 +390,8 @@ class Dev(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def mock(self, ctx: commands.Context, user: discord.Member, *, command):
-        """Mock another user invoking a command.
+        """
+        Mock another user invoking a command.
 
         The prefix must not be entered.
         """
@@ -372,7 +404,8 @@ class Dev(commands.Cog):
     @commands.command(name="mockmsg")
     @commands.is_owner()
     async def mock_msg(self, ctx: commands.Context, user: discord.Member, *, content: str):
-        """Dispatch a message event as if it were sent by a different user.
+        """
+        Dispatch a message event as if it were sent by a different user.
 
         Only reads the raw content of the message. Attachments, embeds etc. are
         ignored.

@@ -30,12 +30,15 @@ class Core(commands.Cog):
     @commands.is_owner()
     async def reloadtree(self, ctx: commands.Context):
         """
-        Sync the application commands with Discord
+        Sync the application commands with Discord.
         """
         await self.bot.tree.sync()
         await ctx.send("Application commands tree reloaded.")
 
     async def reload_package(self, package: str, *, with_prefix=False):
+        """
+        Reload a package by name.
+        """
         try:
             try:
                 await self.bot.reload_extension(package)
@@ -50,7 +53,7 @@ class Core(commands.Cog):
     @commands.is_owner()
     async def reload(self, ctx: commands.Context, package: str):
         """
-        Reload an extension
+        Reload an extension.
         """
         try:
             await self.reload_package(package)

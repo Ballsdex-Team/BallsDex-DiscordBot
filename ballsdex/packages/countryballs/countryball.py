@@ -13,6 +13,12 @@ log = logging.getLogger("ballsdex.packages.countryballs")
 
 
 class CountryBall:
+    """
+    Represents a collectible entity associated with a specific country. Each instance corresponds
+    to a unique ball model, containing attributes such as its name, associated bonuses, and
+    the time of its creation.
+    """
+
     def __init__(self, model: Ball):
         self.name = model.country
         self.model = model
@@ -26,6 +32,9 @@ class CountryBall:
 
     @classmethod
     async def get_random(cls):
+        """
+        Selects and returns a random enabled ball model, based on their rarity distribution.
+        """
         countryballs = list(filter(lambda m: m.enabled, balls.values()))
         if not countryballs:
             raise RuntimeError("No ball to spawn")

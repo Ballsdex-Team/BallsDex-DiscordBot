@@ -30,6 +30,10 @@ log = logging.getLogger("ballsdex.packages.countryballs")
 
 
 class DonationRequest(View):
+    """
+    Formats the view for donation requests.
+    """
+
     def __init__(
         self,
         bot: "BallsDexBot",
@@ -44,6 +48,9 @@ class DonationRequest(View):
         self.new_player = new_player
 
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+        """
+        Validates whether the user interacting with a menu is authorized to do so.
+        """
         if interaction.user.id != self.new_player.discord_id:
             await interaction.response.send_message(
                 "You are not allowed to interact with this menu.", ephemeral=True
@@ -52,6 +59,9 @@ class DonationRequest(View):
         return True
 
     async def on_timeout(self):
+        """
+        Handles the event when the menu times out due to inactivity.
+        """
         for item in self.children:
             item.disabled = True  # type: ignore
         try:
@@ -66,6 +76,9 @@ class DonationRequest(View):
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
     async def accept(self, interaction: discord.Interaction, button: Button):
+        """
+        Handles the acceptance of a donation.
+        """
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
@@ -89,6 +102,9 @@ class DonationRequest(View):
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
     )
     async def deny(self, interaction: discord.Interaction, button: Button):
+        """
+        Handles the rejection of a donation.
+        """
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore

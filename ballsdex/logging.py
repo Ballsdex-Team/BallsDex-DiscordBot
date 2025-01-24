@@ -8,6 +8,10 @@ log = logging.getLogger("ballsdex")
 
 
 def init_logger(disable_rich: bool = False, debug: bool = False) -> logging.handlers.QueueListener:
+    """
+    Initializes and configures the logging system for the application. This includes setting up
+    handlers for streaming logs to the console and saving them to a file.
+    """
     formatter = logging.Formatter(
         "[{asctime}] {levelname} {name}: {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{"
     )
