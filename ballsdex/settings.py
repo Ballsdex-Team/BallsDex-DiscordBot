@@ -60,6 +60,12 @@ class Settings:
         List of packages the bot will load upon startup
     spawn_manager: str
         Python path to a class implementing `BaseSpawnManager`, handling cooldowns and anti-cheat
+    webhook_url: str | None
+        URL of a Discord webhook for admin notifications
+    client_id: str
+        ID of the Discord application
+    client_secret: str
+        Secret key of the Discord application (not the bot token)
     """
 
     bot_token: str = ""
@@ -101,6 +107,12 @@ class Settings:
     prometheus_port: int = 15260
 
     spawn_manager: str = "ballsdex.packages.countryballs.spawn.SpawnManager"
+
+    # django admin panel
+    webhook_url: str | None = None
+    admin_url: str | None = None
+    client_id: str = ""
+    client_secret: str = ""
 
 
 settings = Settings()
@@ -156,6 +168,13 @@ def read_settings(path: "Path"):
     settings.spawn_manager = content.get(
         "spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager"
     )
+
+    if admin := content.get("admin-panel"):
+        settings.webhook_url = admin.get("webhook-url")
+        settings.client_id = admin.get("client-id")
+        settings.client_secret = admin.get("client-secret")
+        settings.admin_url = admin.get("url")
+
     log.info("Settings loaded.")
 
 
@@ -241,6 +260,23 @@ owners:
   # a list of IDs that must be considered owners in addition to the application/team owner
   co-owners:
 
+
+# Admin panel related settings
+admin-panel:
+
+    # to enable Discord OAuth2 login, fill this
+    # client ID of the Discord application (not the bot's user ID)
+    client-id: 
+    # client secret of the Discord application (this is not the bot token)
+    client-secret: 
+
+    # to get admin notifications from the admin panel, create a Discord webhook and paste the url
+    webhook-url: 
+
+    # this will provide some hyperlinks to the admin panel when using /admin commands
+    # set to an empty string to disable those links entirely
+    url: http://localhost:8000
+
 # list of packages that will be loaded
 packages:
   - ballsdex.packages.admin
@@ -273,6 +309,7 @@ def update_settings(path: "Path"):
     add_plural_collectible = "plural-collectible-name" not in content
     add_packages = "packages:" not in content
     add_spawn_manager = "spawn-manager" not in content
+    add_django = "Admin panel related settings" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -340,6 +377,26 @@ packages:
 spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
 """
 
+    if add_django:
+        content += """
+# Admin panel related settings
+admin-panel:
+
+    # to enable Discord OAuth2 login, fill this
+    # client ID of the Discord application (not the bot's user ID)
+    client-id:
+    # client secret of the Discord application (this is not the bot token)
+    client-secret:
+
+    # to get admin notifications from the admin panel, create a Discord webhook and paste the url
+    webhook-url:
+
+    # this will provide some hyperlinks to the admin panel when using /admin commands
+    # set to an empty string to disable those links entirely
+    url: http://localhost:8000
+
+"""
+
     if any(
         (
             add_owners,
@@ -350,6 +407,7 @@ spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
             add_plural_collectible,
             add_packages,
             add_spawn_manager,
+            add_django,
         )
     ):
         path.write_text(content)
