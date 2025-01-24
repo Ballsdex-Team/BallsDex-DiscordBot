@@ -1,64 +1,100 @@
-[tool.poetry]
+[project]
 name = "ballsdex"
-version = "1.0.0a1"
 description = ""
-authors = ["laggron42 <laggron42@gmail.com>"]
+authors = [
+    { name = 'Auguste "laggron42" Charpentier', email = "laggron42@ballsdex.com" },
+    { name = 'Jamie "flare" McGuinness', email = "flare@ballsdex.com" },
+]
 license = "MIT"
+requires-python = ">=3.12, <3.14"
+dynamic = ["version"]
+dependencies = [
+    # asyncio
+    "uvloop==0.21.0; sys_platform != 'win32'",
 
-[tool.poetry.dependencies]
-python = ">=3.12, <3.14"
+    # discord
+    "discord.py==2.4.0",
+    "audioop-lts==0.2.1 ; python_version >= '3.13'",
 
-# asyncio
-uvloop = { version = "^0.21.0", markers = "sys_platform != 'win32'" }
+    # database ORM
+    "tortoise-orm[asyncpg] ==0.22.2",
+    "tortoise-cli==0.1.2",
 
-# discord
-"discord.py" = "^2.4.0"
-audioop-lts = {version = "^0.2.1", python = ">=3.13" }
+    # django admin panel
+    "uvicorn[standard]==0.32.0",
+    "django==5.1.4",
+    "django-allow-cidr (>=0.7.1,<0.8.0)",
+    "django-nonrelated-inlines==0.2",
+    "django-admin-autocomplete-filter==0.7.1",
+    "django-admin-action-forms==1.3.0",
+    "django-admin-inline-paginator==0.4.0",
+    "dj-database-url==2.3.0",
+    "social-auth-app-django==5.4.2",
+    "psycopg==3.2.3",
+    "psycopg-binary==3.2.3",
 
-# fastapi
-fastapi = "^0.115.4"
-fastapi-admin = {git = "https://github.com/Ballsdex-Team/fastapi-admin", branch = "ballsdex"}
-uvicorn = "^0.32.0"
+    # metrics
+    "prometheus-client==0.20.0",
 
-# database ORM
-tortoise-orm = {extras = ["asyncpg"], version = "^0.22.2"}
-tortoise-cli = "^0.1.2"
+    # misc
+    "rich==13.8.0",
+    "python-dateutil==2.9.0",
+    "Pillow==10.4.0",
+    "aerich==0.6.3",
+    "pyyaml==6.0.2",
+    "cachetools==5.5.0",
+]
 
-# misc
-rich = "^13.8.0"
-python-dateutil = "^2.9.0"
-Pillow = "^10.4.0"
-aerich = "^0.6.3"
-pyyaml = "^6.0.2"
-cachetools = "^5.5.0"
+[project.optional-dependencies]
+dev = [
+    "pre-commit==3.7.1",
+    "black==24.8.0",
+    "flake8-pyproject==1.2.3",
+    "pyright==1.1.390",
+    "isort==5.13.2",
+    "django-debug-toolbar==4.4.6",
+    "pyinstrument==5.0.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^3.7.1"
-black = {version = "^24.8.0", allow-prereleases = true}
-flake8-pyproject = "^1.2.3"
-pyright = "^1.1.335"
-isort = "^5.13.2"
+[tool.poetry]
+packages = [{ include = "ballsdex" }]
+requires-poetry = ">=2.0"
+version = "0.0.0"
 
+[tool.poetry.requires-plugins]
+poetry-plugin-shell = ">=1.0"
+poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
 
-[tool.poetry.group.metrics.dependencies]
-prometheus-client = "^0.20.0"
+[tool.poetry-dynamic-versioning]
+enable = true
+
+[tool.poetry-dynamic-versioning.from-file]
+source = "ballsdex/__init__.py"
+pattern = '__version__ = "(?P<base>\d+\.\d+\.\d+)"'
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.aerich]
 tortoise_orm = "ballsdex.__main__.TORTOISE_ORM"
 location = "./migrations"
 src_folder = "./ballsdex"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.black]
 line-length = 99
 
 [tool.flake8]
-ignore = "W503,E203"
+ignore = "W503,E203,E999"
 max-line-length = 99
+exclude = "./admin_panel/admin_panel/settings/*"
 
 [tool.isort]
 profile = "black"
 line_length = 99
+
+[tool.pyright]
+extraPaths = ["./admin_panel"]
+pythonVersion = "3.13"
+reportIncompatibleMethodOverride = "warning"
+reportIncompatibleVariableOverride = "warning"

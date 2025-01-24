@@ -1,0 +1,11 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'bd_models/style.css' %}">
+
+<nav id="preview-sidebar">
+    <h2>Preview</h2>
+    <div id="preview-content">
+        <img src="/{% if request.resolver_match.url_name == "bd_models_ball_change" %}ball{% else %}special{% endif %}/generate/{{ object_id }}" width="100%"/>
+        <h5>Save to reload the preview</h5>
+    </div>
+</nav>

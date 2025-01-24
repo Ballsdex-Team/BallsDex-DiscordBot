@@ -4,7 +4,13 @@ from discord.utils import format_dt
 from tortoise.exceptions import DoesNotExist, IntegrityError
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import BlacklistedGuild, BlacklistedID, BlacklistHistory
+from ballsdex.core.models import (
+    BlacklistedGuild,
+    BlacklistedID,
+    BlacklistHistory,
+    GuildConfig,
+    Player,
+)
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.admin.menu import BlacklistViewFormat
@@ -53,11 +59,11 @@ class Blacklist(app_commands.Group):
         else:
             interaction.client.blacklist.add(user.id)
             await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
-        await log_action(
-            f"{interaction.user} blacklisted {user} ({user.id})"
-            f" for the following reason: {reason}.",
-            interaction.client,
-        )
+            await log_action(
+                f"{interaction.user} blacklisted {user} ({user.id})"
+                f" for the following reason: {reason}.",
+                interaction.client,
+            )
 
     @app_commands.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -94,10 +100,11 @@ class Blacklist(app_commands.Group):
             await interaction.response.send_message(
                 "User is now removed from blacklist.", ephemeral=True
             )
-        await log_action(
-            f"{interaction.user} removed blacklist for user {user} ({user.id}).\nReason: {reason}",
-            interaction.client,
-        )
+            await log_action(
+                f"{interaction.user} removed blacklist for user {user} ({user.id})."
+                f"\nReason: {reason}",
+                interaction.client,
+            )
 
     @app_commands.command(name="info")
     async def blacklist_info(
@@ -123,18 +130,25 @@ class Blacklist(app_commands.Group):
                 )
             else:
                 moderator_msg = "Moderator: Unknown"
+            if settings.admin_url and (player := await Player.get_or_none(discord_id=user.id)):
+                admin_url = (
+                    "\n[View history online]"
+                    f"(<{settings.admin_url}/bd_models/player/{player.pk}/change/>)"
+                )
+            else:
+                admin_url = ""
             if blacklisted.date:
                 await interaction.response.send_message(
                     f"`{user}` (`{user.id}`) was blacklisted on {format_dt(blacklisted.date)}"
                     f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
-                    f"{blacklisted.reason}\n{moderator_msg}",
+                    f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
                     ephemeral=True,
                 )
             else:
                 await interaction.response.send_message(
                     f"`{user}` (`{user.id}`) is currently blacklisted (date unknown)"
                     " for the following reason:\n"
-                    f"{blacklisted.reason}\n{moderator_msg}",
+                    f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
                     ephemeral=True,
                 )
 
@@ -225,11 +239,11 @@ class BlacklistGuild(app_commands.Group):
         else:
             interaction.client.blacklist_guild.add(guild.id)
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
-        await log_action(
-            f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
-            f"for the following reason: {reason}.",
-            interaction.client,
-        )
+            await log_action(
+                f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
+                f"for the following reason: {reason}.",
+                interaction.client,
+            )
 
     @app_commands.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
@@ -330,17 +344,24 @@ class BlacklistGuild(app_commands.Group):
                 )
             else:
                 moderator_msg = "Moderator: Unknown"
+            if settings.admin_url and (gconf := await GuildConfig.get_or_none(guild_id=guild.id)):
+                admin_url = (
+                    "\n[View history online]"
+                    f"(<{settings.admin_url}/bd_models/guildconfig/{gconf.pk}/change/>)"
+                )
+            else:
+                admin_url = ""
             if blacklisted.date:
                 await interaction.response.send_message(
                     f"`{guild}` (`{guild.id}`) was blacklisted on {format_dt(blacklisted.date)}"
                     f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
-                    f"{blacklisted.reason}\n{moderator_msg}",
+                    f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
                     ephemeral=True,
                 )
             else:
                 await interaction.response.send_message(
                     f"`{guild}` (`{guild.id}`) is currently blacklisted (date unknown)"
                     " for the following reason:\n"
-                    f"{blacklisted.reason}\n{moderator_msg}",
+                    f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
                     ephemeral=True,
                 )
