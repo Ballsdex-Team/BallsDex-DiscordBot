@@ -422,6 +422,14 @@ class BallsDexBot(commands.AutoShardedBot):
                 )
                 return
 
+            if isinstance(exception, app_commands.MissingRole):
+                missing_roles = ",".join(exception.missing_role)
+                await send(
+                    f"You are missing the following roles: `{missing_roles}`."
+                    " You need those roles to run this command."
+                )
+                return
+
             return
 
         if isinstance(exception, commands.CommandInvokeError):
