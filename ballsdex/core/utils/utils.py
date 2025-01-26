@@ -37,7 +37,7 @@ async def inventory_privacy(
     elif privacy_policy == PrivacyPolicy.FRIENDS:
         if not await interacting_player.is_friend(player):
             await interaction.followup.send(
-                "This users inventory can only be viewed from users they have added as friends.",
+                "This user's inventory can only be viewed from users they have added as friends.",
                 ephemeral=True,
             )
             return False
