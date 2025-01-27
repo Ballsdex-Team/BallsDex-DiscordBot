@@ -279,8 +279,8 @@ class BallsDexBot(commands.AutoShardedBot):
         if self.cogs != {}:
             return  # bot is reconnecting, no need to setup again
 
-        if self.startup_time is None:
-            self.startup_time = datetime.now()
+        if self.uptime is None:
+            self.uptime = datetime.now()
 
         assert self.user
         log.info(f"Successfully logged in as {self.user} ({self.user.id})!")
