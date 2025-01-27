@@ -13,3 +13,5 @@ ALLOWED_HOSTS = [
     # place the domain of your website here
     # "ballsdex.com"
 ]
+
+MIDDLEWARE.append("admin_panel.middleware.SecurityHeadersMiddleware")
