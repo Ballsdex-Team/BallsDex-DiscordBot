@@ -521,12 +521,14 @@ class Player(commands.GroupCog):
             .distinct()
             .values_list("ball_id")
         )
+
         if total_countryballs > 0:
             completion_percentage = (
                 f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
             )
         else:
             completion_percentage = "0.0%"
+
         caught_owned = [x for x in ball if x.trade_player is None]
         balls_owned = [x for x in ball]
         special = [x for x in ball if x.special is not None]
@@ -537,9 +539,7 @@ class Player(commands.GroupCog):
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
         ).count()
 
-        blocks = await Block.filter(
-            Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
-        ).count()
+        blocks = await Block.filter(player1__discord_id=interaction.user.id).count()
 
         embed = discord.Embed(
             title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**",
