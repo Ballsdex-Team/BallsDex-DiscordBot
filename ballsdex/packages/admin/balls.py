@@ -215,6 +215,14 @@ class Balls(app_commands.Group):
             f"`{user}`.\nSpecial: `{special.name if special else None}` • ATK: "
             f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
         )
+        try:
+            await user.send(
+                f"You received `{countryball.country}` {settings.collectible_name} from `{interaction.user}` (Admin).\nSpecial: "
+                f"`{special.name if special else None}` • ATK: `{instance.attack_bonus:+d}` • HP: `{instance.health_bonus:+d}`. "
+            )
+        except discord.Forbidden:
+            return
+            
         await log_action(
             f"{interaction.user} gave {settings.collectible_name} "
             f"{countryball.country} to {user}. (Special={special.name if special else None} "
