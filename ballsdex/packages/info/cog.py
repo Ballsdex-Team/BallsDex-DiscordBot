@@ -122,7 +122,7 @@ class Info(commands.Cog):
             f"{' '.join(str(x) for x in balls)}\n"
             f"{settings.about_description}\n"
             f"*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\n"
-            f"The bot has been online for **.**\n\n"
+            f"The bot has been online for **{self.get_bot_uptime}.**\n\n"
             f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
             f"**{players_count:,}** players that caught "
             f"**{balls_instances_count:,}** {settings.plural_collectible_name}\n"
