@@ -468,6 +468,7 @@ class BlacklistedID(models.Model):
     )
     reason = fields.TextField(null=True, default=None)
     date = fields.DatetimeField(null=True, default=None, auto_now_add=True)
+    expiry_date = fields.DatetimeField(null=True, default=None)
 
     def __str__(self) -> str:
         return str(self.discord_id)
@@ -482,6 +483,7 @@ class BlacklistedGuild(models.Model):
     )
     reason = fields.TextField(null=True, default=None)
     date = fields.DatetimeField(null=True, default=None, auto_now_add=True)
+    expiry_date = fields.DatetimeField(null=True, default=None)
 
     def __str__(self) -> str:
         return str(self.discord_id)

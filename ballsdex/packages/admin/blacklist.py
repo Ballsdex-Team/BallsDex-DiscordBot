@@ -1,5 +1,7 @@
 import discord
+from datetime import datetime, timedelta
 from discord import app_commands
+from discord.ext import tasks
 from discord.utils import format_dt
 from tortoise.exceptions import DoesNotExist, IntegrityError
 
@@ -22,6 +24,39 @@ class Blacklist(app_commands.Group):
     Bot blacklist management
     """
 
+    def __init__(self):
+        super().__init__()
+        self.blacklist_expiry_check.start()
+
+    def cog_unload(self):
+        self.blacklist_expiry_check.cancel()
+        
+
+    @tasks.loop(minutes=30)
+    async def blacklist_expiry_check(self):
+        blacklists = await BlacklistedID.filter(expiry_date__isnull=False)
+        for blacklist in blacklists:
+            if blacklist.expiry_date < datetime.now():
+                await blacklist.delete()
+                await BlacklistHistory.create(
+                    discord_id=blacklist.discord_id,
+                    reason="Automatic unblacklist after expiry date",
+                    moderator_id=blacklist.moderator_id,
+                    id_type="user",
+                    action_type="unblacklist",
+                )
+        guild_blacklists = await BlacklistedGuild.filter(expiry_date__isnull=False)
+        for blacklist in guild_blacklists:
+            if blacklist.expiry_date < datetime.now():
+                await blacklist.delete()
+                await BlacklistHistory.create(
+                    discord_id=blacklist.discord_id,
+                    reason="Automatic unblacklist after expiry date",
+                    moderator_id=blacklist.moderator_id,
+                    id_type="guild",
+                    action_type="unblacklist",
+                )
+
     @app_commands.command(name="add")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_add(
@@ -29,6 +64,7 @@ class Blacklist(app_commands.Group):
         interaction: discord.Interaction[BallsDexBot],
         user: discord.User,
         reason: str | None = None,
+        days: int | None = None,
     ):
         """
         Add a user to the blacklist. No reload is needed.
@@ -44,10 +80,20 @@ class Blacklist(app_commands.Group):
                 "You cannot blacklist yourself!", ephemeral=True
             )
             return
+        if days:
+            if days < 1 or days > 365:
+                await interaction.response.send_message(
+                    "The amount of days must be between 1 and 365.", ephemeral=True
+                )
+                return
+            expiry = datetime.now() + timedelta(days=days)
+            reason = f"{reason}\nExpires: {format_dt(expiry)}"
+        else:
+            expiry = None
 
         try:
             await BlacklistedID.create(
-                discord_id=user.id, reason=reason, moderator_id=interaction.user.id
+                discord_id=user.id, reason=reason, moderator_id=interaction.user.id, expiry_date=expiry
             )
             await BlacklistHistory.create(
                 discord_id=user.id, reason=reason, moderator_id=interaction.user.id, id_type="user"
@@ -196,6 +242,7 @@ class BlacklistGuild(app_commands.Group):
         interaction: discord.Interaction[BallsDexBot],
         guild_id: str,
         reason: str,
+        days: int | None = None,
     ):
         """
         Add a guild to the blacklist. No reload is needed.
@@ -219,12 +266,23 @@ class BlacklistGuild(app_commands.Group):
                 "The given guild ID could not be found.", ephemeral=True
             )
             return
+        
+        if days:
+            if days < 1 or days > 365:
+                await interaction.response.send_message(
+                    "The amount of days must be between 1 and 365.", ephemeral=True
+                )
+                return
+            expiry = datetime.now() + timedelta(days=days)
+            reason = f"{reason}\nExpires: {format_dt(expiry)}"
+        else:
+            expiry = None
 
         final_reason = f"{reason}\nBy: {interaction.user} ({interaction.user.id})"
 
         try:
             await BlacklistedGuild.create(
-                discord_id=guild.id, reason=final_reason, moderator_id=interaction.user.id
+                discord_id=guild.id, reason=final_reason, moderator_id=interaction.user.id, expiry_date=expiry
             )
             await BlacklistHistory.create(
                 discord_id=guild.id,
