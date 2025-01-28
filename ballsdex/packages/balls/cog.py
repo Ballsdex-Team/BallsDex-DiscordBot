@@ -611,7 +611,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         )
         if new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             await interaction.followup.send(
-                f"{interaction.user.mention}, you just gave {settings.collectible_name} {cb_txt} to {user.mention}!",
+                f"{interaction.user.mention}, you just gave the "
+                f"{settings.collectible_name} {cb_txt} to {user.mention}!",
                 allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
             )
         else:
