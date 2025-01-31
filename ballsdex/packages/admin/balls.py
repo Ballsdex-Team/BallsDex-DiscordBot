@@ -36,7 +36,7 @@ async def save_file(attachment: discord.Attachment) -> Path:
         path = Path(f"./admin_panel/media/{match.group(1)}-{i}{match.group(2)}")
         i = i + 1
     await attachment.save(path)
-    return path
+    return path.relative_to("./admin_panel/media/")
 
 
 class Balls(app_commands.Group):
