@@ -6,7 +6,7 @@ authors = [
     { name = 'Jamie "flare" McGuinness', email = "flare@ballsdex.com" },
 ]
 license = "MIT"
-requires-python = ">=3.12, <3.14"
+requires-python = ">=3.13, <3.14"
 dynamic = ["version"]
 dependencies = [
     # asyncio
