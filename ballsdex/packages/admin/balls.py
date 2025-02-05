@@ -484,8 +484,8 @@ class Balls(app_commands.Group):
         health: int,
         attack: int,
         emoji_id: app_commands.Range[str, 17, 21],
-        capacity_name: app_commands.Range[str, None, 64],
-        capacity_description: app_commands.Range[str, None, 256],
+        ability_name: app_commands.Range[str, None, 64],
+        ability_description: app_commands.Range[str, None, 256],
         collection_card: discord.Attachment,
         image_credits: str,
         economy: EconomyTransform | None = None,
@@ -506,8 +506,8 @@ class Balls(app_commands.Group):
         attack: int
         emoji_id: str
             An emoji ID, the bot will check if it can access the custom emote
-        capacity_name: str
-        capacity_description: str
+        ability_name: str
+        ability_description: str
         collection_card: discord.Attachment
         image_credits: str
         rarity: float
@@ -579,8 +579,8 @@ class Balls(app_commands.Group):
                 wild_card="/" + str(wild_card_path),
                 collection_card="/" + str(collection_card_path),
                 credits=image_credits,
-                capacity_name=capacity_name,
-                capacity_description=capacity_description,
+                capacity_name=ability_name,
+                capacity_description=ability_description,
             )
         except BaseORMException as e:
             log.exception("Failed creating countryball with admin command", exc_info=True)

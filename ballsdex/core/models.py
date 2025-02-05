@@ -171,13 +171,13 @@ class Ball(models.Model):
         max_length=200, description="Image used when displaying balls"
     )
     credits = fields.CharField(max_length=64, description="Author of the collection artwork")
-    capacity_name = fields.CharField(
+    ability_name = fields.CharField(
         max_length=64, description="Name of the countryball's ability"
     )
-    capacity_description = fields.CharField(
+    ability_description = fields.CharField(
         max_length=256, description="Description of the countryball's ability"
     )
-    capacity_logic = fields.JSONField(description="Effect of this capacity", default={})
+    ability_logic = fields.JSONField(description="Effect of this ability", default={})
     created_at = fields.DatetimeField(auto_now_add=True, null=True)
 
     instances: fields.BackwardFKRelation[BallInstance]
