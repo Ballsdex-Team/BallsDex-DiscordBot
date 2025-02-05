@@ -27,16 +27,16 @@ FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
 
 
 async def save_file(attachment: discord.Attachment) -> Path:
-    path = Path(f"./static/uploads/{attachment.filename}")
+    path = Path(f"./admin_panel/media/{attachment.filename}")
     match = FILENAME_RE.match(attachment.filename)
     if not match:
         raise TypeError("The file you uploaded lacks an extension.")
     i = 1
     while path.exists():
-        path = Path(f"./static/uploads/{match.group(1)}-{i}{match.group(2)}")
+        path = Path(f"./admin_panel/media/{match.group(1)}-{i}{match.group(2)}")
         i = i + 1
     await attachment.save(path)
-    return path
+    return path.relative_to("./admin_panel/media/")
 
 
 class Balls(app_commands.Group):
