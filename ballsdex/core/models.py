@@ -171,9 +171,7 @@ class Ball(models.Model):
         max_length=200, description="Image used when displaying balls"
     )
     credits = fields.CharField(max_length=64, description="Author of the collection artwork")
-    ability_name = fields.CharField(
-        max_length=64, description="Name of the countryball's ability"
-    )
+    ability_name = fields.CharField(max_length=64, description="Name of the countryball's ability")
     ability_description = fields.CharField(
         max_length=256, description="Description of the countryball's ability"
     )

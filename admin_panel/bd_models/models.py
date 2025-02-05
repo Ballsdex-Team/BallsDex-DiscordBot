@@ -181,9 +181,7 @@ class Ball(models.Model):
     ability_description = models.CharField(
         max_length=256, help_text="Description of the countryball's ability"
     )
-    ability_logic = models.JSONField(
-        help_text="Effect of this ability", blank=True, default=dict
-    )
+    ability_logic = models.JSONField(help_text="Effect of this ability", blank=True, default=dict)
     enabled = models.BooleanField(
         help_text="Enables spawning and show in completion", default=True
     )
