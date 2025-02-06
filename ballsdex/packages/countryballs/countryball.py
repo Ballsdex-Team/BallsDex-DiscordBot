@@ -18,7 +18,7 @@ class CountryBall:
         self.model = model
         self.algo: str | None = None
         self.message: discord.Message = discord.utils.MISSING
-        self.catched = False
+        self.caught = False
         self.time = datetime.now()
         self.special: Special | None = None
         self.atk_bonus: int | None = None
