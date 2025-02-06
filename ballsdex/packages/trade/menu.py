@@ -399,7 +399,7 @@ class CountryballsSelector(Pages):
             if ball.is_tradeable is False:
                 continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
-            favorite = "❤️ " if ball.favorite else ""
+            favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
             special = ball.special_emoji(self.bot, True)
             options.append(
                 discord.SelectOption(

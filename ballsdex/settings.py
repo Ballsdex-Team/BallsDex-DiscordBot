@@ -34,7 +34,9 @@ class Settings:
         Usually "BallsDex", can be replaced when possible
     players_group_cog_name: str
         Set the name of the base command of the "players" cog, /balls by default
-    max_favorites:
+    favorited_collectible_emoji: str
+        Set the emoji used to represent a favorited countryball, "❤️" by default.
+    max_favorites: int
         Set the maximum amount of favorited countryballs a user can have, 50 by default.
     max_attack_bonus:
         Set the biggest/smallest attack bonus that a spawned countryball can have.
@@ -77,6 +79,7 @@ class Settings:
     plural_collectible_name: str = "countryballs"
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
+    favorited_collectible_emoji: str = "❤️"
 
     max_favorites: int = 50
     max_attack_bonus: int = 20
@@ -134,6 +137,7 @@ def read_settings(path: "Path"):
     )
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
+    settings.favorited_collectible_emoji = content.get("favorited-collectible-emoji", "❤️")
 
     settings.about_description = content["about"]["description"]
     settings.github_link = content["about"]["github-link"]
@@ -220,6 +224,9 @@ bot-name: BallsDex
 # players group cog command name
 # this is /balls by default, but you can change it for /animals or /rocks for example
 players-group-cog-name: balls
+
+# emoji used to represent a favorited collectible
+favorited-collectible-emoji: ❤️
 
 # maximum amount of favorites that are allowed
 max-favorites: 50
