@@ -119,7 +119,7 @@ class BallAdmin(admin.ModelAdmin):
             "Ability",
             {
                 "description": "The ability of the countryball",
-                "fields": ["capacity_name", "capacity_description"],
+                "fields": ["ability_name", "ability_description"],
             },
         ),
         (
@@ -133,7 +133,7 @@ class BallAdmin(admin.ModelAdmin):
                     "short_name",
                     "catch_names",
                     "translations",
-                    "capacity_logic",
+                    "ability_logic",
                 ],
             },
         ),
@@ -144,7 +144,7 @@ class BallAdmin(admin.ModelAdmin):
         "pk",
         "emoji",
         "rarity",
-        "capacity_name",
+        "ability_name",
         "health",
         "attack",
         "enabled",
@@ -155,8 +155,8 @@ class BallAdmin(admin.ModelAdmin):
 
     search_fields = [
         "country",
-        "capacity_name",
-        "capacity_description",
+        "ability_name",
+        "ability_description",
         "catch_names",
         "translations",
         "credits",
@@ -177,7 +177,7 @@ class BallAdmin(admin.ModelAdmin):
     def formfield_for_dbfield(
         self, db_field: "Field[Any, Any]", request: "HttpRequest | None", **kwargs: Any
     ) -> "Field[Any, Any] | None":
-        if db_field.name == "capacity_description":
+        if db_field.name == "ability_description":
             kwargs["widget"] = Textarea()
         return super().formfield_for_dbfield(db_field, request, **kwargs)  # type: ignore
 

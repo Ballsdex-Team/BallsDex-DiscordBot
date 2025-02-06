@@ -20,8 +20,8 @@ CORNERS = ((34, 261), (1393, 992))
 artwork_size = [b - a for a, b in zip(*CORNERS)]
 
 title_font = ImageFont.truetype(str(SOURCES_PATH / "ArsenicaTrial-Extrabold.ttf"), 170)
-capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
-capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
+ability_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
+ability_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
 stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
 credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 
@@ -52,20 +52,20 @@ def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/me
         stroke_width=2,
         stroke_fill=(0, 0, 0, 255),
     )
-    for i, line in enumerate(textwrap.wrap(f"Ability: {ball.capacity_name}", width=26)):
+    for i, line in enumerate(textwrap.wrap(f"Ability: {ball.ability_name}", width=26)):
         draw.text(
             (100, 1050 + 100 * i),
             line,
-            font=capacity_name_font,
+            font=ability_name_font,
             fill=(230, 230, 230, 255),
             stroke_width=2,
             stroke_fill=(0, 0, 0, 255),
         )
-    for i, line in enumerate(textwrap.wrap(ball.capacity_description, width=32)):
+    for i, line in enumerate(textwrap.wrap(ball.ability_description, width=32)):
         draw.text(
             (60, 1300 + 80 * i),
             line,
-            font=capacity_description_font,
+            font=ability_description_font,
             stroke_width=1,
             stroke_fill=(0, 0, 0, 255),
         )
