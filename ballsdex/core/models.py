@@ -277,7 +277,7 @@ class BallInstance(models.Model):
         if bot and self.pk in bot.locked_balls and not is_trade:  # type: ignore
             emotes += "🔒"
         if self.favorite and not is_trade:
-            emotes += f"{settings.favorited_collectible_emoji}"
+            emotes += settings.favorited_collectible_emoji
         if emotes:
             emotes += " "
         if self.specialcard:

@@ -9,6 +9,8 @@ from django.db import models
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
 
+from ballsdex.settings import settings
+
 
 def transform_media(path: str) -> str:
     return path.replace("/static/uploads/", "").replace(
@@ -292,7 +294,7 @@ class BallInstance(models.Model):
         if self.locked and self.locked > now() - timedelta(minutes=30):
             text += "🔒"
         if self.favorite:
-            text += "❤️"
+            text += settings.favorited_collectible_emoji
         if text:
             text += " "
         if self.special:
