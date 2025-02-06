@@ -25,18 +25,23 @@ capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semi
 stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
 credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 
+credits_color_cache = {}
+
+
 def get_text_color(image: Image.Image, region: tuple) -> tuple:
     cropped = image.crop(region)
     dominant_color = cropped.resize((1, 1)).getpixel((0, 0))
     brightness = sum(dominant_color[:3]) / 3
     return (255, 255, 255) if brightness < 128 else (0, 0, 0)
 
+
 def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/media/"):
     ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
     ball_credits = ball.credits
-
+    card_name = ball.cached_regime.name
     if special_image := ball_instance.special_card:
+        card_name = getattr(ball_instance.specialcard, card_name)
         image = Image.open(media_path + special_image)
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             ball_credits += f" • {ball_instance.specialcard.credits}"
@@ -91,7 +96,11 @@ def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/me
         stroke_fill=(0, 0, 0, 255),
         anchor="ra",
     )
-    credits_color = get_text_color(image, (0, int(image.height * 0.8), image.width, image.height))
+    if card_name in credits_color_cache:
+        credits_color = credits_color_cache[card_name]
+    else:
+        credits_color = get_text_color(image, (0, int(image.height * 0.8), image.width, image.height))
+        credits_color_cache[card_name] = credits_color
     draw.text(
         (30, 1870),
         # Modifying the line below is breaking the licence as you are removing credits
