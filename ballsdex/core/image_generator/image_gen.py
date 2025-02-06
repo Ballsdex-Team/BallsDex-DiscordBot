@@ -99,7 +99,9 @@ def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/me
     if card_name in credits_color_cache:
         credits_color = credits_color_cache[card_name]
     else:
-        credits_color = get_text_color(image, (0, int(image.height * 0.8), image.width, image.height))
+        credits_color = get_text_color(
+            image, (0, int(image.height * 0.8), image.width, image.height)
+        )
         credits_color_cache[card_name] = credits_color
     draw.text(
         (30, 1870),
