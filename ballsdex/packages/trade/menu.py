@@ -45,6 +45,10 @@ class TradeView(View):
         else:
             return True
 
+    async def on_timeout(self):
+        await self.trade.cancel(reason="The trade timed out.", colour=discord.Colour.red())
+        await self.trade.unlock_balls()
+
     @button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
     async def lock(self, interaction: discord.Interaction, button: Button):
         trader = self.trade._get_trader(interaction.user)
@@ -94,7 +98,7 @@ class TradeView(View):
 
 class ConfirmView(View):
     def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=90)
+        super().__init__(timeout=180)
         self.trade = trade
         self.cooldown_duration = timedelta(seconds=10)
 
@@ -109,7 +113,11 @@ class ConfirmView(View):
         else:
             return True
 
-    @discord.ui.button(
+    async def on_timeout(self):
+        await self.trade.cancel(reason="The trade timed out.", colour=discord.Colour.red())
+        await self.trade.unlock_balls()
+
+    @button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
     async def accept_button(self, interaction: discord.Interaction, button: Button):
@@ -246,7 +254,11 @@ class TradeMenu:
         )
         self.task = self.bot.loop.create_task(self.update_message_loop())
 
-    async def cancel(self, reason: str = "The trade has been cancelled."):
+    async def cancel(
+        self,
+        reason: str = "The trade has been cancelled.",
+        colour: discord.Colour = discord.Colour.blurple(),
+    ):
         """
         Cancel the trade immediately.
         """
@@ -262,6 +274,7 @@ class TradeMenu:
 
         fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
         self.embed.description = f"**{reason}**"
+        self.embed.colour = colour
         if getattr(self, "message", None):
             await self.message.edit(content=None, embed=self.embed, view=self.current_view)
 
@@ -293,34 +306,44 @@ class TradeMenu:
         await self.cancel()
 
     async def perform_trade(self):
-        valid_transferable_countryballs: list[BallInstance] = []
-
         trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
 
         for countryball in self.trader1.proposal:
-            await countryball.refresh_from_db()
-            if countryball.player.discord_id != self.trader1.player.discord_id:
-                # This is a invalid mutation, the player is not the owner of the countryball
-                raise InvalidTradeOperation()
             countryball.player = self.trader2.player
             countryball.trade_player = self.trader1.player
             countryball.favorite = False
-            valid_transferable_countryballs.append(countryball)
             await TradeObject.create(
                 trade=trade, ballinstance=countryball, player=self.trader1.player
             )
 
         for countryball in self.trader2.proposal:
-            if countryball.player.discord_id != self.trader2.player.discord_id:
-                # This is a invalid mutation, the player is not the owner of the countryball
-                raise InvalidTradeOperation()
             countryball.player = self.trader1.player
             countryball.trade_player = self.trader2.player
             countryball.favorite = False
-            valid_transferable_countryballs.append(countryball)
             await TradeObject.create(
                 trade=trade, ballinstance=countryball, player=self.trader2.player
             )
+
+        await self.unlock_balls()
+
+    async def unlock_balls(self):
+        """
+        This function unlocks collectibles that were locked during the trade.
+        """
+        valid_transferable_countryballs: list[BallInstance] = []
+        for countryball in self.trader1.proposal:
+            await countryball.refresh_from_db()
+            if countryball.player.discord_id != self.trader1.player.discord_id:
+                # This is a invalid mutation, the player is not the owner of the countryball
+                raise InvalidTradeOperation()
+            valid_transferable_countryballs.append(countryball)
+
+        for countryball in self.trader2.proposal:
+            await countryball.refresh_from_db()
+            if countryball.player.discord_id != self.trader2.player.discord_id:
+                # This is a invalid mutation, the player is not the owner of the countryball
+                raise InvalidTradeOperation()
+            valid_transferable_countryballs.append(countryball)
 
         for countryball in valid_transferable_countryballs:
             await countryball.unlock()
