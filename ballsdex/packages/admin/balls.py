@@ -123,7 +123,6 @@ class Balls(app_commands.Group):
         if interaction.response.is_done():
             return
 
-
         if n > 1:
             await self._spawn_bomb(
                 interaction, countryball, channel or interaction.channel, n  # type: ignore
