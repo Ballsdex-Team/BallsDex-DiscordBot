@@ -27,16 +27,16 @@ FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
 
 
 async def save_file(attachment: discord.Attachment) -> Path:
-    path = Path(f"./static/uploads/{attachment.filename}")
+    path = Path(f"./admin_panel/media/{attachment.filename}")
     match = FILENAME_RE.match(attachment.filename)
     if not match:
         raise TypeError("The file you uploaded lacks an extension.")
     i = 1
     while path.exists():
-        path = Path(f"./static/uploads/{match.group(1)}-{i}{match.group(2)}")
+        path = Path(f"./admin_panel/media/{match.group(1)}-{i}{match.group(2)}")
         i = i + 1
     await attachment.save(path)
-    return path
+    return path.relative_to("./admin_panel/media/")
 
 
 class Balls(app_commands.Group):
@@ -104,7 +104,7 @@ class Balls(app_commands.Group):
         interaction: discord.Interaction[BallsDexBot],
         countryball: BallTransform | None = None,
         channel: discord.TextChannel | None = None,
-        n: int = 1,
+        n: app_commands.Range[int, 1, 100] = 1,
     ):
         """
         Force spawn a random or specified countryball.
@@ -121,19 +121,6 @@ class Balls(app_commands.Group):
         """
         # the transformer triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
-            return
-
-        if n < 1:
-            await interaction.response.send_message(
-                "`n` must be superior or equal to 1.", ephemeral=True
-            )
-            return
-        if n > 100:
-            await interaction.response.send_message(
-                f"That doesn't seem reasonable to spawn {n} times, "
-                "the bot will be rate-limited. Try something lower than 100.",
-                ephemeral=True,
-            )
             return
 
         if n > 1:
