@@ -18,8 +18,10 @@ class TradeViewFormat(menus.ListPageSource):
         header: str,
         bot: "BallsDexBot",
         is_admin: bool = False,
+        url: str | None = None,
     ):
         self.header = header
+        self.url = url
         self.bot = bot
         self.is_admin = is_admin
         super().__init__(entries, per_page=1)
@@ -28,6 +30,7 @@ class TradeViewFormat(menus.ListPageSource):
         embed = discord.Embed(
             title=f"Trade history for {self.header}",
             description=f"Trade ID: {trade.pk:0X}",
+            url=self.url if self.is_admin else None,
             timestamp=trade.date,
         )
         embed.set_footer(

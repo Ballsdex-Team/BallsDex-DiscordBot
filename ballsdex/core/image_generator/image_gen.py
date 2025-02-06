@@ -31,20 +31,22 @@ def get_text_color(image: Image.Image, region: tuple) -> tuple:
     brightness = sum(dominant_color[:3]) / 3
     return (255, 255, 255) if brightness < 128 else (0, 0, 0)
 
-def draw_card(ball_instance: "BallInstance"):
+def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/media/"):
     ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
     ball_credits = ball.credits
 
     if special_image := ball_instance.special_card:
-        image = Image.open("." + special_image)
+        image = Image.open(media_path + special_image)
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             ball_credits += f" • {ball_instance.specialcard.credits}"
     else:
-        image = Image.open("." + ball.cached_regime.background)
+        image = Image.open(media_path + ball.cached_regime.background)
     image = image.convert("RGBA")
     icon = (
-        Image.open("." + ball.cached_economy.icon).convert("RGBA") if ball.cached_economy else None
+        Image.open(media_path + ball.cached_economy.icon).convert("RGBA")
+        if ball.cached_economy
+        else None
     )
 
     draw = ImageDraw.Draw(image)
@@ -101,7 +103,7 @@ def draw_card(ball_instance: "BallInstance"):
         stroke_fill=(255, 255, 255, 255),
     )
 
-    artwork = Image.open("." + ball.collection_card).convert("RGBA")
+    artwork = Image.open(media_path + ball.collection_card).convert("RGBA")
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
 
     if icon:
