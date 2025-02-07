@@ -358,7 +358,7 @@ class Trade(commands.GroupCog):
         interaction: discord.Interaction["BallsDexBot"],
         sorting: app_commands.Choice[str] | None = None,
         trade_user: discord.User | None = None,
-        days: Optional[int] = None,
+        days: Optional[app_commands.Range[int, 1, None] = None,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
