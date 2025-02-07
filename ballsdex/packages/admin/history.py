@@ -32,7 +32,7 @@ class History(app_commands.Group):
         user: discord.User,
         sorting: app_commands.Choice[str],
         user2: discord.User | None = None,
-        days: int | None = None,
+        days: app_commands.Range[int, 1, None] | None = None,
     ):
         """
         Show the trade history of a user.
