@@ -194,7 +194,6 @@ files = [
 [package.dependencies]
 idna = ">=2.8"
 sniffio = ">=1.1"
-typing_extensions = {version = ">=4.5", markers = "python_version < \"3.13\""}
 
 [package.extras]
 doc = ["Sphinx (>=7.4,<8.0)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx_rtd_theme"]
@@ -319,7 +318,6 @@ description = "LTS Port of Python audioop"
 optional = false
 python-versions = ">=3.13"
 groups = ["main"]
-markers = "python_version >= \"3.13\""
 files = [
     {file = "audioop_lts-0.2.1-cp313-abi3-macosx_10_13_universal2.whl", hash = "sha256:fd1345ae99e17e6910f47ce7d52673c6a1a70820d78b67de1b7abb3af29c426a"},
     {file = "audioop_lts-0.2.1-cp313-abi3-macosx_10_13_x86_64.whl", hash = "sha256:e175350da05d2087e12cea8e72a70a1a8b14a17e92ed2022952a4419689ede5e"},
@@ -1708,7 +1706,6 @@ files = [
 ]
 
 [package.dependencies]
-typing-extensions = {version = ">=4.6", markers = "python_version < \"3.13\""}
 tzdata = {version = "*", markers = "sys_platform == \"win32\""}
 
 [package.extras]
@@ -2880,5 +2877,5 @@ dev = ["black", "django-debug-toolbar", "flake8-pyproject", "isort", "pre-commit
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.12, <3.14"
-content-hash = "aefafb70ab183f751e1154b9ef0d1579cd26ebbf61469c07448d1910ea0349f0"
+python-versions = ">=3.13, <3.14"
+content-hash = "10da3b9790389a6a8600681bdc044b08319119297d288c80a6a145ac56b02803"
