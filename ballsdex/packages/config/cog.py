@@ -77,7 +77,7 @@ class Config(commands.GroupCog):
     @app_commands.command()
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.checks.bot_has_permissions(send_messages=True)
-    async def disable(self, interaction: discord.Interaction):
+    async def toggle(self, interaction: discord.Interaction):
         """
         Disable or enable countryballs spawning.
         """
