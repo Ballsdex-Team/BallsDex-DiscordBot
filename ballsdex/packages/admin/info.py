@@ -25,7 +25,7 @@ class Info(app_commands.Group):
         self,
         interaction: discord.Interaction[BallsDexBot],
         guild_id: str,
-        days: app_commands.Range[int, 1, None] = 7,
+        days: int = 7,
     ):
         """
         Show information about the server provided
@@ -103,7 +103,7 @@ class Info(app_commands.Group):
         self,
         interaction: discord.Interaction[BallsDexBot],
         user: discord.User,
-        days: app_commands.Range[int, 1, None] = 7,
+        days: int = 7,
     ):
         """
         Show information about the user provided
