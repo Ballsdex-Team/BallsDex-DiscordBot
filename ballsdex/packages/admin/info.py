@@ -103,7 +103,7 @@ class Info(app_commands.Group):
         self,
         interaction: discord.Interaction[BallsDexBot],
         user: discord.User,
-        days: int = 7,
+        days: app_commands.Range[int, 1, None] = 7,
     ):
         """
         Show information about the user provided
