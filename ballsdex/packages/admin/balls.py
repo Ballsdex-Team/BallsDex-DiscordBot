@@ -352,7 +352,7 @@ class Balls(app_commands.Group):
         self,
         interaction: discord.Interaction[BallsDexBot],
         user: discord.User,
-        percentage: int | None = None,
+        percentage: app_commands.Range[int, 1, 99] | None = None,
     ):
         """
         Reset a player's countryballs.
