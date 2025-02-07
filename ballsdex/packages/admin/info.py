@@ -25,7 +25,7 @@ class Info(app_commands.Group):
         self,
         interaction: discord.Interaction[BallsDexBot],
         guild_id: str,
-        days: int = 7,
+        days: app_commands.Range[int, 1, None] = 7,
     ):
         """
         Show information about the server provided
