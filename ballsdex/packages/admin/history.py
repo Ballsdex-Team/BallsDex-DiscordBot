@@ -43,8 +43,10 @@ class History(app_commands.Group):
         ----------
         user: discord.User
             The user you want to check the history of.
-        sorting: str
+        sorting: str | None
             The sorting method you want to use.
+        countryball: BallEnabledTransform | None
+            The countryball you want to filter the history by.
         user2: discord.User | None
             The second user you want to check the history of.
         days: Optional[int]
