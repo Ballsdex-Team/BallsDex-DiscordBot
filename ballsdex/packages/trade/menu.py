@@ -70,17 +70,32 @@ class TradeView(View):
     @button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
     async def clear(self, interaction: discord.Interaction, button: Button):
         trader = self.trade._get_trader(interaction.user)
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
         if trader.locked:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You have locked your proposal, it cannot be edited! "
                 "You can click the cancel button to stop the trade instead.",
                 ephemeral=True,
             )
-        else:
-            for countryball in trader.proposal:
-                await countryball.unlock()
-            trader.proposal.clear()
-            await interaction.response.send_message("Proposal cleared.", ephemeral=True)
+
+        view = ConfirmChoiceView(
+            interaction,
+            accept_message="Clearing your proposal...",
+            cancel_message="This request has been cancelled.",
+        )
+        await interaction.followup.send(
+            "Are you sure you want to clear your proposal?", view=view, ephemeral=True
+        )
+        await view.wait()
+        if not view.value:
+            return
+
+        for countryball in trader.proposal:
+            await countryball.unlock()
+
+        trader.proposal.clear()
+        await interaction.followup.send("Proposal cleared.", ephemeral=True)
 
     @button(
         label="Cancel trade",
@@ -88,8 +103,22 @@ class TradeView(View):
         style=discord.ButtonStyle.danger,
     )
     async def cancel(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        view = ConfirmChoiceView(
+            interaction,
+            accept_message="Cancelling the trade...",
+            cancel_message="This request has been cancelled.",
+        )
+        await interaction.followup.send(
+            "Are you sure you want to cancel this trade?", view=view, ephemeral=True
+        )
+        await view.wait()
+        if not view.value:
+            return
+
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
-        await interaction.response.send_message("Trade has been cancelled.", ephemeral=True)
+        await interaction.followup.send("Trade has been cancelled.", ephemeral=True)
 
 
 class ConfirmView(View):
@@ -151,8 +180,22 @@ class ConfirmView(View):
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
     )
     async def deny_button(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        view = ConfirmChoiceView(
+            interaction,
+            accept_message="Cancelling the trade...",
+            cancel_message="This request has been cancelled.",
+        )
+        await interaction.followup.send(
+            "Are you sure you want to cancel this trade?", view=view, ephemeral=True
+        )
+        await view.wait()
+        if not view.value:
+            return
+
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
-        await interaction.response.send_message("Trade has been cancelled.", ephemeral=True)
+        await interaction.followup.send("Trade has been cancelled.", ephemeral=True)
 
 
 class TradeMenu:
