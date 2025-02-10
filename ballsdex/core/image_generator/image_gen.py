@@ -29,11 +29,9 @@ credits_color_cache = {}
 
 
 def get_credit_color(image: Image.Image, region: tuple) -> tuple:
-    cropped = image.crop(region)
-    avg_color = tuple(sum(cropped.getdata(), (0, 0, 0))[:3])
-    avg_brightness = sum(avg_color) / (3 * len(cropped.getdata()))
-    return (255, 255, 255) if avg_brightness < 128 else (0, 0, 0)
-
+    image = image.crop(region)
+    brightness = sum(image.convert("L").getdata()) / image.width / image.height
+    return (0, 0, 0, 255) if brightness > 100 else (255, 255, 255, 255)
 
 def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/media/"):
     ball = ball_instance.countryball
