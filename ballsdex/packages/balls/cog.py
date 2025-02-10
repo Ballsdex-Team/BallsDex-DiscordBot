@@ -529,7 +529,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
-        if countryball.favorite:
+        favorite = countryball.favorite
+        if favorite:
             view = ConfirmChoiceView(
                 interaction,
                 accept_message=f"{settings.collectible_name.title()} donated.",
@@ -609,7 +610,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             countryball.description(short=True, include_emoji=True, bot=self.bot, is_trade=True)
             + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
         )
-        if new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
+        if favorite:
             await interaction.followup.send(
                 f"{interaction.user.mention}, you just gave the "
                 f"{settings.collectible_name} {cb_txt} to {user.mention}!",
