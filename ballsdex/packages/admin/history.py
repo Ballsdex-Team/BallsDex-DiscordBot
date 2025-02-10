@@ -8,6 +8,7 @@ from tortoise.expressions import Q
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.models import BallInstance, Player, Trade
 from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.transformers import BallEnabledTransform
 from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
@@ -30,7 +31,8 @@ class History(app_commands.Group):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User,
-        sorting: app_commands.Choice[str],
+        sorting: app_commands.Choice[str] | None = None,
+        countryball: BallEnabledTransform | None = None,
         user2: discord.User | None = None,
         days: int | None = None,
     ):
@@ -41,21 +43,25 @@ class History(app_commands.Group):
         ----------
         user: discord.User
             The user you want to check the history of.
-        sorting: str
+        sorting: str | None
             The sorting method you want to use.
+        countryball: BallEnabledTransform | None
+            The countryball you want to filter the history by.
         user2: discord.User | None
             The second user you want to check the history of.
         days: Optional[int]
             Retrieve trade history from last x days.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
+        sort_value = sorting.value if sorting else "-date"
+
         if days is not None and days < 0:
             await interaction.followup.send(
                 "Invalid number of days. Please provide a non-negative value.", ephemeral=True
             )
             return
 
-        queryset = Trade.all()
+        queryset = Trade.filter()
         try:
             player1 = await Player.get(discord_id=user.id)
             if user2:
@@ -72,12 +78,15 @@ class History(app_commands.Group):
             await interaction.followup.send("One or more players are not registered by the bot.")
             return
 
+        if countryball:
+            queryset = queryset.filter(Q(tradeobjects__ballinstance__ball=countryball)).distinct()
+
         if days is not None and days > 0:
             end_date = datetime.datetime.now()
             start_date = end_date - datetime.timedelta(days=days)
             queryset = queryset.filter(date__range=(start_date, end_date))
 
-        queryset = queryset.order_by(sorting.value).prefetch_related("player1", "player2")
+        queryset = queryset.order_by(sort_value).prefetch_related("player1", "player2")
         history = await queryset
 
         if not history:
