@@ -19,7 +19,7 @@ from ballsdex.settings import settings
 
 class Blacklist(app_commands.Group):
     """
-    Bot blacklist management
+    Bot blacklist management.
     """
 
     @app_commands.command(name="add")
@@ -36,7 +36,7 @@ class Blacklist(app_commands.Group):
         Parameters
         ----------
         user: discord.User
-            The user you want to blacklist, if available in the current server.
+            The user you want to blacklist.
         reason: str | None
         """
         if user == interaction.user:
@@ -79,7 +79,7 @@ class Blacklist(app_commands.Group):
         Parameters
         ----------
         user: discord.User
-            The user you want to unblacklist, if available in the current server.
+            The user you want to unblacklist.
         reason: str | None
             The reason for unblacklisting the user.
         """
@@ -116,7 +116,7 @@ class Blacklist(app_commands.Group):
         Parameters
         ----------
         user: discord.User
-            The user you want to check, if available in the current server.
+            The user you want to check.
         """
         try:
             blacklisted = await BlacklistedID.get(discord_id=user.id)
@@ -154,7 +154,7 @@ class Blacklist(app_commands.Group):
 
     @app_commands.command(name="history")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def blacklist_history(self, interaction: discord.Interaction[BallsDexBot], user_id: str):
+    async def blacklist_history(self, interaction: discord.Interaction[BallsDexBot], id: str):
         """
         Show the history of a blacklisted user or guild.
 
@@ -164,7 +164,7 @@ class Blacklist(app_commands.Group):
             The ID of the user or guild you want to check.
         """
         try:
-            _id = int(user_id)
+            _id = int(id)
         except ValueError:
             await interaction.response.send_message(
                 "The ID you gave is not valid.", ephemeral=True
