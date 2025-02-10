@@ -180,7 +180,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
                 )
 
         if value.startswith("="):
-            ball_name = value[1:].strip()
+            ball_name = value[1:]
             balls_queryset = balls_queryset.filter(ball__country__iexact=ball_name)
         else:
             balls_queryset = (
