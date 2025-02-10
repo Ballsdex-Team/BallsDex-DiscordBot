@@ -610,21 +610,16 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             countryball.description(short=True, include_emoji=True, bot=self.bot, is_trade=True)
             + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
         )
-        mentions = []
-        if new_player.can_be_mentioned:
-            mentions.append(new_player.discord_id)
-        if old_player.can_be_mentioned:
-            mentions.append(old_player.discord_id)
         if favorite:
             await interaction.followup.send(
                 f"{interaction.user.mention}, you just gave the "
                 f"{settings.collectible_name} {cb_txt} to {user.mention}!",
-                allowed_mentions=discord.AllowedMentions(users=mentions),
+                allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
             )
         else:
             await interaction.followup.send(
                 f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!",
-                allowed_mentions=discord.AllowedMentions(users=mentions),
+                allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
             )
         await countryball.unlock()
 
