@@ -141,7 +141,7 @@ class Admin(commands.GroupCog):
         guild_id: str | None = None,
     ):
         """
-        Show the details of the spawn cooldown system for the given server
+        Show the details of the spawn cooldown system for the given server.
 
         Parameters
         ----------
@@ -177,12 +177,12 @@ class Admin(commands.GroupCog):
         user: discord.User,
     ):
         """
-        Shows the guilds shared with the specified user. Provide either user or user_id.
+        Shows the guilds shared with the specified user.
 
         Parameters
         ----------
         user: discord.User
-            The user you want to check, if available in the current server.
+            The user you want to check.
         """
         if self.bot.intents.members:
             guilds = user.mutual_guilds
