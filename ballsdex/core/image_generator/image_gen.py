@@ -40,7 +40,7 @@ def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/me
     ball_credits = ball.credits
     card_name = ball.cached_regime.name
     if special_image := ball_instance.special_card:
-        card_name = getattr(ball_instance.specialcard, card_name)
+        card_name = getattr(ball_instance.specialcard, "name", card_name)
         image = Image.open(media_path + special_image)
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             ball_credits += f" • {ball_instance.specialcard.credits}"
