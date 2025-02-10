@@ -611,10 +611,15 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
         )
         if favorite:
+            mentions = []
+            if new_player.can_be_mentioned:
+                mentions.append(new_player.discord_id)
+            if old_player.can_be_mentioned:
+                mentions.append(old_player.discord_id)
             await interaction.followup.send(
                 f"{interaction.user.mention}, you just gave the "
                 f"{settings.collectible_name} {cb_txt} to {user.mention}!",
-                allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
+                allowed_mentions=discord.AllowedMentions(users=mentions),
             )
         else:
             await interaction.followup.send(
