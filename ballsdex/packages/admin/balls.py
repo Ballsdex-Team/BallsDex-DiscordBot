@@ -10,7 +10,7 @@ from discord.utils import format_dt
 from tortoise.exceptions import BaseORMException, DoesNotExist
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import Ball, BallInstance, Player, Trade, TradeObject
+from ballsdex.core.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.transformers import (
@@ -50,6 +50,9 @@ class Balls(app_commands.Group):
         countryball: Ball | None,
         channel: discord.TextChannel,
         n: int,
+        special: Special | None = None,
+        atk_bonus: int | None = None,
+        hp_bonus: int | None = None,
     ):
         spawned = 0
 
@@ -77,6 +80,9 @@ class Balls(app_commands.Group):
                     ball = await CountryBall.get_random()
                 else:
                     ball = CountryBall(countryball)
+                ball.special = special
+                ball.atk_bonus = atk_bonus
+                ball.hp_bonus = hp_bonus
                 result = await ball.spawn(channel)
                 if not result:
                     task.cancel()
@@ -105,6 +111,9 @@ class Balls(app_commands.Group):
         countryball: BallTransform | None = None,
         channel: discord.TextChannel | None = None,
         n: app_commands.Range[int, 1, 100] = 1,
+        special: SpecialTransform | None = None,
+        atk_bonus: int | None = None,
+        hp_bonus: int | None = None,
     ):
         """
         Force spawn a random or specified countryball.
@@ -118,6 +127,12 @@ class Balls(app_commands.Group):
         n: int
             The number of countryballs to spawn. If no countryball was specified, it's random
             every time.
+        special: Special | None
+            Force the countryball to have a special attribute when caught.
+        atk_bonus: int | None
+            Force the countryball to have a specific attack bonus when caught.
+        hp_bonus: int | None
+            Force the countryball to have a specific health bonus when caught.
         """
         # the transformer triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
@@ -140,6 +155,9 @@ class Balls(app_commands.Group):
             ball = await CountryBall.get_random()
         else:
             ball = CountryBall(countryball)
+        ball.special = special
+        ball.atk_bonus = atk_bonus
+        ball.hp_bonus = hp_bonus
         result = await ball.spawn(channel or interaction.channel)  # type: ignore
 
         if result:
