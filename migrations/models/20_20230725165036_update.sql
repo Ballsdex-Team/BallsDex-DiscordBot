@@ -23,12 +23,12 @@ ALTER TABLE "special" DROP COLUMN "dictatorship_card";
 ALTER TABLE "ball" ADD CONSTRAINT "fk_ball_regime_d7fd92a9" FOREIGN KEY ("regime_id") REFERENCES "regime" ("id") ON DELETE CASCADE;
 ALTER TABLE "ball" ADD CONSTRAINT "fk_ball_economy_cfe9c5c3" FOREIGN KEY ("economy_id") REFERENCES "economy" ("id") ON DELETE SET NULL;
 INSERT INTO "economy" ("name", "icon") VALUES
-    ('Capitalist', '/ballsdex/core/image_generator/src/capitalist.png'),
-    ('Communist', '/ballsdex/core/image_generator/src/communist.png');
+    ('Capitalist', 'capitalist.png'),
+    ('Communist', 'communist.png');
 INSERT INTO "regime" ("name", "background") VALUES
-    ('Democracy', '/ballsdex/core/image_generator/src/democracy.png'),
-    ('Dictatorship', '/ballsdex/core/image_generator/src/dictatorship.png'),
-    ('Union', '/ballsdex/core/image_generator/src/union.png');
+    ('Democracy', 'democracy.png'),
+    ('Dictatorship', 'dictatorship.png'),
+    ('Union', 'union.png');
 UPDATE "ball" SET "economy_id" = "economy" WHERE "economy" != 3;
 UPDATE "ball" SET "economy_id" = null WHERE "economy" = 3;
 UPDATE "ball" SET "regime_id" = "regime";
