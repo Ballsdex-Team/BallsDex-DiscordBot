@@ -60,6 +60,8 @@ def _check_reserved_names():
 
 
 def move_forwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+    # Run this first, as outdated objects are created by aerich's initial migrations
+    Regime.objects.update(**_replace_text("background"))
     if not OLD_STATIC.exists(follow_symlinks=False):
         return
     assert MEDIA.is_dir(follow_symlinks=False)
@@ -68,7 +70,6 @@ def move_forwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
 
     Ball.objects.update(**_replace_text("wild_card"), **_replace_text("collection_card"))
     Economy.objects.update(**_replace_text("icon"))
-    Regime.objects.update(**_replace_text("background"))
     Special.objects.update(**_replace_text("background"))
 
     for file in OLD_STATIC.glob("*"):
