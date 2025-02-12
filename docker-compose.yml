@@ -25,7 +25,11 @@ services:
         source: ./
         target: /code
     tty: true
-    command: poetry run python3 -m ballsdex --dev
+    command: >
+      bash -c "
+      cd admin_panel &&
+      poetry run python3 manage.py migrate --no-input --fake-initial &&
+      cd .. && poetry run python3 -m ballsdex"
 
   admin-panel:
     image: ballsdex
