@@ -190,7 +190,7 @@ class Ball(models.Model):
         help_text="Enables spawning and show in completion", default=True
     )
     short_name = models.CharField(
-        max_length=12,
+        max_length=24,
         blank=True,
         null=True,
         help_text="An alternative shorter name used only when generating the card, "
