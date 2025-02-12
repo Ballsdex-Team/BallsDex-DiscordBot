@@ -16,6 +16,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = None
 
+# WARNING: DO NOT ADD EXTERNAL HOSTS HERE!!
+# If you want to expose your admin panel online, please follow this tutorial:
+# https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Serving-the-admin-panel-online
+# THIS HAS SECURITY IMPLICATIONS, ENABLES PRIVILEGE ESCALATION AND REMOTE CODE EXECUTION
+
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
