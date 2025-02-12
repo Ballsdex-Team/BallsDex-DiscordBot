@@ -37,7 +37,7 @@ def execute_aerich_migration_check(apps: "Apps", schema_editor: "BaseDatabaseSch
                 "Commands to run:\n"
                 "  git checkout release/2.24.2\n"
                 "  docker compose up --build bot\n"
-                '  [Press Ctrl+C after seeing the line "Ran X migrations: ...."]'
+                '  [Press Ctrl+C after seeing the line "Ran X migrations: ...."]\n'
                 "  git switch -\n"
                 "  docker compose up --build admin-panel\n"
                 "  [Ensure all migrations complete successfully]"
