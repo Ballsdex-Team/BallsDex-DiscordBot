@@ -4,6 +4,7 @@ import sys
 from typing import TYPE_CHECKING
 
 import django.db.models.deletion
+from bd_models.models import Economy, Regime, Special
 from django.db import connection, migrations, models
 
 if TYPE_CHECKING:
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
 
-def move_forwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+def execute_aerich_migration_check(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
     with connection.cursor() as cursor:
         cursor.execute(
             "SELECT EXISTS(SELECT * FROM information_schema.tables "
@@ -51,8 +52,46 @@ def move_forwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
             )
 
 
-def move_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+def aerich_move_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
     # allows reversing the migration
+    pass
+
+
+def default_models_forward(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+    default_economies = {
+        "Capitalist": "capitalist.png",
+        "Communist": "communist.png",
+    }
+    default_regimes = {
+        "Democracy": "democracy.png",
+        "Dictatorship": "dictatorship.png",
+        "Union": "union.png",
+    }
+
+    for name, icon in default_economies.items():
+        object, created = Economy.objects.get_or_create(name=name, defaults={"icon": icon})
+        if created:
+            print(f"Created default economy {object}")
+    for name, background in default_regimes.items():
+        object, created = Regime.objects.get_or_create(
+            name=name, defaults={"background": background}
+        )
+        if created:
+            print(f"Created default regime {object}")
+    object, created = Special.objects.get_or_create(
+        name="Shiny",
+        defaults={
+            "rarity": 0.00048828125,
+            "catch_phrase": "**✨ It's a shiny countryball! ✨**",
+            "emoji": "✨",
+            "background": "shiny.png",
+        },
+    )
+    if created:
+        print(f"Created default shiny special {object}")
+
+
+def default_models_backward(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
     pass
 
 
@@ -65,8 +104,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(
-            code=move_forwards,
-            reverse_code=move_backwards,
+            code=execute_aerich_migration_check,
+            reverse_code=aerich_move_backwards,
         ),
         migrations.CreateModel(
             name="BlacklistedGuild",
@@ -628,5 +667,8 @@ class Migration(migrations.Migration):
                 "db_table": "tradeobject",
                 "managed": True,
             },
+        ),
+        migrations.RunPython(
+            code=default_models_forward, reverse_code=default_models_backward, atomic=True
         ),
     ]
