@@ -38,7 +38,6 @@ repos:
           - Pillow
           - prometheus_client
           - tortoise-orm
-          - aerich==0.6.3
           - redis
           - django
           - dj_database_url
