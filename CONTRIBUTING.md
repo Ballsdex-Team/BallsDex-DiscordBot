@@ -87,10 +87,16 @@ Their configurations are already written in `pyproject.toml`, so it should work 
 
 ## Migrations
 
-> [!CAUTION]
-> The migration engine we've been using in the past is severely broken, and will be removed soon
-> in favor of Django's migration engine. In the meantime, all PRs that require database migrations
-> are put on hold.
+If you are modifying models definition, you need migrations to update the database schema.
+
+First, synchronize your changes between `ballsdex/core/models.py` and
+`admin_panel/bd_models/models.py`, they must be identical!
+
+Then you can run `python3 manage.py makemigrations` to generate a migration file. Re-read its
+contents to ensure there is only what you modified, and commit it.
+
+You can read more about migrations
+[here](https://docs.djangoproject.com/en/5.1/topics/migrations/), the engine is very extensive!
 
 ## Coding style
 
