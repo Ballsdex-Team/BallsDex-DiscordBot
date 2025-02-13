@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest an idea for Ballsdex
+labels:
+  - feature request
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for suggesting new features!
+
+        Before filling this, try to contact us about the idea you have.
+
+        ### If you are using the official Ballsdex bot
+
+        Join the [official Discord server](https://discord.gg/ballsdex) and create a post in the
+        [`suggestions` forum](https://discord.com/channels/1049118743101452329/1049164568066281472).
+
+        ### If you are hosting your own bot
+
+        Join the [developers server](https://discord.gg/PKKhee4fvy) and create a post in the
+        `suggestions` forum.
+
+        ---
+
+        Then, please fill the following information.
+
+  - type: dropdown
+    id: selfhosting
+    attributes:
+      label: Self-hosting
+      description: Are you using the official Ballsdex bot or hosting your own instance?
+      options:
+        - Official Ballsdex bot
+        - Self-hosting
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the feature is.
+    validations:
+      required: true
