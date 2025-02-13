@@ -5,7 +5,7 @@ labels:
 body:
   - type: markdown
     attributes:
-      value: |
+      value: >
         Thank you for suggesting new features!
 
         Before filling this, try to contact us about the idea you have.

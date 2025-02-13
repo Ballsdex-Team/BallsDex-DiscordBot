@@ -5,7 +5,7 @@ labels:
 body:
   - type: markdown
     attributes:
-      value: |
+      value: >
         Thank you for reporting a bug!
 
         Before filling this, try to contact us about the issue you have.
@@ -95,7 +95,9 @@ body:
     id: stack-trace
     attributes:
       label: Error stack trace
-      description: If self hosting and the bot produces an error, please copy the whole error from your logs and paste them here
+      description: >
+        If self hosting and the bot produces an error, please copy the whole error
+        from your logs and paste them here
       render: python traceback
     validations:
       required: false
