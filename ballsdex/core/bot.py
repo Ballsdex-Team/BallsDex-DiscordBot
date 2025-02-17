@@ -383,7 +383,8 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
         if interaction.command and interaction.user.id in self.command_log:
             log.info(
-                f'{interaction.user} ({interaction.user.id}) used "{interaction.command.qualified_name}" in '
+                f"{interaction.user} ({interaction.user.id}) used "
+                f'"{interaction.command.qualified_name}" in '
                 f"{interaction.guild} ({interaction.guild_id})"
             )
         return True
@@ -428,7 +429,10 @@ class BallsDexBot(commands.AutoShardedBot):
             await context.send(
                 "An error occured when running the command. Contact support if this persists."
             )
-            log.error(f"Unknown error in text command {context.command.qualified_name}", exc_info=exception)
+            log.error(
+                f"Unknown error in text command {context.command.qualified_name}",
+                exc_info=exception,
+            )
 
     async def on_application_command_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
@@ -493,7 +497,8 @@ class BallsDexBot(commands.AutoShardedBot):
                 # still including traceback because it may be a programming error
 
             log.error(
-                f"Error in slash command {interaction.command.qualified_name}", exc_info=error.original
+                f"Error in slash command {interaction.command.qualified_name}",
+                exc_info=error.original,
             )
             await send(
                 "An error occured when running the command. Contact support if this persists."
