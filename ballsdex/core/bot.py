@@ -383,7 +383,8 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
         if interaction.command and interaction.user.id in self.command_log:
             log.info(
-                f'{interaction.user} ({interaction.user.id}) used "{interaction.command.name}" in '
+                f"{interaction.user} ({interaction.user.id}) used "
+                f'"{interaction.command.qualified_name}" in '
                 f"{interaction.guild} ({interaction.guild_id})"
             )
         return True
@@ -428,7 +429,10 @@ class BallsDexBot(commands.AutoShardedBot):
             await context.send(
                 "An error occured when running the command. Contact support if this persists."
             )
-            log.error(f"Unknown error in text command {context.command.name}", exc_info=exception)
+            log.error(
+                f"Unknown error in text command {context.command.qualified_name}",
+                exc_info=exception,
+            )
 
     async def on_application_command_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
@@ -477,7 +481,7 @@ class BallsDexBot(commands.AutoShardedBot):
                 await send("The bot does not have the permission to do something.")
                 # log to know where permissions are lacking
                 log.warning(
-                    f"Missing permissions for app command {interaction.command.name}",
+                    f"Missing permissions for app command {interaction.command.qualified_name}",
                     exc_info=error.original,
                 )
                 return
@@ -486,14 +490,15 @@ class BallsDexBot(commands.AutoShardedBot):
                 # most likely an interaction received twice (happens sometimes),
                 # or two instances are running on the same token.
                 log.warning(
-                    f"Tried invoking command {interaction.command.name}, but the "
+                    f"Tried invoking command {interaction.command.qualified_name}, but the "
                     "interaction was already responded to.",
                     exc_info=error.original,
                 )
                 # still including traceback because it may be a programming error
 
             log.error(
-                f"Error in slash command {interaction.command.name}", exc_info=error.original
+                f"Error in slash command {interaction.command.qualified_name}",
+                exc_info=error.original,
             )
             await send(
                 "An error occured when running the command. Contact support if this persists."
