@@ -1,0 +1,103 @@
+name: Bug report
+description: Create a bug report
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for reporting a bug!
+
+        Before filling this, try to contact us about the issue you have.
+
+        ### If you are using the official Ballsdex bot
+
+        Join the [official Discord server](https://discord.gg/ballsdex) and create a post in the
+        [`bug-reports` forum](https://discord.com/channels/1049118743101452329/1049622402419675206).
+
+        ### If you are hosting your own bot
+
+        Join the [developers server](https://discord.gg/PKKhee4fvy) and ask for help in the
+        `#help` channel.
+
+        ---
+
+        If you are confident that you have found a bug, or were told to fill an issue, please fill
+        in the following information.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: Where does the bug comes from
+      multiple: true
+      options:
+        - Django (admin panel and more)
+        - Admin (/admin commands)
+        - Balls (/balls command)
+        - Config (/config command)
+        - Countryballs (spawn algorithm and countryball catching)
+        - Info (/about and /help commands)
+        - Players (/player command)
+        - Trade (/trade command)
+        - Core (main code, autocompletions, models, anything you may find common to all commands)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If relevant, include screenshots showing the problems.
+      placeholder: You can drag and drop images, or paste them.
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: If self-hosting, inlcude the version of the bot you are using
+      placeholder: 2.24.2
+    validations:
+      required: false
+
+  - type: textarea
+    id: stack-trace
+    attributes:
+      label: Error stack trace
+      description: >
+        If self hosting and the bot produces an error, please copy the whole error
+        from your logs and paste them here
+      render: python traceback
+    validations:
+      required: false

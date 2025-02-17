@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-import discord
+from ballsdex.core.models import BlacklistedID
+
+if TYPE_CHECKING:
+    import discord
 
 from ballsdex.core.models import Player
 
@@ -18,6 +21,7 @@ class TradingUser:
     locked: bool = False
     cancelled: bool = False
     accepted: bool = False
+    blacklisted: bool | None = None
     coins: int = 0
 
     async def add_coins(self, amount: int):
@@ -31,8 +35,15 @@ class TradingUser:
         return player.coins
 
     @classmethod
-    async def from_trade_model(cls, trade: "Trade", player: Player, bot: "BallsDexBot"):
+    async def from_trade_model(
+        cls, trade: "Trade", player: "Player", bot: "BallsDexBot", is_admin: bool = False
+    ):
         proposal = await trade.tradeobjects.filter(player=player).prefetch_related("ballinstance")
         user = await bot.fetch_user(player.discord_id)
         coins = trade.player1_coins if player == trade.player1 else trade.player2_coins
-        return cls(user, player, [x.ballinstance for x in proposal], coins=coins)
+        blacklisted = (
+            await BlacklistedID.exists(discord_id=player.discord_id) if is_admin else None
+        )
+        return cls(
+            user, player, [x.ballinstance for x in proposal], coins=coins, blacklisted=blacklisted
+        )

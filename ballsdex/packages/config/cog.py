@@ -46,7 +46,6 @@ class Config(commands.GroupCog):
         self,
         interaction: discord.Interaction,
         channel: Optional[discord.TextChannel] = None,
-        silent: bool = False,
     ):
         """
         Set or change the channel where countryballs will spawn.
@@ -55,8 +54,6 @@ class Config(commands.GroupCog):
         ----------
         channel: discord.TextChannel
             The channel you want to set, current one if not specified.
-        silent: bool
-            Whether to config a server to suppress wrong name and error messages.
         """
         user = cast(discord.Member, interaction.user)
 
@@ -69,7 +66,7 @@ class Config(commands.GroupCog):
                 )
                 return
 
-        view = AcceptTOSView(interaction, channel, user, silent=silent)
+        view = AcceptTOSView(interaction, channel, user)
         message = await channel.send(embed=activation_embed, view=view)
         view.message = message
 

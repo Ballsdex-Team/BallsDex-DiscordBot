@@ -1,3 +1,4 @@
+import enum
 import logging
 from typing import TYPE_CHECKING
 
@@ -6,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
+from tortoise.functions import Count
 
 from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -98,6 +100,11 @@ class DonationRequest(View):
         await self.countryball.unlock()
 
 
+class DuplicateType(enum.Enum):
+    countryballs = "countryballs"
+    specials = "specials"
+
+
 class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     """
     View and manage your countryballs collection.
@@ -151,7 +158,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if user is not None:
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
-        interaction_player = await Player.get(discord_id=interaction.user.id)
+
+        interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
@@ -169,7 +177,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if sort:
             countryballs = await sort_balls(sort, query)
         else:
-            countryballs = await query.order_by("-favorite", "-shiny")
+            countryballs = await query.order_by("-favorite")
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
@@ -212,7 +220,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Show your current completion of the BallsDex.
@@ -223,12 +230,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user whose completion you want to view, if not yours.
         special: Special
             The special you want to see the completion of
-        shiny: bool
-            Whether you want to see the completion of shiny countryballs
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
-        extra_text = "shiny " if shiny else "" + f"{special.name} " if special else ""
+        extra_text = f"{special.name} " if special else ""
         if user is not None:
             try:
                 player = await Player.get(discord_id=user_obj.id)
@@ -239,7 +244,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
                 return
 
-            interaction_player = await Player.get(discord_id=interaction.user.id)
+            interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+
             blocked = await player.is_blocked(interaction_player)
             if blocked and not is_staff(interaction):
                 await interaction.followup.send(
@@ -261,7 +267,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
-                if y.enabled and y.created_at < special.end_date
+                if y.enabled and (special.end_date is None or y.created_at < special.end_date)
             }
         if not bot_countryballs:
             await interaction.followup.send(
@@ -271,8 +277,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
 
-        if shiny is not None:
-            filters["shiny"] = shiny
         owned_countryballs = set(
             x[0]
             for x in await BallInstance.filter(**filters)
@@ -331,9 +335,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
         special_str = f" ({special.name})" if special else ""
-        shiny_str = " shiny" if shiny else ""
         source.embed.description = (
-            f"{settings.bot_name}{special_str}{shiny_str} progression: "
+            f"{settings.bot_name}{special_str} progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
@@ -349,7 +352,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Display info from a specific countryball.
@@ -360,8 +362,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The countryball you want to inspect
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -397,7 +397,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
-        interaction_player = await Player.get(discord_id=interaction.user.id)
+        interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+
         blocked = await player.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
             await interaction.followup.send(
@@ -431,7 +432,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Set favorite countryballs.
@@ -442,8 +442,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The countryball you want to set/unset as favorite
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -455,7 +453,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         if not countryball.favorite:
-            player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
+            try:
+                player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
+            except DoesNotExist:
+                await interaction.response.send_message(
+                    f"You don't have any {settings.plural_collectible_name} yet.", ephemeral=True
+                )
+                return
+
             grammar = (
                 f"{settings.collectible_name}"
                 if settings.max_favorites == 1
@@ -494,7 +499,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user: discord.User,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
     ):
         """
         Give a countryball to a user.
@@ -507,8 +511,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The countryball you're giving away
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
-        shiny: bool
-            Filter the results of autocompletion to shinies. Ignored afterwards.
         """
         if not countryball:
             return
@@ -527,7 +529,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
-        if countryball.favorite:
+        favorite = countryball.favorite
+        if favorite:
             view = ConfirmChoiceView(
                 interaction,
                 accept_message=f"{settings.collectible_name.title()} donated.",
@@ -607,10 +610,17 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             countryball.description(short=True, include_emoji=True, bot=self.bot, is_trade=True)
             + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
         )
-        await interaction.followup.send(
-            f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!",
-            allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
-        )
+        if favorite:
+            await interaction.followup.send(
+                f"{interaction.user.mention}, you just gave the "
+                f"{settings.collectible_name} {cb_txt} to {user.mention}!",
+                allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
+            )
+        else:
+            await interaction.followup.send(
+                f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!",
+                allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
+            )
         await countryball.unlock()
 
     @app_commands.command()
@@ -619,7 +629,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
-        shiny: bool | None = None,
         current_server: bool = False,
     ):
         """
@@ -631,33 +640,32 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The countryball you want to count
         special: Special
             The special you want to count
-        shiny: bool
-            Whether you want to count shiny countryballs
         current_server: bool
             Only count countryballs caught in the current server
         """
         if interaction.response.is_done():
             return
+
         assert interaction.guild
         filters = {}
         if countryball:
             filters["ball"] = countryball
-        if shiny is not None:
-            filters["shiny"] = shiny
         if special:
             filters["special"] = special
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
+
         await interaction.response.defer(ephemeral=True, thinking=True)
+
         balls = await BallInstance.filter(**filters).count()
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
-        shiny_str = "shiny " if shiny else ""
         special_str = f"{special.name} " if special else ""
         guild = f" caught in {interaction.guild.name}" if current_server else ""
+
         await interaction.followup.send(
-            f"You have {balls} {special_str}{shiny_str}"
+            f"You have {balls} {special_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
         )
 
@@ -698,3 +706,70 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         )
         await ball.delete()
         await interaction.followup.send(message)
+
+    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    async def duplicate(
+        self, interaction: discord.Interaction["BallsDexBot"], type: DuplicateType
+    ):
+        """
+        Shows your most duplicated countryballs or specials.
+
+        Parameters
+        ----------
+        type: DuplicateType
+            Type of duplicate to check (countryballs or specials).
+        """
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        await player.fetch_related("balls")
+        is_special = type.value == "specials"
+        queryset = BallInstance.filter(player=player)
+
+        if is_special:
+            queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
+            annotations = {"name": "special__name", "emoji": "special__emoji"}
+            title = "special"
+            limit = 5
+        else:
+            queryset = queryset.filter(ball__tradeable=True)
+            annotations = {"name": "ball__country", "emoji": "ball__emoji_id"}
+            title = settings.collectible_name
+            limit = 50
+
+        results = (
+            await queryset.annotate(count=Count("id"))
+            .group_by(*annotations.values())
+            .order_by("-count")
+            .limit(limit)
+            .values(*annotations.values(), "count")
+        )
+
+        if not results:
+            await interaction.followup.send(
+                f"You don't have any {type.value} duplicates in your inventory.", ephemeral=True
+            )
+            return
+
+        entries = [
+            (
+                f"{i + 1}. {item[annotations['name']]} "
+                f"{self.bot.get_emoji(item[annotations['emoji']]) or item[annotations['emoji']]}",
+                f"Count: {item['count']}",
+            )
+            for i, item in enumerate(results)
+        ]
+
+        embed_title = (
+            f"Top {len(results)} duplicate {title}s:"
+            if len(results) > 1
+            else f"Top {len(results)} duplicate {title}"
+        )
+
+        source = FieldPageSource(entries, per_page=5 if is_special else 10, inline=False)
+        source.embed.title = embed_title
+        source.embed.color = discord.Color.purple() if is_special else discord.Color.blue()
+        source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
+
+        paginator = Pages(source, interaction=interaction)
+        await paginator.start(ephemeral=True)

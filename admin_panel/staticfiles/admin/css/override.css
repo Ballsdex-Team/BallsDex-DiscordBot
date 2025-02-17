@@ -1,0 +1,30 @@
+.discord-row {
+}
+
+.discord-row a.discord-button {
+    background: #5865F2;
+    display: flex;
+    justify-content: center;
+    width: fit-content;
+    margin: auto;
+    padding: 0;
+}
+
+.discord-row a.discord-button:hover {
+    background: color-mix(in srgb, #5865F2, black 30%)
+}
+
+.discord-button * {
+    padding: 10px;
+}
+
+.discord-icon {
+    width: 1.2em;
+    background: color-mix(in srgb, transparent, black 20%);
+}
+
+.button[disabled], input[type=submit][disabled], input[type=button][disabled], .discord-row a.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: default;
+}

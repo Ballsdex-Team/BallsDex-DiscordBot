@@ -34,7 +34,9 @@ class Settings:
         Usually "BallsDex", can be replaced when possible
     players_group_cog_name: str
         Set the name of the base command of the "players" cog, /balls by default
-    max_favorites:
+    favorited_collectible_emoji: str
+        Set the emoji used to represent a favorited countryball, "❤️" by default.
+    max_favorites: int
         Set the maximum amount of favorited countryballs a user can have, 50 by default.
     max_attack_bonus:
         Set the biggest/smallest attack bonus that a spawned countryball can have.
@@ -60,6 +62,12 @@ class Settings:
         List of packages the bot will load upon startup
     spawn_manager: str
         Python path to a class implementing `BaseSpawnManager`, handling cooldowns and anti-cheat
+    webhook_url: str | None
+        URL of a Discord webhook for admin notifications
+    client_id: str
+        ID of the Discord application
+    client_secret: str
+        Secret key of the Discord application (not the bot token)
     """
 
     bot_token: str = ""
@@ -72,6 +80,7 @@ class Settings:
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
     currency_name: str = "coins"
+    favorited_collectible_emoji: str = "❤️"
 
     max_favorites: int = 50
     max_attack_bonus: int = 20
@@ -104,6 +113,12 @@ class Settings:
     rarities: dict[str, dict[str, int]] = field(default_factory=dict)
     spawn_manager: str = "ballsdex.packages.countryballs.spawn.SpawnManager"
 
+    # django admin panel
+    webhook_url: str | None = None
+    admin_url: str | None = None
+    client_id: str = ""
+    client_secret: str = ""
+
 
 settings = Settings()
 
@@ -124,6 +139,7 @@ def read_settings(path: "Path"):
     )
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
+    settings.favorited_collectible_emoji = content.get("favorited-collectible-emoji", "❤️")
 
     settings.about_description = content["about"]["description"]
     settings.github_link = content["about"]["github-link"]
@@ -161,6 +177,13 @@ def read_settings(path: "Path"):
     settings.spawn_manager = content.get(
         "spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager"
     )
+
+    if admin := content.get("admin-panel"):
+        settings.webhook_url = admin.get("webhook-url")
+        settings.client_id = admin.get("client-id")
+        settings.client_secret = admin.get("client-secret")
+        settings.admin_url = admin.get("url")
+
     log.info("Settings loaded.")
 
 
@@ -209,6 +232,9 @@ players-group-cog-name: balls
 
 # currency name, coins by default
 currency-name: coins
+
+# emoji used to represent a favorited collectible
+favorited-collectible-emoji: ❤️
 
 # maximum amount of favorites that are allowed
 max-favorites: 50
@@ -266,6 +292,22 @@ rarities:
     rarity: 1
     coins: 20
 
+# Admin panel related settings
+admin-panel:
+
+    # to enable Discord OAuth2 login, fill this
+    # client ID of the Discord application (not the bot's user ID)
+    client-id: 
+    # client secret of the Discord application (this is not the bot token)
+    client-secret: 
+
+    # to get admin notifications from the admin panel, create a Discord webhook and paste the url
+    webhook-url: 
+
+    # this will provide some hyperlinks to the admin panel when using /admin commands
+    # set to an empty string to disable those links entirely
+    url: http://localhost:8000
+
 # list of packages that will be loaded
 packages:
   - ballsdex.packages.admin
@@ -298,6 +340,7 @@ def update_settings(path: "Path"):
     add_plural_collectible = "plural-collectible-name" not in content
     add_packages = "packages:" not in content
     add_spawn_manager = "spawn-manager" not in content
+    add_django = "Admin panel related settings" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -365,6 +408,26 @@ packages:
 spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
 """
 
+    if add_django:
+        content += """
+# Admin panel related settings
+admin-panel:
+
+    # to enable Discord OAuth2 login, fill this
+    # client ID of the Discord application (not the bot's user ID)
+    client-id:
+    # client secret of the Discord application (this is not the bot token)
+    client-secret:
+
+    # to get admin notifications from the admin panel, create a Discord webhook and paste the url
+    webhook-url:
+
+    # this will provide some hyperlinks to the admin panel when using /admin commands
+    # set to an empty string to disable those links entirely
+    url: http://localhost:8000
+
+"""
+
     if any(
         (
             add_owners,
@@ -375,6 +438,7 @@ spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
             add_plural_collectible,
             add_packages,
             add_spawn_manager,
+            add_django,
         )
     ):
         path.write_text(content)

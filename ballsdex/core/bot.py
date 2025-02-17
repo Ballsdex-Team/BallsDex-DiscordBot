@@ -130,6 +130,7 @@ class BallsDexBot(commands.AutoShardedBot):
         command_prefix: PrefixType[BallsDexBot],
         disable_messsage_content: bool = False,
         disable_time_check: bool = False,
+        skip_tree_sync: bool = False,
         dev: bool = False,
         **options,
     ):
@@ -155,6 +156,7 @@ class BallsDexBot(commands.AutoShardedBot):
 
         super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
         self.tree.disable_time_check = disable_time_check  # type: ignore
+        self.skip_tree_sync = skip_tree_sync
 
         self.dev = dev
         self.prometheus_server: PrometheusServer | None = None
@@ -163,6 +165,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self.add_check(owner_check)  # Only owners are able to use text commands
 
         self._shutdown = 0
+        self.startup_time: datetime | None = None
         self.blacklist: set[int] = set()
         self.blacklist_guild: set[int] = set()
         self.catch_log: set[int] = set()
@@ -276,6 +279,9 @@ class BallsDexBot(commands.AutoShardedBot):
         if self.cogs != {}:
             return  # bot is reconnecting, no need to setup again
 
+        if self.startup_time is None:
+            self.startup_time = datetime.now()
+
         assert self.user
         log.info(f"Successfully logged in as {self.user} ({self.user.id})!")
 
@@ -322,18 +328,17 @@ class BallsDexBot(commands.AutoShardedBot):
         else:
             log.info("No package loaded.")
 
-        synced_commands = await self.tree.sync()
-        grammar = "" if synced_commands == 1 else "s"
-        if synced_commands:
-            log.info(f"Synced {len(synced_commands)} command{grammar}.")
+        if not self.skip_tree_sync:
+            synced_commands = await self.tree.sync()
+            log.info(f"Synced {len(synced_commands)} commands.")
             try:
                 self.assign_ids_to_app_commands(synced_commands)
             except Exception:
                 log.error("Failed to assign IDs to app commands", exc_info=True)
         else:
-            log.info("No command to sync.")
+            log.warning("Skipping command synchronization.")
 
-        if "ballsdex.packages.admin" in settings.packages:
+        if not self.skip_tree_sync and "ballsdex.packages.admin" in settings.packages:
             for guild_id in settings.admin_guild_ids:
                 guild = self.get_guild(guild_id)
                 if not guild:
@@ -378,7 +383,8 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
         if interaction.command and interaction.user.id in self.command_log:
             log.info(
-                f'{interaction.user} ({interaction.user.id}) used "{interaction.command.name}" in '
+                f"{interaction.user} ({interaction.user.id}) used "
+                f'"{interaction.command.qualified_name}" in '
                 f"{interaction.guild} ({interaction.guild_id})"
             )
         return True
@@ -423,7 +429,10 @@ class BallsDexBot(commands.AutoShardedBot):
             await context.send(
                 "An error occured when running the command. Contact support if this persists."
             )
-            log.error(f"Unknown error in text command {context.command.name}", exc_info=exception)
+            log.error(
+                f"Unknown error in text command {context.command.qualified_name}",
+                exc_info=exception,
+            )
 
     async def on_application_command_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
@@ -472,7 +481,7 @@ class BallsDexBot(commands.AutoShardedBot):
                 await send("The bot does not have the permission to do something.")
                 # log to know where permissions are lacking
                 log.warning(
-                    f"Missing permissions for app command {interaction.command.name}",
+                    f"Missing permissions for app command {interaction.command.qualified_name}",
                     exc_info=error.original,
                 )
                 return
@@ -481,19 +490,26 @@ class BallsDexBot(commands.AutoShardedBot):
                 # most likely an interaction received twice (happens sometimes),
                 # or two instances are running on the same token.
                 log.warning(
-                    f"Tried invoking command {interaction.command.name}, but the "
+                    f"Tried invoking command {interaction.command.qualified_name}, but the "
                     "interaction was already responded to.",
                     exc_info=error.original,
                 )
                 # still including traceback because it may be a programming error
 
             log.error(
-                f"Error in slash command {interaction.command.name}", exc_info=error.original
+                f"Error in slash command {interaction.command.qualified_name}",
+                exc_info=error.original,
             )
             await send(
                 "An error occured when running the command. Contact support if this persists."
             )
             return
+
+        if isinstance(
+            error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)
+        ):
+            await send("Commands desynchronized, contact support to fix this.")
+            log.error(error.args[0])
 
         await send("An error occured when running the command. Contact support if this persists.")
         log.error("Unknown error in interaction", exc_info=error)

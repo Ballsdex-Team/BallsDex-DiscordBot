@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, Iterable, Tuple, Type
 
 import discord
 from discord.utils import format_dt
-from fastapi_admin.models import AbstractAdmin
 from tortoise import exceptions, fields, models, signals, timezone, validators
+from tortoise.contrib.postgres.indexes import PostgreSQLIndex
 from tortoise.expressions import Q
 
 from ballsdex.core.image_generator.image_gen import draw_card
@@ -58,16 +58,6 @@ class DiscordSnowflakeValidator(validators.Validator):
             raise exceptions.ValidationError("Discord IDs are between 17 and 19 characters long")
 
 
-class User(AbstractAdmin):
-    last_login = fields.DatetimeField(description="Last Login", default=datetime.now)
-    avatar = fields.CharField(max_length=200, default="")
-    intro = fields.TextField(default="")
-    created_at = fields.DatetimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.pk}#{self.username}"
-
-
 class GuildConfig(models.Model):
     guild_id = fields.BigIntField(
         description="Discord guild ID", unique=True, validators=[DiscordSnowflakeValidator()]
@@ -78,6 +68,7 @@ class GuildConfig(models.Model):
     enabled = fields.BooleanField(
         description="Whether the bot will spawn countryballs in this guild", default=True
     )
+    # this option is currently disabled
     silent = fields.BooleanField(
         description="Whether the responses of guesses get sent as ephemeral or not",
         default=False,
@@ -108,8 +99,8 @@ class Special(models.Model):
         null=True,
         default=None,
     )
-    start_date = fields.DatetimeField()
-    end_date = fields.DatetimeField()
+    start_date = fields.DatetimeField(null=True, default=None)
+    end_date = fields.DatetimeField(null=True, default=None)
     rarity = fields.FloatField(
         description="Value between 0 and 1, chances of using this special background."
     )
@@ -121,6 +112,9 @@ class Special(models.Model):
     )
     tradeable = fields.BooleanField(default=True)
     hidden = fields.BooleanField(default=False, description="Hides the event from user commands")
+    credits = fields.CharField(
+        max_length=64, description="Author of the special event artwork", null=True
+    )
 
     def __str__(self) -> str:
         return self.name
@@ -240,7 +234,6 @@ class BallInstance(models.Model):
     server_id = fields.BigIntField(
         description="Discord server ID where this ball was caught", null=True
     )
-    shiny = fields.BooleanField(default=False)
     special: fields.ForeignKeyRelation[Special] | None = fields.ForeignKeyField(
         "models.Special", null=True, default=None, on_delete=fields.SET_NULL
     )
@@ -260,6 +253,11 @@ class BallInstance(models.Model):
 
     class Meta:
         unique_together = ("player", "id")
+        indexes = [
+            PostgreSQLIndex(fields=("ball_id",)),
+            PostgreSQLIndex(fields=("player_id",)),
+            PostgreSQLIndex(fields=("special_id",)),
+        ]
 
     @property
     def is_tradeable(self) -> bool:
@@ -300,9 +298,7 @@ class BallInstance(models.Model):
         if bot and self.pk in bot.locked_balls and not is_trade:  # type: ignore
             emotes += "🔒"
         if self.favorite and not is_trade:
-            emotes += "❤️"
-        if self.shiny:
-            emotes += "✨"
+            emotes += settings.favorited_collectible_emoji
         if emotes:
             emotes += " "
         if self.specialcard:
@@ -554,6 +550,12 @@ class Trade(models.Model):
     def __str__(self) -> str:
         return str(self.pk)
 
+    class Meta:
+        indexes = [
+            PostgreSQLIndex(fields=("player1_id",)),
+            PostgreSQLIndex(fields=("player2_id",)),
+        ]
+
 
 class TradeObject(models.Model):
     trade_id: int
@@ -570,6 +572,13 @@ class TradeObject(models.Model):
 
     def __str__(self) -> str:
         return str(self.pk)
+
+    class Meta:
+        indexes = [
+            PostgreSQLIndex(fields=("ballinstance_id",)),
+            PostgreSQLIndex(fields=("player_id",)),
+            PostgreSQLIndex(fields=("trade_id",)),
+        ]
 
 
 class Friendship(models.Model):
