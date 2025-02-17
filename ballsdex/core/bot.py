@@ -503,7 +503,7 @@ class BallsDexBot(commands.AutoShardedBot):
         if isinstance(
             error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)
         ):
-            await send("Commands desynchronizeded, contact support to fix this.")
+            await send("Commands desynchronized, contact support to fix this.")
             log.error(error.args[0])
 
         await send("An error occured when running the command. Contact support if this persists.")
