@@ -70,6 +70,7 @@ async def send_interactive(
     *,
     timeout: int = 15,
     time_taken: float | None = None,
+    block: str | None = "py",
 ) -> list[discord.Message]:
     """
     Send multiple messages interactively.
@@ -112,7 +113,10 @@ async def send_interactive(
     ret = []
 
     for idx, page in enumerate(messages, 1):
-        text = box(page, lang="py")
+        if block:
+            text = box(page, lang=block)
+        else:
+            text = page
         if time_taken and idx == len(messages):
             time = (
                 f"{round(time_taken * 1000)}ms" if time_taken < 1 else f"{round(time_taken, 3)}s"
