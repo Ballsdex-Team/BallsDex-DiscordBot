@@ -19,4 +19,4 @@ COPY . /code
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
 # wait for postgres to be ready
-CMD sleep 2
+CMD ["sleep", "2"]
