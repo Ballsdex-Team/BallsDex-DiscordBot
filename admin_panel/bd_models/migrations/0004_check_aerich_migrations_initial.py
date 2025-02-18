@@ -362,6 +362,14 @@ class Migration(migrations.Migration):
                         default=False, help_text="Hides the event from user commands"
                     ),
                 ),
+                (
+                    "credits",
+                    models.CharField(
+                        null=True,
+                        help_text="Author of the special event artwork",
+                        max_length=64,
+                    ),
+                ),
             ],
             options={
                 "db_table": "special",
