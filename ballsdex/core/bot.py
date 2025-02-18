@@ -166,6 +166,7 @@ class BallsDexBot(commands.AutoShardedBot):
 
         self._shutdown = 0
         self.startup_time: datetime | None = None
+        self.application_emojis: dict[int, discord.Emoji] = {}
         self.blacklist: set[int] = set()
         self.blacklist_guild: set[int] = set()
         self.catch_log: set[int] = set()
@@ -204,10 +205,17 @@ class BallsDexBot(commands.AutoShardedBot):
                     bot_command, cast(list[app_commands.AppCommandGroup], synced_command.options)
                 )
 
+    def get_emoji(self, id: int) -> discord.Emoji | None:
+        return self.application_emojis.get(id) or super().get_emoji(id)
+
     async def load_cache(self):
         table = Table(box=box.SIMPLE)
         table.add_column("Model", style="cyan")
         table.add_column("Count", justify="right", style="green")
+
+        self.application_emojis.clear()
+        for emoji in await self.fetch_application_emojis():
+            self.application_emojis[emoji.id] = emoji
 
         balls.clear()
         for ball in await Ball.all():
