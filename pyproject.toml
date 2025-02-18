@@ -13,8 +13,7 @@ dependencies = [
     "uvloop==0.21.0; sys_platform != 'win32'",
 
     # discord
-    "discord.py==2.4.0",
-    "audioop-lts==0.2.1 ; python_version >= '3.13'",
+    "discord.py[speed]==2.5.0",
 
     # database ORM
     "tortoise-orm[asyncpg] ==0.22.2",
