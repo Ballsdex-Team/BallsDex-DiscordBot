@@ -156,6 +156,9 @@ class Special(models.Model):
         help_text="Whether balls of this event can be traded", default=True
     )
     hidden = models.BooleanField(help_text="Hides the event from user commands", default=False)
+    credits = models.CharField(
+        max_length=64, help_text="Author of the special event artwork", null=True
+    )
 
     def __str__(self) -> str:
         return self.name
