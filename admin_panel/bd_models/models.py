@@ -36,7 +36,7 @@ class GuildConfig(models.Model):
         return str(self.guild_id)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "guildconfig"
 
 
@@ -97,7 +97,7 @@ class Player(models.Model):
         )
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "player"
 
 
@@ -109,7 +109,7 @@ class Economy(models.Model):
         return self.name
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "economy"
         verbose_name_plural = "economies"
 
@@ -122,7 +122,7 @@ class Regime(models.Model):
         return self.name
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "regime"
 
 
@@ -156,12 +156,15 @@ class Special(models.Model):
         help_text="Whether balls of this event can be traded", default=True
     )
     hidden = models.BooleanField(help_text="Hides the event from user commands", default=False)
+    credits = models.CharField(
+        max_length=64, help_text="Author of the special event artwork", null=True
+    )
 
     def __str__(self) -> str:
         return self.name
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "special"
 
 
@@ -190,7 +193,7 @@ class Ball(models.Model):
         help_text="Enables spawning and show in completion", default=True
     )
     short_name = models.CharField(
-        max_length=12,
+        max_length=24,
         blank=True,
         null=True,
         help_text="An alternative shorter name used only when generating the card, "
@@ -248,7 +251,7 @@ class Ball(models.Model):
         return super().save(force_insert, force_update, using, update_fields)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "ball"
 
 
@@ -308,7 +311,7 @@ class BallInstance(models.Model):
         return mark_safe(f"{emoji} {text} ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%")
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "ballinstance"
         unique_together = (("player", "id"),)
 
@@ -320,7 +323,7 @@ class BlacklistedID(models.Model):
     moderator_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "blacklistedid"
 
 
@@ -331,7 +334,7 @@ class BlacklistedGuild(models.Model):
     moderator_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "blacklistedguild"
 
 
@@ -344,7 +347,7 @@ class BlacklistHistory(models.Model):
     action_type = models.CharField(max_length=64, default="blacklist")
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "blacklisthistory"
         verbose_name_plural = "blacklisthistories"
 
@@ -361,7 +364,7 @@ class Trade(models.Model):
         return f"Trade #{self.pk:0X}"
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "trade"
 
 
@@ -374,7 +377,7 @@ class TradeObject(models.Model):
     trade_id: int
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "tradeobject"
 
 
@@ -388,7 +391,7 @@ class Friendship(models.Model):
     player2_id: int
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "friendship"
 
 
@@ -400,5 +403,5 @@ class Block(models.Model):
     player2_id: int
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "block"
