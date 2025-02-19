@@ -421,6 +421,11 @@ class Player(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
+    money = fields.BigIntField(
+        description="Money posessed by the player",
+        default=0,
+        validators=[validators.MaxValueValidator((1 << 63) - 1), validators.MinValueValidator(0)],
+    )
     donation_policy = fields.IntEnumField(
         DonationPolicy,
         description="How you want to handle donations",

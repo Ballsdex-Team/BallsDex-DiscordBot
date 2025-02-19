@@ -66,6 +66,7 @@ class FriendPolicy(models.IntegerChoices):
 
 class Player(models.Model):
     discord_id = models.BigIntegerField(unique=True, help_text="Discord user ID")
+    money = models.PositiveBigIntegerField(help_text="Money posessed by the player", default=0)
     donation_policy = models.SmallIntegerField(
         choices=DonationPolicy.choices, help_text="How you want to handle donations"
     )
