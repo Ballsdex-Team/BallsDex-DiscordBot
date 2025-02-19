@@ -80,6 +80,11 @@ def parse_cli_flags(arguments: list[str]) -> CLIFlags:
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logs")
     parser.add_argument("--dev", action="store_true", help="Enable developer mode")
+    parser.add_argument(
+        "--use-aerich",
+        action="store_false",
+        help="Uses Aerich instead of Django.",
+    )
     args = parser.parse_args(arguments, namespace=CLIFlags())
     return args
 
@@ -240,6 +245,20 @@ async def init_tortoise(db_url: str, *, skip_migrations: bool = False):
     log.debug(f"Database URL: {db_url}")
     await Tortoise.init(config=TORTOISE_ORM)
 
+async def init_tortoise2(db_url: str, *, skip_migrations: bool = False):
+    log.debug(f"Database URL: {db_url}")
+    await Tortoise.init(config=TORTOISE_ORM)
+
+    if skip_migrations:
+        return
+
+    # migrations
+    command = Command(TORTOISE_ORM, app="models")
+    await command.init()
+    migrations = await command.upgrade()
+    if migrations:
+        log.info(f"Ran {len(migrations)} migrations: {', '.join(migrations)}")
+
 
 def main():
     bot = None
@@ -290,12 +309,20 @@ def main():
 
         prefix = settings.prefix
 
-        try:
+        if not cli_flags.use_aerich:
+         try:
             loop.run_until_complete(init_tortoise(db_url))
-        except Exception:
+         except Exception:
             log.exception("Failed to connect to database.")
             return  # will exit with code 1
-        log.info("Tortoise ORM and database ready.")
+         log.info("Tortoise ORM and database ready.")
+    else:
+        try:
+            loop.run_until_complete(init_tortoise2(db_url))
+         except Exception:
+            log.exception("Failed to connect to database.")
+            return  # will exit with code 1
+         log.info("Tortoise ORM and database ready.")
 
         bot = BallsDexBot(
             command_prefix=when_mentioned_or(prefix),
