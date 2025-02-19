@@ -364,8 +364,10 @@ class Trade(models.Model):
     date = models.DateTimeField(auto_now_add=True, editable=False)
     player1 = models.ForeignKey(Player, on_delete=models.CASCADE)
     player1_id: int
+    player1_money = models.PositiveBigIntegerField(default=0)
     player2 = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="trade_player2_set")
     player2_id: int
+    player2_money = models.PositiveBigIntegerField(default=0)
     tradeobject_set: models.QuerySet[TradeObject]
 
     def __str__(self) -> str:

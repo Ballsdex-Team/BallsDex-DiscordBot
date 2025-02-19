@@ -516,8 +516,16 @@ class Trade(models.Model):
     player1: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
         "models.Player", related_name="trades"
     )
+    player1_money = fields.BigIntField(
+        default=0,
+        validators=[validators.MaxValueValidator((1 << 63) - 1), validators.MinValueValidator(0)],
+    )
     player2: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
         "models.Player", related_name="trades2"
+    )
+    player2_money = fields.BigIntField(
+        default=0,
+        validators=[validators.MaxValueValidator((1 << 63) - 1), validators.MinValueValidator(0)],
     )
     date = fields.DatetimeField(auto_now_add=True)
     tradeobjects: fields.ReverseRelation[TradeObject]
