@@ -6,14 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bd_models', '0005_alter_ball_short_name'),
+        ("bd_models", "0005_alter_ball_short_name"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='trade_cooldown_policy',
-            field=models.SmallIntegerField(choices=[(1, 'Cooldown'), (2, 'Bypass')], default=1, help_text='To bypass or not the trade cooldown'),
+            model_name="player",
+            name="trade_cooldown_policy",
+            field=models.SmallIntegerField(
+                choices=[(1, "Cooldown"), (2, "Bypass")],
+                default=1,
+                help_text="To bypass or not the trade cooldown",
+            ),
             preserve_default=False,
         ),
     ]
