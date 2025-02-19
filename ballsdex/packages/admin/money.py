@@ -13,11 +13,7 @@ class Money(app_commands.Group):
     """
 
     @app_commands.command()
-    async def balance(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User
-    ):
+    async def balance(self, interaction: discord.Interaction[BallsDexBot], user: discord.User):
         """
         Show the balance of the user provided
 
@@ -40,10 +36,7 @@ class Money(app_commands.Group):
 
     @app_commands.command()
     async def add(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-        amount: int
+        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int
     ):
         """
         Add coins to the user provided
@@ -76,10 +69,7 @@ class Money(app_commands.Group):
 
     @app_commands.command()
     async def remove(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-        amount: int
+        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int
     ):
         """
         Remove coins from the user provided
@@ -116,10 +106,7 @@ class Money(app_commands.Group):
 
     @app_commands.command()
     async def set(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-        amount: int
+        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int
     ):
         """
         Set the balance of the user provided
