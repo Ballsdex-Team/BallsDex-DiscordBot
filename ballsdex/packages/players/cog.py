@@ -283,6 +283,12 @@ class Player(commands.GroupCog):
         if not view.value:
             self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
             return
+        else:
+            if friended:
+                await interaction.followup.send(
+                    "You are already friends with this user!", ephemeral=True
+                )
+                return
 
         await Friendship.create(player1=player1, player2=player2)
         self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
