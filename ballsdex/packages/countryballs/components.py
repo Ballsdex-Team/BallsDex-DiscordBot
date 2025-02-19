@@ -64,8 +64,14 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             possible_names = (self.ball.name.lower(),)
         if self.ball.model.translations:
             possible_names += tuple(x.lower() for x in self.ball.model.translations.split(";"))
-
-        if self.name.value.lower().strip() in possible_names:
+        cname = self.name.value.lower().strip()
+        # Remove fancy unicode characters like ’ to replace to '
+        cname = cname.replace("\u2019", "'")
+        cname = cname.replace("\u2018", "'")
+        cname = cname.replace("\u201C", '"')
+        cname = cname.replace("\u201D", '"')
+        # There are other "fancy" quotes as well but these are most common
+        if cname in possible_names:
             self.ball.caught = True
             ball, has_caught_before = await self.catch_ball(
                 interaction.client, cast(discord.Member, interaction.user)
