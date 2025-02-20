@@ -461,6 +461,8 @@ class Player(models.Model):
         return await Block.filter((Q(player1=self) & Q(player2=other_player))).exists()
 
     async def add_money(self, amount: int) -> int:
+        if amount <= 0:
+            raise ValueError("Amount to add must be positive")
         self.money += amount
         await self.save(update_fields=("money",))
         return self.money

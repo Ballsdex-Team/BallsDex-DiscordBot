@@ -26,7 +26,7 @@ class Money(app_commands.Group):
         player = await Player.get_or_none(discord_id=user.id)
         if not player:
             await interaction.followup.send(
-                f"This user has does not have a {settings.bot_name} account.", ephemeral=True
+                f"This user does not have a {settings.bot_name} account.", ephemeral=True
             )
             return
 
@@ -52,7 +52,7 @@ class Money(app_commands.Group):
         player = await Player.get_or_none(discord_id=user.id)
         if not player:
             await interaction.followup.send(
-                f"This user has does not have a {settings.bot_name} account.", ephemeral=True
+                f"This user does not have a {settings.bot_name} account.", ephemeral=True
             )
             return
 
@@ -90,7 +90,7 @@ class Money(app_commands.Group):
         player = await Player.get_or_none(discord_id=user.id)
         if not player:
             await interaction.followup.send(
-                f"This user has does not have a {settings.bot_name} account.", ephemeral=True
+                f"This user does not have a {settings.bot_name} account.", ephemeral=True
             )
             return
 
