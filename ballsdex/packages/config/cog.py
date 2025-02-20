@@ -79,7 +79,7 @@ class Config(commands.GroupCog):
               return
             if not channel.permissions_for(interaction.guild.me).embed_links:
               await interaction.response.send_message(
-                f"I need the permission to send messages in {channel.mention}.",
+                f"I need the permission to send embed links in {channel.mention}.",
                 ephemeral=True,
                 )
               return
