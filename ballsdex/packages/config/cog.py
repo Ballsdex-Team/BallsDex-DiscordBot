@@ -56,7 +56,7 @@ class Config(commands.GroupCog):
             The channel you want to set, current one if not specified.
         """
         user = cast(discord.Member, interaction.user)
-
+       
         if channel is None:
             if isinstance(interaction.channel, discord.TextChannel):
                 channel = interaction.channel
@@ -64,7 +64,26 @@ class Config(commands.GroupCog):
                 await interaction.response.send_message(
                     "The current channel is not a valid text channel.", ephemeral=True
                 )
-                return
+        else:
+            if not channel.permissions_for(interaction.guild.me).read_messages:
+              await interaction.response.send_message(
+                f"I need the permission to read messages in {channel.mention}.",
+                ephemeral=True,
+                )
+              return
+            if not channel.permissions_for(interaction.guild.me).send_messages:
+              await interaction.response.send_message(
+                f"I need the permission to send messages in {channel.mention}.",
+                ephemeral=True,
+                )
+              return
+            if not channel.permissions_for(interaction.guild.me).embed_links:
+              await interaction.response.send_message(
+                f"I need the permission to send messages in {channel.mention}.",
+                ephemeral=True,
+                )
+              return
+              
 
         view = AcceptTOSView(interaction, channel, user)
         message = await channel.send(embed=activation_embed, view=view)
