@@ -261,7 +261,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
 
         # Set of ball IDs owned by the player
-        filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
+        filters = {"player__discord_id": user_obj.id, "ball__enabled": True, "deleted": False}
         if special:
             filters["special"] = special
             bot_countryballs = {
@@ -647,7 +647,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         assert interaction.guild
-        filters = {}
+        filters = {"deleted": False}
         if countryball:
             filters["ball"] = countryball
         if special:
@@ -687,7 +687,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
         await player.fetch_related("balls")
         is_special = type.value == "specials"
-        queryset = BallInstance.filter(player=player)
+        queryset = BallInstance.filter(player=player, deleted=False)
 
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
