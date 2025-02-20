@@ -66,6 +66,11 @@ class Money(app_commands.Group):
         await interaction.followup.send(
             f"{amount:,} coins have been added to {user.mention}.", ephemeral=True
         )
+        await log_action(
+            f"{interaction.user} ({interaction.user.id}) added {amount:,} coins to "
+            f"{user} ({user.id})",
+            interaction.client,
+        )
 
     @app_commands.command()
     async def remove(
@@ -103,6 +108,11 @@ class Money(app_commands.Group):
         await interaction.followup.send(
             f"{amount:,} coins have been removed from {user.mention}.", ephemeral=True
         )
+        await log_action(
+            f"{interaction.user} ({interaction.user.id}) removed {amount:,} coins from "
+            f"{user} ({user.id})",
+            interaction.client,
+        )
 
     @app_commands.command()
     async def set(
@@ -136,4 +146,9 @@ class Money(app_commands.Group):
         await player.save()
         await interaction.followup.send(
             f"{user.mention} now has {amount:,} coins.", ephemeral=True
+        )
+        await log_action(
+            f"{interaction.user} ({interaction.user.id}) set the balance of "
+            f"{user} ({user.id}) to {amount:,} coins",
+            interaction.client,
         )
