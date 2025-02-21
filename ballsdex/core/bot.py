@@ -166,6 +166,7 @@ class BallsDexBot(commands.AutoShardedBot):
 
         self._shutdown = 0
         self.startup_time: datetime | None = None
+        self.application_emojis: dict[int, discord.Emoji] = {}
         self.blacklist: set[int] = set()
         self.blacklist_guild: set[int] = set()
         self.catch_log: set[int] = set()
@@ -204,10 +205,17 @@ class BallsDexBot(commands.AutoShardedBot):
                     bot_command, cast(list[app_commands.AppCommandGroup], synced_command.options)
                 )
 
+    def get_emoji(self, id: int) -> discord.Emoji | None:
+        return self.application_emojis.get(id) or super().get_emoji(id)
+
     async def load_cache(self):
         table = Table(box=box.SIMPLE)
         table.add_column("Model", style="cyan")
         table.add_column("Count", justify="right", style="green")
+
+        self.application_emojis.clear()
+        for emoji in await self.fetch_application_emojis():
+            self.application_emojis[emoji.id] = emoji
 
         balls.clear()
         for ball in await Ball.all():
@@ -383,7 +391,8 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
         if interaction.command and interaction.user.id in self.command_log:
             log.info(
-                f'{interaction.user} ({interaction.user.id}) used "{interaction.command.name}" in '
+                f"{interaction.user} ({interaction.user.id}) used "
+                f'"{interaction.command.qualified_name}" in '
                 f"{interaction.guild} ({interaction.guild_id})"
             )
         return True
@@ -428,7 +437,10 @@ class BallsDexBot(commands.AutoShardedBot):
             await context.send(
                 "An error occured when running the command. Contact support if this persists."
             )
-            log.error(f"Unknown error in text command {context.command.name}", exc_info=exception)
+            log.error(
+                f"Unknown error in text command {context.command.qualified_name}",
+                exc_info=exception,
+            )
 
     async def on_application_command_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
@@ -477,7 +489,7 @@ class BallsDexBot(commands.AutoShardedBot):
                 await send("The bot does not have the permission to do something.")
                 # log to know where permissions are lacking
                 log.warning(
-                    f"Missing permissions for app command {interaction.command.name}",
+                    f"Missing permissions for app command {interaction.command.qualified_name}",
                     exc_info=error.original,
                 )
                 return
@@ -486,14 +498,15 @@ class BallsDexBot(commands.AutoShardedBot):
                 # most likely an interaction received twice (happens sometimes),
                 # or two instances are running on the same token.
                 log.warning(
-                    f"Tried invoking command {interaction.command.name}, but the "
+                    f"Tried invoking command {interaction.command.qualified_name}, but the "
                     "interaction was already responded to.",
                     exc_info=error.original,
                 )
                 # still including traceback because it may be a programming error
 
             log.error(
-                f"Error in slash command {interaction.command.name}", exc_info=error.original
+                f"Error in slash command {interaction.command.qualified_name}",
+                exc_info=error.original,
             )
             await send(
                 "An error occured when running the command. Contact support if this persists."
@@ -503,7 +516,7 @@ class BallsDexBot(commands.AutoShardedBot):
         if isinstance(
             error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)
         ):
-            await send("Commands desynchronizeded, contact support to fix this.")
+            await send("Commands desynchronized, contact support to fix this.")
             log.error(error.args[0])
 
         await send("An error occured when running the command. Contact support if this persists.")

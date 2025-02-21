@@ -78,6 +78,7 @@ class TradeView(View):
                 "You can click the cancel button to stop the trade instead.",
                 ephemeral=True,
             )
+            return
 
         view = ConfirmChoiceView(
             interaction,
