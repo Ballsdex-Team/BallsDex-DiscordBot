@@ -13,6 +13,7 @@ from tortoise.contrib.postgres.indexes import PostgreSQLIndex
 from tortoise.expressions import Q
 
 from ballsdex.core.image_generator.image_gen import draw_card
+from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
@@ -124,7 +125,7 @@ class Ball(models.Model):
 
     country = fields.CharField(max_length=48, unique=True, description="Name of this countryball")
     short_name = fields.CharField(
-        max_length=12,
+        max_length=24,
         null=True,
         default=None,
         description="Alternative shorter name to be used in card design, "
@@ -276,7 +277,7 @@ class BallInstance(models.Model):
         if bot and self.pk in bot.locked_balls and not is_trade:  # type: ignore
             emotes += "🔒"
         if self.favorite and not is_trade:
-            emotes += "❤️"
+            emotes += settings.favorited_collectible_emoji
         if emotes:
             emotes += " "
         if self.specialcard:

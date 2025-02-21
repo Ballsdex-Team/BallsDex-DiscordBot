@@ -9,12 +9,25 @@ import dj_database_url
 
 from ballsdex.settings import read_settings, settings
 
-read_settings(Path("../config.yml"))
+try:
+    read_settings(Path("../config.yml"))
+except FileNotFoundError:
+    from rich import print
+
+    print(
+        "[yellow][bold]Could not find ../config.yml file.[/bold] "
+        "Please run the bot once to generate this file.[/yellow]"
+    )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 SECRET_KEY = None
+
+# WARNING: DO NOT ADD EXTERNAL HOSTS HERE!!
+# If you want to expose your admin panel online, please follow this tutorial:
+# https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Serving-the-admin-panel-online
+# THIS HAS SECURITY IMPLICATIONS, ENABLES PRIVILEGE ESCALATION AND REMOTE CODE EXECUTION
 
 ALLOWED_HOSTS = [
     "localhost",
