@@ -161,7 +161,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
     async def get_options(
         self, interaction: Interaction["BallsDexBot"], value: str
     ) -> list[app_commands.Choice[int]]:
-        balls_queryset = BallInstance.filter(player__discord_id=interaction.user.id)
+        balls_queryset = BallInstance.filter(player__discord_id=interaction.user.id, deleted=False)
 
         if (special := getattr(interaction.namespace, "special", None)) and special.isdigit():
             balls_queryset = balls_queryset.filter(special_id=int(special))

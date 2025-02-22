@@ -135,7 +135,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             # None is added representing the common countryball
             special = random.choices(population=population + [None], weights=weights, k=1)[0]
 
-        is_new = not await BallInstance.filter(player=player, ball=self.ball.model).exists()
+        is_new = not await BallInstance.filter(
+            player=player, ball=self.ball.model, deleted=False
+        ).exists()
         ball = await BallInstance.create(
             ball=self.ball.model,
             player=player,

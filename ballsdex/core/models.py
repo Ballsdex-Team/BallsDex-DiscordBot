@@ -228,6 +228,7 @@ class BallInstance(models.Model):
         null=True,
         default=None,
     )
+    deleted = fields.BooleanField(default=False)
     extra_data = fields.JSONField(default={})
 
     class Meta:
