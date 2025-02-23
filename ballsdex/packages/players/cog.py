@@ -80,7 +80,7 @@ class Player(commands.GroupCog):
             f"Your privacy policy has been set to **{policy.name}**.", ephemeral=True
         )
 
-    @policy.command()
+    @policy.command(description=f"Change how you want to receive donations from /{settings.players_group_cog_name} give.")
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Accept all donations", value=DonationPolicy.ALWAYS_ACCEPT),
@@ -93,15 +93,8 @@ class Player(commands.GroupCog):
             ),
         ]
     )
+    @app_commands.describe(policy="The new policy for accepting donations.")
     async def donation(self, interaction: discord.Interaction, policy: DonationPolicy):
-        """
-        Change how you want to receive donations from /balls give
-
-        Parameters
-        ----------
-        policy: DonationPolicy
-            The new policy for accepting donations
-        """
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         player.donation_policy = DonationPolicy(policy.value)
         if policy.value == DonationPolicy.ALWAYS_ACCEPT:
