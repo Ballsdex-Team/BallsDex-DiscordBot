@@ -25,7 +25,11 @@ services:
         source: ./
         target: /code
     tty: true
-    command: poetry run python3 -m ballsdex --dev
+    command: >
+      bash -c "
+      cd admin_panel &&
+      poetry run python3 manage.py migrate --no-input --fake-initial &&
+      cd .. && poetry run python3 -m ballsdex"
 
   admin-panel:
     image: ballsdex
@@ -48,7 +52,7 @@ services:
     working_dir: /code/admin_panel
     command: >
       bash -c "
-      poetry run python3 manage.py migrate --no-input &&
+      poetry run python3 manage.py migrate --no-input --fake-initial &&
       poetry run python3 manage.py collectstatic --no-input &&
       poetry run uvicorn admin_panel.asgi:application --host 0.0.0.0"
 

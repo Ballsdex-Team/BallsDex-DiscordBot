@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from bd_models.models import Ball, Economy, Regime, Special
-from django.db import migrations
+from django.db import connection, migrations
 from django.db.models import Case, ImageField, When
 from django.db.models.expressions import F, Value
 from django.db.models.functions import Concat, Replace
@@ -60,16 +60,21 @@ def _check_reserved_names():
 
 
 def move_forwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+    # only run this migration if there are existing tables (migrating from aerich)
+    if "ball" not in connection.introspection.table_names():
+        return
+
+    # Run this first, as outdated objects are created by aerich's initial migrations
+    Regime.objects.update(**_replace_text("background"))
+    Special.objects.update(**_replace_text("background"))
+    Ball.objects.update(**_replace_text("wild_card"), **_replace_text("collection_card"))
+    Economy.objects.update(**_replace_text("icon"))
+
     if not OLD_STATIC.exists(follow_symlinks=False):
         return
     assert MEDIA.is_dir(follow_symlinks=False)
     assert CORE_SRC.is_dir(follow_symlinks=False)
     _check_reserved_names()
-
-    Ball.objects.update(**_replace_text("wild_card"), **_replace_text("collection_card"))
-    Economy.objects.update(**_replace_text("icon"))
-    Regime.objects.update(**_replace_text("background"))
-    Special.objects.update(**_replace_text("background"))
 
     for file in OLD_STATIC.glob("*"):
         if file.name == ".gitkeep":
@@ -79,9 +84,9 @@ def move_forwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
 
 
 def move_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
-    if not OLD_STATIC.exists(follow_symlinks=False):
+    # only run this migration if the tables weren't deleted
+    if "ball" not in connection.introspection.table_names():
         return
-    assert MEDIA.is_dir(follow_symlinks=False)
 
     Ball.objects.update(
         **_replace_text("wild_card", reverse=True),
@@ -90,6 +95,10 @@ def move_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
     Economy.objects.update(**_replace_text("icon", reverse=True))
     Regime.objects.update(**_replace_text("background", reverse=True))
     Special.objects.update(**_replace_text("background", reverse=True))
+
+    if not OLD_STATIC.exists(follow_symlinks=False):
+        return
+    assert MEDIA.is_dir(follow_symlinks=False)
 
     for file in MEDIA.glob("*"):
         if file.name in DEFAULT_ASSETS:

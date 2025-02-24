@@ -6,15 +6,14 @@ authors = [
     { name = 'Jamie "flare" McGuinness', email = "flare@ballsdex.com" },
 ]
 license = "MIT"
-requires-python = ">=3.12, <3.14"
+requires-python = ">=3.13, <3.14"
 dynamic = ["version"]
 dependencies = [
     # asyncio
     "uvloop==0.21.0; sys_platform != 'win32'",
 
     # discord
-    "discord.py==2.4.0",
-    "audioop-lts==0.2.1 ; python_version >= '3.13'",
+    "discord.py[speed]==2.5.0",
 
     # database ORM
     "tortoise-orm[asyncpg] ==0.22.2",
@@ -40,7 +39,6 @@ dependencies = [
     "rich==13.8.0",
     "python-dateutil==2.9.0",
     "Pillow==10.4.0",
-    "aerich==0.6.3",
     "pyyaml==6.0.2",
     "cachetools==5.5.0",
 ]
@@ -75,11 +73,6 @@ pattern = '__version__ = "(?P<base>\d+\.\d+\.\d+)"'
 [build-system]
 requires = ["poetry-core>=2.0"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.aerich]
-tortoise_orm = "ballsdex.__main__.TORTOISE_ORM"
-location = "./migrations"
-src_folder = "./ballsdex"
 
 [tool.black]
 line-length = 99
