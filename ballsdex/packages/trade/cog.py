@@ -8,6 +8,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
 from tortoise.expressions import Q
+from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.models import BallInstance, Player
 from ballsdex.core.models import Trade as TradeModel
@@ -427,16 +428,43 @@ class Trade(commands.GroupCog):
     async def view(
         self,
         interaction: discord.Interaction["BallsDexBot"],
+        trade_id: str | None = None,
     ):
         """
         View the countryballs added to an ongoing trade.
-        """
-        trade, trader = self.get_trade(interaction)
-        if not trade or not trader:
-            await interaction.response.send_message(
-                "You do not have an ongoing trade.", ephemeral=True
-            )
-            return
 
-        source = TradeViewMenu(interaction, [trade.trader1, trade.trader2], self)
-        await source.start(content="Select a user to view their proposal.")
+        Parameters
+        ----------
+        trade_id: str | None
+            The id of the trade to view, current if empty.
+        """
+        if trade_id:
+            try:
+                trade = await TradeModel.get(id=trade_id).prefetch_related("player1", "player2")
+            except DoesNotExist:
+                await interaction.response.send_message(
+                    f"Trade with id #{trade_id} not found.", ephemeral=True
+                )
+                return
+
+            if interaction.user.id not in (trade.player1.discord_id, trade.player2.discord_id):
+                await interaction.response.send_message(
+                    "You were not part of this trade.", ephemeral=True
+                )
+                return
+
+            trader1 = await TradingUser.from_trade_model(trade, trade.player1, self.bot)
+            trader2 = await TradingUser.from_trade_model(trade, trade.player2, self.bot)
+
+            source = TradeViewMenu(interaction, [trader1, trader2], self)
+            await source.start(content="Select a user to view their proposal.")
+        else:
+            trade, trader = self.get_trade(interaction)
+            if not trade or not trader:
+                await interaction.response.send_message(
+                    "You do not have an ongoing trade.", ephemeral=True
+                )
+                return
+
+            source = TradeViewMenu(interaction, [trade.trader1, trade.trader2], self)
+            await source.start(content="Select a user to view their proposal.")
