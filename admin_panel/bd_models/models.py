@@ -182,9 +182,11 @@ class Ball(models.Model):
         max_length=200, help_text="Image used when displaying balls"
     )
     credits = models.CharField(max_length=64, help_text="Author of the collection artwork")
-    ability_name = models.CharField(max_length=64, help_text="Name of the countryball's ability")
+    ability_name = models.CharField(
+        max_length=64, help_text="Name of the countryball's ability", default=None
+    )
     ability_description = models.CharField(
-        max_length=256, help_text="Description of the countryball's ability"
+        max_length=256, help_text="Description of the countryball's ability", default=None
     )
     ability_logic = models.JSONField(help_text="Effect of this ability", blank=True, default=dict)
     enabled = models.BooleanField(
