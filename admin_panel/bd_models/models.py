@@ -310,6 +310,12 @@ class BallInstance(models.Model):
         emoji = f'<img src="https://cdn.discordapp.com/emojis/{self.ball.emoji_id}.png?size=20" />'
         return mark_safe(f"{emoji} {text} ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%")
 
+    @admin.display(description="Time to catch")
+    def catch_time(self):
+        if self.spawned_time:
+            return str(self.catch_date - self.spawned_time)
+        return "-"
+
     class Meta:
         managed = True
         db_table = "ballinstance"
