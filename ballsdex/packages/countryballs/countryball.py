@@ -1,9 +1,9 @@
 import logging
 import random
 import string
-from datetime import datetime
 
 import discord
+from tortoise.timezone import now as tortoise_now
 
 from ballsdex.core.models import Ball, Special, balls
 from ballsdex.packages.countryballs.components import CatchView
@@ -19,7 +19,7 @@ class CountryBall:
         self.algo: str | None = None
         self.message: discord.Message = discord.utils.MISSING
         self.caught = False
-        self.time = datetime.now()
+        self.time = tortoise_now()
         self.special: Special | None = None
         self.atk_bonus: int | None = None
         self.hp_bonus: int | None = None
