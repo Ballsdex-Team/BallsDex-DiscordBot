@@ -443,7 +443,7 @@ class Trade(commands.GroupCog):
                 trade = await TradeModel.get(id=trade_id).prefetch_related("player1", "player2")
             except DoesNotExist:
                 await interaction.response.send_message(
-                    f"Trade with id #{trade_id} not found.", ephemeral=True
+                    f"Trade with ID #{trade_id} not found.", ephemeral=True
                 )
                 return
 
