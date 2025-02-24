@@ -7,8 +7,8 @@ from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
-from tortoise.expressions import Q
 from tortoise.exceptions import DoesNotExist
+from tortoise.expressions import Q
 
 from ballsdex.core.models import BallInstance, Player
 from ballsdex.core.models import Trade as TradeModel
