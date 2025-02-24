@@ -77,12 +77,11 @@ class Info(commands.Cog):
         players_count = await row_count_estimate("player")
         balls_instances_count = await row_count_estimate("ballinstance")
 
-        days, hours, minutes, seconds = 0, 0, 0, 0
         if self.bot.startup_time is not None:
             uptime_duration = datetime.now() - self.bot.startup_time
-            days, remainder = divmod(int(uptime_duration.total_seconds()), 86400)
-            hours, remainder = divmod(remainder, 3600)
-            minutes, seconds = divmod(remainder, 60)
+            formatted_uptime = str(uptime_duration).split(".")[0]
+        else:
+            formatted_uptime = "N/A"
 
         assert self.bot.user
         assert self.bot.application
@@ -125,8 +124,7 @@ class Info(commands.Cog):
             f"{' '.join(str(x) for x in balls)}\n"
             f"{settings.about_description}\n"
             f"*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\n"
-            f"The bot has been online for **{days} days, {hours} hours, {minutes} minutes, "
-            f"and {seconds} seconds.**\n\n"
+            f"The bot has been online for **{formatted_uptime}**.\n\n"
             f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
             f"**{players_count:,}** players that caught "
             f"**{balls_instances_count:,}** {settings.plural_collectible_name}\n"
