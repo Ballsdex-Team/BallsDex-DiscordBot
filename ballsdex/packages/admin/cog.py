@@ -34,7 +34,7 @@ class Admin(commands.GroupCog):
 
         assert self.__cog_app_commands_group__
         self.__cog_app_commands_group__.add_command(
-            BallsGroup(name=settings.plural_collectible_name)
+            BallsGroup(name=settings.players_group_cog_name)
         )
         self.__cog_app_commands_group__.add_command(BlacklistGroup())
         self.__cog_app_commands_group__.add_command(BlacklistGuildGroup())
