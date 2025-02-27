@@ -372,7 +372,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
-    async def last(self, interaction: discord.Interaction, user: discord.User | None = None):
+    async def last(
+        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User | None = None
+    ):
         """
         Display info of your or another users last caught countryball.
 
