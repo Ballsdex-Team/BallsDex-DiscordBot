@@ -59,9 +59,16 @@ def sort_balls(
             **{f"{sort.value}_sort": F(f"{sort.value}_bonus") + F(f"ball__{sort.value}")}
         ).order_by(f"-{sort.value}_sort")
     elif sort == SortingChoices.total_stats:
-        return queryset.annotate(
-            stats=F("health_bonus") + F("ball__health") + F("attack_bonus") + F("ball__attack")
-        ).order_by("-stats")
+        return (
+            queryset.select_related("ball")
+            .annotate(
+                stats=RawSQL(
+                    "health_bonus + ballinstance__ball.health + "
+                    "attack_bonus + ballinstance__ball.attack :: BIGINT"
+                )
+            )
+            .order_by("-stats")
+        )
     elif sort == SortingChoices.rarity:
         return queryset.order_by(sort.value, "ball__country")
     else:
