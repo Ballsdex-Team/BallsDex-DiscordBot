@@ -23,6 +23,7 @@ class CountryBallsSpawner(commands.Cog):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
         self.cache: dict[int, int] = {}
+        self.countryball_cls = CountryBall
 
         module_path, class_name = settings.spawn_manager.rsplit(".", 1)
         module = importlib.import_module(module_path)

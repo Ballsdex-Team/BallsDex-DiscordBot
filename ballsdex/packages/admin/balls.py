@@ -3,6 +3,7 @@ import logging
 import random
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import app_commands
@@ -19,8 +20,10 @@ from ballsdex.core.utils.transformers import (
     RegimeTransform,
     SpecialTransform,
 )
-from ballsdex.packages.countryballs.countryball import CountryBall
 from ballsdex.settings import settings
+
+if TYPE_CHECKING:
+    from ballsdex.packages.countryballs.countryball import CountryBall
 
 log = logging.getLogger("ballsdex.packages.admin.balls")
 FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
@@ -136,6 +139,21 @@ class Balls(app_commands.Group):
         """
         # the transformer triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
+            return
+        cog = cast("CountryBall | None", interaction.client.get_cog("CountryBallsSpawner"))
+        if not cog:
+            prefix = (
+                settings.prefix
+                if interaction.client.intents.message_content or not interaction.client.user
+                else f"{interaction.client.user.mention} "
+            )
+            # do not replace `countryballs` with `settings.collectible_name`, it is intended
+            await interaction.response.send_message(
+                "The `countryballs` package is not loaded, this command is unavailable.\n"
+                "Please resolve the errors preventing this package from loading. Use "
+                f'"{prefix}reload countryballs" to try reloading it.',
+                ephemeral=True,
+            )
             return
 
         if n > 1:
