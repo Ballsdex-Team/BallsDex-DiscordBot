@@ -19,6 +19,18 @@ RECTANGLE_HEIGHT = (HEIGHT // 5) * 2
 CORNERS = ((34, 261), (1393, 992))
 artwork_size = [b - a for a, b in zip(*CORNERS)]
 
+# ===== TIP =====
+#
+# If you want to quickly test the image generation, there is a CLI tool to quickly generate
+# test images locally, without the bot or the admin panel running:
+#
+# With Docker: "docker compose run admin-panel python3 manage.py preview > image.png"
+# Without: "cd admin_panel && poetry run python3 manage.py preview"
+#
+# This will either create a file named "image.png" or directly display it using your system's
+# image viewer. There are options available to specify the ball or the special background,
+# use the "--help" flag to view all options.
+
 title_font = ImageFont.truetype(str(SOURCES_PATH / "ArsenicaTrial-Extrabold.ttf"), 170)
 capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
 capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
