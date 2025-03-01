@@ -7,6 +7,15 @@ if TYPE_CHECKING:
 
     from ballsdex.core.bot import BallsDexBot
 
+# It is a good idea to call importlib.reload on your custom module to make "b.reload countryballs"
+# also reload the spawn manager. Otherwise, you'll be forced to fully restart to apply changes
+#
+# import importlib
+# import yourpackage
+# importlib.reload(yourpackage)
+# ...
+# manager_class_b = yourpackage.SpawnManager
+
 
 class ABSpawner(BaseSpawnManager):
     """
