@@ -93,15 +93,14 @@ class History(app_commands.Group):
             await interaction.followup.send("No history found.", ephemeral=True)
             return
 
-        if user2:
-            await interaction.followup.send(
-                f"History of {user.display_name} and {user2.display_name}:"
-            )
-
         url = f"{settings.admin_url}/bd_models/trade/{query}" if settings.admin_url else None
         source = TradeViewFormat(history, user.display_name, interaction.client, True, url)
         pages = Pages(source=source, interaction=interaction)
-        await pages.start(ephemeral=True)
+
+        await pages.start(
+            content=f"History of {user.display_name} and {user2.display_name}:" if user2 else "",
+            ephemeral=True,
+        )
 
     @app_commands.command(name="countryball")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
