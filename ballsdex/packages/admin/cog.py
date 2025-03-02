@@ -134,7 +134,7 @@ class Admin(commands.GroupCog):
         await pages.start(ephemeral=True)
 
     @app_commands.command()
-    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def cooldown(
         self,
         interaction: discord.Interaction["BallsDexBot"],
