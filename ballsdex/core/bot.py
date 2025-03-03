@@ -433,7 +433,6 @@ class BallsDexBot(commands.AutoShardedBot):
 
         return True
 
-
     async def on_command_error(
         self, context: commands.Context, exception: commands.errors.CommandError
     ):

@@ -29,7 +29,7 @@ class UserAcceptTOS(View):
     Button prompting the user to accept the terms of service.
     """
 
-    def __init__(self,interaction: discord.Interaction):
+    def __init__(self, interaction: discord.Interaction):
         super().__init__()
         self.original_interaction = interaction
         self.message: Optional[discord.Message] = None
