@@ -5,8 +5,8 @@ from discord import app_commands
 from discord.ext import commands
 
 from ballsdex.core.models import GuildConfig
-from ballsdex.packages.config.components import AcceptTOSView
 from ballsdex.core.utils.accept_tos import activation_embed
+from ballsdex.packages.config.components import AcceptTOSView
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:

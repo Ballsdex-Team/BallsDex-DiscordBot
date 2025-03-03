@@ -40,7 +40,7 @@ from ballsdex.core.models import (
     regimes,
     specials,
 )
-from ballsdex.core.utils.accept_tos import activation_embed, UserAcceptTOS
+from ballsdex.core.utils.accept_tos import UserAcceptTOS, activation_embed
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
