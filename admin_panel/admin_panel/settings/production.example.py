@@ -13,3 +13,14 @@ ALLOWED_HOSTS = [
     # place the domain of your website here
     # "ballsdex.com"
 ]
+
+
+# If you are handling TLS/HTTPS yourself, uncomment this line to enforce HTTPS connections
+# Do not uncomment if HTTPS is not handled locally (like Cloudflare), this will result in
+# infinite redirections
+#
+# SECURE_SSL_REDIRECT = True
+
+
+# You can read more about Django's security options by running "python3 manage.py check --deploy"
+# or here: https://docs.djangoproject.com/en/5.1/ref/middleware/#module-django.middleware.security
