@@ -31,7 +31,6 @@ class UserAcceptTOS(View):
 
     def __init__(self,interaction: discord.Interaction):
         super().__init__()
-        self.value = None
         self.original_interaction = interaction
         self.message: Optional[discord.Message] = None
 
@@ -61,8 +60,6 @@ class UserAcceptTOS(View):
             "You have accepted the terms of service, you can now continue with playing the bot.",
             ephemeral=True,
         )
-
-        self.value = True
         self.stop()
 
         if self.message:
