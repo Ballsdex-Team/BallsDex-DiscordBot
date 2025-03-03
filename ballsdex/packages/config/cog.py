@@ -6,23 +6,11 @@ from discord.ext import commands
 
 from ballsdex.core.models import GuildConfig
 from ballsdex.packages.config.components import AcceptTOSView
+from ballsdex.core.utils.accept_tos import activation_embed
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
-
-activation_embed = discord.Embed(
-    colour=0x00D936,
-    title=f"{settings.bot_name} activation",
-    description=f"To enable {settings.bot_name} in your server, you must "
-    f"read and accept the [Terms of Service]({settings.terms_of_service}).\n\n"
-    "As a summary, these are the rules of the bot:\n"
-    f"- No farming (spamming or creating servers for {settings.plural_collectible_name})\n"
-    f"- Selling or exchanging {settings.plural_collectible_name} "
-    "against money or other goods is forbidden\n"
-    "- Do not attempt to abuse the bot's internals\n"
-    "**Not respecting these rules will lead to a blacklist**",
-)
 
 
 @app_commands.default_permissions(manage_guild=True)
@@ -67,7 +55,8 @@ class Config(commands.GroupCog):
                 return
 
         view = AcceptTOSView(interaction, channel, user)
-        message = await channel.send(embed=activation_embed, view=view)
+        embed = activation_embed()
+        message = await channel.send(embed=embed, view=view)
         view.message = message
 
         await interaction.response.send_message(
