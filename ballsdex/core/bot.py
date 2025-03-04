@@ -25,6 +25,7 @@ from rich.table import Table
 
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
+from ballsdex.core.help import HelpCommand
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.models import (
     Ball,
@@ -157,7 +158,13 @@ class BallsDexBot(commands.AutoShardedBot):
             trace.on_request_end.append(on_request_end)
             options["http_trace"] = trace
 
-        super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
+        super().__init__(
+            command_prefix,
+            intents=intents,
+            tree_cls=CommandTree,
+            help_command=HelpCommand(),
+            **options,
+        )
         self.tree.disable_time_check = disable_time_check  # type: ignore
         self.skip_tree_sync = skip_tree_sync
 
