@@ -102,7 +102,7 @@ class PlayerAdmin(admin.ModelAdmin):
             f'{", ".join([str(x.discord_id) for x in queryset])} for the reason: {data["reason"]}.'
         )
 
-  @action_with_form(
+   @action_with_form(
         BlacklistActionForm, description="Unblacklist the selected users"
     )  # type: ignore
     def unblacklist_users(self, request: "HttpRequest", queryset: "QuerySet[Player]", data: dict):
