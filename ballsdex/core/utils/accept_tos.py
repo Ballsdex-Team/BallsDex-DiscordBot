@@ -55,7 +55,7 @@ class UserAcceptTOS(View):
         emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}",
     )
     async def accept_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await Player.create(discord_id=interaction.user.id)
+        await Player.filter(discord_id=interaction.user.id).update(accepted_tos=True)
         await interaction.response.send_message(
             "You have accepted the terms of service, you can now continue with playing the bot.",
             ephemeral=True,

@@ -22,7 +22,6 @@ from prometheus_client import Histogram
 from rich import box, print
 from rich.console import Console
 from rich.table import Table
-from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
@@ -410,10 +409,10 @@ class BallsDexBot(commands.AutoShardedBot):
         view = UserAcceptTOS(interaction)
 
         if interaction.type != discord.InteractionType.autocomplete:
-            try:
-                await Player.get(discord_id=interaction.user.id)
+            player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+            if player.accepted_tos:
                 return True
-            except DoesNotExist:
+            else:
                 pass
 
             if not interaction.response.is_done():
