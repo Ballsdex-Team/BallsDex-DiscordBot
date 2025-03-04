@@ -2,33 +2,25 @@ import logging
 import time
 from datetime import timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable
 
 import discord
 from discord import app_commands
-from discord.interactions import Interaction
+from discord.ext import commands
 from tortoise.exceptions import DoesNotExist
 from tortoise.expressions import Q, RawSQL
-from tortoise.models import Model
 from tortoise.timezone import now as tortoise_now
 
-from ballsdex.core.models import (
-    Ball,
-    BallInstance,
-    Economy,
-    Regime,
-    Special,
-    balls,
-    economies,
-    regimes,
-)
+from ballsdex.core.models import Ball, BallInstance, Economy, Regime, Special
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
+    from tortoise.models import Model
+    from tortoise.queryset import QuerySet
+
     from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.core.utils.transformers")
-T = TypeVar("T", bound=Model)
 
 __all__ = (
     "BallTransform",
@@ -49,37 +41,45 @@ class TradeCommandType(Enum):
     REMOVE = 1
 
 
-class ValidationError(Exception):
-    """
-    Raised when an autocomplete result is forbidden and should raise a user message.
-    """
-
-    def __init__(self, message: str):
-        self.message = message
-
-
-class ModelTransformer(app_commands.Transformer, Generic[T]):
+class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter):
     """
     Base abstract class for autocompletion from on Tortoise models
+
+    This also works with hybrid commands.
 
     Attributes
     ----------
     name: str
         Name to qualify the object being listed
+    column: str
+        Column of the model to use for matching text-based conversions. Defaults to "name".
     model: T
         The Tortoise model associated to the class derivation
+
+
+    Parameters
+    ----------
+    **filters: Any
+        Filters to apply on the model before providing options.
     """
 
     name: str
+    column: str = "name"
     model: T
+
+    def __init__(self, **filters: Any):
+        self.filters = filters
 
     def key(self, model: T) -> str:
         """
         Return a string used for searching while sending autocompletion suggestions.
         """
-        raise NotImplementedError()
+        return getattr(model, self.column)
 
-    async def validate(self, interaction: discord.Interaction["BallsDexBot"], item: T):
+    def get_queryset(self) -> "QuerySet[T]":
+        return self.model.filter(**self.filters)
+
+    async def validate(self, ctx: commands.Context["BallsDexBot"], item: T):
         """
         A function to validate the fetched item before calling back the command.
 
@@ -99,7 +99,18 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
         KeyError | tortoise.exceptions.DoesNotExist
             Entry does not exist
         """
-        return await self.model.get(pk=value)
+        return await self.get_queryset().get(pk=value)
+
+    async def get_from_text(self, value: str) -> T:
+        """
+        Return a Tortoise model instance from the raw value entered.
+
+        Raises
+        ------
+        KeyError | tortoise.exceptions.DoesNotExist
+            Entry does not exist
+        """
+        return await self.get_queryset().get(**{f"{self.column}__iexact": value})
 
     async def get_options(
         self, interaction: discord.Interaction["BallsDexBot"], value: str
@@ -110,7 +121,7 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
         raise NotImplementedError()
 
     async def autocomplete(
-        self, interaction: Interaction["BallsDexBot"], value: str
+        self, interaction: discord.Interaction["BallsDexBot"], value: str
     ) -> list[app_commands.Choice[int]]:
         t1 = time.time()
         choices: list[app_commands.Choice[int]] = []
@@ -123,25 +134,28 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
         )
         return choices
 
-    async def transform(self, interaction: Interaction["BallsDexBot"], value: str) -> T | None:
+    async def transform(self, interaction: discord.Interaction["BallsDexBot"], value: str) -> T:
         if not value:
-            await interaction.response.send_message(
+            raise commands.BadArgument(
                 "You need to use the autocomplete function for the economy selection."
             )
-            return None
         try:
             instance = await self.get_from_pk(int(value))
-            await self.validate(interaction, instance)
+            await self.validate(await commands.Context.from_interaction(interaction), instance)
         except (DoesNotExist, KeyError, ValueError):
-            await interaction.response.send_message(
+            raise commands.BadArgument(
                 f"The {self.name} could not be found. Make sure to use the autocomplete "
                 "function on this command.",
-                ephemeral=True,
             )
-            return None
-        except ValidationError as e:
-            await interaction.response.send_message(e.message, ephemeral=True)
-            return None
+        else:
+            return instance
+
+    async def convert(self, ctx: commands.Context["BallsDexBot"], argument: str) -> T:
+        try:
+            instance = await self.get_from_text(argument)
+            await self.validate(ctx, instance)
+        except DoesNotExist as e:
+            raise commands.BadArgument(f"The {self.name} could not be found.") from e
         else:
             return instance
 
@@ -150,18 +164,21 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
     name = settings.collectible_name
     model = BallInstance  # type: ignore
 
-    async def get_from_pk(self, value: int) -> BallInstance:
-        return await self.model.get(pk=value).prefetch_related("player")
+    def get_queryset(self) -> "QuerySet[BallInstance]":
+        return super().get_queryset().prefetch_related("player")
 
-    async def validate(self, interaction: discord.Interaction["BallsDexBot"], item: BallInstance):
+    async def get_from_text(self, value: str) -> BallInstance:
+        return await self.get_queryset().get(pk=int(value, 16))
+
+    async def validate(self, ctx: commands.Context["BallsDexBot"], item: BallInstance):
         # checking if the ball does belong to user, and a custom ID wasn't forced
-        if item.player.discord_id != interaction.user.id:
-            raise ValidationError(f"That {settings.collectible_name} doesn't belong to you.")
+        if item.player.discord_id != ctx.author.id:
+            raise commands.BadArgument(f"That {settings.collectible_name} doesn't belong to you.")
 
     async def get_options(
-        self, interaction: Interaction["BallsDexBot"], value: str
+        self, interaction: discord.Interaction["BallsDexBot"], value: str
     ) -> list[app_commands.Choice[int]]:
-        balls_queryset = BallInstance.filter(player__discord_id=interaction.user.id)
+        balls_queryset = self.get_queryset().filter(player__discord_id=interaction.user.id)
 
         if (special := getattr(interaction.namespace, "special", None)) and special.isdigit():
             balls_queryset = balls_queryset.filter(special_id=int(special))
@@ -203,7 +220,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         return choices
 
 
-class TTLModelTransformer(ModelTransformer[T]):
+class TTLModelTransformer[T: "Model"](ModelTransformer[T]):
     """
     Base class for simple Tortoise model autocompletion with TTL cache.
 
@@ -218,7 +235,8 @@ class TTLModelTransformer(ModelTransformer[T]):
 
     ttl: float = 300
 
-    def __init__(self):
+    def __init__(self, **filters: Any):
+        super().__init__(**filters)
         self.items: dict[int, T] = {}
         self.search_map: dict[T, str] = {}
         self.last_refresh: float = 0
@@ -228,7 +246,7 @@ class TTLModelTransformer(ModelTransformer[T]):
         """
         Query values to fill `items` with.
         """
-        return await self.model.all()
+        return await self.get_queryset().all()
 
     async def maybe_refresh(self):
         t = time.time()
@@ -238,7 +256,7 @@ class TTLModelTransformer(ModelTransformer[T]):
             self.search_map = {x: self.key(x).lower() for x in self.items.values()}
 
     async def get_options(
-        self, interaction: Interaction["BallsDexBot"], value: str
+        self, interaction: discord.Interaction["BallsDexBot"], value: str
     ) -> list[app_commands.Choice[str]]:
         await self.maybe_refresh()
 
@@ -255,67 +273,23 @@ class TTLModelTransformer(ModelTransformer[T]):
 
 class BallTransformer(TTLModelTransformer[Ball]):
     name = settings.collectible_name
+    column = "country"
     model = Ball()
-
-    def key(self, model: Ball) -> str:
-        return model.country
-
-    async def load_items(self) -> Iterable[Ball]:
-        return balls.values()
-
-
-class BallEnabledTransformer(BallTransformer):
-    async def load_items(self) -> Iterable[Ball]:
-        return {k: v for k, v in balls.items() if v.enabled}.values()
-
-    async def transform(
-        self, interaction: discord.Interaction["BallsDexBot"], value: str
-    ) -> Optional[Ball]:
-        try:
-            ball = await super().transform(interaction, value)
-            if ball is None or not ball.enabled:
-                raise ValueError(
-                    f"This {settings.collectible_name} is disabled and will not be shown."
-                )
-            return ball
-        except ValueError as e:
-            await interaction.response.send_message(str(e), ephemeral=True)
-            return None
 
 
 class SpecialTransformer(TTLModelTransformer[Special]):
     name = "special event"
     model = Special()
 
-    def key(self, model: Special) -> str:
-        return model.name
-
-
-class SpecialEnabledTransformer(SpecialTransformer):
-    async def load_items(self) -> Iterable[Special]:
-        return await Special.filter(hidden=False).all()
-
 
 class RegimeTransformer(TTLModelTransformer[Regime]):
     name = "regime"
     model = Regime()
 
-    def key(self, model: Regime) -> str:
-        return model.name
-
-    async def load_items(self) -> Iterable[Regime]:
-        return regimes.values()
-
 
 class EconomyTransformer(TTLModelTransformer[Economy]):
     name = "economy"
     model = Economy()
-
-    def key(self, model: Economy) -> str:
-        return model.name
-
-    async def load_items(self) -> Iterable[Economy]:
-        return economies.values()
 
 
 BallTransform = app_commands.Transform[Ball, BallTransformer]
@@ -323,5 +297,5 @@ BallInstanceTransform = app_commands.Transform[BallInstance, BallInstanceTransfo
 SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
 RegimeTransform = app_commands.Transform[Regime, RegimeTransformer]
 EconomyTransform = app_commands.Transform[Economy, EconomyTransformer]
-SpecialEnabledTransform = app_commands.Transform[Special, SpecialEnabledTransformer]
-BallEnabledTransform = app_commands.Transform[Ball, BallEnabledTransformer]
+SpecialEnabledTransform = app_commands.Transform[Special, SpecialTransformer(hidden=False)]
+BallEnabledTransform = app_commands.Transform[Ball, BallTransformer(enabled=True)]
