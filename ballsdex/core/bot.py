@@ -407,6 +407,10 @@ class BallsDexBot(commands.AutoShardedBot):
             return
 
         assert context.command
+        if isinstance(exception, commands.BadArgument):
+            await context.send(exception.args[0])
+            return
+
         if isinstance(exception, (commands.ConversionError, commands.UserInputError)):
             # in case we need to know what happened
             log.debug("Silenced command exception", exc_info=exception)
@@ -481,6 +485,9 @@ class BallsDexBot(commands.AutoShardedBot):
             return
 
         if isinstance(error, app_commands.TransformerError):
+            if error.__cause__ and isinstance(error.__cause__, commands.BadArgument):
+                await send(error.__cause__.args[0])
+                return
             await send("One of the arguments provided cannot be parsed.")
             log.debug("Failed running converter", exc_info=error)
             return
