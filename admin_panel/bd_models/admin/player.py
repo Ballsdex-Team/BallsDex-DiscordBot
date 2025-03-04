@@ -101,3 +101,39 @@ class PlayerAdmin(admin.ModelAdmin):
             f"{request.user} blacklisted players "
             f'{", ".join([str(x.discord_id) for x in queryset])} for the reason: {data["reason"]}.'
         )
+
+  @action_with_form(
+        BlacklistActionForm, description="Unblacklist the selected users"
+    )  # type: ignore
+    def unblacklist_users(self, request: "HttpRequest", queryset: "QuerySet[Player]", data: dict):
+        reason = (
+            data["reason"]
+            + f"\nDone through the admin panel by {request.user} ({request.user.pk})"
+        )
+        blacklists: list[BlacklistedID] = []
+        histories: list[BlacklistHistory] = []
+        for player in queryset:
+            if not BlacklistedID.objects.filter(discord_id=player.discord_id).exists():
+                self.message_user(
+                    request, f"Player {player.discord_id} is not blacklisted!", messages.ERROR
+                )
+                return
+            blacklists.append(
+                BlacklistedID(discord_id=player.discord_id, reason=reason, moderator_id=None)
+            )
+            histories.append(
+                BlacklistHistory(discord_id=player.discord_id, reason=reason, moderator_id=0)
+            )
+        BlacklistedID.objects.filter(discord_id__in=[b.discord_id for b in blacklists]).delete()
+        BlacklistHistory.objects.bulk_create(histories)
+
+        self.message_user(
+            request,
+            f"Created unblacklist for {queryset.count()} user{"s" if queryset.count() > 1 else ""}. "
+            "This will be applied after reloading the bot's cache.",
+        )
+        async_to_sync(notify_admins)(
+            f"{request.user} unblacklisted player{"s" if queryset.count() > 1 else ""} "
+            f'{", ".join([str(x.discord_id) for x in queryset])} for the reason: {data["reason"]}.'
+        )
+
