@@ -7,7 +7,7 @@ import math
 import time
 import types
 from datetime import datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Self, cast
 
 import aiohttp
 import discord
@@ -378,32 +378,39 @@ class BallsDexBot(commands.AutoShardedBot):
             "is now operational![/green][/bold]\n"
         )
 
-    async def blacklist_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id in self.blacklist:
-            if interaction.type != discord.InteractionType.autocomplete:
-                await interaction.response.send_message(
-                    "You are blacklisted from the bot."
-                    "\nYou can appeal this blacklist in our support server: {}".format(
-                        settings.discord_invite
-                    ),
-                    ephemeral=True,
-                )
+    async def blacklist_check(
+        self, source: discord.Interaction[Self] | commands.Context[Self]
+    ) -> bool:
+        if isinstance(source, discord.Interaction):
+            user = source.user
+            guild_id = source.guild_id
+            send_func = source.response.send_message
+        else:
+            user = source.author
+            guild_id = source.guild.id if source.guild else None
+            send_func = source.send
+        if user.id in self.blacklist:
+            await send_func(
+                "You are blacklisted from the bot."
+                "\nYou can appeal this blacklist in our support server: {}".format(
+                    settings.discord_invite
+                ),
+                ephemeral=True,
+            )
             return False
-        if interaction.guild_id and interaction.guild_id in self.blacklist_guild:
-            if interaction.type != discord.InteractionType.autocomplete:
-                await interaction.response.send_message(
-                    "This server is blacklisted from the bot."
-                    "\nYou can appeal this blacklist in our support server: {}".format(
-                        settings.discord_invite
-                    ),
-                    ephemeral=True,
-                )
+        if guild_id and guild_id in self.blacklist_guild:
+            await send_func(
+                "This server is blacklisted from the bot."
+                "\nYou can appeal this blacklist in our support server: {}".format(
+                    settings.discord_invite
+                ),
+                ephemeral=True,
+            )
             return False
-        if interaction.command and interaction.user.id in self.command_log:
+        if source.command and user.id in self.command_log:
             log.info(
-                f"{interaction.user} ({interaction.user.id}) used "
-                f'"{interaction.command.qualified_name}" in '
-                f"{interaction.guild} ({interaction.guild_id})"
+                f'{user} ({user.id}) used "{source.command.qualified_name}" in '
+                f"{source.guild} ({guild_id})"
             )
         return True
 
@@ -457,7 +464,7 @@ class BallsDexBot(commands.AutoShardedBot):
             )
 
     async def on_application_command_error(
-        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+        self, interaction: discord.Interaction[Self], error: app_commands.AppCommandError
     ):
         async def send(content: str):
             if interaction.response.is_done():
