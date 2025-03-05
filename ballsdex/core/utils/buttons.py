@@ -1,24 +1,26 @@
 from typing import Optional
 
 import discord
+from discord.ext import commands
 from discord.ui import Button, View
 
 
 class ConfirmChoiceView(View):
     def __init__(
         self,
-        interaction: discord.Interaction,
+        ctx: commands.Context,
         user: Optional[discord.User] = None,
         accept_message: str = "Confirmed",
         cancel_message: str = "Cancelled",
     ):
         super().__init__(timeout=90)
         self.value = None
-        self.interaction = interaction
-        self.user = user or interaction.user
+        self.ctx = ctx
+        self.user = user or ctx.author
         self.interaction_response: discord.Interaction
         self.accept_message = accept_message
         self.cancel_message = cancel_message
+        self.message: discord.Message | None = None
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         self.interaction_response = interaction
@@ -40,7 +42,10 @@ class ConfirmChoiceView(View):
         for item in self.children:
             item.disabled = True  # type: ignore
         try:
-            await self.interaction.followup.edit_message("@original", view=self)  # type: ignore
+            if self.ctx.interaction:
+                await self.ctx.interaction.edit_original_response(view=self)
+            elif self.message:
+                await self.message.edit(view=self)
         except discord.NotFound:
             pass
 
