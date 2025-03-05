@@ -162,7 +162,7 @@ class BallsDexBot(commands.AutoShardedBot):
             command_prefix,
             intents=intents,
             tree_cls=CommandTree,
-            help_command=HelpCommand(),
+            help_command=HelpCommand(width=100),
             **options,
         )
         self.tree.disable_time_check = disable_time_check  # type: ignore
