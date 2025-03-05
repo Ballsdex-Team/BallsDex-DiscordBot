@@ -8,6 +8,28 @@ class HelpCommand(commands.DefaultHelpCommand):
     An override of the default help command to show flag converters in text commands.
     """
 
+    def get_command_signature(self, command: commands.Command[Any, ..., Any]) -> str:
+        if not self.show_parameter_descriptions:
+            return super().get_command_signature(command)
+
+        name = command.qualified_name
+        if len(command.aliases) > 0:
+            aliases = "|".join(command.aliases)
+            name += f"|{aliases}"
+
+        base = f"{self.context.clean_prefix}{name}"
+
+        for param in command.clean_params.values():
+            param_str = param.displayed_name or param.name
+            if param.displayed_default:
+                param_str += f"={param.displayed_default}"
+            if param.required:
+                param_str = f"<{param_str}>"
+            else:
+                param_str = f"[{param_str}]"
+            base += f" {param_str}"
+        return base
+
     def add_command_arguments(self, command: commands.Command[Any, ..., Any]) -> None:
         to_remove: str | None = None
         flag_converter: type[commands.FlagConverter] | None = None
