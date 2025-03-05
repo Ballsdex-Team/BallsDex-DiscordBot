@@ -6,21 +6,17 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import app_commands
+from discord.ext import commands
 from discord.utils import format_dt
-from tortoise.exceptions import BaseORMException, DoesNotExist
+from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
-from ballsdex.core.utils.transformers import (
-    BallTransform,
-    EconomyTransform,
-    RegimeTransform,
-    SpecialTransform,
-)
 from ballsdex.settings import settings
+
+from .flags import BallsCountFlags, GiveBallFlags, SpawnFlags
 
 if TYPE_CHECKING:
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
@@ -43,604 +39,398 @@ async def save_file(attachment: discord.Attachment) -> Path:
     return path.relative_to("./admin_panel/media/")
 
 
-class Balls(app_commands.Group):
+async def _spawn_bomb(
+    ctx: commands.Context[BallsDexBot],
+    countryball_cls: type["CountryBall"],
+    countryball: Ball | None,
+    channel: discord.TextChannel,
+    n: int,
+    special: Special | None = None,
+    atk_bonus: int | None = None,
+    hp_bonus: int | None = None,
+):
+    spawned = 0
+    message: discord.Message
+
+    async def update_message_loop():
+        nonlocal spawned, message
+        for i in range(5 * 12 * 10):  # timeout progress after 10 minutes
+            await edit_func(
+                content=f"Spawn bomb in progress in {channel.mention}, "
+                f"{settings.collectible_name.title()}: {countryball or 'Random'}\n"
+                f"{spawned}/{n} spawned ({round((spawned / n) * 100)}%)",
+            )
+            await asyncio.sleep(5)
+        await edit_func(content="Spawn bomb seems to have timed out.")
+
+    message = await ctx.send(f"Starting spawn bomb in {channel.mention}...", ephemeral=True)
+    edit_func = ctx.interaction.edit_original_response if ctx.interaction else message.edit
+    task = ctx.bot.loop.create_task(update_message_loop())
+    try:
+        for i in range(n):
+            if not countryball:
+                ball = await countryball_cls.get_random()
+            else:
+                ball = countryball_cls(countryball)
+            ball.special = special
+            ball.atk_bonus = atk_bonus
+            ball.hp_bonus = hp_bonus
+            result = await ball.spawn(channel)
+            if not result:
+                task.cancel()
+                await edit_func(
+                    content=f"A {settings.collectible_name} failed to spawn, probably "
+                    "indicating a lack of permissions to send messages "
+                    f"or upload files in {channel.mention}.",
+                )
+                return
+            spawned += 1
+        task.cancel()
+        await edit_func(
+            content=f"Successfully spawned {spawned} {settings.plural_collectible_name} "
+            f"in {channel.mention}!"
+        )
+    finally:
+        task.cancel()
+
+
+@commands.hybrid_group(name=settings.players_group_cog_name)
+async def balls(ctx: commands.Context[BallsDexBot]):
     """
     Countryballs management
     """
+    await ctx.send_help(ctx.command)
 
-    async def _spawn_bomb(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        countryball_cls: type["CountryBall"],
-        countryball: Ball | None,
-        channel: discord.TextChannel,
-        n: int,
-        special: Special | None = None,
-        atk_bonus: int | None = None,
-        hp_bonus: int | None = None,
-    ):
-        spawned = 0
 
-        async def update_message_loop():
-            nonlocal spawned
-            for i in range(5 * 12 * 10):  # timeout progress after 10 minutes
-                await interaction.followup.edit_message(
-                    "@original",  # type: ignore
-                    content=f"Spawn bomb in progress in {channel.mention}, "
-                    f"{settings.collectible_name.title()}: {countryball or 'Random'}\n"
-                    f"{spawned}/{n} spawned ({round((spawned / n) * 100)}%)",
-                )
-                await asyncio.sleep(5)
-            await interaction.followup.edit_message(
-                "@original", content="Spawn bomb seems to have timed out."  # type: ignore
-            )
-
-        await interaction.response.send_message(
-            f"Starting spawn bomb in {channel.mention}...", ephemeral=True
+@balls.command()
+@commands.has_any_role(*settings.root_role_ids)
+async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
+    """
+    Force spawn a random or specified countryball.
+    """
+    cog = cast("CountryBallsSpawner | None", ctx.bot.get_cog("CountryBallsSpawner"))
+    if not cog:
+        prefix = (
+            settings.prefix
+            if ctx.bot.intents.message_content or not ctx.bot.user
+            else f"{ctx.bot.user.mention} "
         )
-        task = interaction.client.loop.create_task(update_message_loop())
-        try:
-            for i in range(n):
-                if not countryball:
-                    ball = await countryball_cls.get_random()
-                else:
-                    ball = countryball_cls(countryball)
-                ball.special = special
-                ball.atk_bonus = atk_bonus
-                ball.hp_bonus = hp_bonus
-                result = await ball.spawn(channel)
-                if not result:
-                    task.cancel()
-                    await interaction.followup.edit_message(
-                        "@original",  # type: ignore
-                        content=f"A {settings.collectible_name} failed to spawn, probably "
-                        "indicating a lack of permissions to send messages "
-                        f"or upload files in {channel.mention}.",
-                    )
-                    return
-                spawned += 1
-            task.cancel()
-            await interaction.followup.edit_message(
-                "@original",  # type: ignore
-                content=f"Successfully spawned {spawned} {settings.plural_collectible_name} "
-                f"in {channel.mention}!",
-            )
-        finally:
-            task.cancel()
-
-    @app_commands.command()
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def spawn(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        countryball: BallTransform | None = None,
-        channel: discord.TextChannel | None = None,
-        n: app_commands.Range[int, 1, 100] = 1,
-        special: SpecialTransform | None = None,
-        atk_bonus: int | None = None,
-        hp_bonus: int | None = None,
-    ):
-        """
-        Force spawn a random or specified countryball.
-
-        Parameters
-        ----------
-        countryball: Ball | None
-            The countryball you want to spawn. Random according to rarities if not specified.
-        channel: discord.TextChannel | None
-            The channel you want to spawn the countryball in. Current channel if not specified.
-        n: int
-            The number of countryballs to spawn. If no countryball was specified, it's random
-            every time.
-        special: Special | None
-            Force the countryball to have a special attribute when caught.
-        atk_bonus: int | None
-            Force the countryball to have a specific attack bonus when caught.
-        hp_bonus: int | None
-            Force the countryball to have a specific health bonus when caught.
-        """
-        # the transformer triggered a response, meaning user tried an incorrect input
-        if interaction.response.is_done():
-            return
-        cog = cast("CountryBallsSpawner | None", interaction.client.get_cog("CountryBallsSpawner"))
-        if not cog:
-            prefix = (
-                settings.prefix
-                if interaction.client.intents.message_content or not interaction.client.user
-                else f"{interaction.client.user.mention} "
-            )
-            # do not replace `countryballs` with `settings.collectible_name`, it is intended
-            await interaction.response.send_message(
-                "The `countryballs` package is not loaded, this command is unavailable.\n"
-                "Please resolve the errors preventing this package from loading. Use "
-                f'"{prefix}reload countryballs" to try reloading it.',
-                ephemeral=True,
-            )
-            return
-
-        if n > 1:
-            await self._spawn_bomb(
-                interaction,
-                cog.countryball_cls,
-                countryball,
-                channel or interaction.channel,  # type: ignore
-                n,
-            )
-            await log_action(
-                f"{interaction.user} spawned {settings.collectible_name}"
-                f" {countryball or 'random'} {n} times in {channel or interaction.channel}.",
-                interaction.client,
-            )
-
-            return
-
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        if not countryball:
-            ball = await cog.countryball_cls.get_random()
-        else:
-            ball = cog.countryball_cls(countryball)
-        ball.special = special
-        ball.atk_bonus = atk_bonus
-        ball.hp_bonus = hp_bonus
-        result = await ball.spawn(channel or interaction.channel)  # type: ignore
-
-        if result:
-            await interaction.followup.send(
-                f"{settings.collectible_name.title()} spawned.", ephemeral=True
-            )
-            special_attrs = []
-            if special is not None:
-                special_attrs.append(f"special={special.name}")
-            if atk_bonus is not None:
-                special_attrs.append(f"atk={atk_bonus}")
-            if hp_bonus is not None:
-                special_attrs.append(f"hp={hp_bonus}")
-            await log_action(
-                f"{interaction.user} spawned {settings.collectible_name} {ball.name} "
-                f"in {channel or interaction.channel}"
-                f"{f" ({", ".join(special_attrs)})" if special_attrs else ""}.",
-                interaction.client,
-            )
-
-    @app_commands.command()
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def give(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        countryball: BallTransform,
-        user: discord.User,
-        special: SpecialTransform | None = None,
-        health_bonus: int | None = None,
-        attack_bonus: int | None = None,
-    ):
-        """
-        Give the specified countryball to a player.
-
-        Parameters
-        ----------
-        countryball: Ball
-        user: discord.User
-        special: Special | None
-        health_bonus: int | None
-            Omit this to make it random.
-        attack_bonus: int | None
-            Omit this to make it random.
-        """
-        # the transformers triggered a response, meaning user tried an incorrect input
-        if interaction.response.is_done():
-            return
-        await interaction.response.defer(ephemeral=True, thinking=True)
-
-        player, created = await Player.get_or_create(discord_id=user.id)
-        instance = await BallInstance.create(
-            ball=countryball,
-            player=player,
-            attack_bonus=(
-                attack_bonus
-                if attack_bonus is not None
-                else random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
-            ),
-            health_bonus=(
-                health_bonus
-                if health_bonus is not None
-                else random.randint(-settings.max_health_bonus, settings.max_health_bonus)
-            ),
-            special=special,
+        # do not replace `countryballs` with `settings.collectible_name`, it is intended
+        await ctx.send(
+            "The `countryballs` package is not loaded, this command is unavailable.\n"
+            "Please resolve the errors preventing this package from loading. Use "
+            f'"{prefix}reload countryballs" to try reloading it.',
+            ephemeral=True,
         )
-        await interaction.followup.send(
-            f"`{countryball.country}` {settings.collectible_name} was successfully given to "
-            f"`{user}`.\nSpecial: `{special.name if special else None}` • ATK: "
-            f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
+        return
+
+    if flags.n > 1:
+        await _spawn_bomb(
+            ctx,
+            cog.countryball_cls,
+            flags.countryball,
+            flags.channel or ctx.channel,  # type: ignore
+            flags.n,
         )
         await log_action(
-            f"{interaction.user} gave {settings.collectible_name} "
-            f"{countryball.country} to {user}. (Special={special.name if special else None} "
-            f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
-            interaction.client,
+            f"{ctx.author} spawned {settings.collectible_name}"
+            f" {flags.countryball or 'random'} {flags.n} times in {flags.channel}.",
+            ctx.bot,
         )
 
-    @app_commands.command(name="info")
-    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def balls_info(self, interaction: discord.Interaction[BallsDexBot], countryball_id: str):
-        """
-        Show information about a countryball.
+        return
 
-        Parameters
-        ----------
-        countryball_id: str
-            The ID of the countryball you want to get information about.
-        """
-        try:
-            pk = int(countryball_id, 16)
-        except ValueError:
-            await interaction.response.send_message(
-                f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
-            )
-            return
-        try:
-            ball = await BallInstance.get(id=pk).prefetch_related(
-                "player", "trade_player", "special"
-            )
-        except DoesNotExist:
-            await interaction.response.send_message(
-                f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
-            )
-            return
-        spawned_time = format_dt(ball.spawned_time, style="R") if ball.spawned_time else "N/A"
-        catch_time = (
-            (ball.catch_date - ball.spawned_time).total_seconds()
-            if ball.catch_date and ball.spawned_time
-            else "N/A"
-        )
-        admin_url = (
-            f"[View online](<{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/>)"
-            if settings.admin_url
-            else ""
-        )
-        await interaction.response.send_message(
-            f"**{settings.collectible_name.title()} ID:** {ball.pk}\n"
-            f"**Player:** {ball.player}\n"
-            f"**Name:** {ball.countryball}\n"
-            f"**Attack:** {ball.attack}\n"
-            f"**Attack bonus:** {ball.attack_bonus}\n"
-            f"**Health bonus:** {ball.health_bonus}\n"
-            f"**Health:** {ball.health}\n"
-            f"**Special:** {ball.special.name if ball.special else None}\n"
-            f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
-            f"**Spawned at:** {spawned_time}\n"
-            f"**Catch time:** {catch_time} seconds\n"
-            f"**Caught in:** {ball.server_id if ball.server_id else 'N/A'}\n"
-            f"**Traded:** {ball.trade_player}\n{admin_url}",
-            ephemeral=True,
-        )
-        await log_action(f"{interaction.user} got info for {ball}({ball.pk}).", interaction.client)
+    await ctx.defer(ephemeral=True)
+    if not flags.countryball:
+        ball = await cog.countryball_cls.get_random()
+    else:
+        ball = cog.countryball_cls(flags.countryball)
+    ball.special = flags.special
+    ball.atk_bonus = flags.atk_bonus
+    ball.hp_bonus = flags.hp_bonus
+    result = await ball.spawn(flags.channel or ctx.channel)  # type: ignore
 
-    @app_commands.command(name="delete")
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_delete(
-        self, interaction: discord.Interaction[BallsDexBot], countryball_id: str
-    ):
-        """
-        Delete a countryball.
-
-        Parameters
-        ----------
-        countryball_id: str
-            The ID of the countryball you want to delete.
-        """
-        try:
-            ballIdConverted = int(countryball_id, 16)
-        except ValueError:
-            await interaction.response.send_message(
-                f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
-            )
-            return
-        try:
-            ball = await BallInstance.get(id=ballIdConverted)
-        except DoesNotExist:
-            await interaction.response.send_message(
-                f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
-            )
-            return
-        await ball.delete()
-        await interaction.response.send_message(
-            f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True
-        )
-        await log_action(f"{interaction.user} deleted {ball}({ball.pk}).", interaction.client)
-
-    @app_commands.command(name="transfer")
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_transfer(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        countryball_id: str,
-        user: discord.User,
-    ):
-        """
-        Transfer a countryball to another user.
-
-        Parameters
-        ----------
-        countryball_id: str
-            The ID of the countryball you want to transfer.
-        user: discord.User
-            The user you want to transfer the countryball to.
-        """
-        try:
-            ballIdConverted = int(countryball_id, 16)
-        except ValueError:
-            await interaction.response.send_message(
-                f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
-            )
-            return
-        try:
-            ball = await BallInstance.get(id=ballIdConverted).prefetch_related("player")
-            original_player = ball.player
-        except DoesNotExist:
-            await interaction.response.send_message(
-                f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
-            )
-            return
-        player, _ = await Player.get_or_create(discord_id=user.id)
-        ball.player = player
-        await ball.save()
-
-        trade = await Trade.create(player1=original_player, player2=player)
-        await TradeObject.create(trade=trade, ballinstance=ball, player=original_player)
-        await interaction.response.send_message(
-            f"Transfered {ball}({ball.pk}) from {original_player} to {user}.",
-            ephemeral=True,
-        )
+    if result:
+        await ctx.send(f"{settings.collectible_name.title()} spawned.", ephemeral=True)
+        special_attrs = []
+        if flags.special is not None:
+            special_attrs.append(f"special={flags.special.name}")
+        if flags.atk_bonus is not None:
+            special_attrs.append(f"atk={flags.atk_bonus}")
+        if flags.hp_bonus is not None:
+            special_attrs.append(f"hp={flags.hp_bonus}")
         await log_action(
-            f"{interaction.user} transferred {ball}({ball.pk}) from {original_player} to {user}.",
-            interaction.client,
+            f"{ctx.author} spawned {settings.collectible_name} {ball.name} "
+            f"in {flags.channel}"
+            f"{f" ({", ".join(special_attrs)})" if special_attrs else ""}.",
+            ctx.bot,
         )
 
-    @app_commands.command(name="reset")
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_reset(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-        percentage: int | None = None,
-    ):
-        """
-        Reset a player's countryballs.
 
-        Parameters
-        ----------
-        user: discord.User
-            The user you want to reset the countryballs of.
-        percentage: int | None
-            The percentage of countryballs to delete, if not all. Used for sanctions.
-        """
-        player = await Player.get_or_none(discord_id=user.id)
-        if not player:
-            await interaction.response.send_message(
-                "The user you gave does not exist.", ephemeral=True
-            )
-            return
-        if percentage and not 0 < percentage < 100:
-            await interaction.response.send_message(
-                "The percentage must be between 1 and 99.", ephemeral=True
-            )
-            return
-        await interaction.response.defer(ephemeral=True, thinking=True)
+@balls.command()
+@commands.has_any_role(*settings.root_role_ids)
+async def give(ctx: commands.Context[BallsDexBot], user: discord.User, *, flags: GiveBallFlags):
+    """
+    Give the specified countryball to a player.
+    """
+    await ctx.defer(ephemeral=True)
 
-        if not percentage:
-            text = f"Are you sure you want to delete {user}'s {settings.plural_collectible_name}?"
-        else:
-            text = (
-                f"Are you sure you want to delete {percentage}% of "
-                f"{user}'s {settings.plural_collectible_name}?"
-            )
-        view = ConfirmChoiceView(
-            interaction,
-            accept_message=f"Confirmed, deleting the {settings.plural_collectible_name}...",
-            cancel_message="Request cancelled.",
+    player, created = await Player.get_or_create(discord_id=user.id)
+    instance = await BallInstance.create(
+        ball=flags.countryball,
+        player=player,
+        attack_bonus=(
+            flags.attack_bonus
+            if flags.attack_bonus is not None
+            else random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
+        ),
+        health_bonus=(
+            flags.health_bonus
+            if flags.health_bonus is not None
+            else random.randint(-settings.max_health_bonus, settings.max_health_bonus)
+        ),
+        special=flags.special,
+    )
+    await ctx.send(
+        f"`{flags.countryball.country}` {settings.collectible_name} was successfully given to "
+        f"`{user}`.\nSpecial: `{flags.special.name if flags.special else None}` • ATK: "
+        f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
+    )
+    await log_action(
+        f"{ctx.author} gave {settings.collectible_name} "
+        f"{flags.countryball.country} to {user}. "
+        f"(Special={flags.special.name if flags.special else None} "
+        f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
+        ctx.bot,
+    )
+
+
+@balls.command(name="info")
+@commands.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+async def balls_info(ctx: commands.Context[BallsDexBot], countryball_id: str):
+    """
+    Show information about a countryball.
+
+    Parameters
+    ----------
+    countryball_id: str
+        The ID of the countryball you want to get information about.
+    """
+    try:
+        pk = int(countryball_id, 16)
+    except ValueError:
+        await ctx.send(
+            f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
         )
-        await interaction.followup.send(
-            text,
-            view=view,
-            ephemeral=True,
+        return
+    try:
+        ball = await BallInstance.get(id=pk).prefetch_related("player", "trade_player", "special")
+    except DoesNotExist:
+        await ctx.send(
+            f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
         )
-        await view.wait()
-        if not view.value:
-            return
-        if percentage:
-            balls = await BallInstance.filter(player=player)
-            to_delete = random.sample(balls, int(len(balls) * (percentage / 100)))
-            for ball in to_delete:
-                await ball.delete()
-            count = len(to_delete)
-        else:
-            count = await BallInstance.filter(player=player).delete()
-        await interaction.followup.send(
-            f"{count} {settings.plural_collectible_name} from {user} have been deleted.",
-            ephemeral=True,
+        return
+    spawned_time = format_dt(ball.spawned_time, style="R") if ball.spawned_time else "N/A"
+    catch_time = (
+        (ball.catch_date - ball.spawned_time).total_seconds()
+        if ball.catch_date and ball.spawned_time
+        else "N/A"
+    )
+    admin_url = (
+        f"[View online](<{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/>)"
+        if settings.admin_url
+        else ""
+    )
+    await ctx.send(
+        f"**{settings.collectible_name.title()} ID:** {ball.pk}\n"
+        f"**Player:** {ball.player}\n"
+        f"**Name:** {ball.countryball}\n"
+        f"**Attack:** {ball.attack}\n"
+        f"**Attack bonus:** {ball.attack_bonus}\n"
+        f"**Health bonus:** {ball.health_bonus}\n"
+        f"**Health:** {ball.health}\n"
+        f"**Special:** {ball.special.name if ball.special else None}\n"
+        f"**Caught at:** {format_dt(ball.catch_date, style='R')}\n"
+        f"**Spawned at:** {spawned_time}\n"
+        f"**Catch time:** {catch_time} seconds\n"
+        f"**Caught in:** {ball.server_id if ball.server_id else 'N/A'}\n"
+        f"**Traded:** {ball.trade_player}\n{admin_url}",
+        ephemeral=True,
+    )
+    await log_action(f"{ctx.author} got info for {ball}({ball.pk}).", ctx.bot)
+
+
+@balls.command(name="delete")
+@commands.has_any_role(*settings.root_role_ids)
+async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str):
+    """
+    Delete a countryball.
+
+    Parameters
+    ----------
+    countryball_id: str
+        The ID of the countryball you want to delete.
+    """
+    try:
+        ballIdConverted = int(countryball_id, 16)
+    except ValueError:
+        await ctx.send(
+            f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
         )
-        await log_action(
-            f"{interaction.user} deleted {percentage or 100}% of "
-            f"{player}'s {settings.plural_collectible_name}.",
-            interaction.client,
+        return
+    try:
+        ball = await BallInstance.get(id=ballIdConverted)
+    except DoesNotExist:
+        await ctx.send(
+            f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
         )
+        return
+    await ball.delete()
+    await ctx.send(
+        f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True
+    )
+    await log_action(f"{ctx.author} deleted {ball}({ball.pk}).", ctx.bot)
 
-    @app_commands.command(name="count")
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_count(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User | None = None,
-        countryball: BallTransform | None = None,
-        special: SpecialTransform | None = None,
-    ):
-        """
-        Count the number of countryballs that a player has or how many exist in total.
 
-        Parameters
-        ----------
-        user: discord.User
-            The user you want to count the countryballs of.
-        countryball: Ball
-        special: Special
-        """
-        if interaction.response.is_done():
-            return
-        filters = {}
-        if countryball:
-            filters["ball"] = countryball
-        if special:
-            filters["special"] = special
-        if user:
-            filters["player__discord_id"] = user.id
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        balls = await BallInstance.filter(**filters).count()
-        verb = "is" if balls == 1 else "are"
-        country = f"{countryball.country} " if countryball else ""
-        plural = "s" if balls > 1 or balls == 0 else ""
-        special_str = f"{special.name} " if special else ""
-        if user:
-            await interaction.followup.send(
-                f"{user} has {balls} {special_str}"
-                f"{country}{settings.collectible_name}{plural}."
-            )
-        else:
-            await interaction.followup.send(
-                f"There {verb} {balls} {special_str}"
-                f"{country}{settings.collectible_name}{plural}."
-            )
+@balls.command(name="transfer")
+@commands.has_any_role(*settings.root_role_ids)
+async def balls_transfer(
+    ctx: commands.Context[BallsDexBot],
+    countryball_id: str,
+    user: discord.User,
+):
+    """
+    Transfer a countryball to another user.
 
-    @app_commands.command(name="create")
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_create(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        *,
-        name: app_commands.Range[str, None, 48],
-        regime: RegimeTransform,
-        health: int,
-        attack: int,
-        emoji_id: app_commands.Range[str, 17, 21],
-        capacity_name: app_commands.Range[str, None, 64],
-        capacity_description: app_commands.Range[str, None, 256],
-        collection_card: discord.Attachment,
-        image_credits: str,
-        economy: EconomyTransform | None = None,
-        rarity: float = 0.0,
-        enabled: bool = False,
-        tradeable: bool = False,
-        wild_card: discord.Attachment | None = None,
-    ):
-        """
-        Shortcut command for creating countryballs. They are disabled by default.
+    Parameters
+    ----------
+    countryball_id: str
+        The ID of the countryball you want to transfer.
+    user: discord.User
+        The user you want to transfer the countryball to.
+    """
+    try:
+        ballIdConverted = int(countryball_id, 16)
+    except ValueError:
+        await ctx.send(
+            f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
+        )
+        return
+    try:
+        ball = await BallInstance.get(id=ballIdConverted).prefetch_related("player")
+        original_player = ball.player
+    except DoesNotExist:
+        await ctx.send(
+            f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
+        )
+        return
+    player, _ = await Player.get_or_create(discord_id=user.id)
+    ball.player = player
+    await ball.save()
 
-        Parameters
-        ----------
-        name: str
-        regime: Regime
-        economy: Economy | None
-        health: int
-        attack: int
-        emoji_id: str
-            An emoji ID, the bot will check if it can access the custom emote
-        capacity_name: str
-        capacity_description: str
-        collection_card: discord.Attachment
-        image_credits: str
-        rarity: float
-            Value defining the rarity of this countryball, if enabled
-        enabled: bool
-            If true, the countryball can spawn and will show up in global completion
-        tradeable: bool
-            If false, all instances are untradeable
-        wild_card: discord.Attachment
-            Artwork used to spawn the countryball, with a default
-        """
-        if regime is None or interaction.response.is_done():  # economy autocomplete failed
-            return
+    trade = await Trade.create(player1=original_player, player2=player)
+    await TradeObject.create(trade=trade, ballinstance=ball, player=original_player)
+    await ctx.send(
+        f"Transfered {ball}({ball.pk}) from {original_player} to {user}.",
+        ephemeral=True,
+    )
+    await log_action(
+        f"{ctx.author} transferred {ball}({ball.pk}) from {original_player} to {user}.",
+        ctx.bot,
+    )
 
-        if not emoji_id.isnumeric():
-            await interaction.response.send_message(
-                "`emoji_id` is not a valid number.", ephemeral=True
-            )
-            return
-        emoji = interaction.client.get_emoji(int(emoji_id))
-        if not emoji:
-            await interaction.response.send_message(
-                "The bot does not have access to the given emoji.", ephemeral=True
-            )
-            return
-        await interaction.response.defer(ephemeral=True, thinking=True)
 
-        default_path = Path("./ballsdex/core/image_generator/src/default.png")
-        missing_default = ""
-        if not wild_card and not default_path.exists():
-            missing_default = (
-                "**Warning:** The default spawn image is not set. This will result in errors when "
-                f"attempting to spawn this {settings.collectible_name}. You can edit this on the "
-                "web panel or add an image at `./ballsdex/core/image_generator/src/default.png`.\n"
-            )
+@balls.command(name="reset")
+@commands.has_any_role(*settings.root_role_ids)
+async def balls_reset(
+    ctx: commands.Context[BallsDexBot],
+    user: discord.User,
+    percentage: int | None = None,
+):
+    """
+    Reset a player's countryballs.
 
-        try:
-            collection_card_path = await save_file(collection_card)
-        except Exception as e:
-            log.exception("Failed saving file when creating countryball", exc_info=True)
-            await interaction.followup.send(
-                f"Failed saving the attached file: {collection_card.url}.\n"
-                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
-                "The full error is in the bot logs."
-            )
-            return
-        try:
-            wild_card_path = await save_file(wild_card) if wild_card else default_path
-        except Exception as e:
-            log.exception("Failed saving file when creating countryball", exc_info=True)
-            await interaction.followup.send(
-                f"Failed saving the attached file: {collection_card.url}.\n"
-                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
-                "The full error is in the bot logs."
-            )
-            return
+    Parameters
+    ----------
+    user: discord.User
+        The user you want to reset the countryballs of.
+    percentage: int | None
+        The percentage of countryballs to delete, if not all. Used for sanctions.
+    """
+    player = await Player.get_or_none(discord_id=user.id)
+    if not player:
+        await ctx.send("The user you gave does not exist.", ephemeral=True)
+        return
+    if percentage and not 0 < percentage < 100:
+        await ctx.send("The percentage must be between 1 and 99.", ephemeral=True)
+        return
+    await ctx.defer(ephemeral=True)
 
-        try:
-            ball = await Ball.create(
-                country=name,
-                regime=regime,
-                economy=economy,
-                health=health,
-                attack=attack,
-                rarity=rarity,
-                enabled=enabled,
-                tradeable=tradeable,
-                emoji_id=emoji_id,
-                wild_card="/" + str(wild_card_path),
-                collection_card="/" + str(collection_card_path),
-                credits=image_credits,
-                capacity_name=capacity_name,
-                capacity_description=capacity_description,
-            )
-        except BaseORMException as e:
-            log.exception("Failed creating countryball with admin command", exc_info=True)
-            await interaction.followup.send(
-                f"Failed creating the {settings.collectible_name}.\n"
-                f"Partial error: {', '.join(str(x) for x in e.args)}\n"
-                "The full error is in the bot logs."
-            )
-        else:
-            files = [await collection_card.to_file()]
-            if wild_card:
-                files.append(await wild_card.to_file())
-            await interaction.client.load_cache()
-            admin_url = (
-                f"[View online](<{settings.admin_url}/bd_models/ball/{ball.pk}/change/>)\n"
-                if settings.admin_url
-                else ""
-            )
-            await interaction.followup.send(
-                f"Successfully created a {settings.collectible_name} with ID {ball.pk}! "
-                f"The internal cache was reloaded.\n{admin_url}"
-                f"{missing_default}\n"
-                f"{name=} regime={regime.name} economy={economy.name if economy else None} "
-                f"{health=} {attack=} {rarity=} {enabled=} {tradeable=} emoji={emoji}",
-                files=files,
-            )
+    if not percentage:
+        text = f"Are you sure you want to delete {user}'s {settings.plural_collectible_name}?"
+    else:
+        text = (
+            f"Are you sure you want to delete {percentage}% of "
+            f"{user}'s {settings.plural_collectible_name}?"
+        )
+    view = ConfirmChoiceView(
+        ctx,
+        accept_message=f"Confirmed, deleting the {settings.plural_collectible_name}...",
+        cancel_message="Request cancelled.",
+    )
+    msg = await ctx.send(
+        text,
+        view=view,
+        ephemeral=True,
+    )
+    view.message = msg
+    await view.wait()
+    if not view.value:
+        return
+    if percentage:
+        balls = await BallInstance.filter(player=player)
+        to_delete = random.sample(balls, int(len(balls) * (percentage / 100)))
+        for ball in to_delete:
+            await ball.delete()
+        count = len(to_delete)
+    else:
+        count = await BallInstance.filter(player=player).delete()
+    await ctx.send(
+        f"{count} {settings.plural_collectible_name} from {user} have been deleted.",
+        ephemeral=True,
+    )
+    await log_action(
+        f"{ctx.author} deleted {percentage or 100}% of "
+        f"{player}'s {settings.plural_collectible_name}.",
+        ctx.bot,
+    )
+
+
+@balls.command(name="count")
+@commands.has_any_role(*settings.root_role_ids)
+async def balls_count(ctx: commands.Context[BallsDexBot], *, flags: BallsCountFlags):
+    """
+    Count the number of countryballs that a player has or how many exist in total.
+    """
+    filters = {}
+    if flags.countryball:
+        filters["ball"] = flags.countryball
+    if flags.special:
+        filters["special"] = flags.special
+    if flags.user:
+        filters["player__discord_id"] = flags.user.id
+    await ctx.defer(ephemeral=True)
+    balls = await BallInstance.filter(**filters).count()
+    verb = "is" if balls == 1 else "are"
+    country = f"{flags.countryball.country} " if flags.countryball else ""
+    plural = "s" if balls > 1 or balls == 0 else ""
+    special_str = f"{flags.special.name} " if flags.special else ""
+    if flags.user:
+        await ctx.send(
+            f"{flags.user} has {balls} {special_str}"
+            f"{country}{settings.collectible_name}{plural}."
+        )
+    else:
+        await ctx.send(
+            f"There {verb} {balls} {special_str}" f"{country}{settings.collectible_name}{plural}."
+        )
