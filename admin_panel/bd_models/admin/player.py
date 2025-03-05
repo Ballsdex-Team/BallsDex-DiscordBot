@@ -12,7 +12,7 @@ from django_admin_inline_paginator.admin import TabularInlinePaginated
 
 from admin_panel.webhook import notify_admins
 
-from ..forms import BlacklistActionForm, BlacklistedListFilter
+from ..forms import BlacklistActionForm, UnblacklistActionForm, BlacklistedListFilter
 from ..models import BallInstance, BlacklistedID, BlacklistHistory, GuildConfig, Player
 from ..utils import BlacklistTabular
 
@@ -103,7 +103,7 @@ class PlayerAdmin(admin.ModelAdmin):
         )
 
     @action_with_form(
-        BlacklistActionForm, description="Unblacklist the selected users"
+        UnblacklistActionForm, description="Unblacklist the selected users"
     )  # type: ignore
     def unblacklist_users(self, request: "HttpRequest", queryset: "QuerySet[Player]", data: dict):
         reason = (
