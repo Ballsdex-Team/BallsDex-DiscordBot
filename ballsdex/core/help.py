@@ -1,3 +1,4 @@
+import inspect
 from typing import Any
 
 from discord.ext import commands
@@ -34,7 +35,9 @@ class HelpCommand(commands.DefaultHelpCommand):
         to_remove: str | None = None
         flag_converter: type[commands.FlagConverter] | None = None
         for key, param in command.clean_params.items():
-            if issubclass(param.converter, commands.FlagConverter):
+            if inspect.isclass(param.converter) and issubclass(
+                param.converter, commands.FlagConverter
+            ):
                 if to_remove:
                     raise RuntimeError("This formatter only supports one FlagConverter")
                 to_remove = key
