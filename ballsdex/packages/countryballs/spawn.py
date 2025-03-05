@@ -13,6 +13,8 @@ from discord.utils import format_dt
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
+    from discord.ext.commands import Context
+
     from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.packages.countryballs")
@@ -59,17 +61,15 @@ class BaseSpawnManager:
         raise NotImplementedError
 
     @abstractmethod
-    async def admin_explain(
-        self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild
-    ):
+    async def admin_explain(self, ctx: "Context[BallsDexBot]", guild: discord.Guild):
         """
         Invoked by "/admin cooldown", this function should provide insights of the cooldown
         system for admins.
 
         Parameters
         ----------
-        interaction: discord.Interaction[BallsDexBot]
-            The interaction of the slash command
+        ctx: ~discord.ext.commands.Context[BallsDexBot]
+            The context of the invoking hybrid command
         guild: discord.Guild
             The guild that is targeted for the insights
         """
@@ -188,28 +188,27 @@ class SpawnManager(BaseSpawnManager):
         cooldown.reset(message.created_at)
         return True
 
-    async def admin_explain(
-        self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild
-    ):
+    async def admin_explain(self, ctx: "Context[BallsDexBot]", guild: discord.Guild):
         cooldown = self.cooldowns.get(guild.id)
         if not cooldown:
-            await interaction.response.send_message(
+            await ctx.send(
                 "No spawn manager could be found for that guild. Spawn may have been disabled.",
                 ephemeral=True,
             )
             return
 
         if not guild.member_count:
-            await interaction.response.send_message(
-                "`member_count` data not returned for this guild, spawn cannot work."
-            )
+            await ctx.send("`member_count` data not returned for this guild, spawn cannot work.")
             return
 
         embed = discord.Embed()
         embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else None)
         embed.colour = discord.Colour.orange()
 
-        delta = (interaction.created_at - cooldown.time).total_seconds()
+        delta = (
+            (ctx.interaction.created_at if ctx.interaction else ctx.message.created_at)
+            - cooldown.time
+        ).total_seconds()
         # change how the threshold varies according to the member count, while nuking farm servers
         if guild.member_count < 5:
             multiplier = 0.1
@@ -288,4 +287,4 @@ class SpawnManager(BaseSpawnManager):
                 value="- " + "\n- ".join(informations),
             )
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await ctx.send(embed=embed, ephemeral=True)
