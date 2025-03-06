@@ -188,7 +188,7 @@ class Trade(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
         if countryball.favorite:
             view = ConfirmChoiceView(
-                interaction,
+                await commands.Context.from_interaction(interaction),
                 accept_message=f"{settings.collectible_name.title()} added.",
                 cancel_message="This request has been cancelled.",
             )
@@ -420,7 +420,7 @@ class Trade(commands.GroupCog):
             return
 
         source = TradeViewFormat(history, interaction.user.name, self.bot)
-        pages = Pages(source=source, interaction=interaction)
+        pages = Pages(await commands.Context.from_interaction(interaction), source)
         await pages.start()
 
     @app_commands.command()
@@ -438,5 +438,9 @@ class Trade(commands.GroupCog):
             )
             return
 
-        source = TradeViewMenu(interaction, [trade.trader1, trade.trader2], self)
+        source = TradeViewMenu(
+            await commands.Context.from_interaction(interaction),
+            [trade.trader1, trade.trader2],
+            self,
+        )
         await source.start(content="Select a user to view their proposal.")

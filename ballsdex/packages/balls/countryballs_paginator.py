@@ -10,6 +10,8 @@ from ballsdex.core.utils.paginator import Pages
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
+    from discord.ext.commands import Context
+
     from ballsdex.core.bot import BallsDexBot
 
 
@@ -23,10 +25,10 @@ class CountryballsSource(menus.ListPageSource):
 
 
 class CountryballsSelector(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[BallInstance]):
-        self.bot = interaction.client
+    def __init__(self, ctx: "Context[BallsDexBot]", balls: list[BallInstance]):
+        self.bot = ctx.bot
         source = CountryballsSource(balls)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.select_ball_menu)
 
     def set_options(self, balls: List[BallInstance]):

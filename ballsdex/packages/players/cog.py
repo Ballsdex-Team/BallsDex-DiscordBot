@@ -186,7 +186,7 @@ class Player(commands.GroupCog):
         """
         Delete your player data.
         """
-        view = ConfirmChoiceView(interaction)
+        view = ConfirmChoiceView(await commands.Context.from_interaction(interaction))
         await interaction.response.send_message(
             "Are you sure you want to delete your player data?", view=view, ephemeral=True
         )
@@ -267,7 +267,7 @@ class Player(commands.GroupCog):
 
         await interaction.response.defer(thinking=True)
         view = ConfirmChoiceView(
-            interaction,
+            await commands.Context.from_interaction(interaction),
             user=user,
             accept_message="Friend request accepted!",
             cancel_message="Friend request declined.",
@@ -360,7 +360,7 @@ class Player(commands.GroupCog):
         source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
         source.embed.set_footer(text="To add a friend, use the command /player friend add.")
 
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Pages(await commands.Context.from_interaction(interaction), source, compact=True)
         await pages.start(ephemeral=True)
 
     @blocked.command(name="add")
@@ -399,7 +399,7 @@ class Player(commands.GroupCog):
         friended = await player1.is_friend(player2)
         if friended:
             view = ConfirmChoiceView(
-                interaction,
+                await commands.Context.from_interaction(interaction),
                 accept_message="User has been blocked.",
                 cancel_message=f"Request cancelled, {user.name} is still your friend.",
             )
@@ -494,7 +494,7 @@ class Player(commands.GroupCog):
         source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
         source.embed.set_footer(text="To block a user, use the command /player block add.")
 
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Pages(await commands.Context.from_interaction(interaction), source, compact=True)
         await pages.start(ephemeral=True)
 
     @app_commands.command()

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
+from discord.ext.commands import Context
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
 
@@ -81,7 +82,7 @@ class TradeView(View):
             return
 
         view = ConfirmChoiceView(
-            interaction,
+            await Context.from_interaction(interaction),
             accept_message="Clearing your proposal...",
             cancel_message="This request has been cancelled.",
         )
@@ -107,7 +108,7 @@ class TradeView(View):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         view = ConfirmChoiceView(
-            interaction,
+            await Context.from_interaction(interaction),
             accept_message="Cancelling the trade...",
             cancel_message="This request has been cancelled.",
         )
@@ -184,7 +185,7 @@ class ConfirmView(View):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         view = ConfirmChoiceView(
-            interaction,
+            await Context.from_interaction(interaction),
             accept_message="Cancelling the trade...",
             cancel_message="This request has been cancelled.",
         )
@@ -422,14 +423,14 @@ class CountryballsSource(menus.ListPageSource):
 class CountryballsSelector(Pages):
     def __init__(
         self,
-        interaction: discord.Interaction["BallsDexBot"],
+        ctx: Context["BallsDexBot"],
         balls: List[BallInstance],
         cog: TradeCog,
     ):
-        self.bot = interaction.client
-        self.interaction = interaction
+        self.bot = ctx.bot
+        self.ctx = ctx
         source = CountryballsSource(balls)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.select_ball_menu)
         self.add_item(self.confirm_button)
         self.add_item(self.select_all_button)
@@ -524,7 +525,7 @@ class CountryballsSelector(Pages):
                     "for trade and won't be added to the proposal.",
                     ephemeral=True,
                 )
-            view = ConfirmChoiceView(interaction)
+            view = ConfirmChoiceView(await Context.from_interaction(interaction))
             if ball.favorite:
                 await interaction.followup.send(
                     f"One or more of the {settings.plural_collectible_name} is favorited, "
@@ -548,7 +549,7 @@ class CountryballsSelector(Pages):
         self.balls_selected.clear()
 
     @discord.ui.button(label="Clear", style=discord.ButtonStyle.danger)
-    async def clear_button(self, interaction: discord.Interaction, button: Button):
+    async def clear_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
         self.balls_selected.clear()
         await interaction.followup.send(
@@ -578,13 +579,13 @@ class TradeViewSource(menus.ListPageSource):
 class TradeViewMenu(Pages):
     def __init__(
         self,
-        interaction: discord.Interaction["BallsDexBot"],
+        ctx: Context["BallsDexBot"],
         proposal: List[TradingUser],
         cog: TradeCog,
     ):
-        self.bot = interaction.client
+        self.bot = ctx.bot
         source = TradeViewSource(proposal)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.select_player_menu)
         self.cog = cog
 
@@ -628,5 +629,5 @@ class TradeViewMenu(Pages):
                 ephemeral=True,
             )
 
-        paginator = CountryballsViewer(interaction, ball_instances)
+        paginator = CountryballsViewer(await Context.from_interaction(interaction), ball_instances)
         await paginator.start()
