@@ -1,10 +1,13 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import discord
 from discord.ui import Button, View, button
 
 from ballsdex.core.models import GuildConfig
 from ballsdex.settings import settings
+
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
 
 
 class AcceptTOSView(View):
@@ -14,7 +17,7 @@ class AcceptTOSView(View):
 
     def __init__(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         channel: discord.TextChannel,
         new_player: discord.Member,
     ):
@@ -39,7 +42,7 @@ class AcceptTOSView(View):
             )
         )
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"]) -> bool:
         if interaction.user.id != self.new_player.id:
             await interaction.response.send_message(
                 "You are not allowed to interact with this menu.", ephemeral=True
@@ -52,7 +55,9 @@ class AcceptTOSView(View):
         style=discord.ButtonStyle.success,
         emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}",
     )
-    async def accept_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def accept_button(
+        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
+    ):
         config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
         config.spawn_channel = self.channel.id  # type: ignore
         config.enabled = True
