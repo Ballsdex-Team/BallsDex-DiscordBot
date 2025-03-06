@@ -1,6 +1,7 @@
 import inspect
 from typing import Any
 
+import discord
 from discord.ext import commands
 
 
@@ -21,6 +22,10 @@ class HelpCommand(commands.DefaultHelpCommand):
         base = f"{self.context.clean_prefix}{name}"
 
         for param in command.clean_params.values():
+            if inspect.isclass(param.converter) and issubclass(
+                param.converter, commands.FlagConverter
+            ):
+                continue
             param_str = param.displayed_name or param.name
             if param.displayed_default:
                 param_str += f"={param.displayed_default}"
@@ -32,39 +37,60 @@ class HelpCommand(commands.DefaultHelpCommand):
         return base
 
     def add_command_arguments(self, command: commands.Command[Any, ..., Any]) -> None:
-        to_remove: str | None = None
+        arguments = command.clean_params.values()
+        if not arguments:
+            return
+
         flag_converter: type[commands.FlagConverter] | None = None
-        for key, param in command.clean_params.items():
+        for param in arguments:
             if inspect.isclass(param.converter) and issubclass(
                 param.converter, commands.FlagConverter
             ):
-                if to_remove:
+                if flag_converter:
                     raise RuntimeError("This formatter only supports one FlagConverter")
-                to_remove = key
                 flag_converter = param.converter
 
-        if to_remove:
-            command.params.pop(to_remove)
-        super().add_command_arguments(command)
+        if len(arguments) > 1 or flag_converter is None:
+            self.paginator.add_line(self.arguments_heading)
+            max_size = self.get_max_size(arguments)  # type: ignore # not a command
+
+            get_width = discord.utils._string_width
+            for argument in arguments:
+                name = argument.displayed_name or argument.name
+                width = max_size - (get_width(name) - len(name))
+                description = argument.description or self.default_argument_description
+                entry = f'{self.indent * " "}{name:<{width}} {description}'
+                # we do not want to shorten the default value, if any.
+                entry = self.shorten_text(entry)
+                if argument.displayed_default is not None:
+                    entry += f" (default: {argument.displayed_default})"
+
+                self.paginator.add_line(entry)
+
         if not flag_converter:
             return
 
-        if command.clean_params:
+        if len(arguments) > 1:
             self.paginator.add_line()
         self.paginator.add_line("Flags:")
 
+        required_once = False
         prefix = flag_converter.__commands_flag_prefix__
         for flag in flag_converter.get_flags().values():
             joiner = " " if prefix else "|"
             names = joiner.join(f"{prefix}{x}" for x in (flag.name, *flag.aliases))
             if flag.required:
+                required_once = True
                 entry = f"{(self.indent - 1) * " "}*{names}"
             else:
                 entry = f"{self.indent * " "}{names}"
             if flag.default:
-                entry += f" = {flag.default}"
+                entry += f"={flag.default}"
             entry = self.shorten_text(entry)
             if flag.description:
                 entry += self.shorten_text(f"\n{self.indent * 2 * " "}{flag.description}")
 
             self.paginator.add_line(entry)
+
+        if required_once:
+            self.paginator.add_line("* required")
