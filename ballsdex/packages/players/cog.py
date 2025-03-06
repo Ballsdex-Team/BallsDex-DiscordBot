@@ -534,11 +534,18 @@ class Player(commands.GroupCog):
         special = [x for x in ball if x.special is not None]
         trades = await Trade.filter(
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
-        ).count()
+        ).values_list("player1__discord_id", "player2__discord_id")
+
+        trade_partners = set()
+        for p1, p2 in trades:
+            if p1 != interaction.user.id:
+                trade_partners.add(p1)
+            if p2 != interaction.user.id:
+                trade_partners.add(p2)
+
         friends = await Friendship.filter(
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
         ).count()
-
         blocks = await Block.filter(player1__discord_id=interaction.user.id).count()
 
         embed = discord.Embed(
@@ -559,7 +566,8 @@ class Player(commands.GroupCog):
             f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned):,}\n"
             f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned):,}\n"
             f"**Special {settings.collectible_name.title()}s:** {len(special):,}\n"
-            f"**Trades Completed:** {trades:,}"
+            f"**Trades Completed:** {len(trades):,}\n"
+            f"**Amount of Users Traded With:** {len(trade_partners):,}"
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
