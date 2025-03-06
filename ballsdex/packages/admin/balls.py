@@ -566,10 +566,12 @@ class Balls(app_commands.Group):
             return
         emoji = interaction.client.get_emoji(int(emoji_id))
         if not emoji:
-            await interaction.response.send_message(
+            emoji = interaction.client.fetch_application_emoji(int(emoji_id))
+            if not emoji:
+             await interaction.response.send_message(
                 "The bot does not have access to the given emoji.", ephemeral=True
-            )
-            return
+             )
+             return
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         default_path = Path("./ballsdex/core/image_generator/src/default.png")
