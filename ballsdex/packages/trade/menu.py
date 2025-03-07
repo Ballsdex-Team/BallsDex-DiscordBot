@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
+from discord.ext.commands import Context
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
 
@@ -34,7 +35,7 @@ class TradeView(View):
         super().__init__(timeout=60 * 30)
         self.trade = trade
 
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         try:
             self.trade._get_trader(interaction.user)
         except RuntimeError:
@@ -46,7 +47,7 @@ class TradeView(View):
             return True
 
     @button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
-    async def lock(self, interaction: discord.Interaction, button: Button):
+    async def lock(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
         if trader.locked:
             await interaction.response.send_message(
@@ -68,7 +69,7 @@ class TradeView(View):
             )
 
     @button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
-    async def clear(self, interaction: discord.Interaction, button: Button):
+    async def clear(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
         await interaction.response.defer(thinking=True, ephemeral=True)
 
@@ -81,7 +82,7 @@ class TradeView(View):
             return
 
         view = ConfirmChoiceView(
-            interaction,
+            await Context.from_interaction(interaction),
             accept_message="Clearing your proposal...",
             cancel_message="This request has been cancelled.",
         )
@@ -103,11 +104,11 @@ class TradeView(View):
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
         style=discord.ButtonStyle.danger,
     )
-    async def cancel(self, interaction: discord.Interaction, button: Button):
+    async def cancel(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         view = ConfirmChoiceView(
-            interaction,
+            await Context.from_interaction(interaction),
             accept_message="Cancelling the trade...",
             cancel_message="This request has been cancelled.",
         )
@@ -128,7 +129,7 @@ class ConfirmView(View):
         self.trade = trade
         self.cooldown_duration = timedelta(seconds=10)
 
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         try:
             self.trade._get_trader(interaction.user)
         except RuntimeError:
@@ -142,7 +143,7 @@ class ConfirmView(View):
     @discord.ui.button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
-    async def accept_button(self, interaction: discord.Interaction, button: Button):
+    async def accept_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
         if self.trade.cooldown_start_time is None:
             return
@@ -180,11 +181,11 @@ class ConfirmView(View):
         style=discord.ButtonStyle.danger,
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
     )
-    async def deny_button(self, interaction: discord.Interaction, button: Button):
+    async def deny_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         view = ConfirmChoiceView(
-            interaction,
+            await Context.from_interaction(interaction),
             accept_message="Cancelling the trade...",
             cancel_message="This request has been cancelled.",
         )
@@ -422,14 +423,14 @@ class CountryballsSource(menus.ListPageSource):
 class CountryballsSelector(Pages):
     def __init__(
         self,
-        interaction: discord.Interaction["BallsDexBot"],
+        ctx: Context["BallsDexBot"],
         balls: List[BallInstance],
         cog: TradeCog,
     ):
-        self.bot = interaction.client
-        self.interaction = interaction
+        self.bot = ctx.bot
+        self.ctx = ctx
         source = CountryballsSource(balls)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.select_ball_menu)
         self.add_item(self.confirm_button)
         self.add_item(self.select_all_button)
@@ -459,7 +460,9 @@ class CountryballsSelector(Pages):
         self.select_ball_menu.max_values = len(options)
 
     @discord.ui.select(min_values=1, max_values=25)
-    async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
+    async def select_ball_menu(
+        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
+    ):
         for value in item.values:
             ball_instance = await BallInstance.get(id=int(value)).prefetch_related(
                 "ball", "player"
@@ -468,7 +471,9 @@ class CountryballsSelector(Pages):
         await interaction.response.defer()
 
     @discord.ui.button(label="Select Page", style=discord.ButtonStyle.secondary)
-    async def select_all_button(self, interaction: discord.Interaction, button: Button):
+    async def select_all_button(
+        self, interaction: discord.Interaction["BallsDexBot"], button: Button
+    ):
         await interaction.response.defer(thinking=True, ephemeral=True)
         for ball in self.select_ball_menu.options:
             ball_instance = await BallInstance.get(id=int(ball.value)).prefetch_related(
@@ -485,7 +490,9 @@ class CountryballsSelector(Pages):
         )
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
-    async def confirm_button(self, interaction: discord.Interaction, button: Button):
+    async def confirm_button(
+        self, interaction: discord.Interaction["BallsDexBot"], button: Button
+    ):
         await interaction.response.defer(thinking=True, ephemeral=True)
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
@@ -524,7 +531,7 @@ class CountryballsSelector(Pages):
                     "for trade and won't be added to the proposal.",
                     ephemeral=True,
                 )
-            view = ConfirmChoiceView(interaction)
+            view = ConfirmChoiceView(await Context.from_interaction(interaction))
             if ball.favorite:
                 await interaction.followup.send(
                     f"One or more of the {settings.plural_collectible_name} is favorited, "
@@ -548,7 +555,7 @@ class CountryballsSelector(Pages):
         self.balls_selected.clear()
 
     @discord.ui.button(label="Clear", style=discord.ButtonStyle.danger)
-    async def clear_button(self, interaction: discord.Interaction, button: Button):
+    async def clear_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
         self.balls_selected.clear()
         await interaction.followup.send(
@@ -578,13 +585,13 @@ class TradeViewSource(menus.ListPageSource):
 class TradeViewMenu(Pages):
     def __init__(
         self,
-        interaction: discord.Interaction["BallsDexBot"],
+        ctx: Context["BallsDexBot"],
         proposal: List[TradingUser],
         cog: TradeCog,
     ):
-        self.bot = interaction.client
+        self.bot = ctx.bot
         source = TradeViewSource(proposal)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.select_player_menu)
         self.cog = cog
 
@@ -628,5 +635,5 @@ class TradeViewMenu(Pages):
                 ephemeral=True,
             )
 
-        paginator = CountryballsViewer(interaction, ball_instances)
+        paginator = CountryballsViewer(await Context.from_interaction(interaction), ball_instances)
         await paginator.start()

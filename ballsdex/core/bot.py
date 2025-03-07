@@ -7,7 +7,7 @@ import math
 import time
 import types
 from datetime import datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Self, cast
 
 import aiohttp
 import discord
@@ -25,6 +25,7 @@ from rich.table import Table
 
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
+from ballsdex.core.help import HelpCommand
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.models import (
     Ball,
@@ -157,7 +158,13 @@ class BallsDexBot(commands.AutoShardedBot):
             trace.on_request_end.append(on_request_end)
             options["http_trace"] = trace
 
-        super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
+        super().__init__(
+            command_prefix,
+            intents=intents,
+            tree_cls=CommandTree,
+            help_command=HelpCommand(width=100),
+            **options,
+        )
         self.tree.disable_time_check = disable_time_check  # type: ignore
         self.skip_tree_sync = skip_tree_sync
 
@@ -371,42 +378,53 @@ class BallsDexBot(commands.AutoShardedBot):
             "is now operational![/green][/bold]\n"
         )
 
-    async def blacklist_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id in self.blacklist:
-            if interaction.type != discord.InteractionType.autocomplete:
-                await interaction.response.send_message(
-                    "You are blacklisted from the bot."
-                    "\nYou can appeal this blacklist in our support server: {}".format(
-                        settings.discord_invite
-                    ),
-                    ephemeral=True,
-                )
+    async def blacklist_check(
+        self, source: discord.Interaction[Self] | commands.Context[Self]
+    ) -> bool:
+        if isinstance(source, discord.Interaction):
+            user = source.user
+            guild_id = source.guild_id
+            send_func = source.response.send_message
+        else:
+            user = source.author
+            guild_id = source.guild.id if source.guild else None
+            send_func = source.send
+        if user.id in self.blacklist:
+            await send_func(
+                "You are blacklisted from the bot."
+                "\nYou can appeal this blacklist in our support server: {}".format(
+                    settings.discord_invite
+                ),
+                ephemeral=True,
+            )
             return False
-        if interaction.guild_id and interaction.guild_id in self.blacklist_guild:
-            if interaction.type != discord.InteractionType.autocomplete:
-                await interaction.response.send_message(
-                    "This server is blacklisted from the bot."
-                    "\nYou can appeal this blacklist in our support server: {}".format(
-                        settings.discord_invite
-                    ),
-                    ephemeral=True,
-                )
+        if guild_id and guild_id in self.blacklist_guild:
+            await send_func(
+                "This server is blacklisted from the bot."
+                "\nYou can appeal this blacklist in our support server: {}".format(
+                    settings.discord_invite
+                ),
+                ephemeral=True,
+            )
             return False
-        if interaction.command and interaction.user.id in self.command_log:
+        if source.command and user.id in self.command_log:
             log.info(
-                f"{interaction.user} ({interaction.user.id}) used "
-                f'"{interaction.command.qualified_name}" in '
-                f"{interaction.guild} ({interaction.guild_id})"
+                f'{user} ({user.id}) used "{source.command.qualified_name}" in '
+                f"{source.guild} ({guild_id})"
             )
         return True
 
     async def on_command_error(
-        self, context: commands.Context, exception: commands.errors.CommandError
+        self, context: commands.Context[Self], exception: commands.errors.CommandError
     ):
         if isinstance(exception, (commands.CommandNotFound, commands.DisabledCommand)):
             return
 
         assert context.command
+        if isinstance(exception, commands.BadArgument):
+            await context.send(exception.args[0])
+            return
+
         if isinstance(exception, (commands.ConversionError, commands.UserInputError)):
             # in case we need to know what happened
             log.debug("Silenced command exception", exc_info=exception)
@@ -446,7 +464,7 @@ class BallsDexBot(commands.AutoShardedBot):
             )
 
     async def on_application_command_error(
-        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+        self, interaction: discord.Interaction[Self], error: app_commands.AppCommandError
     ):
         async def send(content: str):
             if interaction.response.is_done():
@@ -481,6 +499,9 @@ class BallsDexBot(commands.AutoShardedBot):
             return
 
         if isinstance(error, app_commands.TransformerError):
+            if error.__cause__ and isinstance(error.__cause__, commands.BadArgument):
+                await send(error.__cause__.args[0])
+                return
             await send("One of the arguments provided cannot be parsed.")
             log.debug("Failed running converter", exc_info=error)
             return

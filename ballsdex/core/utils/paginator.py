@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import discord
+from discord.ext.commands import Context
 from discord.ext.commands import Paginator as CommandPaginator
 
 from ballsdex.core.utils import menus
@@ -34,27 +35,22 @@ class NumberedPageModal(discord.ui.Modal, title="Go to page"):
 class Pages(discord.ui.View):
     def __init__(
         self,
+        ctx: "Context[BallsDexBot]",
         source: menus.PageSource,
         *,
-        interaction: discord.Interaction["BallsDexBot"],
         check_embeds: bool = False,
         compact: bool = False,
     ):
         super().__init__()
         self.source: menus.PageSource = source
         self.check_embeds: bool = check_embeds
-        self.original_interaction = interaction
-        self.bot = self.original_interaction.client
+        self.ctx = ctx
+        self.bot = ctx.bot
         self.current_page: int = 0
         self.compact: bool = compact
         self.clear_items()
         self.fill_items()
-
-    async def send(self, *args, **kwargs):
-        if self.original_interaction.response.is_done():
-            await self.original_interaction.followup.send(*args, **kwargs)
-        else:
-            await self.original_interaction.response.send_message(*args, **kwargs)
+        self.message: discord.Message
 
     def fill_items(self) -> None:
         if not self.compact:
@@ -145,10 +141,7 @@ class Pages(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction[BallsDexBot]) -> bool:
         if not await interaction.client.blacklist_check(interaction):
             return False
-        if interaction.user and interaction.user.id in (
-            self.bot.owner_id,
-            self.original_interaction.user.id,
-        ):
+        if interaction.user and interaction.user.id in (self.bot.owner_id, self.ctx.author.id):
             return True
         await interaction.response.send_message(
             "This pagination menu cannot be controlled by you, sorry!", ephemeral=True
@@ -160,9 +153,10 @@ class Pages(discord.ui.View):
         for item in self.children:
             item.disabled = True  # type: ignore
         try:
-            await self.original_interaction.followup.edit_message(
-                "@original", view=self  # type: ignore
-            )
+            if self.ctx.interaction:
+                await self.ctx.interaction.edit_original_response(view=self)
+            else:
+                await self.message.edit(view=self)
         except discord.HTTPException:
             pass
 
@@ -180,11 +174,9 @@ class Pages(discord.ui.View):
     async def start(self, *, content: Optional[str] = None, ephemeral: bool = False) -> None:
         if (
             self.check_embeds
-            and not self.original_interaction.channel.permissions_for(  # type: ignore
-                self.original_interaction.guild.me  # type: ignore
-            ).embed_links
+            and not self.ctx.channel.permissions_for(self.ctx.guild.me).embed_links  # type: ignore
         ):
-            await self.send(
+            await self.ctx.send(
                 "Bot does not have embed links permission in this channel.", ephemeral=True
             )
             return
@@ -196,7 +188,7 @@ class Pages(discord.ui.View):
             kwargs.setdefault("content", content)
 
         self._update_labels(0)
-        await self.send(**kwargs, view=self, ephemeral=ephemeral)
+        self.message = await self.ctx.send(**kwargs, view=self, ephemeral=ephemeral)
 
     @discord.ui.button(label="≪", style=discord.ButtonStyle.grey)
     async def go_to_first_page(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -332,8 +324,6 @@ class SimplePages(Pages):
     Basically an embed with some normal formatting.
     """
 
-    def __init__(
-        self, entries, *, interaction: discord.Interaction["BallsDexBot"], per_page: int = 12
-    ):
-        super().__init__(SimplePageSource(entries, per_page=per_page), interaction=interaction)
+    def __init__(self, ctx: "Context[BallsDexBot]", entries, *, per_page: int = 12):
+        super().__init__(ctx, SimplePageSource(entries, per_page=per_page))
         self.embed = discord.Embed(colour=discord.Colour.blurple())

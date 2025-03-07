@@ -59,7 +59,7 @@ class Info(commands.Cog):
         return emotes
 
     @app_commands.command()
-    async def about(self, interaction: discord.Interaction):
+    async def about(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Get information about this bot.
         """
@@ -147,7 +147,7 @@ class Info(commands.Cog):
         await interaction.response.send_message(embed=embed, view=LicenseInfo())
 
     @app_commands.command()
-    async def help(self, interaction: discord.Interaction):
+    async def help(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Show the list of commands from the bot.
         """

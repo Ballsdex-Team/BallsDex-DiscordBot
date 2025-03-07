@@ -34,7 +34,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         self.ball = ball
         self.button = button
 
-    async def on_error(self, interaction: discord.Interaction, error: Exception, /) -> None:
+    async def on_error(
+        self, interaction: discord.Interaction["BallsDexBot"], error: Exception
+    ) -> None:
         log.exception("An error occured in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
             await interaction.followup.send(
@@ -68,8 +70,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         # Remove fancy unicode characters like ’ to replace to '
         cname = cname.replace("\u2019", "'")
         cname = cname.replace("\u2018", "'")
-        cname = cname.replace("\u201C", '"')
-        cname = cname.replace("\u201D", '"')
+        cname = cname.replace("\u201c", '"')
+        cname = cname.replace("\u201d", '"')
         # There are other "fancy" quotes as well but these are most common
         if cname in possible_names:
             self.ball.caught = True

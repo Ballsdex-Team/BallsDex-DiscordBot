@@ -44,7 +44,7 @@ class Config(commands.GroupCog):
     )
     async def channel(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         channel: Optional[discord.TextChannel] = None,
     ):
         """
@@ -77,7 +77,7 @@ class Config(commands.GroupCog):
     @app_commands.command()
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.checks.bot_has_permissions(send_messages=True)
-    async def disable(self, interaction: discord.Interaction):
+    async def disable(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Disable or enable countryballs spawning.
         """
