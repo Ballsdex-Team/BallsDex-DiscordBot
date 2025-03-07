@@ -50,13 +50,17 @@ class SpawnFlags(FlagConverter):
 
 
 class GiveBallFlags(FlagConverter):
-    countryball: BallTransform = flag(positional=True)
-    special: SpecialTransform | None = None
-    health_bonus: int | None = None
-    attack_bonus: int | None = None
+    countryball: BallTransform = flag(
+        positional=True, description="The countryball you want to give"
+    )
+    special: SpecialTransform | None = flag(description="A special event to set to this card")
+    health_bonus: int | None = flag(description="Force a specific health bonus percentage")
+    attack_bonus: int | None = flag(description="Force a specific attack bonus percentage")
 
 
 class BallsCountFlags(FlagConverter):
-    user: discord.User | None = None
-    countryball: BallTransform | None = None
-    special: SpecialTransform | None = None
+    user: discord.User | None = flag(description="The player whose countryballs you are counting")
+    countryball: BallTransform | None = flag(
+        description="Restrict countring to a specific countryball"
+    )
+    special: SpecialTransform | None = flag(description="Restrict counting to a special event")

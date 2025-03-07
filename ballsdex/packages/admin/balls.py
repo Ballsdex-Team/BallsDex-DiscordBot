@@ -172,6 +172,11 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
 async def give(ctx: commands.Context[BallsDexBot], user: discord.User, *, flags: GiveBallFlags):
     """
     Give the specified countryball to a player.
+
+    Parameters
+    ----------
+    user: discord.User
+        The user you want to give a countryball to
     """
     await ctx.defer(ephemeral=True)
 
