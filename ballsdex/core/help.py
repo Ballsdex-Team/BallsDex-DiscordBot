@@ -56,6 +56,8 @@ class HelpCommand(commands.DefaultHelpCommand):
 
             get_width = discord.utils._string_width
             for argument in arguments:
+                if argument.converter == flag_converter:
+                    continue
                 name = argument.displayed_name or argument.name
                 width = max_size - (get_width(name) - len(name))
                 description = argument.description or self.default_argument_description
@@ -93,4 +95,4 @@ class HelpCommand(commands.DefaultHelpCommand):
             self.paginator.add_line(entry)
 
         if required_once:
-            self.paginator.add_line("* required")
+            self.paginator.add_line("*required")
