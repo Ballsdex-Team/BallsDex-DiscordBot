@@ -9,10 +9,11 @@ from tortoise.expressions import Q
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.models import BallInstance, Player, Trade
 from ballsdex.core.utils.paginator import Pages
-from ballsdex.core.utils.transformers import BallEnabledTransform
 from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
+
+from .flags import TradeHistoryFlags, UserTradeHistoryFlags
 
 
 @commands.hybrid_group()
@@ -32,12 +33,7 @@ async def history(ctx: commands.Context):
     ]
 )
 async def history_user(
-    ctx: commands.Context["BallsDexBot"],
-    user: discord.User,
-    sorting: app_commands.Choice[str] | None = None,
-    countryball: BallEnabledTransform | None = None,
-    user2: discord.User | None = None,
-    days: int | None = None,
+    ctx: commands.Context["BallsDexBot"], user: discord.User, *, flags: UserTradeHistoryFlags
 ):
     """
     Show the trade history of a user.
@@ -46,19 +42,11 @@ async def history_user(
     ----------
     user: discord.User
         The user you want to check the history of.
-    sorting: str | None
-        The sorting method you want to use.
-    countryball: BallEnabledTransform | None
-        The countryball you want to filter the history by.
-    user2: discord.User | None
-        The second user you want to check the history of.
-    days: Optional[int]
-        Retrieve trade history from last x days.
     """
     await ctx.defer(ephemeral=True)
-    sort_value = sorting.value if sorting else "-date"
+    sort_value = "date" if flags.sort_oldest else "-date"
 
-    if days is not None and days < 0:
+    if flags.days is not None and flags.days < 0:
         await ctx.send(
             "Invalid number of days. Please provide a non-negative value.", ephemeral=True
         )
@@ -67,9 +55,9 @@ async def history_user(
     queryset = Trade.filter()
     try:
         player1 = await Player.get(discord_id=user.id)
-        if user2:
-            player2 = await Player.get(discord_id=user2.id)
-            query = f"?q={user.id}+{user2.id}"
+        if flags.user2:
+            player2 = await Player.get(discord_id=flags.user2.id)
+            query = f"?q={user.id}+{flags.user2.id}"
             queryset = queryset.filter(
                 (Q(player1=player1) & Q(player2=player2))
                 | (Q(player1=player2) & Q(player2=player1))
@@ -81,12 +69,14 @@ async def history_user(
         await ctx.send("One or more players are not registered by the bot.", ephemeral=True)
         return
 
-    if countryball:
-        queryset = queryset.filter(Q(tradeobjects__ballinstance__ball=countryball)).distinct()
+    if flags.countryball:
+        queryset = queryset.filter(
+            Q(tradeobjects__ballinstance__ball=flags.countryball)
+        ).distinct()
 
-    if days is not None and days > 0:
+    if flags.days is not None and flags.days > 0:
         end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=days)
+        start_date = end_date - datetime.timedelta(days=flags.days)
         queryset = queryset.filter(date__range=(start_date, end_date))
 
     queryset = queryset.order_by(sort_value).prefetch_related("player1", "player2")
@@ -96,8 +86,8 @@ async def history_user(
         await ctx.send("No history found.", ephemeral=True)
         return
 
-    if user2:
-        await ctx.send(f"History of {user.display_name} and {user2.display_name}:")
+    if flags.user2:
+        await ctx.send(f"History of {user.display_name} and {flags.user2.display_name}:")
 
     url = f"{settings.admin_url}/bd_models/trade/{query}" if settings.admin_url else None
     source = TradeViewFormat(history, user.display_name, ctx.bot, True, url)
@@ -107,17 +97,8 @@ async def history_user(
 
 @history.command(name="countryball")
 @commands.has_any_role(*settings.root_role_ids)
-@app_commands.choices(
-    sorting=[
-        app_commands.Choice(name="Most Recent", value="-date"),
-        app_commands.Choice(name="Oldest", value="date"),
-    ]
-)
 async def history_ball(
-    ctx: commands.Context["BallsDexBot"],
-    countryball_id: str,
-    sorting: app_commands.Choice[str] | None = None,
-    days: int | None = None,
+    ctx: commands.Context["BallsDexBot"], countryball_id: str, *, flags: TradeHistoryFlags
 ):
     """
     Show the trade history of a countryball.
@@ -126,12 +107,8 @@ async def history_ball(
     ----------
     countryball_id: str
         The ID of the countryball you want to check the history of.
-    sorting: str | None
-        The sorting method you want to use.
-    days: Optional[int]
-        Retrieve ball history from last x days.
     """
-    sort_value = sorting.value if sorting else "-date"
+    sort_value = "date" if flags.sort_oldest else "-date"
 
     try:
         pk = int(countryball_id, 16)
@@ -149,18 +126,18 @@ async def history_ball(
         return
 
     await ctx.defer(ephemeral=True)
-    if days is not None and days < 0:
+    if flags.days is not None and flags.days < 0:
         await ctx.send(
             "Invalid number of days. Please provide a non-negative value.", ephemeral=True
         )
         return
 
     queryset = Trade.all()
-    if days is None or days == 0:
+    if flags.days is None or flags.days == 0:
         queryset = queryset.filter(tradeobjects__ballinstance_id=pk)
     else:
         end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=days)
+        start_date = end_date - datetime.timedelta(days=flags.days)
         queryset = queryset.filter(
             tradeobjects__ballinstance_id=pk, date__range=(start_date, end_date)
         )

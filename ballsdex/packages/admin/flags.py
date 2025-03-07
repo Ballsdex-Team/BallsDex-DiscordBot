@@ -64,3 +64,17 @@ class BallsCountFlags(FlagConverter):
         description="Restrict countring to a specific countryball"
     )
     special: SpecialTransform | None = flag(description="Restrict counting to a special event")
+
+
+class TradeHistoryFlags(FlagConverter):
+    sort_oldest: bool = flag(description='"yes" to have oldest trades first', default=False)
+    days: int | None = flag(description="Retrieve entries from the last n days")
+
+
+class UserTradeHistoryFlags(TradeHistoryFlags):
+    countryball: BallTransform | None = flag(
+        description="The countryball you want to filter the history by"
+    )
+    user2: discord.User | None = flag(
+        description="The second user you want to check the history of"
+    )
