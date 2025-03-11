@@ -473,7 +473,7 @@ class Player(models.Model):
         self.money -= amount
         await self.save(update_fields=("money",))
 
-    async def can_afford(self, amount: int) -> bool:
+    def can_afford(self, amount: int) -> bool:
         return self.money >= amount
 
     @property

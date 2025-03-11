@@ -99,9 +99,9 @@ class Money(app_commands.Group):
                 "The amount must be greater than zero.", ephemeral=True
             )
             return
-        if not await player.can_afford(amount):
+        if not player.can_afford(amount):
             await interaction.followup.send(
-                "This user does not have enough coins to remove.", ephemeral=True
+                f"This user does not have enough coins to remove (balance={player.balance}).", ephemeral=True
             )
             return
         await player.remove_money(amount)
