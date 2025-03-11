@@ -49,6 +49,7 @@ class Player(commands.GroupCog):
     friend = app_commands.Group(name="friend", description="Friend commands")
     blocked = app_commands.Group(name="block", description="Block commands")
     policy = app_commands.Group(name="policy", description="Policy commands")
+    money = app_commands.Group(name="money", description="Money commands")
 
     @policy.command()
     @app_commands.choices(
@@ -559,11 +560,62 @@ class Player(commands.GroupCog):
             f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned):,}\n"
             f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned):,}\n"
             f"**Special {settings.collectible_name.title()}s:** {len(special):,}\n"
-            f"**Trades Completed:** {trades:,}"
+            f"**Trades Completed:** {trades:,}\n"
+            f"**Current Balance:** {player.money:,}"
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @money.command()
+    async def balance(self, interaction: discord.Interaction):
+        """
+        Check your balance.
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        await interaction.response.send_message(
+            f"Your balance is **{player.money:,}**.", ephemeral=True
+        )
+
+    @money.command()
+    async def give(self, interaction: discord.Interaction, user: discord.User, amount: int):
+        """
+        Give coins to another user.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to give coins to.
+        amount: int
+            The amount of coins to give.
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        if not player.can_afford(amount):
+            await interaction.response.send_message(
+                "You do not have enough coins to give.", ephemeral=True
+            )
+            return
+        if amount <= 0:
+            await interaction.response.send_message(
+                "The amount must be greater than zero.", ephemeral=True
+            )
+            return
+        if user.bot:
+            await interaction.response.send_message(
+                "You cannot give coins to a bot.", ephemeral=True
+            )
+            return
+        if user.id == interaction.user.id:
+            await interaction.response.send_message(
+                "You cannot give coins to yourself.", ephemeral=True
+            )
+            return
+        other_player, _ = await PlayerModel.get_or_create(discord_id=user.id)
+        await player.remove_money(amount)
+        await other_player.add_money(amount)
+        await interaction.response.send_message(
+            f"{amount:,} coins have been given to {user.mention}.", ephemeral=True
+        )
 
     @app_commands.command()
     @app_commands.choices(
