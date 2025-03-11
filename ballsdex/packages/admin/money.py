@@ -13,6 +13,7 @@ class Money(app_commands.Group):
     """
 
     @app_commands.command()
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def balance(self, interaction: discord.Interaction[BallsDexBot], user: discord.User):
         """
         Show the balance of the user provided
@@ -35,6 +36,7 @@ class Money(app_commands.Group):
         )
 
     @app_commands.command()
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def add(
         self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int
     ):
@@ -73,6 +75,7 @@ class Money(app_commands.Group):
         )
 
     @app_commands.command()
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def remove(
         self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int
     ):
@@ -115,6 +118,7 @@ class Money(app_commands.Group):
         )
 
     @app_commands.command()
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def set(
         self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int
     ):
