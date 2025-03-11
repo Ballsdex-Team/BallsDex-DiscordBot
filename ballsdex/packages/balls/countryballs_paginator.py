@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import discord
 
@@ -10,27 +10,29 @@ from ballsdex.core.utils.paginator import Pages
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
+    from discord.ext.commands import Context
+
     from ballsdex.core.bot import BallsDexBot
 
 
 class CountryballsSource(menus.ListPageSource):
-    def __init__(self, entries: List[BallInstance]):
+    def __init__(self, entries: list[BallInstance]):
         super().__init__(entries, per_page=25)
 
-    async def format_page(self, menu: CountryballsSelector, balls: List[BallInstance]):
+    async def format_page(self, menu: CountryballsSelector, balls: list[BallInstance]):
         menu.set_options(balls)
         return True  # signal to edit the page
 
 
 class CountryballsSelector(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[BallInstance]):
-        self.bot = interaction.client
+    def __init__(self, ctx: "Context[BallsDexBot]", balls: list[BallInstance]):
+        self.bot = ctx.bot
         source = CountryballsSource(balls)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.select_ball_menu)
 
-    def set_options(self, balls: List[BallInstance]):
-        options: List[discord.SelectOption] = []
+    def set_options(self, balls: list[BallInstance]):
+        options: list[discord.SelectOption] = []
         for ball in balls:
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
@@ -50,19 +52,25 @@ class CountryballsSelector(Pages):
         self.select_ball_menu.options = options
 
     @discord.ui.select()
-    async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
+    async def select_ball_menu(
+        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
+    ):
         await interaction.response.defer(thinking=True)
         ball_instance = await BallInstance.get(
             id=int(interaction.data.get("values")[0])  # type: ignore
         )
         await self.ball_selected(interaction, ball_instance)
 
-    async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):
+    async def ball_selected(
+        self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance
+    ):
         raise NotImplementedError()
 
 
 class CountryballsViewer(CountryballsSelector):
-    async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):
+    async def ball_selected(
+        self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance
+    ):
         content, file = await ball_instance.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file)
         file.close()
