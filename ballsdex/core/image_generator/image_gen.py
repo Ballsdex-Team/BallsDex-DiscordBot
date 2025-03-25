@@ -31,11 +31,11 @@ artwork_size = [b - a for a, b in zip(*CORNERS)]
 # image viewer. There are options available to specify the ball or the special background,
 # use the "--help" flag to view all options.
 
-title_font = ImageFont.truetype(str(SOURCES_PATH / "ArsenicaTrial-Extrabold.ttf"), 170)
-capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
-capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
-stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
-credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
+title_font = ImageFont.truetype(str(SOURCES_PATH / "RussoOne-Regular.ttf"), 170)
+capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "BebasNeue-Regular.ttf"), 110)
+capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "HelveticaNeueMedium.otf"), 70)
+stats_font = ImageFont.truetype(str(SOURCES_PATH / "BebasNeue-Regular.ttf"), 130)
+credits_font = ImageFont.truetype(str(SOURCES_PATH / "HelveticaNeueRoman.otf"), 40)
 
 credits_color_cache = {}
 
@@ -73,21 +73,23 @@ def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/me
         stroke_width=2,
         stroke_fill=(0, 0, 0, 255),
     )
-    for i, line in enumerate(textwrap.wrap(f"Ability: {ball.capacity_name}", width=26)):
+    cap_name = textwrap.wrap(f"Ability: {ball.capacity_name}", width=32)
+
+    for i, line in enumerate(cap_name):
         draw.text(
             (100, 1050 + 100 * i),
             line,
             font=capacity_name_font,
             fill=(230, 230, 230, 255),
-            stroke_width=2,
+            stroke_width=3,
             stroke_fill=(0, 0, 0, 255),
         )
-    for i, line in enumerate(textwrap.wrap(ball.capacity_description, width=32)):
+    for i, line in enumerate(textwrap.wrap(ball.capacity_description, width=36)):
         draw.text(
-            (60, 1300 + 80 * i),
+            (60, 1100 + 100*len(cap_name) + 80*i),
             line,
             font=capacity_description_font,
-            stroke_width=1,
+            stroke_width=2,
             stroke_fill=(0, 0, 0, 255),
         )
     draw.text(
