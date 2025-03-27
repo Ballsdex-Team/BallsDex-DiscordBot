@@ -31,6 +31,7 @@ from ballsdex.core.models import (
     BlacklistedGuild,
     BlacklistedID,
     Economy,
+    Player,
     Regime,
     Special,
     balls,
@@ -38,6 +39,7 @@ from ballsdex.core.models import (
     regimes,
     specials,
 )
+from ballsdex.core.utils.accept_tos import UserAcceptTOS, activation_embed
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -120,7 +122,10 @@ class CommandTree(app_commands.CommandTree):
                     ephemeral=True,
                 )
             return False  # wait for all shards to be connected
-        return await bot.blacklist_check(interaction)
+
+        if not await bot.blacklist_check(interaction):
+            return False
+        return await bot.accept_tos(interaction)
 
 
 class BallsDexBot(commands.AutoShardedBot):
@@ -398,6 +403,33 @@ class BallsDexBot(commands.AutoShardedBot):
                 f'"{interaction.command.qualified_name}" in '
                 f"{interaction.guild} ({interaction.guild_id})"
             )
+        return True
+
+    async def accept_tos(self, interaction: discord.Interaction) -> bool:
+        view = UserAcceptTOS(interaction)
+
+        if interaction.type != discord.InteractionType.autocomplete:
+            player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+            if player.accepted_tos:
+                return True
+            else:
+                pass
+
+            if not interaction.response.is_done():
+                await interaction.response.defer(thinking=True, ephemeral=True)
+
+            embed = activation_embed()
+            view.message = await interaction.followup.send(
+                content=(
+                    "Before starting to use this bot, you need to "
+                    "acknowledge the Terms of Service."
+                ),
+                embed=embed,
+                view=view,
+                ephemeral=True,
+            )
+            return False
+
         return True
 
     async def on_command_error(
