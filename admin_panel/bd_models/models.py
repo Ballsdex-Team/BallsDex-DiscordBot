@@ -78,6 +78,7 @@ class Player(models.Model):
     friend_policy = models.SmallIntegerField(
         choices=FriendPolicy.choices, help_text="Open or close your friend requests"
     )
+    extra_data = models.JSONField(blank=True, default=dict)
 
     def is_blacklisted(self) -> bool:
         blacklist = cast(
