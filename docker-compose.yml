@@ -7,7 +7,6 @@ x-common-env-vars:
     "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
 
 services:
-
   bot:
     restart: "no"
     image: ballsdex
