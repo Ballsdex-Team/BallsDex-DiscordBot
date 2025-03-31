@@ -12,7 +12,7 @@ from django_admin_inline_paginator.admin import TabularInlinePaginated
 
 from admin_panel.webhook import notify_admins
 
-from ..forms import BlacklistActionForm, UnblacklistActionForm, BlacklistedListFilter
+from ..forms import BlacklistActionForm, BlacklistedListFilter, UnblacklistActionForm
 from ..models import BallInstance, BlacklistedID, BlacklistHistory, GuildConfig, Player
 from ..utils import BlacklistTabular
 
@@ -129,11 +129,11 @@ class PlayerAdmin(admin.ModelAdmin):
 
         self.message_user(
             request,
-            f"Created unblacklist for {queryset.count()} user{"s" if queryset.count() > 1 else ""}. "
+            f"Created unblacklist for {queryset.count()} "
+            f"user{"s" if queryset.count() > 1 else ""}. "
             "This will be applied after reloading the bot's cache.",
         )
         async_to_sync(notify_admins)(
             f"{request.user} unblacklisted player{"s" if queryset.count() > 1 else ""} "
             f'{", ".join([str(x.discord_id) for x in queryset])} for the reason: {data["reason"]}.'
         )
-
