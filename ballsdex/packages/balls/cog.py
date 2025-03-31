@@ -1,6 +1,6 @@
 import enum
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import app_commands
@@ -798,8 +798,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
 
-        user1_balls = await player1.balls.filter(special=special).values_list("ball_id", flat=True)
-        user2_balls = await player2.balls.filter(special=special).values_list("ball_id", flat=True)
+        user1_balls = cast(
+            list[int],
+            await player1.balls.filter(special=special).values_list("ball_id", flat=True),
+        )
+        user2_balls = cast(
+            list[int],
+            await player2.balls.filter(special=special).values_list("ball_id", flat=True),
+        )
         both = set(user1_balls) & set(user2_balls)
         user1_only = set(user1_balls) - set(user2_balls)
         user2_only = set(user2_balls) - set(user1_balls)
