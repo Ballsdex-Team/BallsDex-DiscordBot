@@ -15,7 +15,7 @@ services:
       - *postgres-url
     depends_on:
       migration:
-        condition: service_started
+        condition: service_completed_successfully
       postgres-db:
         condition: service_healthy
     # ports:
@@ -23,7 +23,7 @@ services:
     networks:
       - internal
     volumes:
-      - ./:/code
+      - "./:/code"
     tty: true
     command: "poetry --quiet run python3 -m ballsdex"
 
@@ -40,31 +40,33 @@ services:
       # - DJANGO_SETTINGS_MODULE=admin_panel.settings.production
     depends_on:
       migration:
-        condition: service_started
+        condition: service_completed_successfully
       postgres-db:
         condition: service_healthy
     volumes:
-      - ./:/code
+      - "./:/code"
     tty: true
     working_dir: /code/admin_panel
     command: "poetry --quiet run uvicorn admin_panel.asgi:application --host 0.0.0.0"
 
-    migration:
-      image: ballsdex
-      build: .
-      environment:
-        - *postgres-url
-      volumes:
-        - ./:/code
-      depends_on:
-        postgres-db:
-          condition: service_healthy
-      working_dir: /code/admin_panel
-      command: >
-        sh -c "
-        poetry --quiet run python3 manage.py migrate --no-input --fake-initial &&
-        poetry --quiet run python3 manage.py collectstatic --no-input
-        "
+  migration:
+    image: ballsdex
+    build: .
+    networks:
+      - internal
+    environment:
+      - *postgres-url
+    volumes:
+      - ./:/code
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    working_dir: /code/admin_panel
+    command: >
+      sh -c "
+      poetry --quiet run python3 manage.py migrate --no-input --fake-initial &&
+      poetry --quiet run python3 manage.py collectstatic --no-input
+      "
 
   postgres-db:
     image: postgres
