@@ -3,6 +3,6 @@ admin_panel/static
 pgbackups
 config.yml
 .env
-ballsdex.log
+ballsdex.log*
 venv
 __pycache__
