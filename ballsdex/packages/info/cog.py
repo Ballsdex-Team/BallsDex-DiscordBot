@@ -127,7 +127,7 @@ class Info(commands.Cog):
             f"The bot has been online for **{formatted_uptime}**.\n\n"
             f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
             f"**{players_count:,}** players that caught "
-            f"**{balls_instances_count:,}** {settings.plural_collectible_name}\n"
+            f"**{balls_instances_count:,}** {settings.plural_collectible_name[:-1]}\n"
             f"**{len(self.bot.guilds):,}** servers playing\n\n"
             f"{dex_credits}\n\n"
             "Consider supporting El Laggron on "
