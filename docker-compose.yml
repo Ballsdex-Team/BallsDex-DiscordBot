@@ -7,7 +7,6 @@ x-common-env-vars:
     "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
 
 services:
-
   bot:
     restart: "no"
     image: ballsdex
@@ -15,21 +14,18 @@ services:
     environment:
       - *postgres-url
     depends_on:
-      - postgres-db
+      migration:
+        condition: service_completed_successfully
+      postgres-db:
+        condition: service_healthy
     # ports:
     #   - "15260:15260"
     networks:
       - internal
     volumes:
-      - type: bind
-        source: ./
-        target: /code
+      - "./:/code"
     tty: true
-    command: >
-      bash -c "
-      cd admin_panel &&
-      poetry run python3 manage.py migrate --no-input --fake-initial &&
-      cd .. && poetry run python3 -m ballsdex"
+    command: "poetry --quiet run python3 -m ballsdex"
 
   admin-panel:
     image: ballsdex
@@ -43,18 +39,34 @@ services:
       # if serving the admin panel online, copy the file "production.example.py" and uncomment
       # - DJANGO_SETTINGS_MODULE=admin_panel.settings.production
     depends_on:
-      - postgres-db
+      migration:
+        condition: service_completed_successfully
+      postgres-db:
+        condition: service_healthy
     volumes:
-      - type: bind
-        source: ./
-        target: /code
+      - "./:/code"
     tty: true
     working_dir: /code/admin_panel
+    command: "poetry --quiet run uvicorn admin_panel.asgi:application --host 0.0.0.0"
+
+  migration:
+    image: ballsdex
+    build: .
+    networks:
+      - internal
+    environment:
+      - *postgres-url
+    volumes:
+      - ./:/code
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    working_dir: /code/admin_panel
     command: >
-      bash -c "
-      poetry run python3 manage.py migrate --no-input --fake-initial &&
-      poetry run python3 manage.py collectstatic --no-input &&
-      poetry run uvicorn admin_panel.asgi:application --host 0.0.0.0"
+      sh -c "
+      poetry --quiet run python3 manage.py migrate --no-input --fake-initial &&
+      poetry --quiet run python3 manage.py collectstatic --no-input
+      "
 
   postgres-db:
     image: postgres
@@ -72,6 +84,11 @@ services:
       - internal
     volumes:  # Persist the db data
       - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ballsdex}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   postgres-backup:
     image: prodrigestivill/postgres-backup-local
@@ -80,7 +97,8 @@ services:
     volumes:
       - ./pgbackups:/backups
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
     networks:
       - internal
     environment:
