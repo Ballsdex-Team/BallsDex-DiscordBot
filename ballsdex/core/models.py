@@ -441,6 +441,7 @@ class Player(models.Model):
         description="How you want to handle friend requests",
         default=FriendPolicy.ALLOW,
     )
+    extra_data = fields.JSONField(default=dict)
     balls: fields.BackwardFKRelation[BallInstance]
 
     def __str__(self) -> str:
