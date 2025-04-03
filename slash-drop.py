@@ -1,6 +1,6 @@
 # credit me somewhere
 # I kinda redid this
-# /gu bhinjidk if it works  
+# idk if it works  
 ball_id="Specific ball ID to drop (leave empty for random)",
 channel="Channel to drop the ball in (defaults to current channel)"
 async def drop(
