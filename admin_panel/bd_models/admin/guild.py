@@ -60,7 +60,7 @@ class BallInstanceGuildTabular(InlinePaginated, NonrelatedInlineMixin, admin.Tab
 class GuildAdmin(admin.ModelAdmin):
     list_display = ("guild_id", "spawn_channel", "enabled", "silent", "blacklisted")
     list_filter = ("enabled", "silent", BlacklistedListFilter)
-    show_facets = admin.ShowFacets.NEVER
+    show_facets = admin.ShowFacets.NEVER  # type: ignore
 
     search_fields = ("guild_id", "spawn_channel")
     search_help_text = "Search by guild ID or spawn channel ID"

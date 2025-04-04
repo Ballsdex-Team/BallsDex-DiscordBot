@@ -42,7 +42,7 @@ credits_color_cache = {}
 
 def get_credit_color(image: Image.Image, region: tuple) -> tuple:
     image = image.crop(region)
-    brightness = sum(image.convert("L").getdata()) / image.width / image.height
+    brightness = sum(image.convert("L").getdata()) / image.width / image.height  # type: ignore
     return (0, 0, 0, 255) if brightness > 100 else (255, 255, 255, 255)
 
 

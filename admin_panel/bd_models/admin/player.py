@@ -56,7 +56,7 @@ class PlayerAdmin(admin.ModelAdmin):
 
     list_display = ("discord_id", "pk", "blacklisted")
     list_filter = (BlacklistedListFilter,)
-    show_facets = admin.ShowFacets.NEVER
+    show_facets = admin.ShowFacets.NEVER  # type: ignore
 
     search_fields = ("discord_id",)
     search_help_text = "Search for a Discord ID"

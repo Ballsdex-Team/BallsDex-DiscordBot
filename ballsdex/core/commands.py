@@ -191,7 +191,6 @@ class Core(commands.Cog):
         uploaded = 0
 
         async def update_message_loop():
-            nonlocal uploaded
             for i in range(5 * 12 * 10):  # timeout progress after 10 minutes
                 print(f"Updating msg {uploaded}")
                 await msg.edit(

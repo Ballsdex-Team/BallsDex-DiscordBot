@@ -46,7 +46,7 @@ class Admin(commands.GroupCog):
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def status(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         status: discord.Status | None = None,
         name: str | None = None,
         state: str | None = None,

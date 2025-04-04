@@ -48,7 +48,9 @@ repos:
           - django-admin-autocomplete-filter
           - django_admin_action_forms
           - django_admin_inline_paginator
-  - repo: https://github.com/csachs/pyproject-flake8
-    rev: v7.0.0
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.2.0
     hooks:
-      - id: pyproject-flake8
+      - id: flake8
+        additional_dependencies:
+          - Flake8-pyproject==1.2.3

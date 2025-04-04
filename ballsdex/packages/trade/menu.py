@@ -34,7 +34,7 @@ class TradeView(View):
         super().__init__(timeout=60 * 30)
         self.trade = trade
 
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         try:
             self.trade._get_trader(interaction.user)
         except RuntimeError:
@@ -46,7 +46,7 @@ class TradeView(View):
             return True
 
     @button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
-    async def lock(self, interaction: discord.Interaction, button: Button):
+    async def lock(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
         if trader.locked:
             await interaction.response.send_message(
@@ -68,7 +68,7 @@ class TradeView(View):
             )
 
     @button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
-    async def clear(self, interaction: discord.Interaction, button: Button):
+    async def clear(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
         await interaction.response.defer(thinking=True, ephemeral=True)
 
@@ -103,7 +103,7 @@ class TradeView(View):
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
         style=discord.ButtonStyle.danger,
     )
-    async def cancel(self, interaction: discord.Interaction, button: Button):
+    async def cancel(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         view = ConfirmChoiceView(
@@ -128,7 +128,7 @@ class ConfirmView(View):
         self.trade = trade
         self.cooldown_duration = timedelta(seconds=10)
 
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         try:
             self.trade._get_trader(interaction.user)
         except RuntimeError:
@@ -142,7 +142,7 @@ class ConfirmView(View):
     @discord.ui.button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
-    async def accept_button(self, interaction: discord.Interaction, button: Button):
+    async def accept_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
         if self.trade.cooldown_start_time is None:
             return
@@ -180,7 +180,7 @@ class ConfirmView(View):
         style=discord.ButtonStyle.danger,
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
     )
-    async def deny_button(self, interaction: discord.Interaction, button: Button):
+    async def deny_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         view = ConfirmChoiceView(
@@ -459,7 +459,9 @@ class CountryballsSelector(Pages):
         self.select_ball_menu.max_values = len(options)
 
     @discord.ui.select(min_values=1, max_values=25)
-    async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
+    async def select_ball_menu(
+        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
+    ):
         for value in item.values:
             ball_instance = await BallInstance.get(id=int(value)).prefetch_related(
                 "ball", "player"
@@ -468,7 +470,9 @@ class CountryballsSelector(Pages):
         await interaction.response.defer()
 
     @discord.ui.button(label="Select Page", style=discord.ButtonStyle.secondary)
-    async def select_all_button(self, interaction: discord.Interaction, button: Button):
+    async def select_all_button(
+        self, interaction: discord.Interaction["BallsDexBot"], button: Button
+    ):
         await interaction.response.defer(thinking=True, ephemeral=True)
         for ball in self.select_ball_menu.options:
             ball_instance = await BallInstance.get(id=int(ball.value)).prefetch_related(
@@ -485,7 +489,9 @@ class CountryballsSelector(Pages):
         )
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
-    async def confirm_button(self, interaction: discord.Interaction, button: Button):
+    async def confirm_button(
+        self, interaction: discord.Interaction["BallsDexBot"], button: Button
+    ):
         await interaction.response.defer(thinking=True, ephemeral=True)
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
@@ -548,7 +554,7 @@ class CountryballsSelector(Pages):
         self.balls_selected.clear()
 
     @discord.ui.button(label="Clear", style=discord.ButtonStyle.danger)
-    async def clear_button(self, interaction: discord.Interaction, button: Button):
+    async def clear_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
         self.balls_selected.clear()
         await interaction.followup.send(

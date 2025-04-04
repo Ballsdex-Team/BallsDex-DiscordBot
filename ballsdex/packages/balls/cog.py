@@ -33,7 +33,7 @@ class DonationRequest(View):
     def __init__(
         self,
         bot: "BallsDexBot",
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         countryball: BallInstance,
         new_player: Player,
     ):
@@ -43,7 +43,7 @@ class DonationRequest(View):
         self.countryball = countryball
         self.new_player = new_player
 
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         if interaction.user.id != self.new_player.discord_id:
             await interaction.response.send_message(
                 "You are not allowed to interact with this menu.", ephemeral=True
@@ -65,7 +65,7 @@ class DonationRequest(View):
     @button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
-    async def accept(self, interaction: discord.Interaction, button: Button):
+    async def accept(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
@@ -88,7 +88,7 @@ class DonationRequest(View):
         style=discord.ButtonStyle.danger,
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
     )
-    async def deny(self, interaction: discord.Interaction, button: Button):
+    async def deny(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
@@ -300,7 +300,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 if len(buffer) + len(text) > 1024:
                     # hitting embed limits, adding an intermediate field
                     if first_field_added:
-                        entries.append(("\u200B", buffer))
+                        entries.append(("\u200b", buffer))
                     else:
                         entries.append((f"__**{title}**__", buffer))
                         first_field_added = True
@@ -309,7 +309,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
             if buffer:  # add what's remaining
                 if first_field_added:
-                    entries.append(("\u200B", buffer))
+                    entries.append(("\u200b", buffer))
                 else:
                     entries.append((f"__**{title}**__", buffer))
 
@@ -329,7 +329,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 (
                     f"__**:tada: No missing {settings.plural_collectible_name}, "
                     "congratulations! :tada:**__",
-                    "\u200B",
+                    "\u200b",
                 )
             )  # force empty field value
 
@@ -349,7 +349,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
     async def info(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -431,7 +431,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     @app_commands.command()
     async def favorite(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -497,7 +497,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     @app_commands.command(extras={"trade": TradeCommandType.PICK})
     async def give(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         user: discord.User,
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
@@ -628,7 +628,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     @app_commands.command()
     async def count(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
         current_server: bool = False,
@@ -828,7 +828,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 if len(buffer) + len(text) > 1024:
                     # hitting embed limits, adding an intermediate field
                     if first_field_added:
-                        entries.append(("\u200B", buffer))
+                        entries.append(("\u200b", buffer))
                     else:
                         entries.append((f"__**{title}**__", buffer))
                         first_field_added = True
@@ -837,7 +837,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
             if buffer:  # add what's remaining
                 if first_field_added:
-                    entries.append(("\u200B", buffer))
+                    entries.append(("\u200b", buffer))
                 else:
                     entries.append((f"__**{title}**__", buffer))
 

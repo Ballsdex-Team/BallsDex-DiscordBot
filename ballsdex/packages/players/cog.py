@@ -59,7 +59,9 @@ class Player(commands.GroupCog):
             app_commands.Choice(name="Same Server", value=PrivacyPolicy.SAME_SERVER),
         ]
     )
-    async def privacy(self, interaction: discord.Interaction, policy: PrivacyPolicy):
+    async def privacy(
+        self, interaction: discord.Interaction["BallsDexBot"], policy: PrivacyPolicy
+    ):
         """
         Set your privacy policy.
 
@@ -93,7 +95,9 @@ class Player(commands.GroupCog):
             ),
         ]
     )
-    async def donation(self, interaction: discord.Interaction, policy: DonationPolicy):
+    async def donation(
+        self, interaction: discord.Interaction["BallsDexBot"], policy: DonationPolicy
+    ):
         """
         Change how you want to receive donations from /balls give
 
@@ -141,7 +145,9 @@ class Player(commands.GroupCog):
             app_commands.Choice(name="Deny all mentions", value=MentionPolicy.DENY),
         ]
     )
-    async def mention(self, interaction: discord.Interaction, policy: MentionPolicy):
+    async def mention(
+        self, interaction: discord.Interaction["BallsDexBot"], policy: MentionPolicy
+    ):
         """
         Set your mention policy.
 
@@ -164,7 +170,7 @@ class Player(commands.GroupCog):
             app_commands.Choice(name="Deny all friend requests", value=FriendPolicy.DENY),
         ]
     )
-    async def friends(self, interaction: discord.Interaction, policy: FriendPolicy):
+    async def friends(self, interaction: discord.Interaction["BallsDexBot"], policy: FriendPolicy):
         """
         Set your friend policy.
 
@@ -182,7 +188,7 @@ class Player(commands.GroupCog):
         )
 
     @app_commands.command()
-    async def delete(self, interaction: discord.Interaction):
+    async def delete(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Delete your player data.
         """
@@ -197,7 +203,9 @@ class Player(commands.GroupCog):
         await player.delete()
 
     @friend.command(name="add")
-    async def friend_add(self, interaction: discord.Interaction, user: discord.User):
+    async def friend_add(
+        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User
+    ):
         """
         Add another user as a friend.
 
@@ -288,7 +296,9 @@ class Player(commands.GroupCog):
         self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
 
     @friend.command(name="remove")
-    async def friend_remove(self, interaction: discord.Interaction, user: discord.User):
+    async def friend_remove(
+        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User
+    ):
         """
         Remove a friend.
 
@@ -364,7 +374,7 @@ class Player(commands.GroupCog):
         await pages.start(ephemeral=True)
 
     @blocked.command(name="add")
-    async def block_add(self, interaction: discord.Interaction, user: discord.User):
+    async def block_add(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
         """
         Block another user.
 
@@ -422,7 +432,9 @@ class Player(commands.GroupCog):
         await interaction.followup.send(f"You have now blocked {user.name}.", ephemeral=True)
 
     @blocked.command(name="remove")
-    async def block_remove(self, interaction: discord.Interaction, user: discord.User):
+    async def block_remove(
+        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User
+    ):
         """
         Unblock a user.
 
@@ -498,7 +510,7 @@ class Player(commands.GroupCog):
         await pages.start(ephemeral=True)
 
     @app_commands.command()
-    async def info(self, interaction: discord.Interaction):
+    async def info(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Display some of your info in the bot!
         """
@@ -581,7 +593,7 @@ class Player(commands.GroupCog):
             app_commands.Choice(name="All", value="all"),
         ]
     )
-    async def export(self, interaction: discord.Interaction, type: str):
+    async def export(self, interaction: discord.Interaction["BallsDexBot"], type: str):
         """
         Export your player data.
         """

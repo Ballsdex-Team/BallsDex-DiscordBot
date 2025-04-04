@@ -43,7 +43,7 @@ class Trade(commands.GroupCog):
 
     def get_trade(
         self,
-        interaction: discord.Interaction | None = None,
+        interaction: discord.Interaction["BallsDexBot"] | None = None,
         *,
         channel: discord.TextChannel | None = None,
         user: discord.User | discord.Member = MISSING,
@@ -53,7 +53,7 @@ class Trade(commands.GroupCog):
 
         Parameters
         ----------
-        interaction: discord.Interaction
+        interaction: discord.Interaction["BallsDexBot"]
             The current interaction, used for getting the guild, channel and author.
 
         Returns
@@ -164,7 +164,7 @@ class Trade(commands.GroupCog):
     @app_commands.command(extras={"trade": TradeCommandType.PICK})
     async def add(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -236,7 +236,7 @@ class Trade(commands.GroupCog):
     @bulk.command(name="add", extras={"trade": TradeCommandType.PICK})
     async def bulk_add(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         countryball: BallEnabledTransform | None = None,
         sort: SortingChoices | None = None,
         special: SpecialEnabledTransform | None = None,
@@ -290,7 +290,7 @@ class Trade(commands.GroupCog):
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
     async def remove(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction["BallsDexBot"],
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
     ):
@@ -332,7 +332,7 @@ class Trade(commands.GroupCog):
         await countryball.unlock()
 
     @app_commands.command()
-    async def cancel(self, interaction: discord.Interaction):
+    async def cancel(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Cancel the ongoing trade.
         """

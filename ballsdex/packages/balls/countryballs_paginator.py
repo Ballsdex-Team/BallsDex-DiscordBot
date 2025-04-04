@@ -50,19 +50,25 @@ class CountryballsSelector(Pages):
         self.select_ball_menu.options = options
 
     @discord.ui.select()
-    async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
+    async def select_ball_menu(
+        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
+    ):
         await interaction.response.defer(thinking=True)
         ball_instance = await BallInstance.get(
             id=int(interaction.data.get("values")[0])  # type: ignore
         )
         await self.ball_selected(interaction, ball_instance)
 
-    async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):
+    async def ball_selected(
+        self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance
+    ):
         raise NotImplementedError()
 
 
 class CountryballsViewer(CountryballsSelector):
-    async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):
+    async def ball_selected(
+        self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance
+    ):
         content, file = await ball_instance.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file)
         file.close()

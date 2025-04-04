@@ -48,10 +48,12 @@ dev = [
     "pre-commit==3.7.1",
     "black==24.8.0",
     "flake8-pyproject==1.2.3",
+    "flake8==7.2.0",
     "pyright==1.1.390",
     "isort==5.13.2",
     "django-debug-toolbar==4.4.6",
     "pyinstrument==5.0.0",
+    "django-types==0.20.0",
 ]
 
 [tool.poetry]
