@@ -1,6 +1,6 @@
 import enum
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import app_commands
@@ -738,3 +738,124 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         paginator = Pages(source, interaction=interaction)
         await paginator.start(ephemeral=True)
+
+    @app_commands.command()
+    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    async def compare(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User,
+        special: SpecialEnabledTransform | None = None,
+    ):
+        """
+        Compare your countryballs with another user.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to compare with
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        """
+        await interaction.response.defer(thinking=True)
+        if interaction.user == user:
+            await interaction.followup.send("You cannot compare with yourself.", ephemeral=True)
+            return
+
+        try:
+            player = await Player.get(discord_id=user.id)
+        except DoesNotExist:
+            await interaction.followup.send(
+                f"{user.display_name} doesn't have any {settings.plural_collectible_name} yet."
+            )
+            return
+
+        if await inventory_privacy(self.bot, interaction, player, user) is False:
+            return
+
+        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
+        if special:
+            bot_countryballs = {
+                x: y.emoji_id
+                for x, y in balls.items()
+                if y.enabled and (special.end_date is None or y.created_at < special.end_date)
+            }
+
+        player1, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        player2, _ = await Player.get_or_create(discord_id=user.id)
+
+        blocked = await player.is_blocked(player1)
+        if blocked and not is_staff(interaction):
+            await interaction.followup.send(
+                "You cannot compare with a user that has you blocked.", ephemeral=True
+            )
+            return
+
+        blocked = await player.is_blocked(player2)
+        if blocked and not is_staff(interaction):
+            await interaction.followup.send(
+                "You cannot compare with a user that has you blocked.", ephemeral=True
+            )
+            return
+        queryset = BallInstance.filter(ball__enabled=True).distinct()
+        if special:
+            queryset = queryset.filter(special=special)
+        user1_balls = cast(
+            list[int],
+            await queryset.filter(player=player1).values_list("ball_id", flat=True),
+        )
+        user2_balls = cast(
+            list[int],
+            await queryset.filter(player=player2).values_list("ball_id", flat=True),
+        )
+        both = set(user1_balls) & set(user2_balls)
+        user1_only = set(user1_balls) - set(user2_balls)
+        user2_only = set(user2_balls) - set(user1_balls)
+        neither = set(bot_countryballs.keys()) - both - user1_only - user2_only
+
+        entries = []
+
+        def fill_fields(title: str, ids: set[int]):
+            first_field_added = False
+            buffer = ""
+
+            for ball_id in ids:
+                emoji = self.bot.get_emoji(bot_countryballs[ball_id])
+                if not emoji:
+                    continue
+
+                text = f"{emoji} "
+                if len(buffer) + len(text) > 1024:
+                    # hitting embed limits, adding an intermediate field
+                    if first_field_added:
+                        entries.append(("\u200B", buffer))
+                    else:
+                        entries.append((f"__**{title}**__", buffer))
+                        first_field_added = True
+                    buffer = ""
+                buffer += text
+
+            if buffer:  # add what's remaining
+                if first_field_added:
+                    entries.append(("\u200B", buffer))
+                else:
+                    entries.append((f"__**{title}**__", buffer))
+
+        if both:
+            fill_fields("Both have", both)
+        else:
+            entries.append(("__**Both have**__", "None"))
+        fill_fields(f"{interaction.user.display_name} has", user1_only)
+        fill_fields(f"{user.display_name} has", user2_only)
+        fill_fields("Neither have", neither)
+
+        source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
+        special_str = f" ({special.name})" if special else ""
+        source.embed.title = (
+            f"Comparison of {interaction.user.display_name} and {user.display_name}'s "
+            f"{settings.plural_collectible_name}{special_str}"
+        )
+        source.embed.colour = discord.Colour.blurple()
+
+        pages = Pages(source=source, interaction=interaction, compact=True)
+        await pages.start()
