@@ -797,19 +797,21 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 "You cannot compare with a user that has you blocked.", ephemeral=True
             )
             return
-
+        queryset = BallInstance.filter(ball__enabled=True).distinct()
+        if special:
+            queryset = queryset.filter(special=special)
         user1_balls = cast(
             list[int],
-            await player1.balls.filter(special=special).values_list("ball_id", flat=True),
+            await queryset.filter(player=player1).values_list("ball_id", flat=True),
         )
         user2_balls = cast(
             list[int],
-            await player2.balls.filter(special=special).values_list("ball_id", flat=True),
+            await queryset.filter(player=player2).values_list("ball_id", flat=True),
         )
         both = set(user1_balls) & set(user2_balls)
         user1_only = set(user1_balls) - set(user2_balls)
         user2_only = set(user2_balls) - set(user1_balls)
-        neither = set(balls.keys()) - both - user1_only - user2_only
+        neither = set(bot_countryballs.keys()) - both - user1_only - user2_only
 
         entries = []
 
