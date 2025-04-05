@@ -7,7 +7,7 @@ from discord.ext import commands
 from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.models import GuildConfig
-from ballsdex.packages.countryballs.countryball import CountryBall
+from ballsdex.packages.countryballs.countryball import BallSpawnView
 from ballsdex.packages.countryballs.spawn import BaseSpawnManager
 from ballsdex.settings import settings
 
@@ -23,7 +23,7 @@ class CountryBallsSpawner(commands.Cog):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
         self.cache: dict[int, int] = {}
-        self.countryball_cls = CountryBall
+        self.countryball_cls = BallSpawnView
 
         module_path, class_name = settings.spawn_manager.rsplit(".", 1)
         module = importlib.import_module(module_path)
@@ -68,7 +68,7 @@ class CountryBallsSpawner(commands.Cog):
             log.warning(f"Lost channel {self.cache[guild.id]} for guild {guild.name}.")
             del self.cache[guild.id]
             return
-        ball = await CountryBall.get_random()
+        ball = await BallSpawnView.get_random(self.bot)
         ball.algo = algo
         await ball.spawn(cast(discord.TextChannel, channel))
 
