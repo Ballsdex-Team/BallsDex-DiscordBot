@@ -18,6 +18,8 @@ from ballsdex.settings import settings
 if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
 
+    from ballsdex.core.bot import BallsDexBot
+
 
 balls: dict[int, Ball] = {}
 regimes: dict[int, Regime] = {}
@@ -336,7 +338,7 @@ class BallInstance(models.Model):
         return buffer
 
     async def prepare_for_message(
-        self, interaction: discord.Interaction
+        self, interaction: discord.Interaction["BallsDexBot"]
     ) -> Tuple[str, discord.File]:
         # message content
         trade_content = ""
