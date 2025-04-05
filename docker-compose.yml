@@ -25,7 +25,8 @@ services:
     volumes:
       - "./:/code"
     tty: true
-    command: "poetry --quiet run python3 -m ballsdex"
+    working_dir: /code/
+    command: python3 -m ballsdex
 
   admin-panel:
     image: ballsdex
@@ -47,7 +48,7 @@ services:
       - "./:/code"
     tty: true
     working_dir: /code/admin_panel
-    command: "poetry --quiet run uvicorn admin_panel.asgi:application --host 0.0.0.0"
+    command: "uvicorn admin_panel.asgi:application --host 0.0.0.0"
 
   migration:
     image: ballsdex
@@ -64,8 +65,8 @@ services:
     working_dir: /code/admin_panel
     command: >
       sh -c "
-      poetry --quiet run python3 manage.py migrate --no-input --fake-initial &&
-      poetry --quiet run python3 manage.py collectstatic --no-input
+      python3 manage.py migrate --no-input --fake-initial &&
+      python3 manage.py collectstatic --no-input
       "
 
   postgres-db:
