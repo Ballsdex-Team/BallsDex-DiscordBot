@@ -48,7 +48,7 @@ services:
       - "./:/code"
     tty: true
     working_dir: /code/admin_panel
-    command: "uvicorn admin_panel.asgi:application --host 0.0.0.0"
+    command: "python3 -m uvicorn admin_panel.asgi:application --host 0.0.0.0"
 
   migration:
     image: ballsdex
