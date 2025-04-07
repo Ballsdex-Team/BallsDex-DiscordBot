@@ -13,7 +13,8 @@ ENV PYTHONFAULTHANDLER=1 \
     POETRY_NO_INTERACTION=1 \
     POETRY_NO_ANSI=1
 
-RUN addgroup -S ballsdex -g 1000 && adduser -S ballsdex -G ballsdex -u 1000
+ARG UID GID
+RUN addgroup -S ballsdex -g ${GID:-1000} && adduser -S ballsdex -G ballsdex -u ${UID:-1000}
 WORKDIR /code
 
 FROM base AS builder-base
