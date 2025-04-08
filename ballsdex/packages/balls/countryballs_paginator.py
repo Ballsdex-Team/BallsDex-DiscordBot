@@ -69,6 +69,6 @@ class CountryballsViewer(CountryballsSelector):
     async def ball_selected(
         self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance
     ):
-        content, file = await ball_instance.prepare_for_message(interaction)
-        await interaction.followup.send(content=content, file=file)
+        content, file, view = await ball_instance.prepare_for_message(interaction)
+        await interaction.followup.send(content=content, file=file, view=view)
         file.close()

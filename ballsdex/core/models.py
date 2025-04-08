@@ -339,7 +339,7 @@ class BallInstance(models.Model):
 
     async def prepare_for_message(
         self, interaction: discord.Interaction["BallsDexBot"]
-    ) -> Tuple[str, discord.File]:
+    ) -> Tuple[str, discord.File, discord.ui.View]:
         # message content
         trade_content = ""
         await self.fetch_related("trade_player", "special")
@@ -379,7 +379,8 @@ class BallInstance(models.Model):
         with ThreadPoolExecutor() as pool:
             buffer = await interaction.client.loop.run_in_executor(pool, self.draw_card)
 
-        return content, discord.File(buffer, "card.png")
+        view = discord.ui.View()
+        return content, discord.File(buffer, "card.webp"), view
 
     async def lock_for_trade(self):
         self.locked = timezone.now()

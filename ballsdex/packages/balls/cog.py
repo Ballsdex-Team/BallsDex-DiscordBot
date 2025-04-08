@@ -366,8 +366,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if not countryball:
             return
         await interaction.response.defer(thinking=True)
-        content, file = await countryball.prepare_for_message(interaction)
-        await interaction.followup.send(content=content, file=file)
+        content, file, view = await countryball.prepare_for_message(interaction)
+        await interaction.followup.send(content=content, file=file, view=view)
         file.close()
 
     @app_commands.command()
@@ -419,13 +419,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
 
-        content, file = await countryball.prepare_for_message(interaction)
+        content, file, view = await countryball.prepare_for_message(interaction)
         if user is not None and user.id != interaction.user.id:
             content = (
                 f"You are viewing {user.display_name}'s last caught {settings.collectible_name}.\n"
                 + content
             )
-        await interaction.followup.send(content=content, file=file)
+        await interaction.followup.send(content=content, file=file, view=view)
         file.close()
 
     @app_commands.command()
