@@ -44,7 +44,7 @@ class Command(BaseCommand):
             if ball is None:
                 raise CommandError(f"You need at least one {settings.collectible_name} created.")
 
-        special = None
+        special: Special | None = None
         if special_name := options.get("special"):
             try:
                 special = await Special.get(name__iexact=special_name)
@@ -59,7 +59,7 @@ class Command(BaseCommand):
         )
 
         instance = BallInstance(ball=ball, special=special)
-        image = draw_card(instance, media_path="./media/")
+        image, kwargs = draw_card(instance, media_path="./media/")
 
         if sys.platform not in ("win32", "darwin") and not os.environ.get("DISPLAY"):
             self.stderr.write(
@@ -72,9 +72,17 @@ class Command(BaseCommand):
             )
             raise CommandError("No display detected.")
         if sys.stdout.isatty():
+            if kwargs.get("save_all", False):
+                self.stderr.write(
+                    self.style.WARNING(
+                        "You are trying to generate an animation, which is not supported in "
+                        "your OS viewer (only the first frame will show). Pipe to a file instead "
+                        "to generate a viewable animation file."
+                    )
+                )
             image.show(title=ball.country)
         else:
-            image.save(sys.stdout.buffer, "png")
+            image.save(sys.stdout.buffer, **kwargs)
 
     def handle(self, *args, **options):
         loop = asyncio.get_event_loop()

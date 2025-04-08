@@ -330,9 +330,9 @@ class BallInstance(models.Model):
         return text
 
     def draw_card(self) -> BytesIO:
-        image = draw_card(self)
+        image, kwargs = draw_card(self)
         buffer = BytesIO()
-        image.save(buffer, format="png")
+        image.save(buffer, **kwargs)
         buffer.seek(0)
         image.close()
         return buffer
