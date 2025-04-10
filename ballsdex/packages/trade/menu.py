@@ -92,6 +92,14 @@ class TradeView(View):
         if not view.value:
             return
 
+        if trader.locked:
+            await interaction.followup.send(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return
+
         for countryball in trader.proposal:
             await countryball.unlock()
 
