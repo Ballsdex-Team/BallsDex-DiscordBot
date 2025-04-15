@@ -464,6 +464,22 @@ class Player(models.Model):
     async def is_blocked(self, other_player: "Player") -> bool:
         return await Block.filter((Q(player1=self) & Q(player2=other_player))).exists()
 
+    async def add_money(self, amount: int) -> int:
+        if amount <= 0:
+            raise ValueError("Amount to add must be positive")
+        self.money += amount
+        await self.save(update_fields=("money",))
+        return self.money
+
+    async def remove_money(self, amount: int) -> None:
+        if self.money < amount:
+            raise ValueError("Not enough money")
+        self.money -= amount
+        await self.save(update_fields=("money",))
+
+    def can_afford(self, amount: int) -> bool:
+        return self.money >= amount
+
     @property
     def can_be_mentioned(self) -> bool:
         return self.mention_policy == MentionPolicy.ALLOW
