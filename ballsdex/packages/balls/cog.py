@@ -100,8 +100,8 @@ class DonationRequest(View):
         await self.countryball.unlock()
 
 
-class DuplicateType(enum.Enum):
-    countryballs = "countryballs"
+class DuplicateType(enum.StrEnum):
+    countryballs = settings.plural_collectible_name
     specials = "specials"
 
 
@@ -688,7 +688,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
         await player.fetch_related("balls")
-        is_special = type.value == "specials"
+        is_special = type == DuplicateType.specials
         queryset = BallInstance.filter(player=player)
 
         if is_special:
@@ -723,7 +723,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             for i, item in enumerate(results)
         ]
 
-        source = DuplicateViewMenu(interaction, entries, "balls" if not is_special else "specials")
+        source = DuplicateViewMenu(interaction, entries, type.value)
         await source.start(content=f"View your duplicate {type.value}.")
 
     @app_commands.command()
