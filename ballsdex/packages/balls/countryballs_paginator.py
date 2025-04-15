@@ -72,3 +72,46 @@ class CountryballsViewer(CountryballsSelector):
         content, file, view = await ball_instance.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file, view=view)
         file.close()
+
+
+class DuplicateSource(menus.ListPageSource):
+    def __init__(self, entries: List[str]):
+        super().__init__(entries, per_page=25)
+
+    async def format_page(self, menu, items):
+        menu.set_options(items)
+        return True  # signal to edit the page
+
+
+class DuplicateViewMenu(Pages):
+    def __init__(self, interaction: discord.Interaction["BallsDexBot"], list, dupe_type: str):
+        self.bot = interaction.client
+        self.dupe_type = dupe_type
+        source = DuplicateSource(list)
+        super().__init__(source, interaction=interaction)
+        self.add_item(self.dupe_ball_menu)
+
+    def set_options(self, items):
+        options: List[discord.SelectOption] = []
+        for item in items:
+            options.append(
+                discord.SelectOption(
+                    label=item["name"], description=f"Count: {item['count']}", emoji=item["emoji"]
+                )
+            )
+        self.dupe_ball_menu.options = options
+
+    @discord.ui.select()
+    async def dupe_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        if self.dupe_type == "balls":
+            balls = await BallInstance.filter(
+                ball__country=item.values[0], player__discord_id=interaction.user.id
+            ).count()
+        else:
+            balls = await BallInstance.filter(
+                special__name=item.values[0], player__discord_id=interaction.user.id
+            ).count()
+        await interaction.followup.send(
+            f"You have {balls:,} {item.values[0]} {settings.collectible_name}."
+        )

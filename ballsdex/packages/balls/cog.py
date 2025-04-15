@@ -20,7 +20,7 @@ from ballsdex.core.utils.transformers import (
     TradeCommandType,
 )
 from ballsdex.core.utils.utils import inventory_privacy, is_staff
-from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
+from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer, DuplicateViewMenu
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -100,8 +100,8 @@ class DonationRequest(View):
         await self.countryball.unlock()
 
 
-class DuplicateType(enum.Enum):
-    countryballs = "countryballs"
+class DuplicateType(enum.StrEnum):
+    countryballs = settings.plural_collectible_name
     specials = "specials"
 
 
@@ -688,18 +688,16 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
         await player.fetch_related("balls")
-        is_special = type.value == "specials"
+        is_special = type == DuplicateType.specials
         queryset = BallInstance.filter(player=player)
 
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
             annotations = {"name": "special__name", "emoji": "special__emoji"}
-            title = "special"
             limit = 5
         else:
             queryset = queryset.filter(ball__tradeable=True)
             annotations = {"name": "ball__country", "emoji": "ball__emoji_id"}
-            title = settings.collectible_name
             limit = 50
 
         results = (
@@ -715,29 +713,18 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 f"You don't have any {type.value} duplicates in your inventory.", ephemeral=True
             )
             return
-
         entries = [
-            (
-                f"{i + 1}. {item[annotations['name']]} "
-                f"{self.bot.get_emoji(item[annotations['emoji']]) or item[annotations['emoji']]}",
-                f"Count: {item['count']}",
-            )
+            {
+                "name": item[annotations["name"]],
+                "emoji": self.bot.get_emoji(item[annotations["emoji"]])
+                or item[annotations["emoji"]],
+                "count": item["count"],
+            }
             for i, item in enumerate(results)
         ]
 
-        embed_title = (
-            f"Top {len(results)} duplicate {title}s:"
-            if len(results) > 1
-            else f"Top {len(results)} duplicate {title}"
-        )
-
-        source = FieldPageSource(entries, per_page=5 if is_special else 10, inline=False)
-        source.embed.title = embed_title
-        source.embed.color = discord.Color.purple() if is_special else discord.Color.blue()
-        source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
-
-        paginator = Pages(source, interaction=interaction)
-        await paginator.start(ephemeral=True)
+        source = DuplicateViewMenu(interaction, entries, type.value)
+        await source.start(content=f"View your duplicate {type.value}.")
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
