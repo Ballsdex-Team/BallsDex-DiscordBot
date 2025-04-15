@@ -131,7 +131,7 @@ class BallsDexBot(commands.AutoShardedBot):
     def __init__(
         self,
         command_prefix: PrefixType[BallsDexBot],
-        disable_messsage_content: bool = False,
+        disable_message_content: bool = False,
         disable_time_check: bool = False,
         skip_tree_sync: bool = False,
         dev: bool = False,
@@ -146,9 +146,9 @@ class BallsDexBot(commands.AutoShardedBot):
             guilds=True,
             guild_messages=True,
             emojis_and_stickers=True,
-            message_content=not disable_messsage_content,
+            message_content=not disable_message_content,
         )
-        if disable_messsage_content:
+        if disable_message_content:
             log.warning("Message content disabled, this will make spam detection harder")
 
         if settings.prometheus_enabled:
