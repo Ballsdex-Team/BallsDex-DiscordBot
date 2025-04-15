@@ -164,6 +164,9 @@ class Balls(app_commands.Group):
                 countryball,
                 channel or interaction.channel,  # type: ignore
                 n,
+                special,
+                atk_bonus,
+                hp_bonus,
             )
             await log_action(
                 f"{interaction.user} spawned {settings.collectible_name}"
