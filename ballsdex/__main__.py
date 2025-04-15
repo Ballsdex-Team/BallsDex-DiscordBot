@@ -301,7 +301,7 @@ def main():
             command_prefix=when_mentioned_or(prefix),
             dev=cli_flags.dev,  # type: ignore
             shard_count=settings.shard_count,
-            disable_messsage_content=cli_flags.disable_message_content,
+            disable_message_content=cli_flags.disable_message_content,
             disable_time_check=cli_flags.disable_time_check,
             skip_tree_sync=cli_flags.skip_tree_sync,
         )
