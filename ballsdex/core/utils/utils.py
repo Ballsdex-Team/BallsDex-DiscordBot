@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, List, Union
 
 import discord
 
-from ballsdex.core.models import Player, PrivacyPolicy
+from ballsdex.core.models import Player, PrivacyPolicy, MentionPolicy
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -60,3 +60,10 @@ async def inventory_privacy(
             await interaction.followup.send("This user is not in the server.", ephemeral=True)
             return False
     return True
+
+async def can_mention(players: List[Player]) -> discord.AllowedMentions:
+    can_mention = []
+    for player in players:
+        if player.can_be_mentioned:
+            can_mention.append(discord.Object(id=player.discord_id))
+    return discord.AllowedMentions(users=can_mention)

@@ -5,6 +5,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List, Set, cast
 
+from ballsdex.core.utils.utils import can_mention
 import discord
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
@@ -294,7 +295,7 @@ class TradeMenu:
             "is proposing a trade with you!",
             embed=self.embed,
             view=self.current_view,
-            allowed_mentions=discord.AllowedMentions(users=self.trader2.player.can_be_mentioned),
+            allowed_mentions=can_mention([self.trader2.player]),
         )
         self.task = self.bot.loop.create_task(self.update_message_loop())
 

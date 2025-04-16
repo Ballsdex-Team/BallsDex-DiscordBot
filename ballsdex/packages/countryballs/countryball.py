@@ -7,6 +7,7 @@ import string
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from ballsdex.core.utils.utils import can_mention
 import discord
 from discord.ui import Button, Modal, TextInput, View, button
 from tortoise.timezone import get_default_timezone
@@ -63,7 +64,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             await interaction.followup.send(
                 f"{interaction.user.mention} I was caught already!",
                 ephemeral=True,
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                allowed_mentions=can_mention([player]),
             )
             return
 
@@ -74,13 +75,13 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
             await interaction.followup.send(
                 f"{interaction.user.mention} {self.view.get_message(ball, has_caught_before)}",
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                allowed_mentions=can_mention([player]),
             )
             await interaction.followup.edit_message(self.view.message.id, view=self.view)
         else:
             await interaction.followup.send(
                 f"{interaction.user.mention} Wrong name!",
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                allowed_mentions=can_mention([player]),
                 ephemeral=False,
             )
 
