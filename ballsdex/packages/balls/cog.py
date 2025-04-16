@@ -19,7 +19,7 @@ from ballsdex.core.utils.transformers import (
     SpecialEnabledTransform,
     TradeCommandType,
 )
-from ballsdex.core.utils.utils import inventory_privacy, is_staff, can_mention
+from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer, DuplicateViewMenu
 from ballsdex.settings import settings
 

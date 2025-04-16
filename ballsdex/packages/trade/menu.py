@@ -5,7 +5,6 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List, Set, cast
 
-from ballsdex.core.utils.utils import can_mention
 import discord
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
@@ -14,6 +13,7 @@ from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.utils import can_mention
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser

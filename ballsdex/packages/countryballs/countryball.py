@@ -7,7 +7,6 @@ import string
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from ballsdex.core.utils.utils import can_mention
 import discord
 from discord.ui import Button, Modal, TextInput, View, button
 from tortoise.timezone import get_default_timezone
@@ -24,6 +23,7 @@ from ballsdex.core.models import (
     balls,
     specials,
 )
+from ballsdex.core.utils.utils import can_mention
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
