@@ -742,7 +742,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user: discord.User
             The user you want to compare with
         special: Special
-            Filter the results of autocompletion to a special event. Ignored afterwards.
+            Filter the results of the comparison to a special event.
         """
         await interaction.response.defer(thinking=True)
         if interaction.user == user:
