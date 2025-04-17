@@ -915,7 +915,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 specials[ball.special] += 1
 
         desc = (
-            f"**Total**: {total:,} ({total_caught_self:,} caught, {total_traded:,} received from trade)\n"
+            f"**Total**: {total:,} ({total_caught_self:,} caught, "
+            f"{total_traded:,} received from trade)\n"
             f"**Total Specials**: {special_count:,}\n\n"
         )
         if specials:
