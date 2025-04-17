@@ -104,7 +104,7 @@ class DuplicateViewMenu(Pages):
     @discord.ui.select()
     async def dupe_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        if self.dupe_type == "balls":
+        if self.dupe_type == settings.plural_collectible_name:
             balls = await BallInstance.filter(
                 ball__country=item.values[0], player__discord_id=interaction.user.id
             ).count()
