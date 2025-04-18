@@ -674,7 +674,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
     async def duplicate(
-        self, interaction: discord.Interaction["BallsDexBot"], type: DuplicateType
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        type: DuplicateType,
+        limit: int | None = None,
     ):
         """
         Shows your most duplicated countryballs or specials.
@@ -683,6 +686,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         type: DuplicateType
             Type of duplicate to check (countryballs or specials).
+        limit: int | None
+            The amount of countryballs to show, can only be used with `countryballs`.
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
 
@@ -694,33 +699,37 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
             annotations = {"name": "special__name", "emoji": "special__emoji"}
-            limit = 5
+            apply_limit = False
         else:
             queryset = queryset.filter(ball__tradeable=True)
             annotations = {"name": "ball__country", "emoji": "ball__emoji_id"}
-            limit = 50
+            apply_limit = True
 
-        results = (
-            await queryset.annotate(count=Count("id"))
-            .group_by(*annotations.values())
-            .order_by("-count")
-            .limit(limit)
-            .values(*annotations.values(), "count")
+        query = (
+            queryset.annotate(count=Count("id")).group_by(*annotations.values()).order_by("-count")
         )
+
+        if apply_limit and limit is not None:
+            query = query.limit(limit)
+
+        query = query.values(*annotations.values(), "count")
+        results = await query
 
         if not results:
             await interaction.followup.send(
                 f"You don't have any {type.value} duplicates in your inventory.", ephemeral=True
             )
             return
+
         entries = [
             {
                 "name": item[annotations["name"]],
-                "emoji": self.bot.get_emoji(item[annotations["emoji"]])
-                or item[annotations["emoji"]],
+                "emoji": (
+                    self.bot.get_emoji(item[annotations["emoji"]]) or item[annotations["emoji"]]
+                ),
                 "count": item["count"],
             }
-            for i, item in enumerate(results)
+            for item in results
         ]
 
         source = DuplicateViewMenu(interaction, entries, type.value)

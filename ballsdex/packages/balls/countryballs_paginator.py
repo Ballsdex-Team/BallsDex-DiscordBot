@@ -112,6 +112,6 @@ class DuplicateViewMenu(Pages):
             balls = await BallInstance.filter(
                 special__name=item.values[0], player__discord_id=interaction.user.id
             ).count()
-        await interaction.followup.send(
-            f"You have {balls:,} {item.values[0]} {settings.collectible_name}."
-        )
+
+        plural = settings.collectible_name if balls == 1 else settings.plural_collectible_name
+        await interaction.followup.send(f"You have {balls:,} {item.values[0]} {plural}.")
