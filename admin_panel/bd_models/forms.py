@@ -19,6 +19,10 @@ class BlacklistActionForm(AdminActionForm):
     reason = forms.CharField(label="Reason", required=True)
 
 
+class UnblacklistActionForm(AdminActionForm):
+    reason = forms.CharField(label="Reason", required=True)
+
+
 class BlacklistedListFilter(admin.SimpleListFilter):
     title = "blacklisted"
     parameter_name = "blacklisted"
