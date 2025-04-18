@@ -1,5 +1,5 @@
 import enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from tortoise.expressions import F, RawSQL
 
@@ -7,6 +7,13 @@ if TYPE_CHECKING:
     from tortoise.queryset import QuerySet
 
     from ballsdex.core.models import BallInstance
+
+
+class FilteringChoices(enum.Enum):
+    only_specials = "special"
+    non_specials = "non_special"
+    self_caught = "self_caught"
+    this_server = "this_server"
 
 
 class SortingChoices(enum.Enum):
@@ -70,3 +77,34 @@ def sort_balls(
         return queryset.order_by(sort.value, "ball__country")
     else:
         return queryset.order_by(sort.value)
+
+
+def filter_balls(
+    filter: FilteringChoices, balls: "List[BallInstance]", guild_id: int | None = None
+) -> "List[BallInstance]":
+    """
+    Edit a list of ball instances in place to apply the selected filtering options.
+
+    Parameters
+    ----------
+    filter: FilteringChoices
+        One of the supported filtering methods
+    balls: List[BallInstance]
+        A list of ball instances.
+    guild_id: int | None
+        The ID of the server to filter by. Only used for the ``this_server`` filter.
+        If not provided, this filter will be ignored.
+
+    Returns
+    -------
+    List[BallInstance]
+        The same list modified to apply the filtering.
+    """
+    if filter == FilteringChoices.only_specials:
+        return [ball for ball in balls if ball.special]
+    elif filter == FilteringChoices.non_specials:
+        return [ball for ball in balls if not ball.special]
+    elif filter == FilteringChoices.self_caught:
+        return [ball for ball in balls if not ball.trade_player]
+    elif filter == FilteringChoices.this_server:
+        return [ball for ball in balls if ball.server_id == guild_id]

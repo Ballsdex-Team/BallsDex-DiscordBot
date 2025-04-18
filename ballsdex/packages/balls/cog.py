@@ -12,7 +12,7 @@ from tortoise.functions import Count
 from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
-from ballsdex.core.utils.sorting import SortingChoices, sort_balls
+from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
@@ -123,6 +123,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         reverse: bool = False,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        filter: FilteringChoices | None = None,
     ):
         """
         List your countryballs.
@@ -139,6 +140,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Filter the list by a specific countryball.
         special: Special
             Filter the list by a specific special event.
+        filter: FilteringChoices
+            Filter the list by a specific filter.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -178,6 +181,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             countryballs = await sort_balls(sort, query)
         else:
             countryballs = await query.order_by("-favorite")
+
+        if filter:
+            countryballs = filter_balls(
+                filter, countryballs, interaction.guild.id if interaction.guild else None
+            )
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
