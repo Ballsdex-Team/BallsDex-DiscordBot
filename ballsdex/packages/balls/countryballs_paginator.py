@@ -114,6 +114,4 @@ class DuplicateViewMenu(Pages):
             ).count()
 
         plural = settings.collectible_name if balls == 1 else settings.plural_collectible_name
-        await interaction.followup.send(
-            f"You have {balls:,} {item.values[0]} {plural}."
-        )
+        await interaction.followup.send(f"You have {balls:,} {item.values[0]} {plural}.")

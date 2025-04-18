@@ -706,9 +706,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             apply_limit = True
 
         query = (
-            queryset.annotate(count=Count("id"))
-            .group_by(*annotations.values())
-            .order_by("-count")
+            queryset.annotate(count=Count("id")).group_by(*annotations.values()).order_by("-count")
         )
 
         if apply_limit and limit is not None:
