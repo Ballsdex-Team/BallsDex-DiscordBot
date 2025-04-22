@@ -1,13 +1,4 @@
-from ballsdex.core.models import (
-    Ball,
-    Economy,
-    Regime,
-    Special,
-    balls,
-    economies,
-    regimes,
-    specials,
-)
+from bd_models.models import Ball, Economy, Regime, Special, balls, economies, regimes, specials
 
 
 async def refresh_cache():
@@ -19,17 +10,17 @@ async def refresh_cache():
     do *not* want caching in the admin panel to happen (since we're actively editing stuff).
     """
     balls.clear()
-    for ball in await Ball.all():
+    async for ball in Ball.objects.all():
         balls[ball.pk] = ball
 
     regimes.clear()
-    for regime in await Regime.all():
+    async for regime in Regime.objects.all():
         regimes[regime.pk] = regime
 
     economies.clear()
-    for economy in await Economy.all():
+    async for economy in Economy.objects.all():
         economies[economy.pk] = economy
 
     specials.clear()
-    for special in await Special.all():
+    async for special in Special.objects.all():
         specials[special.pk] = special

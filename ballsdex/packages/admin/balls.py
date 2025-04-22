@@ -6,12 +6,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import discord
+from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from discord import app_commands
 from discord.utils import format_dt
-from tortoise.exceptions import BaseORMException, DoesNotExist
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.transformers import (
@@ -233,8 +232,8 @@ class Balls(app_commands.Group):
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        player, created = await Player.get_or_create(discord_id=user.id)
-        instance = await BallInstance.create(
+        player, created = await Player.objects.aget_or_create(discord_id=user.id)
+        instance = await BallInstance.objects.acreate(
             ball=countryball,
             player=player,
             attack_bonus=(
@@ -280,10 +279,10 @@ class Balls(app_commands.Group):
             )
             return
         try:
-            ball = await BallInstance.get(id=pk).prefetch_related(
+            ball = await BallInstance.objects.prefetch_related(
                 "player", "trade_player", "special"
-            )
-        except DoesNotExist:
+            ).aget(id=pk)
+        except BallInstance.DoesNotExist:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
             )
@@ -338,13 +337,13 @@ class Balls(app_commands.Group):
             )
             return
         try:
-            ball = await BallInstance.get(id=ballIdConverted)
-        except DoesNotExist:
+            ball = await BallInstance.objects.aget(id=ballIdConverted)
+        except BallInstance.DoesNotExist:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
             )
             return
-        await ball.delete()
+        await ball.adelete()
         await interaction.response.send_message(
             f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True
         )
@@ -376,19 +375,19 @@ class Balls(app_commands.Group):
             )
             return
         try:
-            ball = await BallInstance.get(id=ballIdConverted).prefetch_related("player")
+            ball = await BallInstance.objects.prefetch_related("player").aget(id=ballIdConverted)
             original_player = ball.player
-        except DoesNotExist:
+        except BallInstance.DoesNotExist:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
             )
             return
-        player, _ = await Player.get_or_create(discord_id=user.id)
+        player, _ = await Player.objects.aget_or_create(discord_id=user.id)
         ball.player = player
-        await ball.save()
+        await ball.asave()
 
-        trade = await Trade.create(player1=original_player, player2=player)
-        await TradeObject.create(trade=trade, ballinstance=ball, player=original_player)
+        trade = await Trade.objects.acreate(player1=original_player, player2=player)
+        await TradeObject.objects.acreate(trade=trade, ballinstance=ball, player=original_player)
         await interaction.response.send_message(
             f"Transfered {ball}({ball.pk}) from {original_player} to {user}.",
             ephemeral=True,
@@ -416,7 +415,7 @@ class Balls(app_commands.Group):
         percentage: int | None
             The percentage of countryballs to delete, if not all. Used for sanctions.
         """
-        player = await Player.get_or_none(discord_id=user.id)
+        player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
             await interaction.response.send_message(
                 "The user you gave does not exist.", ephemeral=True
@@ -450,13 +449,13 @@ class Balls(app_commands.Group):
         if not view.value:
             return
         if percentage:
-            balls = await BallInstance.filter(player=player)
+            balls = [x async for x in BallInstance.objects.filter(player=player)]
             to_delete = random.sample(balls, int(len(balls) * (percentage / 100)))
             for ball in to_delete:
-                await ball.delete()
+                await ball.adelete()
             count = len(to_delete)
         else:
-            count = await BallInstance.filter(player=player).delete()
+            count = await BallInstance.objects.filter(player=player).adelete()
         await interaction.followup.send(
             f"{count} {settings.plural_collectible_name} from {user} have been deleted.",
             ephemeral=True,
@@ -496,7 +495,7 @@ class Balls(app_commands.Group):
         if user:
             filters["player__discord_id"] = user.id
         await interaction.response.defer(ephemeral=True, thinking=True)
-        balls = await BallInstance.filter(**filters).count()
+        balls = await BallInstance.objects.filter(**filters).acount()
         verb = "is" if balls == 1 else "are"
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
@@ -605,7 +604,7 @@ class Balls(app_commands.Group):
             return
 
         try:
-            ball = await Ball.create(
+            ball = await Ball.objects.acreate(
                 country=name,
                 regime=regime,
                 economy=economy,
@@ -621,7 +620,7 @@ class Balls(app_commands.Group):
                 capacity_name=capacity_name,
                 capacity_description=capacity_description,
             )
-        except BaseORMException as e:
+        except Exception as e:
             log.exception("Failed creating countryball with admin command", exc_info=True)
             await interaction.followup.send(
                 f"Failed creating the {settings.collectible_name}.\n"

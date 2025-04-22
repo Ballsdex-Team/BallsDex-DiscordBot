@@ -13,6 +13,18 @@ import aiohttp
 import discord
 import discord.gateway
 from aiohttp import ClientTimeout
+from bd_models.models import (
+    Ball,
+    BlacklistedGuild,
+    BlacklistedID,
+    Economy,
+    Regime,
+    Special,
+    balls,
+    economies,
+    regimes,
+    specials,
+)
 from cachetools import TTLCache
 from discord import app_commands
 from discord.app_commands.translator import TranslationContextTypes, locale_str
@@ -26,18 +38,6 @@ from rich.table import Table
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
-from ballsdex.core.models import (
-    Ball,
-    BlacklistedGuild,
-    BlacklistedID,
-    Economy,
-    Regime,
-    Special,
-    balls,
-    economies,
-    regimes,
-    specials,
-)
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -221,32 +221,32 @@ class BallsDexBot(commands.AutoShardedBot):
             self.application_emojis[emoji.id] = emoji
 
         balls.clear()
-        for ball in await Ball.all():
+        async for ball in Ball.objects.all():
             balls[ball.pk] = ball
         table.add_row(settings.collectible_name.title() + "s", str(len(balls)))
 
         regimes.clear()
-        for regime in await Regime.all():
+        async for regime in Regime.objects.all():
             regimes[regime.pk] = regime
         table.add_row("Regimes", str(len(regimes)))
 
         economies.clear()
-        for economy in await Economy.all():
+        async for economy in Economy.objects.all():
             economies[economy.pk] = economy
         table.add_row("Economies", str(len(economies)))
 
         specials.clear()
-        for special in await Special.all():
+        async for special in Special.objects.all():
             specials[special.pk] = special
         table.add_row("Special events", str(len(specials)))
 
         self.blacklist = set()
-        for blacklisted_id in await BlacklistedID.all().only("discord_id"):
+        async for blacklisted_id in BlacklistedID.objects.all().only("discord_id"):
             self.blacklist.add(blacklisted_id.discord_id)
         table.add_row("Blacklisted users", str(len(self.blacklist)))
 
         self.blacklist_guild = set()
-        for blacklisted_id in await BlacklistedGuild.all().only("discord_id"):
+        async for blacklisted_id in BlacklistedGuild.objects.all().only("discord_id"):
             self.blacklist_guild.add(blacklisted_id.discord_id)
         table.add_row("Blacklisted guilds", str(len(self.blacklist_guild)))
 

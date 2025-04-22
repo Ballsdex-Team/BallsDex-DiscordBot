@@ -1,12 +1,11 @@
 import datetime
 
 import discord
+from bd_models.models import BallInstance, Player, Trade
 from discord import app_commands
-from tortoise.exceptions import DoesNotExist
-from tortoise.expressions import Q
+from django.db.models import Q
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import BallInstance, Player, Trade
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils.transformers import BallEnabledTransform
 from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
@@ -61,11 +60,11 @@ class History(app_commands.Group):
             )
             return
 
-        queryset = Trade.filter()
+        queryset = Trade.objects.filter()
         try:
-            player1 = await Player.get(discord_id=user.id)
+            player1 = await Player.objects.aget(discord_id=user.id)
             if user2:
-                player2 = await Player.get(discord_id=user2.id)
+                player2 = await Player.objects.aget(discord_id=user2.id)
                 query = f"?q={user.id}+{user2.id}"
                 queryset = queryset.filter(
                     (Q(player1=player1) & Q(player2=player2))
@@ -74,7 +73,7 @@ class History(app_commands.Group):
             else:
                 query = f"?q={user.id}"
                 queryset = queryset.filter(Q(player1=player1) | Q(player2=player1))
-        except DoesNotExist:
+        except Player.DoesNotExist:
             await interaction.followup.send("One or more players are not registered by the bot.")
             return
 
@@ -87,9 +86,8 @@ class History(app_commands.Group):
             queryset = queryset.filter(date__range=(start_date, end_date))
 
         queryset = queryset.order_by(sort_value).prefetch_related("player1", "player2")
-        history = await queryset
 
-        if not history:
+        if not await queryset.aexists():
             await interaction.followup.send("No history found.", ephemeral=True)
             return
 
@@ -99,7 +97,7 @@ class History(app_commands.Group):
             )
 
         url = f"{settings.admin_url}/bd_models/trade/{query}" if settings.admin_url else None
-        source = TradeViewFormat(history, user.display_name, interaction.client, True, url)
+        source = TradeViewFormat(queryset, user.display_name, interaction.client, True, url)
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
@@ -140,7 +138,7 @@ class History(app_commands.Group):
             )
             return
 
-        ball = await BallInstance.get(id=pk)
+        ball = await BallInstance.objects.aget(id=pk)
         if not ball:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
@@ -154,7 +152,7 @@ class History(app_commands.Group):
             )
             return
 
-        queryset = Trade.all()
+        queryset = Trade.objects.all()
         if days is None or days == 0:
             queryset = queryset.filter(tradeobjects__ballinstance_id=pk)
         else:
@@ -163,9 +161,9 @@ class History(app_commands.Group):
             queryset = queryset.filter(
                 tradeobjects__ballinstance_id=pk, date__range=(start_date, end_date)
             )
-        trades = await queryset.order_by(sort_value).prefetch_related("player1", "player2")
+        queryset = queryset.order_by(sort_value).prefetch_related("player1", "player2")
 
-        if not trades:
+        if not await queryset.aexists():
             await interaction.followup.send("No history found.", ephemeral=True)
             return
 
@@ -175,7 +173,7 @@ class History(app_commands.Group):
             else None
         )
         source = TradeViewFormat(
-            trades, f"{settings.collectible_name} {ball}", interaction.client, True, url
+            queryset, f"{settings.collectible_name} {ball}", interaction.client, True, url
         )
         pages = Pages(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
@@ -202,7 +200,7 @@ class History(app_commands.Group):
                 "The trade ID you gave is not valid.", ephemeral=True
             )
             return
-        trade = await Trade.get(id=pk).prefetch_related("player1", "player2")
+        trade = await Trade.objects.prefetch_related("player1", "player2").aget(id=pk)
         if not trade:
             await interaction.response.send_message(
                 "The trade ID you gave does not exist.", ephemeral=True

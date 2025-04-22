@@ -1,7 +1,7 @@
-from tortoise import Tortoise
+from django.db import connection
 
 
-async def row_count_estimate(table_name: str, *, analyze: bool = True) -> int:
+def row_count_estimate(table_name: str, *, analyze: bool = True) -> int:
     """
     Estimate the number of rows in a table. This is *insanely* faster than querying all rows,
     but the number given is an estimation, not the real value.
@@ -22,18 +22,18 @@ async def row_count_estimate(table_name: str, *, analyze: bool = True) -> int:
     int
         Estimated number of rows
     """
-    connection = Tortoise.get_connection("default")
+    with connection.cursor() as cursor:
+        # returns as a tuple the number of rows affected (always 1) and the result as a list
+        cursor.execute(
+            f"SELECT reltuples AS estimate FROM pg_class where relname = '{table_name}';"
+        )
+        record = cursor.fetchone()
 
-    # returns as a tuple the number of rows affected (always 1) and the result as a list
-    _, rows = await connection.execute_query(
-        f"SELECT reltuples AS estimate FROM pg_class where relname = '{table_name}';"
-    )
-    # Record type: https://magicstack.github.io/asyncpg/current/api/index.html#record-objects
-    record = rows[0]
-    result = int(record["estimate"])
-    if result == -1 and analyze is True:
-        # the cache wasn't built yet, let's ask for an analyze query
-        await connection.execute_query(f"ANALYZE {table_name}")
-        return await row_count_estimate(table_name, analyze=False)  # prevent recursion error
+        # Record type: https://magicstack.github.io/asyncpg/current/api/index.html#record-objects
+        result = int(record[0])  # type: ignore
+        if result == -1 and analyze is True:
+            # the cache wasn't built yet, let's ask for an analyze query
+            cursor.execute(f"ANALYZE {table_name}")
+            return row_count_estimate(table_name, analyze=False)  # prevent recursion error
 
     return result

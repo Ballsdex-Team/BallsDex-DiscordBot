@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
+from bd_models.models import Ball
+from bd_models.models import balls as countryballs
 from discord import app_commands
 from discord.app_commands.translator import (
     TranslationContext,
@@ -14,8 +16,6 @@ from discord.app_commands.translator import (
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
-from ballsdex.core.models import Ball
-from ballsdex.core.models import balls as countryballs
 from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.tortoise import row_count_estimate
 from ballsdex.settings import settings
@@ -74,8 +74,8 @@ class Info(commands.Cog):
             balls = []
 
         balls_count = len([x for x in countryballs.values() if x.enabled])
-        players_count = await row_count_estimate("player")
-        balls_instances_count = await row_count_estimate("ballinstance")
+        players_count = row_count_estimate("player")
+        balls_instances_count = row_count_estimate("ballinstance")
 
         if self.bot.startup_time is not None:
             uptime_duration = datetime.now() - self.bot.startup_time

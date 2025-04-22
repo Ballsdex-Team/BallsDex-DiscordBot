@@ -2,11 +2,10 @@ import asyncio
 import os
 import sys
 
+from bd_models.models import Ball, BallInstance, Special
 from django.core.management.base import BaseCommand, CommandError, CommandParser
-from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.image_generator.image_gen import draw_card
-from ballsdex.core.models import Ball, BallInstance, Special
 from ballsdex.settings import settings
 
 from ...utils import refresh_cache
@@ -34,21 +33,21 @@ class Command(BaseCommand):
 
         if ball_name := options.get("ball"):
             try:
-                ball = await Ball.get(country__iexact=ball_name)
-            except DoesNotExist as e:
+                ball = await Ball.objects.aget(country__iexact=ball_name)
+            except Ball.DoesNotExist as e:
                 raise CommandError(
                     f'No {settings.collectible_name} found with the name "{ball_name}"'
                 ) from e
         else:
-            ball = await Ball.first()
+            ball = await Ball.objects.afirst()
             if ball is None:
                 raise CommandError(f"You need at least one {settings.collectible_name} created.")
 
         special: Special | None = None
         if special_name := options.get("special"):
             try:
-                special = await Special.get(name__iexact=special_name)
-            except DoesNotExist as e:
+                special = await Special.objects.aget(name__iexact=special_name)
+            except Special.DoesNotExist as e:
                 raise CommandError(f'No special found with the name "{special_name}"') from e
 
         # use stderr to avoid piping

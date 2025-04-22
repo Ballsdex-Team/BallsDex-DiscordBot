@@ -13,7 +13,6 @@ import yarl
 from discord.ext.commands import when_mentioned_or
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from rich import print
-from tortoise import Tortoise
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
@@ -22,16 +21,6 @@ from ballsdex.settings import read_settings, settings, update_settings, write_de
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
 log = logging.getLogger("ballsdex")
-
-TORTOISE_ORM = {
-    "connections": {"default": os.environ.get("BALLSDEXBOT_DB_URL")},
-    "apps": {
-        "models": {
-            "models": ["ballsdex.core.models"],
-            "default_connection": "default",
-        },
-    },
-}
 
 
 class CLIFlags(TypedDict):
@@ -197,11 +186,6 @@ class RemoveWSBehindMsg(logging.Filter):
         return True
 
 
-async def init_tortoise(db_url: str, *, skip_migrations: bool = False):
-    log.debug(f"Database URL: {db_url}")
-    await Tortoise.init(config=TORTOISE_ORM)
-
-
 class Command(BaseCommand):
     help = (
         "Generate a local preview of a card. This will use the system's image viewer "
@@ -285,13 +269,6 @@ class Command(BaseCommand):
 
             prefix = settings.prefix
 
-            try:
-                loop.run_until_complete(init_tortoise(db_url))
-            except Exception:
-                log.exception("Failed to connect to database.")
-                return  # will exit with code 1
-            log.info("Tortoise ORM and database ready.")
-
             bot = BallsDexBot(
                 command_prefix=when_mentioned_or(prefix),
                 dev=options["dev"],  # type: ignore
@@ -331,8 +308,6 @@ class Command(BaseCommand):
             loop.run_until_complete(loop.shutdown_asyncgens())
             if server is not None:
                 loop.run_until_complete(server.stop())
-            if Tortoise._inited:
-                loop.run_until_complete(Tortoise.close_connections())
             asyncio.set_event_loop(None)
             loop.stop()
             loop.close()

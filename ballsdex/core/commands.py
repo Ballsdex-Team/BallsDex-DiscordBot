@@ -4,11 +4,11 @@ import time
 from typing import TYPE_CHECKING
 
 import discord
+from bd_models.models import Ball
 from discord.ext import commands
-from tortoise import Tortoise
+from django.db import connection
 
 from ballsdex.core.dev import pagify, send_interactive
-from ballsdex.core.models import Ball
 from ballsdex.settings import settings
 
 log = logging.getLogger("ballsdex.core.commands")
@@ -69,7 +69,8 @@ class Core(commands.Cog):
                 await self.bot.load_extension(package)
         except commands.ExtensionNotFound:
             if not with_prefix:
-                return await self.reload_package("ballsdex.packages." + package, with_prefix=True)
+                await self.reload_package("ballsdex.packages." + package, with_prefix=True)
+                return
             raise
 
     @commands.command()
@@ -106,10 +107,11 @@ class Core(commands.Cog):
         """
         Analyze the database. This refreshes the counts displayed by the `/about` command.
         """
-        connection = Tortoise.get_connection("default")
-        t1 = time.time()
-        await connection.execute_query("ANALYZE")
-        t2 = time.time()
+        # pleading for this https://github.com/django/django/pull/18408
+        with connection.cursor() as cursor:
+            t1 = time.time()
+            cursor.execute("ANALYZE")
+            t2 = time.time()
         await ctx.send(f"Analyzed database in {round((t2 - t1) * 1000)}ms.")
 
     @commands.command()
@@ -121,8 +123,8 @@ class Core(commands.Cog):
         The emoji IDs of the countryballs are updated afterwards.
         This does not delete guild emojis after they were migrated.
         """
-        balls = await Ball.all()
-        if not balls:
+        balls = Ball.objects.all()
+        if not await balls.aexists():
             await ctx.send(f"No {settings.plural_collectible_name} found.")
             return
 
@@ -133,7 +135,7 @@ class Core(commands.Cog):
         matching_name: list[tuple[Ball, discord.Emoji]] = []
         to_upload: list[tuple[Ball, discord.Emoji]] = []
 
-        for ball in balls:
+        async for ball in balls:
             emote = self.bot.get_emoji(ball.emoji_id)
             if not emote:
                 not_found.add(ball)
@@ -207,7 +209,7 @@ class Core(commands.Cog):
                         name=emote.name, image=await emote.read()
                     )
                     ball.emoji_id = new_emote.id
-                    await ball.save()
+                    await ball.asave()
                     uploaded += 1
                     print(f"Uploaded {ball}")
                     await asyncio.sleep(1)

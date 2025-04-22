@@ -1,15 +1,27 @@
+# pyright: reportIncompatibleVariableOverride=false
+
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
-from typing import Any, Iterable, cast
+from io import BytesIO
+from typing import TYPE_CHECKING, Any, Iterable, Self, cast
 
+import discord
+from discord.utils import format_dt
 from django.contrib import admin
 from django.core.cache import cache
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
 
+from ballsdex.core.image_generator.image_gen import draw_card
 from ballsdex.settings import settings
+
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
 
 
 def transform_media(path: str) -> str:
@@ -22,6 +34,29 @@ def image_display(image_link: str) -> SafeText:
     return mark_safe(f'<img src="/media/{transform_media(image_link)}" width="80%" />')
 
 
+balls: dict[int, Ball] = {}
+regimes: dict[int, Regime] = {}
+economies: dict[int, Economy] = {}
+specials: dict[int, Special] = {}
+
+
+class Manager[T: models.Model](models.Manager[T]):
+    def get_or_none(self, *args: Any, **kwargs: Any) -> T | None:
+        try:
+            return super().get(*args, **kwargs)
+        except self.model.DoesNotExist:
+            return None
+
+    async def aget_or_none(self, *args: Any, **kwargs: Any) -> T | None:
+        try:
+            return await super().aget(*args, **kwargs)
+        except self.model.DoesNotExist:
+            return None
+
+    async def aall(self) -> list[T]:
+        return [x async for x in super().all()]
+
+
 class GuildConfig(models.Model):
     guild_id = models.BigIntegerField(unique=True, help_text="Discord guild ID")
     spawn_channel = models.BigIntegerField(
@@ -31,6 +66,8 @@ class GuildConfig(models.Model):
         help_text="Whether the bot will spawn countryballs in this guild"
     )
     silent = models.BooleanField()
+
+    objects: Manager[Self] = Manager()
 
     def __str__(self) -> str:
         return str(self.guild_id)
@@ -81,6 +118,20 @@ class Player(models.Model):
     )
     extra_data = models.JSONField(blank=True, default=dict)
 
+    objects: Manager[Self] = Manager()
+
+    balls: models.QuerySet[BallInstance]
+
+    class Meta:
+        managed = True
+        db_table = "player"
+
+    def __str__(self) -> str:
+        return (
+            f"{'\N{NO MOBILE PHONES} ' if self.is_blacklisted() else ''}#"
+            f"{self.pk} ({self.discord_id})"
+        )
+
     def is_blacklisted(self) -> bool:
         blacklist = cast(
             list[int],
@@ -92,40 +143,78 @@ class Player(models.Model):
         )
         return self.discord_id in blacklist
 
-    def __str__(self) -> str:
-        return (
-            f"{'\N{NO MOBILE PHONES} ' if self.is_blacklisted() else ''}#"
-            f"{self.pk} ({self.discord_id})"
-        )
+    async def is_friend(self, other_player: "Player") -> bool:
+        return await Friendship.objects.filter(
+            (Q(player1=self) & Q(player2=other_player))
+            | (Q(player1=other_player) & Q(player2=self))
+        ).aexists()
 
-    class Meta:
-        managed = True
-        db_table = "player"
+    async def is_blocked(self, other_player: "Player") -> bool:
+        return await Block.objects.filter((Q(player1=self) & Q(player2=other_player))).aexists()
+
+    @property
+    def can_be_mentioned(self) -> bool:
+        return self.mention_policy == MentionPolicy.ALLOW
+
+    async def add_money(self, amount: int) -> int:
+        if amount <= 0:
+            raise ValueError("Amount to add must be positive")
+        self.money += amount
+        await self.asave(update_fields=("money",))
+        return self.money
+
+    async def remove_money(self, amount: int) -> None:
+        if self.money < amount:
+            raise ValueError("Not enough money")
+        self.money -= amount
+        await self.asave(update_fields=("money",))
+
+    def can_afford(self, amount: int) -> bool:
+        return self.money >= amount
 
 
 class Economy(models.Model):
     name = models.CharField(max_length=64)
     icon = models.ImageField(max_length=200, help_text="512x512 PNG image")
 
-    def __str__(self) -> str:
-        return self.name
+    objects: Manager[Self] = Manager()
 
     class Meta:
         managed = True
         db_table = "economy"
         verbose_name_plural = "economies"
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Regime(models.Model):
     name = models.CharField(max_length=64)
     background = models.ImageField(max_length=200, help_text="1428x2000 PNG image")
 
-    def __str__(self) -> str:
-        return self.name
+    objects: Manager[Self] = Manager()
 
     class Meta:
         managed = True
         db_table = "regime"
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class EnabledManager[T: models.Model](Manager[T]):
+    def get_queryset(self) -> models.QuerySet[T]:
+        return super().get_queryset().filter(enabled=True)
+
+
+class TradeableManager[T: models.Model](Manager[T]):
+    def get_queryset(self) -> models.QuerySet[T]:
+        return super().get_queryset().filter(tradeable=True)
+
+
+class SpecialEnabledManager(Manager["Special"]):
+    def get_queryset(self) -> models.QuerySet[Special]:
+        return super().get_queryset().filter(hidden=False)
 
 
 class Special(models.Model):
@@ -162,12 +251,15 @@ class Special(models.Model):
         max_length=64, help_text="Author of the special event artwork", null=True
     )
 
-    def __str__(self) -> str:
-        return self.name
+    objects: Manager[Self] = Manager()
+    enabled_objects = SpecialEnabledManager()
 
     class Meta:
         managed = True
         db_table = "special"
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Ball(models.Model):
@@ -224,6 +316,22 @@ class Ball(models.Model):
     created_at = models.DateTimeField(blank=True, null=True, auto_now_add=True, editable=False)
     translations = models.TextField(blank=True, null=True)
 
+    objects: Manager[Self] = Manager()
+    enabled_objects: EnabledManager[Self] = EnabledManager()
+    tradeable_objects: TradeableManager[Self] = TradeableManager()
+
+    class Meta:
+        managed = True
+        db_table = "ball"
+
+    @property
+    def cached_regime(self) -> Regime:
+        return regimes.get(self.regime_id, self.regime)
+
+    @property
+    def cached_economy(self) -> Economy | None:
+        return economies.get(self.economy_id, self.economy) if self.economy_id else None
+
     def __str__(self) -> str:
         return self.country
 
@@ -252,10 +360,6 @@ class Ball(models.Model):
 
         return super().save(force_insert, force_update, using, update_fields)
 
-    class Meta:
-        managed = True
-        db_table = "ball"
-
 
 class BallInstance(models.Model):
     catch_date = models.DateTimeField()
@@ -263,7 +367,7 @@ class BallInstance(models.Model):
     attack_bonus = models.IntegerField()
     ball = models.ForeignKey(Ball, on_delete=models.CASCADE)
     ball_id: int
-    player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="balls")
     player_id: int
     trade_player = models.ForeignKey(
         Player,
@@ -286,6 +390,19 @@ class BallInstance(models.Model):
     )
     spawned_time = models.DateTimeField(blank=True, null=True)
 
+    objects: Manager[Self] = Manager()
+    tradeable_objects: TradeableManager[Self] = TradeableManager()
+
+    class Meta:
+        managed = True
+        db_table = "ballinstance"
+        unique_together = (("player", "id"),)
+        indexes = (
+            models.Index(fields=("ball_id",)),
+            models.Index(fields=("player_id",)),
+            models.Index(fields=("special_id",)),
+        )
+
     def __getattribute__(self, name: str) -> Any:
         if name == "ball":
             balls = cast(list[Ball], cache.get_or_set("balls", Ball.objects.all(), timeout=30))
@@ -306,8 +423,39 @@ class BallInstance(models.Model):
             text += self.special.emoji or ""
         return f"{text}#{self.pk:0X} {self.ball.country}"
 
+    @property
+    def is_tradeable(self) -> bool:
+        return (
+            self.tradeable
+            and self.countryball.tradeable
+            and getattr(self.specialcard, "tradeable", True)
+        )
+
+    @property
+    def attack(self) -> int:
+        bonus = int(self.countryball.attack * self.attack_bonus * 0.01)
+        return self.countryball.attack + bonus
+
+    @property
+    def health(self) -> int:
+        bonus = int(self.countryball.health * self.health_bonus * 0.01)
+        return self.countryball.health + bonus
+
+    @property
+    def special_card(self) -> str | None:
+        if self.specialcard:
+            return self.specialcard.background.name or self.countryball.collection_card.name
+
+    @property
+    def countryball(self) -> Ball:
+        return balls.get(self.ball_id, None) or self.ball
+
+    @property
+    def specialcard(self) -> Special | None:
+        return specials.get(self.special_id, None) if self.special_id else None
+
     @admin.display(description="Countryball")
-    def description(self) -> SafeText:
+    def admin_description(self) -> SafeText:
         text = str(self)
         emoji = f'<img src="https://cdn.discordapp.com/emojis/{self.ball.emoji_id}.png?size=20" />'
         return mark_safe(f"{emoji} {text} ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%")
@@ -318,10 +466,92 @@ class BallInstance(models.Model):
             return str(self.catch_date - self.spawned_time)
         return "-"
 
-    class Meta:
-        managed = True
-        db_table = "ballinstance"
-        unique_together = (("player", "id"),)
+    def description(
+        self,
+        *,
+        short: bool = False,
+        include_emoji: bool = False,
+        bot: "BallsDexBot | None" = None,
+        is_trade: bool = False,
+    ) -> str:
+        text = self.to_string(bot, is_trade=is_trade)
+        if not short:
+            text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
+        if include_emoji:
+            if not bot:
+                raise TypeError(
+                    "You need to provide the bot argument when using with include_emoji=True"
+                )
+            if isinstance(self.countryball, Ball):
+                emoji = bot.get_emoji(self.countryball.emoji_id)
+                if emoji:
+                    text = f"{emoji} {text}"
+        return text
+
+    def draw_card(self) -> BytesIO:
+        image, kwargs = draw_card(self)
+        buffer = BytesIO()
+        image.save(buffer, **kwargs)
+        buffer.seek(0)
+        image.close()
+        return buffer
+
+    async def prepare_for_message(
+        self, interaction: discord.Interaction["BallsDexBot"]
+    ) -> tuple[str, discord.File, discord.ui.View]:
+        # message content
+        trade_content = ""
+        if self.trade_player:
+            original_player = None
+            # we want to avoid calling fetch_user if possible (heavily rate-limited call)
+            if interaction.guild:
+                try:
+                    original_player = await interaction.guild.fetch_member(
+                        int(self.trade_player.discord_id)
+                    )
+                except discord.NotFound:
+                    pass
+            elif original_player is None:  # try again if not found in guild
+                try:
+                    original_player = await interaction.client.fetch_user(
+                        int(self.trade_player.discord_id)
+                    )
+                except discord.NotFound:
+                    pass
+
+            original_player_name = (
+                original_player.name
+                if original_player
+                else f"user with ID {self.trade_player.discord_id}"
+            )
+            trade_content = f"Obtained by trade with {original_player_name}.\n"
+        content = (
+            f"ID: `#{self.pk:0X}`\n"
+            f"Caught on {format_dt(self.catch_date)} ({format_dt(self.catch_date, style='R')}).\n"
+            f"{trade_content}\n"
+            f"ATK: {self.attack} ({self.attack_bonus:+d}%)\n"
+            f"HP: {self.health} ({self.health_bonus:+d}%)"
+        )
+
+        # draw image
+        with ThreadPoolExecutor() as pool:
+            buffer = await interaction.client.loop.run_in_executor(pool, self.draw_card)
+
+        view = discord.ui.View()
+        return content, discord.File(buffer, "card.webp"), view
+
+    async def lock_for_trade(self):
+        self.locked = timezone.now()
+        await self.asave(update_fields=("locked",))
+
+    async def unlock(self):
+        self.locked = None  # type: ignore
+        await self.asave(update_fields=("locked",))
+
+    async def is_locked(self):
+        await self.arefresh_from_db(fields=["locked"])
+        self.locked
+        return self.locked is not None and (self.locked + timedelta(minutes=30)) > timezone.now()
 
 
 class BlacklistedID(models.Model):
@@ -329,6 +559,8 @@ class BlacklistedID(models.Model):
     reason = models.TextField(blank=True, null=True)
     date = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     moderator_id = models.BigIntegerField(blank=True, null=True)
+
+    objects: Manager[Self] = Manager()
 
     class Meta:
         managed = True
@@ -340,6 +572,8 @@ class BlacklistedGuild(models.Model):
     reason = models.TextField(blank=True, null=True)
     date = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     moderator_id = models.BigIntegerField(blank=True, null=True)
+
+    objects: Manager[Self] = Manager()
 
     class Meta:
         managed = True
@@ -353,6 +587,8 @@ class BlacklistHistory(models.Model):
     date = models.DateTimeField(auto_now_add=True, editable=False)
     id_type = models.CharField(max_length=64, default="user")
     action_type = models.CharField(max_length=64, default="blacklist")
+
+    objects: Manager[Self] = Manager()
 
     class Meta:
         managed = True
@@ -370,12 +606,18 @@ class Trade(models.Model):
     player2_money = models.PositiveBigIntegerField(default=0)
     tradeobject_set: models.QuerySet[TradeObject]
 
+    objects: Manager[Self] = Manager()
+
     def __str__(self) -> str:
         return f"Trade #{self.pk:0X}"
 
     class Meta:
         managed = True
         db_table = "trade"
+        indexes = (
+            models.Index(fields=("player1_id",)),
+            models.Index(fields=("player2_id",)),
+        )
 
 
 class TradeObject(models.Model):
@@ -386,9 +628,16 @@ class TradeObject(models.Model):
     trade = models.ForeignKey(Trade, on_delete=models.CASCADE)
     trade_id: int
 
+    objects: Manager[Self] = Manager()
+
     class Meta:
         managed = True
         db_table = "tradeobject"
+        indexes = (
+            models.Index(fields=("ballinstance_id",)),
+            models.Index(fields=("player_id",)),
+            models.Index(fields=("trade_id",)),
+        )
 
 
 class Friendship(models.Model):
@@ -399,6 +648,8 @@ class Friendship(models.Model):
         Player, on_delete=models.CASCADE, related_name="friendship_player2_set"
     )
     player2_id: int
+
+    objects: Manager[Self] = Manager()
 
     class Meta:
         managed = True
@@ -411,6 +662,8 @@ class Block(models.Model):
     player1_id: int
     player2 = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="block_player2_set")
     player2_id: int
+
+    objects: Manager[Self] = Manager()
 
     class Meta:
         managed = True

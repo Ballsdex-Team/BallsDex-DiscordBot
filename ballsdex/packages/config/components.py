@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Optional
 
 import discord
+from bd_models.models import GuildConfig
 from discord.ui import Button, View, button
 
-from ballsdex.core.models import GuildConfig
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -58,10 +58,10 @@ class AcceptTOSView(View):
     async def accept_button(
         self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
     ):
-        config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
+        config, created = await GuildConfig.objects.aget_or_create(guild_id=interaction.guild_id)
         config.spawn_channel = self.channel.id  # type: ignore
         config.enabled = True
-        await config.save()
+        await config.asave()
         interaction.client.dispatch(
             "ballsdex_settings_change", interaction.guild, channel=self.channel, enabled=True
         )

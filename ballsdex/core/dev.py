@@ -14,10 +14,8 @@ from typing import TYPE_CHECKING, Iterable
 
 import aiohttp
 import discord
-from discord.ext import commands
-
-from ballsdex.core import models
-from ballsdex.core.models import (
+from bd_models import models
+from bd_models.models import (
     Ball,
     BallInstance,
     BlacklistedGuild,
@@ -37,6 +35,8 @@ from ballsdex.core.models import (
     Trade,
     TradeObject,
 )
+from discord.ext import commands
+
 from ballsdex.core.utils.formatting import pagify
 
 if TYPE_CHECKING:

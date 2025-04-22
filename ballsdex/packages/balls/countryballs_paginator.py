@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 import discord
+from bd_models.models import BallInstance
 
-from ballsdex.core.models import BallInstance
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.settings import settings
@@ -34,7 +34,7 @@ class CountryballsSelector(Pages):
         for ball in balls:
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
-            special = ball.special_emoji(self.bot, True)
+            special = ball.specialcard.emoji if ball.specialcard else None
             options.append(
                 discord.SelectOption(
                     label=f"{favorite}{special}#{ball.pk:0X} {ball.countryball.country}",
@@ -54,7 +54,7 @@ class CountryballsSelector(Pages):
         self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
     ):
         await interaction.response.defer(thinking=True)
-        ball_instance = await BallInstance.get(
+        ball_instance = await BallInstance.objects.aget(
             id=int(interaction.data.get("values")[0])  # type: ignore
         )
         await self.ball_selected(interaction, ball_instance)
@@ -105,13 +105,13 @@ class DuplicateViewMenu(Pages):
     async def dupe_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
         await interaction.response.defer(thinking=True, ephemeral=True)
         if self.dupe_type == settings.plural_collectible_name:
-            balls = await BallInstance.filter(
+            balls = await BallInstance.objects.filter(
                 ball__country=item.values[0], player__discord_id=interaction.user.id
-            ).count()
+            ).acount()
         else:
-            balls = await BallInstance.filter(
+            balls = await BallInstance.objects.filter(
                 special__name=item.values[0], player__discord_id=interaction.user.id
-            ).count()
+            ).acount()
 
         plural = settings.collectible_name if balls == 1 else settings.plural_collectible_name
         await interaction.followup.send(f"You have {balls:,} {item.values[0]} {plural}.")

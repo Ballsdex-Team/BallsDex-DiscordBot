@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Iterable
 
 import discord
+from bd_models.models import Trade as TradeModel
 
-from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.trade.trade_user import TradingUser

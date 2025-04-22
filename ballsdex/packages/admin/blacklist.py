@@ -1,16 +1,10 @@
 import discord
+from bd_models.models import BlacklistedGuild, BlacklistedID, BlacklistHistory, GuildConfig, Player
 from discord import app_commands
 from discord.utils import format_dt
-from tortoise.exceptions import DoesNotExist, IntegrityError
+from django.db import IntegrityError
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import (
-    BlacklistedGuild,
-    BlacklistedID,
-    BlacklistHistory,
-    GuildConfig,
-    Player,
-)
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.admin.menu import BlacklistViewFormat
@@ -46,10 +40,10 @@ class Blacklist(app_commands.Group):
             return
 
         try:
-            await BlacklistedID.create(
+            await BlacklistedID.objects.acreate(
                 discord_id=user.id, reason=reason, moderator_id=interaction.user.id
             )
-            await BlacklistHistory.create(
+            await BlacklistHistory.objects.acreate(
                 discord_id=user.id, reason=reason, moderator_id=interaction.user.id, id_type="user"
             )
         except IntegrityError:
@@ -84,12 +78,12 @@ class Blacklist(app_commands.Group):
             The reason for unblacklisting the user.
         """
         try:
-            blacklisted = await BlacklistedID.get(discord_id=user.id)
-        except DoesNotExist:
+            blacklisted = await BlacklistedID.objects.aget(discord_id=user.id)
+        except BlacklistedID.DoesNotExist:
             await interaction.response.send_message("That user isn't blacklisted.", ephemeral=True)
         else:
-            await blacklisted.delete()
-            await BlacklistHistory.create(
+            await blacklisted.adelete()
+            await BlacklistHistory.objects.acreate(
                 discord_id=user.id,
                 reason=reason,
                 moderator_id=interaction.user.id,
@@ -119,8 +113,8 @@ class Blacklist(app_commands.Group):
             The user you want to check, if available in the current server.
         """
         try:
-            blacklisted = await BlacklistedID.get(discord_id=user.id)
-        except DoesNotExist:
+            blacklisted = await BlacklistedID.objects.aget(discord_id=user.id)
+        except BlacklistedID.DoesNotExist:
             await interaction.response.send_message("That user isn't blacklisted.", ephemeral=True)
         else:
             if blacklisted.moderator_id:
@@ -130,7 +124,9 @@ class Blacklist(app_commands.Group):
                 )
             else:
                 moderator_msg = "Moderator: Unknown"
-            if settings.admin_url and (player := await Player.get_or_none(discord_id=user.id)):
+            if settings.admin_url and (
+                player := await Player.objects.aget_or_none(discord_id=user.id)
+            ):
                 admin_url = (
                     "\n[View history online]"
                     f"(<{settings.admin_url}/bd_models/player/{player.pk}/change/>)"
@@ -171,7 +167,9 @@ class Blacklist(app_commands.Group):
             )
             return
 
-        history = await BlacklistHistory.filter(discord_id=_id).order_by("-date")
+        history = [
+            x async for x in BlacklistHistory.objects.filter(discord_id=_id).order_by("-date")
+        ]
 
         if not history:
             await interaction.response.send_message(
@@ -223,10 +221,10 @@ class BlacklistGuild(app_commands.Group):
         final_reason = f"{reason}\nBy: {interaction.user} ({interaction.user.id})"
 
         try:
-            await BlacklistedGuild.create(
+            await BlacklistedGuild.objects.acreate(
                 discord_id=guild.id, reason=final_reason, moderator_id=interaction.user.id
             )
-            await BlacklistHistory.create(
+            await BlacklistHistory.objects.acreate(
                 discord_id=guild.id,
                 reason=final_reason,
                 moderator_id=interaction.user.id,
@@ -278,14 +276,14 @@ class BlacklistGuild(app_commands.Group):
             return
 
         try:
-            blacklisted = await BlacklistedGuild.get(discord_id=guild.id)
-        except DoesNotExist:
+            blacklisted = await BlacklistedGuild.objects.aget(discord_id=guild.id)
+        except BlacklistedGuild.DoesNotExist:
             await interaction.response.send_message(
                 "That guild isn't blacklisted.", ephemeral=True
             )
         else:
-            await blacklisted.delete()
-            await BlacklistHistory.create(
+            await blacklisted.adelete()
+            await BlacklistHistory.objects.acreate(
                 discord_id=guild.id,
                 reason=reason,
                 moderator_id=interaction.user.id,
@@ -331,8 +329,8 @@ class BlacklistGuild(app_commands.Group):
             return
 
         try:
-            blacklisted = await BlacklistedGuild.get(discord_id=guild.id)
-        except DoesNotExist:
+            blacklisted = await BlacklistedGuild.objects.aget(discord_id=guild.id)
+        except BlacklistedGuild.DoesNotExist:
             await interaction.response.send_message(
                 "That guild isn't blacklisted.", ephemeral=True
             )
@@ -344,7 +342,9 @@ class BlacklistGuild(app_commands.Group):
                 )
             else:
                 moderator_msg = "Moderator: Unknown"
-            if settings.admin_url and (gconf := await GuildConfig.get_or_none(guild_id=guild.id)):
+            if settings.admin_url and (
+                gconf := await GuildConfig.objects.aget_or_none(guild_id=guild.id)
+            ):
                 admin_url = (
                     "\n[View history online]"
                     f"(<{settings.admin_url}/bd_models/guildconfig/{gconf.pk}/change/>)"

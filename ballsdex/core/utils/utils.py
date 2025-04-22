@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Union
 
 import discord
+from bd_models.models import Player, PrivacyPolicy
 
-from ballsdex.core.models import Player, PrivacyPolicy
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ async def inventory_privacy(
     user_obj: Union[discord.User, discord.Member],
 ):
     privacy_policy = player.privacy_policy
-    interacting_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+    interacting_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
     if interaction.user.id == player.discord_id:
         return True
     if is_staff(interaction):

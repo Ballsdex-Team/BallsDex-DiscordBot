@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
+from bd_models.models import GuildConfig
 from discord import app_commands
 from discord.ext import commands
 
-from ballsdex.core.models import GuildConfig
 from ballsdex.packages.config.components import AcceptTOSView
 from ballsdex.settings import settings
 
@@ -82,10 +82,10 @@ class Config(commands.GroupCog):
         Disable or enable countryballs spawning.
         """
         guild = cast(discord.Guild, interaction.guild)  # guild-only command
-        config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
+        config, created = await GuildConfig.objects.aget_or_create(guild_id=interaction.guild_id)
         if config.enabled:
             config.enabled = False  # type: ignore
-            await config.save()
+            await config.asave()
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=False)
             await interaction.response.send_message(
                 f"{settings.bot_name} is now disabled in this server. Commands will still be "
@@ -94,7 +94,7 @@ class Config(commands.GroupCog):
             )
         else:
             config.enabled = True  # type: ignore
-            await config.save()
+            await config.asave()
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=True)
             if config.spawn_channel and (channel := guild.get_channel(config.spawn_channel)):
                 if channel:

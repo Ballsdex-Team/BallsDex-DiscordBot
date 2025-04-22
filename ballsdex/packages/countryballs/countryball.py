@@ -8,12 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
-from discord.ui import Button, Modal, TextInput, View, button
-from tortoise.timezone import get_default_timezone
-from tortoise.timezone import now as tortoise_now
-
-from ballsdex.core.metrics import caught_balls
-from ballsdex.core.models import (
+from bd_models.models import (
     Ball,
     BallInstance,
     Player,
@@ -23,6 +18,10 @@ from ballsdex.core.models import (
     balls,
     specials,
 )
+from discord.ui import Button, Modal, TextInput, View, button
+from django.utils import timezone
+
+from ballsdex.core.metrics import caught_balls
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -58,7 +57,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         await interaction.response.defer(thinking=True)
 
-        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         if self.view.caught:
             await interaction.followup.send(
                 f"{interaction.user.mention} I was caught already!",
@@ -187,9 +186,9 @@ class BallSpawnView(View):
             x
             for x in specials.values()
             # handle null start/end dates with infinity times
-            if (x.start_date or datetime.min.replace(tzinfo=get_default_timezone()))
-            <= tortoise_now()
-            <= (x.end_date or datetime.max.replace(tzinfo=get_default_timezone()))
+            if (x.start_date or datetime.min.replace(tzinfo=timezone.get_current_timezone()))
+            <= timezone.now()
+            <= (x.end_date or datetime.max.replace(tzinfo=timezone.get_current_timezone()))
         ]
 
         if not population:
@@ -229,8 +228,8 @@ class BallSpawnView(View):
             source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
             return "".join(random.choices(source, k=15))
 
-        extension = self.model.wild_card.split(".")[-1]
-        file_location = "./admin_panel/media/" + self.model.wild_card
+        extension = self.model.wild_card.name.split(".")[-1]
+        file_location = "./admin_panel/media/" + self.model.wild_card.name
         file_name = f"nt_{generate_random_name()}.{extension}"
         try:
             permissions = channel.permissions_for(channel.guild.me)
@@ -317,20 +316,20 @@ class BallSpawnView(View):
             raise RuntimeError("This ball was already caught!")
         self.caught = True
         self.catch_button.disabled = True
-        player = player or (await Player.get_or_create(discord_id=user.id))[0]
-        is_new = not await BallInstance.filter(player=player, ball=self.model).exists()
+        player = player or (await Player.objects.aget_or_create(discord_id=user.id))[0]
+        is_new = not await BallInstance.objects.filter(player=player, ball=self.model).aexists()
 
         if self.ballinstance:
             # if specified, do not create a countryball but switch owner
             # it's important to register this as a trade to avoid bypass
-            trade = await Trade.create(player1=self.ballinstance.player, player2=player)
-            await TradeObject.create(
+            trade = await Trade.objects.acreate(player1=self.ballinstance.player, player2=player)
+            await TradeObject.objects.acreate(
                 trade=trade, player=self.ballinstance.player, ballinstance=self.ballinstance
             )
             self.ballinstance.trade_player = self.ballinstance.player
             self.ballinstance.player = player
             self.ballinstance.locked = None  # type: ignore
-            await self.ballinstance.save(update_fields=("player", "trade_player", "locked"))
+            await self.ballinstance.asave(update_fields=("player", "trade_player", "locked"))
             return self.ballinstance, is_new
 
         # stat may vary by +/- 20% of base stat
@@ -351,7 +350,7 @@ class BallSpawnView(View):
         if not special:
             special = self.get_random_special()
 
-        ball = await BallInstance.create(
+        ball = await BallInstance.objects.acreate(
             ball=self.model,
             player=player,
             special=special,

@@ -3,14 +3,14 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
+from bd_models.models import BallInstance, Player
+from bd_models.models import Trade as TradeModel
 from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
-from tortoise.expressions import Q
+from django.db.models import Q
 
-from ballsdex.core.models import BallInstance, Player
-from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils.sorting import SortingChoices, sort_balls
@@ -118,8 +118,8 @@ class Trade(commands.GroupCog):
                 "You cannot trade with yourself.", ephemeral=True
             )
             return
-        player1, _ = await Player.get_or_create(discord_id=interaction.user.id)
-        player2, _ = await Player.get_or_create(discord_id=user.id)
+        player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
         blocked = await player1.is_blocked(player2)
         if blocked:
             await interaction.response.send_message(
@@ -146,8 +146,8 @@ class Trade(commands.GroupCog):
             )
             return
 
-        player1, _ = await Player.get_or_create(discord_id=interaction.user.id)
-        player2, _ = await Player.get_or_create(discord_id=user.id)
+        player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
         if player2.discord_id in self.bot.blacklist:
             await interaction.response.send_message(
                 "You cannot trade with a blacklisted user.", ephemeral=True
@@ -265,14 +265,14 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        query = BallInstance.filter(player__discord_id=interaction.user.id)
+        query = BallInstance.objects.filter(player__discord_id=interaction.user.id)
         if countryball:
             query = query.filter(ball=countryball)
         if special:
             query = query.filter(special=special)
         if sort:
             query = sort_balls(sort, query)
-        balls = await query
+        balls = await query.aall()
         if not balls:
             await interaction.followup.send(
                 f"No {settings.plural_collectible_name} found.", ephemeral=True
@@ -389,12 +389,12 @@ class Trade(commands.GroupCog):
             return
 
         if trade_user:
-            queryset = TradeModel.filter(
+            queryset = TradeModel.objects.filter(
                 (Q(player1__discord_id=user.id, player2__discord_id=trade_user.id))
                 | (Q(player1__discord_id=trade_user.id, player2__discord_id=user.id))
             )
         else:
-            queryset = TradeModel.filter(
+            queryset = TradeModel.objects.filter(
                 Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
             )
 
@@ -408,11 +408,15 @@ class Trade(commands.GroupCog):
         if special:
             queryset = queryset.filter(Q(tradeobjects__ballinstance__special=special)).distinct()
 
-        history = await queryset.order_by(sort_value).prefetch_related(
-            "player1",
-            "player2",
-            "tradeobjects__ballinstance__ball",
-            "tradeobjects__ballinstance__special",
+        history = (
+            await queryset.order_by(sort_value)
+            .prefetch_related(
+                "player1",
+                "player2",
+                "tradeobjects__ballinstance__ball",
+                "tradeobjects__ballinstance__special",
+            )
+            .aall()
         )
 
         if not history:

@@ -2,11 +2,11 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 import discord
+from bd_models.models import Ball, GuildConfig
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button
 
-from ballsdex.core.models import Ball, GuildConfig
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.settings import settings
 
@@ -112,10 +112,10 @@ class Admin(commands.GroupCog):
             Include the countryballs that are disabled or with a rarity of 0.
         """
         text = ""
-        balls_queryset = Ball.all().order_by("rarity")
+        balls_queryset = Ball.objects.all().order_by("rarity")
         if not include_disabled:
             balls_queryset = balls_queryset.filter(rarity__gt=0, enabled=True)
-        sorted_balls = await balls_queryset
+        sorted_balls = [x async for x in balls_queryset]
 
         if chunked:
             indexes: dict[float, list[Ball]] = defaultdict(list)
@@ -208,7 +208,7 @@ class Admin(commands.GroupCog):
 
         entries: list[tuple[str, str]] = []
         for guild in guilds:
-            if config := await GuildConfig.get_or_none(guild_id=guild.id):
+            if config := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
                 spawn_enabled = config.enabled and config.guild_id
             else:
                 spawn_enabled = False

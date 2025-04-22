@@ -3,13 +3,7 @@ from io import BytesIO
 from typing import TYPE_CHECKING
 
 import discord
-from discord import app_commands
-from discord.ext import commands
-from discord.utils import format_dt
-from tortoise.exceptions import DoesNotExist
-from tortoise.expressions import Q
-
-from ballsdex.core.models import (
+from bd_models.models import (
     BallInstance,
     Block,
     DonationPolicy,
@@ -17,8 +11,13 @@ from ballsdex.core.models import (
     Friendship,
     MentionPolicy,
 )
-from ballsdex.core.models import Player as PlayerModel
-from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject, balls
+from bd_models.models import Player as PlayerModel
+from bd_models.models import PrivacyPolicy, Trade, TradeObject, balls
+from discord import app_commands
+from discord.ext import commands
+from discord.utils import format_dt
+from django.db.models import Q
+
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.enums import (
     DONATION_POLICY_MAP,
@@ -71,14 +70,14 @@ class Player(commands.GroupCog):
         policy: PrivacyPolicy
             The new privacy policy to choose.
         """
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
         if policy == PrivacyPolicy.SAME_SERVER and not self.bot.intents.members:
             await interaction.response.send_message(
                 "I need the `members` intent to use this policy.", ephemeral=True
             )
             return
         player.privacy_policy = PrivacyPolicy(policy.value)
-        await player.save()
+        await player.asave()
         await interaction.response.send_message(
             f"Your privacy policy has been set to **{policy.name}**.", ephemeral=True
         )
@@ -107,7 +106,7 @@ class Player(commands.GroupCog):
         policy: DonationPolicy
             The new policy for accepting donations
         """
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
         player.donation_policy = DonationPolicy(policy.value)
         if policy.value == DonationPolicy.ALWAYS_ACCEPT:
             await interaction.response.send_message(
@@ -137,7 +136,7 @@ class Player(commands.GroupCog):
         else:
             await interaction.response.send_message("Invalid input!", ephemeral=True)
             return
-        await player.save()  # do not save if the input is invalid
+        await player.asave()  # do not save if the input is invalid
 
     @policy.command()
     @app_commands.choices(
@@ -157,9 +156,9 @@ class Player(commands.GroupCog):
         policy: MentionPolicy
             The new policy for mentions
         """
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
         player.mention_policy = policy
-        await player.save()
+        await player.asave()
         await interaction.response.send_message(
             f"Your mention policy has been set to **{policy.name.lower()}**.", ephemeral=True
         )
@@ -180,9 +179,9 @@ class Player(commands.GroupCog):
         policy: FriendPolicy
             The new policy for friend requests.
         """
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
         player.friend_policy = policy
-        await player.save()
+        await player.asave()
         await interaction.response.send_message(
             f"Your friend request policy has been set to **{policy.name.lower()}**.",
             ephemeral=True,
@@ -200,8 +199,8 @@ class Player(commands.GroupCog):
         await view.wait()
         if view.value is None or not view.value:
             return
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        await player.delete()
+        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
+        await player.adelete()
 
     @friend.command(name="add")
     async def friend_add(
@@ -215,8 +214,8 @@ class Player(commands.GroupCog):
         user: discord.User
             The user you want to add as a friend.
         """
-        player1, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
+        player1, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
+        player2, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
 
         if player1 == player2:
             await interaction.response.send_message(
@@ -293,7 +292,7 @@ class Player(commands.GroupCog):
             self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
             return
 
-        await Friendship.create(player1=player1, player2=player2)
+        await Friendship.objects.acreate(player1=player1, player2=player2)
         self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
 
     @friend.command(name="remove")
@@ -308,8 +307,8 @@ class Player(commands.GroupCog):
         user: discord.User
             The user you want to remove as a friend.
         """
-        player1, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
+        player1, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
+        player2, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
 
         if player1 == player2:
             await interaction.response.send_message("You cannot remove yourself.", ephemeral=True)
@@ -325,10 +324,10 @@ class Player(commands.GroupCog):
             )
             return
         else:
-            await Friendship.filter(
+            await Friendship.objects.filter(
                 (Q(player1=player1) & Q(player2=player2))
                 | (Q(player1=player2) & Q(player2=player1))
-            ).delete()
+            ).adelete()
             await interaction.response.send_message(
                 f"{user.name} has been removed as a friend.", ephemeral=True
             )
@@ -338,14 +337,15 @@ class Player(commands.GroupCog):
         """
         View all your friends.
         """
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
 
-        friendships = (
-            await Friendship.filter(Q(player1=player) | Q(player2=player))
+        friendships = [
+            x
+            async for x in Friendship.objects.filter(Q(player1=player) | Q(player2=player))
             .select_related("player1", "player2")
             .order_by("since")
             .all()
-        )
+        ]
 
         if not friendships:
             await interaction.response.send_message(
@@ -384,8 +384,8 @@ class Player(commands.GroupCog):
         user: discord.User
             The user you want to block.
         """
-        player1, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
+        player1, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
+        player2, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -424,12 +424,12 @@ class Player(commands.GroupCog):
             if not view.value:
                 return
             else:
-                await Friendship.filter(
+                await Friendship.objects.filter(
                     (Q(player1=player1) & Q(player2=player2))
                     | (Q(player1=player2) & Q(player2=player1))
-                ).delete()
+                ).adelete()
 
-        await Block.create(player1=player1, player2=player2)
+        await Block.objects.acreate(player1=player1, player2=player2)
         await interaction.followup.send(f"You have now blocked {user.name}.", ephemeral=True)
 
     @blocked.command(name="remove")
@@ -444,8 +444,8 @@ class Player(commands.GroupCog):
         user: discord.User
             The user you want to unblock.
         """
-        player1, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        player2, _ = await PlayerModel.get_or_create(discord_id=user.id)
+        player1, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
+        player2, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
 
         if player1 == player2:
             await interaction.response.send_message("You cannot unblock yourself.", ephemeral=True)
@@ -460,7 +460,7 @@ class Player(commands.GroupCog):
             await interaction.response.send_message("This user isn't blocked.", ephemeral=True)
             return
         else:
-            await Block.filter((Q(player1=player1) & Q(player2=player2))).delete()
+            await Block.objects.filter((Q(player1=player1) & Q(player2=player2))).adelete()
             await interaction.response.send_message(
                 f"{user.name} has been unblocked.", ephemeral=True
             )
@@ -470,13 +470,13 @@ class Player(commands.GroupCog):
         """
         View all the users you have blocked.
         """
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
 
         blocked_relations = (
-            await Block.filter(player1=player)
+            await Block.objects.filter(player1=player)
             .select_related("player1", "player2")
             .order_by("date")
-            .all()
+            .aall()
         )
 
         if not blocked_relations:
@@ -517,22 +517,28 @@ class Player(commands.GroupCog):
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
         try:
-            player = await PlayerModel.get(discord_id=interaction.user.id).prefetch_related(
-                "balls"
+            player = await PlayerModel.objects.prefetch_related("balls").aget(
+                discord_id=interaction.user.id
             )
-        except DoesNotExist:
+        except PlayerModel.DoesNotExist:
             await interaction.followup.send("You haven't got any info to show!", ephemeral=True)
             return
-        ball = await BallInstance.filter(player=player).prefetch_related("special", "trade_player")
+        ball = (
+            await BallInstance.objects.prefetch_related("special", "trade_player")
+            .filter(player=player)
+            .aall()
+        )
 
         user = interaction.user
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
         total_countryballs = len(bot_countryballs)
         owned_countryballs = set(
-            x[0]
-            for x in await player.balls.filter(ball__enabled=True)
-            .distinct()
-            .values_list("ball_id")
+            [
+                x[0]
+                async for x in player.balls.filter(ball__enabled=True)
+                .distinct()
+                .values_list("ball_id")
+            ]
         )
 
         if total_countryballs > 0:
@@ -545,21 +551,21 @@ class Player(commands.GroupCog):
         caught_owned = [x for x in ball if x.trade_player is None]
         balls_owned = [x for x in ball]
         special = [x for x in ball if x.special is not None]
-        trades = await Trade.filter(
+        trades = Trade.objects.filter(
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
         ).values_list("player1__discord_id", "player2__discord_id")
 
         trade_partners = set()
-        for p1, p2 in trades:
+        async for p1, p2 in trades:
             if p1 != interaction.user.id:
                 trade_partners.add(p1)
             if p2 != interaction.user.id:
                 trade_partners.add(p2)
 
-        friends = await Friendship.filter(
+        friends = await Friendship.objects.filter(
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
-        ).count()
-        blocks = await Block.filter(player1__discord_id=interaction.user.id).count()
+        ).acount()
+        blocks = await Block.objects.filter(player1__discord_id=interaction.user.id).acount()
 
         embed = discord.Embed(
             title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**",
@@ -649,7 +655,7 @@ class Player(commands.GroupCog):
         """
         Export your player data.
         """
-        player = await PlayerModel.get_or_none(discord_id=interaction.user.id)
+        player = await PlayerModel.objects.aget_or_none(discord_id=interaction.user.id)
         if player is None:
             await interaction.response.send_message(
                 "You don't have any player data to export.", ephemeral=True
@@ -709,16 +715,16 @@ async def get_items_csv(player: PlayerModel) -> BytesIO:
     """
     Get a CSV file with all items of the player.
     """
-    balls = await BallInstance.filter(player=player).prefetch_related(
-        "ball", "trade_player", "special"
+    balls = BallInstance.objects.prefetch_related("ball", "trade_player", "special").filter(
+        player=player
     )
     txt = (
         f"id,hex id,{settings.collectible_name},catch date,trade_player"
         ",special,attack,attack bonus,hp,hp_bonus\n"
     )
-    for ball in balls:
+    async for ball in balls:
         txt += (
-            f"{ball.id},{ball.id:0X},{ball.ball.country},{ball.catch_date},"  # type: ignore
+            f"{ball.pk},{ball.pk:0X},{ball.ball.country},{ball.catch_date},"
             f"{ball.trade_player.discord_id if ball.trade_player else 'None'},{ball.special},"
             f"{ball.attack},{ball.attack_bonus},{ball.health},{ball.health_bonus}\n"
         )
@@ -730,21 +736,21 @@ async def get_trades_csv(player: PlayerModel) -> BytesIO:
     Get a CSV file with all trades of the player.
     """
     trade_history = (
-        await Trade.filter(Q(player1=player) | Q(player2=player))
+        Trade.objects.filter(Q(player1=player) | Q(player2=player))
         .order_by("date")
         .prefetch_related("player1", "player2")
     )
     txt = "id,date,player1,player2,player1 received,player2 received\n"
-    for trade in trade_history:
-        player1_items = await TradeObject.filter(
+    async for trade in trade_history:
+        player1_items = TradeObject.objects.prefetch_related("ballinstance").filter(
             trade=trade, player=trade.player1
-        ).prefetch_related("ballinstance")
-        player2_items = await TradeObject.filter(
+        )
+        player2_items = TradeObject.objects.prefetch_related("ballinstance").filter(
             trade=trade, player=trade.player2
-        ).prefetch_related("ballinstance")
+        )
         txt += (
-            f"{trade.id},{trade.date},{trade.player1.discord_id},{trade.player2.discord_id},"
-            f"{','.join([i.ballinstance.to_string() for i in player2_items])},"  # type: ignore
-            f"{','.join([i.ballinstance.to_string() for i in player1_items])}\n"  # type: ignore
+            f"{trade.pk},{trade.date},{trade.player1.discord_id},{trade.player2.discord_id},"
+            f"{','.join([str(i.ballinstance) async for i in player2_items])},"
+            f"{','.join([str(i.ballinstance) async for i in player1_items])}\n"
         )
     return BytesIO(txt.encode("utf-8"))
