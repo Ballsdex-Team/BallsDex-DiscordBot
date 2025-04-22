@@ -15,10 +15,6 @@ dependencies = [
     # discord
     "discord.py[speed]==2.5.0",
 
-    # database ORM
-    "tortoise-orm[asyncpg] ==0.22.2",
-    "tortoise-cli==0.1.2",
-
     # django admin panel
     "uvicorn[standard]==0.32.0",
     "django==5.1.4",
