@@ -60,12 +60,14 @@ class Manager[T: models.Model](models.Manager[T]):
 class GuildConfig(models.Model):
     guild_id = models.BigIntegerField(unique=True, help_text="Discord guild ID")
     spawn_channel = models.BigIntegerField(
-        blank=True, null=True, help_text="Discord channel ID where balls will spawn"
+        null=True, help_text="Discord channel ID where balls will spawn"
     )
     enabled = models.BooleanField(
-        help_text="Whether the bot will spawn countryballs in this guild"
+        help_text="Whether the bot will spawn countryballs in this guild", default=True
     )
-    silent = models.BooleanField()
+    silent = models.BooleanField(
+        help_text="Whether the responses of guesses get sent as ephemeral or not", default=False
+    )
 
     objects: Manager[Self] = Manager()
 
@@ -105,16 +107,24 @@ class Player(models.Model):
     discord_id = models.BigIntegerField(unique=True, help_text="Discord user ID")
     money = models.PositiveBigIntegerField(help_text="Money posessed by the player", default=0)
     donation_policy = models.SmallIntegerField(
-        choices=DonationPolicy.choices, help_text="How you want to handle donations"
+        choices=DonationPolicy.choices,
+        help_text="How you want to handle donations",
+        default=DonationPolicy.ALWAYS_ACCEPT,
     )
     privacy_policy = models.SmallIntegerField(
-        choices=PrivacyPolicy.choices, help_text="How you want to handle inventory privacy"
+        choices=PrivacyPolicy.choices,
+        help_text="How you want to handle inventory privacy",
+        default=PrivacyPolicy.DENY,
     )
     mention_policy = models.SmallIntegerField(
-        choices=MentionPolicy.choices, help_text="Control the bot's mentions"
+        choices=MentionPolicy.choices,
+        help_text="Control the bot's mentions",
+        default=MentionPolicy.ALLOW,
     )
     friend_policy = models.SmallIntegerField(
-        choices=FriendPolicy.choices, help_text="Open or close your friend requests"
+        choices=FriendPolicy.choices,
+        help_text="Open or close your friend requests",
+        default=FriendPolicy.ALLOW,
     )
     extra_data = models.JSONField(blank=True, default=dict)
 
@@ -362,9 +372,9 @@ class Ball(models.Model):
 
 
 class BallInstance(models.Model):
-    catch_date = models.DateTimeField()
-    health_bonus = models.IntegerField()
-    attack_bonus = models.IntegerField()
+    catch_date = models.DateTimeField(auto_now_add=True)
+    health_bonus = models.IntegerField(default=0)
+    attack_bonus = models.IntegerField(default=0)
     ball = models.ForeignKey(Ball, on_delete=models.CASCADE)
     ball_id: int
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="balls")
@@ -373,22 +383,21 @@ class BallInstance(models.Model):
         Player,
         on_delete=models.SET_NULL,
         related_name="ballinstance_trade_player_set",
-        blank=True,
         null=True,
     )
     trade_player_id: int | None
-    favorite = models.BooleanField()
-    special = models.ForeignKey(Special, on_delete=models.SET_NULL, blank=True, null=True)
+    favorite = models.BooleanField(default=False)
+    special = models.ForeignKey(Special, on_delete=models.SET_NULL, null=True)
     special_id: int | None
     server_id = models.BigIntegerField(
-        blank=True, null=True, help_text="Discord server ID where this ball was caught"
+        null=True, help_text="Discord server ID where this ball was caught"
     )
-    tradeable = models.BooleanField()
+    tradeable = models.BooleanField(default=True)
     extra_data = models.JSONField(blank=True, default=dict)
     locked = models.DateTimeField(
-        blank=True, null=True, help_text="If the instance was locked for a trade and when"
+        null=True, help_text="If the instance was locked for a trade and when", default=None
     )
-    spawned_time = models.DateTimeField(blank=True, null=True)
+    spawned_time = models.DateTimeField(null=True)
 
     objects: Manager[Self] = Manager()
     tradeable_objects: TradeableManager[Self] = TradeableManager()
@@ -556,9 +565,9 @@ class BallInstance(models.Model):
 
 class BlacklistedID(models.Model):
     discord_id = models.BigIntegerField(unique=True, help_text="Discord user ID")
-    reason = models.TextField(blank=True, null=True)
+    reason = models.TextField(blank=True, null=True, default=None)
     date = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    moderator_id = models.BigIntegerField(blank=True, null=True)
+    moderator_id = models.BigIntegerField(blank=True, null=True, default=None)
 
     objects: Manager[Self] = Manager()
 
@@ -569,9 +578,9 @@ class BlacklistedID(models.Model):
 
 class BlacklistedGuild(models.Model):
     discord_id = models.BigIntegerField(unique=True, help_text="Discord Guild ID")
-    reason = models.TextField(blank=True, null=True)
+    reason = models.TextField(blank=True, null=True, default=None)
     date = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    moderator_id = models.BigIntegerField(blank=True, null=True)
+    moderator_id = models.BigIntegerField(blank=True, null=True, default=None)
 
     objects: Manager[Self] = Manager()
 
