@@ -720,16 +720,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             apply_limit = True
 
         query = (
-            queryset.annotate(count=Count("id")).group_by(*annotations.values()).order_by("-count")
+            queryset.values(*annotations.values()).annotate(count=Count("id")).order_by("-count")
         )
 
         if apply_limit and limit is not None:
-            query = query.limit(limit)
+            query = query[:limit]
 
-        query = query.values(*annotations.values(), "count")
-        results = await query
-
-        if not results:
+        if not await query.aexists():
             await interaction.followup.send(
                 f"You don't have any {type.value} duplicates in your inventory.", ephemeral=True
             )
@@ -743,7 +740,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ),
                 "count": item["count"],
             }
-            for item in results
+            async for item in query
         ]
 
         source = DuplicateViewMenu(interaction, entries, type.value)
