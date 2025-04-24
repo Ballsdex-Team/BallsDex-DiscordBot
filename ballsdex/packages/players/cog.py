@@ -600,7 +600,7 @@ class Player(commands.GroupCog):
         """
         Check your balance.
         """
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
         await interaction.response.send_message(
             f"Your balance is **{player.money:,}**.", ephemeral=True
         )
@@ -617,7 +617,7 @@ class Player(commands.GroupCog):
         amount: int
             The amount of coins to give.
         """
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
         if not player.can_afford(amount):
             await interaction.response.send_message(
                 "You do not have enough coins to give.", ephemeral=True
@@ -638,7 +638,7 @@ class Player(commands.GroupCog):
                 "You cannot give coins to yourself.", ephemeral=True
             )
             return
-        other_player, _ = await PlayerModel.get_or_create(discord_id=user.id)
+        other_player, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
         await player.remove_money(amount)
         await other_player.add_money(amount)
         await interaction.response.send_message(

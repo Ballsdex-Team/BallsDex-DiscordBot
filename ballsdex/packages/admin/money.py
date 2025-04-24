@@ -2,9 +2,9 @@ import discord
 from discord import app_commands
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import Player
 from ballsdex.core.utils.logging import log_action
 from ballsdex.settings import settings
+from bd_models.models import Player
 
 
 class Money(app_commands.Group):
@@ -24,7 +24,7 @@ class Money(app_commands.Group):
             The user you want to get information about.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
-        player = await Player.get_or_none(discord_id=user.id)
+        player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
             await interaction.followup.send(
                 f"This user does not have a {settings.bot_name} account.", ephemeral=True
@@ -51,7 +51,7 @@ class Money(app_commands.Group):
             The amount of coins to add.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
-        player = await Player.get_or_none(discord_id=user.id)
+        player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
             await interaction.followup.send(
                 f"This user does not have a {settings.bot_name} account.", ephemeral=True
@@ -90,7 +90,7 @@ class Money(app_commands.Group):
             The amount of coins to remove.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
-        player = await Player.get_or_none(discord_id=user.id)
+        player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
             await interaction.followup.send(
                 f"This user does not have a {settings.bot_name} account.", ephemeral=True
@@ -134,7 +134,7 @@ class Money(app_commands.Group):
             The amount of coins to set.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
-        player = await Player.get_or_none(discord_id=user.id)
+        player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
             await interaction.followup.send(
                 f"This user has does not have a {settings.bot_name} account.", ephemeral=True
@@ -148,7 +148,7 @@ class Money(app_commands.Group):
             return
 
         player.money = amount
-        await player.save()
+        await player.asave()
         await interaction.followup.send(
             f"{user.mention} now has {amount:,} coins.", ephemeral=True
         )
