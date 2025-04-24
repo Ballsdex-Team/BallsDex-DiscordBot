@@ -454,7 +454,7 @@ class CountryballsSelector(Pages):
                 continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
-            special = ball.special_emoji(self.bot, True)
+            special = ball.specialcard.emoji if ball.specialcard else None
             options.append(
                 discord.SelectOption(
                     label=f"{favorite}{special}#{ball.pk:0X} {ball.countryball.country}",

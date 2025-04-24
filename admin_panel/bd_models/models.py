@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from io import BytesIO
@@ -40,7 +41,7 @@ economies: dict[int, Economy] = {}
 specials: dict[int, Special] = {}
 
 
-class Manager[T: models.Model](models.Manager[T]):
+class QuerySet[T: models.Model](models.QuerySet[T]):
     def get_or_none(self, *args: Any, **kwargs: Any) -> T | None:
         try:
             return super().get(*args, **kwargs)
@@ -55,6 +56,17 @@ class Manager[T: models.Model](models.Manager[T]):
 
     async def aall(self) -> list[T]:
         return [x async for x in super().all()]
+
+
+if TYPE_CHECKING:
+
+    class Manager[T: models.Model](models.Manager[T], QuerySet[T]):
+        pass
+
+else:
+
+    class Manager[T: models.Model](models.Manager[T].from_queryset(QuerySet)):
+        pass
 
 
 class GuildConfig(models.Model):
@@ -143,6 +155,10 @@ class Player(models.Model):
         )
 
     def is_blacklisted(self) -> bool:
+        # this should only be used for the admin panel
+        if "startbot" in sys.argv:
+            return False
+
         blacklist = cast(
             list[int],
             cache.get_or_set(
@@ -420,17 +436,23 @@ class BallInstance(models.Model):
                     return ball
         return super().__getattribute__(name)
 
-    def __str__(self) -> str:
+    def short_description(self, *, is_trade: bool = False) -> str:
+        """
+        Return a short string representation. Similar to str(x) without arguments.
+        """
         text = ""
-        if self.locked and self.locked > now() - timedelta(minutes=30):
+        if not is_trade and self.locked and self.locked > now() - timedelta(minutes=30):
             text += "🔒"
         if self.favorite:
             text += settings.favorited_collectible_emoji
         if text:
             text += " "
-        if self.special:
-            text += self.special.emoji or ""
-        return f"{text}#{self.pk:0X} {self.ball.country}"
+        if self.specialcard:
+            text += self.specialcard.emoji or ""
+        return f"{text}#{self.pk:0X} {self.countryball.country}"
+
+    def __str__(self) -> str:
+        return self.short_description()
 
     @property
     def is_tradeable(self) -> bool:
@@ -483,7 +505,7 @@ class BallInstance(models.Model):
         bot: "BallsDexBot | None" = None,
         is_trade: bool = False,
     ) -> str:
-        text = self.to_string(bot, is_trade=is_trade)
+        text = self.short_description(is_trade=is_trade)
         if not short:
             text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
         if include_emoji:

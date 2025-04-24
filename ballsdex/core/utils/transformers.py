@@ -70,7 +70,7 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
     """
 
     name: str
-    model: T
+    model: type[T]
 
     def key(self, model: T) -> str:
         """
@@ -147,7 +147,7 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
 
 class BallInstanceTransformer(ModelTransformer[BallInstance]):
     name = settings.collectible_name
-    model = BallInstance  # type: ignore
+    model = BallInstance
 
     async def get_from_pk(self, value: int) -> BallInstance:
         return await self.model.objects.prefetch_related("player").aget(pk=value)
@@ -186,9 +186,9 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
                 balls_queryset.select_related("ball")
                 .annotate(
                     searchable=RawSQL(
-                        "to_hex(ballinstance.id) || ' ' || ballinstance__ball.country || ' ' || "
-                        "COALESCE(ballinstance__ball.catch_names, '') || ' ' || "
-                        "COALESCE(ballinstance__ball.translations, '')",
+                        "to_hex(ballinstance.id) || ' ' || ball.country || ' ' || "
+                        "COALESCE(ball.catch_names, '') || ' ' || "
+                        "COALESCE(ball.translations, '')",
                         (),
                     )
                 )
@@ -255,7 +255,7 @@ class TTLModelTransformer(ModelTransformer[T]):
 
 class BallTransformer(TTLModelTransformer[Ball]):
     name = settings.collectible_name
-    model = Ball()
+    model = Ball
 
     def key(self, model: Ball) -> str:
         return model.country
@@ -285,7 +285,7 @@ class BallEnabledTransformer(BallTransformer):
 
 class SpecialTransformer(TTLModelTransformer[Special]):
     name = "special event"
-    model = Special()
+    model = Special
 
     def key(self, model: Special) -> str:
         return model.name
@@ -298,7 +298,7 @@ class SpecialEnabledTransformer(SpecialTransformer):
 
 class RegimeTransformer(TTLModelTransformer[Regime]):
     name = "regime"
-    model = Regime()
+    model = Regime
 
     def key(self, model: Regime) -> str:
         return model.name
@@ -309,7 +309,7 @@ class RegimeTransformer(TTLModelTransformer[Regime]):
 
 class EconomyTransformer(TTLModelTransformer[Economy]):
     name = "economy"
-    model = Economy()
+    model = Economy
 
     def key(self, model: Economy) -> str:
         return model.name

@@ -265,20 +265,21 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        query = BallInstance.objects.filter(player__discord_id=interaction.user.id)
+        query = BallInstance.objects.filter(
+            player__discord_id=interaction.user.id
+        ).prefetch_related("player")
         if countryball:
             query = query.filter(ball=countryball)
         if special:
             query = query.filter(special=special)
         if sort:
             query = sort_balls(sort, query)
-        balls = await query.aall()
-        if not balls:
+        if not await query.aexists():
             await interaction.followup.send(
                 f"No {settings.plural_collectible_name} found.", ephemeral=True
             )
             return
-        balls = [x for x in balls if x.is_tradeable]
+        balls = [x async for x in query if x.is_tradeable]
 
         view = BulkAddView(interaction, balls, self)  # type: ignore
         await view.start(

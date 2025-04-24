@@ -421,7 +421,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
 
-        countryball = await player.balls.select_related("ball").all().order_by("-id").afirst()
+        countryball = (
+            await player.balls.select_related("ball", "trade_player")
+            .all()
+            .order_by("-id")
+            .afirst()
+        )
         if not countryball:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(

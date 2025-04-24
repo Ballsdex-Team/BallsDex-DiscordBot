@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
+from asgiref.sync import sync_to_async
 from bd_models.models import Ball
 from bd_models.models import balls as countryballs
 from discord import app_commands
@@ -74,8 +75,8 @@ class Info(commands.Cog):
             balls = []
 
         balls_count = len([x for x in countryballs.values() if x.enabled])
-        players_count = row_count_estimate("player")
-        balls_instances_count = row_count_estimate("ballinstance")
+        players_count = await sync_to_async(row_count_estimate)("player")
+        balls_instances_count = await sync_to_async(row_count_estimate)("ballinstance")
 
         if self.bot.startup_time is not None:
             uptime_duration = datetime.now() - self.bot.startup_time
