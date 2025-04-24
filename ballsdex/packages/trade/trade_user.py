@@ -5,9 +5,9 @@ from bd_models.models import BlacklistedID
 
 if TYPE_CHECKING:
     import discord
-    from bd_models.models import BallInstance, Player, Trade
 
     from ballsdex.core.bot import BallsDexBot
+    from bd_models.models import BallInstance, Player, Trade
 
 
 @dataclass(slots=True)

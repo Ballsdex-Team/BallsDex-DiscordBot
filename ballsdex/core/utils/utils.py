@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING, Union
 
 import discord
-from bd_models.models import Player, PrivacyPolicy
 
 from ballsdex.settings import settings
+from bd_models.enums import PrivacyPolicy
+from bd_models.models import Player
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 from django.db.models.expressions import F, RawSQL
 
 if TYPE_CHECKING:
-    from bd_models.models import BallInstance
     from django.db.models import QuerySet
+
+    from bd_models.models import BallInstance
 
 
 class SortingChoices(enum.Enum):

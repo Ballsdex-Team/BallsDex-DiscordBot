@@ -41,12 +41,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit==3.7.1",
-    "black==24.8.0",
+    "pre-commit==4.2.0",
+    "black==25.1.0",
     "flake8-pyproject==1.2.3",
     "flake8==7.2.0",
-    "pyright==1.1.390",
-    "isort==5.13.2",
+    "pyright==1.1.399",
+    "isort==6.0.1",
     "django-debug-toolbar==4.4.6",
     "pyinstrument==5.0.0",
     "django-types==0.20.0",
@@ -82,7 +82,10 @@ exclude = "./admin_panel/admin_panel/settings/*"
 
 [tool.isort]
 profile = "black"
+py_version = "313"
 line_length = 99
+# list all django modules
+known_first_party = ["ballsdex", "bd_models", "admin_panel", "preview"]
 
 [tool.pyright]
 extraPaths = ["./admin_panel"]

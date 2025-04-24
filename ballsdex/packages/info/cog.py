@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING
 
 import discord
 from asgiref.sync import sync_to_async
-from bd_models.models import Ball
-from bd_models.models import balls as countryballs
 from discord import app_commands
 from discord.app_commands.translator import (
     TranslationContext,
@@ -20,6 +18,8 @@ from ballsdex import __version__ as ballsdex_version
 from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.tortoise import row_count_estimate
 from ballsdex.settings import settings
+from bd_models.models import Ball
+from bd_models.models import balls as countryballs
 
 from .license import LicenseInfo
 

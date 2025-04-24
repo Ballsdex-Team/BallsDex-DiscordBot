@@ -4,12 +4,12 @@ import time
 from typing import TYPE_CHECKING
 
 import discord
-from bd_models.models import Ball
 from discord.ext import commands
 from django.db import connection
 
 from ballsdex.core.dev import pagify, send_interactive
 from ballsdex.settings import settings
+from bd_models.models import Ball
 
 log = logging.getLogger("ballsdex.core.commands")
 

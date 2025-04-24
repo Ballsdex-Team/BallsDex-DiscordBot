@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Optional
 
 import discord
-from bd_models.models import GuildConfig
 from discord.ui import Button, View, button
 
 from ballsdex.settings import settings
+from bd_models.models import GuildConfig
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

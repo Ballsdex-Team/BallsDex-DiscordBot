@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
-from bd_models.models import BallInstance, Player, Trade, TradeObject
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
 
@@ -17,6 +16,7 @@ from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
+from bd_models.models import BallInstance, Player, Trade, TradeObject
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

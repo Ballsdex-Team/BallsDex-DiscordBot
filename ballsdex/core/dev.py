@@ -14,7 +14,11 @@ from typing import TYPE_CHECKING, Iterable
 
 import aiohttp
 import discord
+from discord.ext import commands
+
+from ballsdex.core.utils.formatting import pagify
 from bd_models import models
+from bd_models.enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy
 from bd_models.models import (
     Ball,
     BallInstance,
@@ -22,22 +26,15 @@ from bd_models.models import (
     BlacklistedID,
     BlacklistHistory,
     Block,
-    DonationPolicy,
     Economy,
-    FriendPolicy,
     Friendship,
     GuildConfig,
-    MentionPolicy,
     Player,
-    PrivacyPolicy,
     Regime,
     Special,
     Trade,
     TradeObject,
 )
-from discord.ext import commands
-
-from ballsdex.core.utils.formatting import pagify
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

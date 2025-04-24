@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
-from bd_models.models import GuildConfig
 from discord import app_commands
 from discord.ext import commands
 
 from ballsdex.packages.config.components import AcceptTOSView
 from ballsdex.settings import settings
+from bd_models.models import GuildConfig
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

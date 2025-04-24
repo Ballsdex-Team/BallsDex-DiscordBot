@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import discord
-from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from discord import app_commands
 from discord.utils import format_dt
 
@@ -20,6 +19,7 @@ from ballsdex.core.utils.transformers import (
     SpecialTransform,
 )
 from ballsdex.settings import settings
+from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 
 if TYPE_CHECKING:
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner

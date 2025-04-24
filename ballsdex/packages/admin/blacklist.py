@@ -1,5 +1,4 @@
 import discord
-from bd_models.models import BlacklistedGuild, BlacklistedID, BlacklistHistory, GuildConfig, Player
 from discord import app_commands
 from discord.utils import format_dt
 from django.db import IntegrityError
@@ -9,6 +8,7 @@ from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.admin.menu import BlacklistViewFormat
 from ballsdex.settings import settings
+from bd_models.models import BlacklistedGuild, BlacklistedID, BlacklistHistory, GuildConfig, Player
 
 
 class Blacklist(app_commands.Group):

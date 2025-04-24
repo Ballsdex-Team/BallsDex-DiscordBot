@@ -3,16 +3,6 @@ from io import BytesIO
 from typing import TYPE_CHECKING
 
 import discord
-from bd_models.models import (
-    BallInstance,
-    Block,
-    DonationPolicy,
-    FriendPolicy,
-    Friendship,
-    MentionPolicy,
-)
-from bd_models.models import Player as PlayerModel
-from bd_models.models import PrivacyPolicy, Trade, TradeObject, balls
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import format_dt
@@ -27,6 +17,18 @@ from ballsdex.core.utils.enums import (
 )
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.settings import settings
+from bd_models.enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy
+from bd_models.models import (
+    BallInstance,
+    Block,
+    Friendship,
+)
+from bd_models.models import Player as PlayerModel
+from bd_models.models import (
+    Trade,
+    TradeObject,
+    balls,
+)
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

@@ -1,7 +1,6 @@
 import datetime
 
 import discord
-from bd_models.models import BallInstance, GuildConfig, Player
 from discord import app_commands
 from discord.utils import format_dt
 
@@ -13,6 +12,7 @@ from ballsdex.core.utils.enums import (
     PRIVATE_POLICY_MAP,
 )
 from ballsdex.settings import settings
+from bd_models.models import BallInstance, GuildConfig, Player
 
 
 class Info(app_commands.Group):

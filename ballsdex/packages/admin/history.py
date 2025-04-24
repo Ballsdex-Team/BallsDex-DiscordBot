@@ -1,7 +1,6 @@
 import datetime
 
 import discord
-from bd_models.models import BallInstance, Player, Trade
 from discord import app_commands
 from django.db.models import Q
 
@@ -11,6 +10,7 @@ from ballsdex.core.utils.transformers import BallEnabledTransform
 from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
+from bd_models.models import BallInstance, Player, Trade
 
 
 class History(app_commands.Group):

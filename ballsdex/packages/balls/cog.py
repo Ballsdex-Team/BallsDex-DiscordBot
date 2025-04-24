@@ -3,7 +3,6 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 import discord
-from bd_models.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View, button
@@ -21,6 +20,8 @@ from ballsdex.core.utils.transformers import (
 from ballsdex.core.utils.utils import inventory_privacy, is_staff
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer, DuplicateViewMenu
 from ballsdex.settings import settings
+from bd_models.enums import DonationPolicy
+from bd_models.models import BallInstance, Player, Trade, TradeObject, balls
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

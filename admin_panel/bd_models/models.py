@@ -21,6 +21,8 @@ from django.utils.timezone import now
 from ballsdex.core.image_generator.image_gen import draw_card
 from ballsdex.settings import settings
 
+from .enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy
+
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
@@ -89,30 +91,6 @@ class GuildConfig(models.Model):
     class Meta:
         managed = True
         db_table = "guildconfig"
-
-
-class DonationPolicy(models.IntegerChoices):
-    ALWAYS_ACCEPT = 1
-    REQUEST_APPROVAL = 2
-    ALWAYS_DENY = 3
-    FRIENDS_ONLY = 4
-
-
-class PrivacyPolicy(models.IntegerChoices):
-    ALLOW = 1
-    DENY = 2
-    SAME_SERVER = 3
-    FRIENDS = 4
-
-
-class MentionPolicy(models.IntegerChoices):
-    ALLOW = 1
-    DENY = 2
-
-
-class FriendPolicy(models.IntegerChoices):
-    ALLOW = 1
-    DENY = 2
 
 
 class Player(models.Model):

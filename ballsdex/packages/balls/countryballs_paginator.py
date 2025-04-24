@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 import discord
-from bd_models.models import BallInstance
 
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.settings import settings
+from bd_models.models import BallInstance
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

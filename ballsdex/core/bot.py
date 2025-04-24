@@ -13,18 +13,6 @@ import aiohttp
 import discord
 import discord.gateway
 from aiohttp import ClientTimeout
-from bd_models.models import (
-    Ball,
-    BlacklistedGuild,
-    BlacklistedID,
-    Economy,
-    Regime,
-    Special,
-    balls,
-    economies,
-    regimes,
-    specials,
-)
 from cachetools import TTLCache
 from discord import app_commands
 from discord.app_commands.translator import TranslationContextTypes, locale_str
@@ -39,6 +27,18 @@ from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.settings import settings
+from bd_models.models import (
+    Ball,
+    BlacklistedGuild,
+    BlacklistedID,
+    Economy,
+    Regime,
+    Special,
+    balls,
+    economies,
+    regimes,
+    specials,
+)
 
 if TYPE_CHECKING:
     from discord.ext.commands.bot import PrefixType

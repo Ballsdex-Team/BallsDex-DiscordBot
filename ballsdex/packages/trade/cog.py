@@ -3,8 +3,6 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, cast
 
 import discord
-from bd_models.models import BallInstance, Player
-from bd_models.models import Trade as TradeModel
 from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
@@ -24,6 +22,8 @@ from ballsdex.packages.trade.display import TradeViewFormat
 from ballsdex.packages.trade.menu import BulkAddView, TradeMenu, TradeViewMenu
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
+from bd_models.models import BallInstance, Player
+from bd_models.models import Trade as TradeModel
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

@@ -2,13 +2,13 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 import discord
-from bd_models.models import Ball, GuildConfig
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button
 
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.settings import settings
+from bd_models.models import Ball, GuildConfig
 
 from .balls import Balls as BallsGroup
 from .blacklist import Blacklist as BlacklistGroup

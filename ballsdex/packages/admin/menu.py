@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING, Iterable
 
 import discord
-from bd_models.models import BlacklistHistory, Player
 from discord.utils import format_dt
 
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.settings import settings
+from bd_models.models import BlacklistHistory, Player
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

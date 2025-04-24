@@ -3,8 +3,9 @@
 from typing import TYPE_CHECKING
 
 import django.db.models.deletion
-from bd_models.models import Economy, Regime, Special
 from django.db import migrations, models
+
+from bd_models.models import Economy, Regime, Special
 
 if TYPE_CHECKING:
     from django.apps.registry import Apps
