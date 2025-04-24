@@ -59,11 +59,7 @@ def sort_balls[QS: QuerySet[BallInstance]](sort: SortingChoices, queryset: QS) -
     elif sort == SortingChoices.total_stats:
         return (
             queryset.select_related("ball")
-            .annotate(
-                stats=RawSQL(
-                    "ballinstance__ball.health + " "ballinstance__ball.attack :: BIGINT", ()
-                )
-            )
+            .annotate(stats=RawSQL("ball.health + ball.attack :: BIGINT", ()))
             .order_by("-stats")
         )
     elif sort == SortingChoices.rarity:
