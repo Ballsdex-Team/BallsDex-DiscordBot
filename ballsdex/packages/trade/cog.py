@@ -13,7 +13,7 @@ from ballsdex.core.models import BallInstance, Player
 from ballsdex.core.models import Trade as TradeModel
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
-from ballsdex.core.utils.sorting import SortingChoices, sort_balls
+from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
@@ -240,6 +240,7 @@ class Trade(commands.GroupCog):
         countryball: BallEnabledTransform | None = None,
         sort: SortingChoices | None = None,
         special: SpecialEnabledTransform | None = None,
+        filter: FilteringChoices | None = None,
     ):
         """
         Bulk add countryballs to the ongoing trade, with paramaters to aid with searching.
@@ -252,6 +253,8 @@ class Trade(commands.GroupCog):
             Choose how countryballs are sorted. Can be used to show duplicates.
         special: Special
             Filter the results to a special event
+        filter: FilteringChoices
+            Filter the results to a specific filter
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
         trade, trader = self.get_trade(interaction)
@@ -272,6 +275,8 @@ class Trade(commands.GroupCog):
             query = query.filter(special=special)
         if sort:
             query = sort_balls(sort, query)
+        if filter:
+            query = filter_balls(filter, query, interaction.guild_id)
         balls = await query
         if not balls:
             await interaction.followup.send(
