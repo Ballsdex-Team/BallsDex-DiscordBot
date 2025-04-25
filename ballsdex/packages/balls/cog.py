@@ -882,14 +882,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer(thinking=True)
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
-        if not countryball:
-            balls = await BallInstance.filter(player=player).prefetch_related(
-                "player", "trade_player", "special"
-            )
-        else:
-            balls = await BallInstance.filter(ball=countryball, player=player).prefetch_related(
-                "player", "trade_player", "special"
-            )
+        query = BallInstance.filter(player=player).prefetch_related(
+            "player", "trade_player", "special"
+        )
+        if countryball:
+            query = query.filter(ball=countryball)
+        balls = await query
 
         if not balls:
             if countryball:
