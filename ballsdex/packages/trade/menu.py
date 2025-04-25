@@ -352,7 +352,9 @@ class TradeMenu:
         )
 
         for countryball in self.trader1.proposal:
-            await countryball.arefresh_from_db()
+            await countryball.arefresh_from_db(
+                from_queryset=BallInstance.objects.prefetch_related("player")
+            )
             if countryball.player.discord_id != self.trader1.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
@@ -365,6 +367,9 @@ class TradeMenu:
             )
 
         for countryball in self.trader2.proposal:
+            await countryball.arefresh_from_db(
+                from_queryset=BallInstance.objects.prefetch_related("player")
+            )
             if countryball.player.discord_id != self.trader2.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
@@ -417,6 +422,9 @@ class TradeMenu:
                 result = False
 
         await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+        if result is False:
+            for ball in self.trader1.proposal + self.trader2.proposal:
+                await ball.unlock()
         return result
 
 

@@ -150,7 +150,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
     model = BallInstance
 
     async def get_from_pk(self, value: int) -> BallInstance:
-        return await self.model.objects.prefetch_related("player").aget(pk=value)
+        return await self.model.objects.prefetch_related("player", "trade_player").aget(pk=value)
 
     async def validate(self, interaction: discord.Interaction["BallsDexBot"], item: BallInstance):
         # checking if the ball does belong to user, and a custom ID wasn't forced

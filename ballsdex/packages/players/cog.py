@@ -726,7 +726,7 @@ async def get_items_csv(player: PlayerModel) -> BytesIO:
     )
     async for ball in balls:
         txt += (
-            f"{ball.pk},{ball.pk:0X},{ball.ball.country},{ball.catch_date},"
+            f"{ball.pk},{ball.pk:0X},{ball.countryball.country},{ball.catch_date},"
             f"{ball.trade_player.discord_id if ball.trade_player else 'None'},{ball.special},"
             f"{ball.attack},{ball.attack_bonus},{ball.health},{ball.health_bonus}\n"
         )

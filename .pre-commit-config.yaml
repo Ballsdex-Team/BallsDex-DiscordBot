@@ -40,7 +40,8 @@ repos:
           - redis
           - django
           - dj_database_url
-          - django-types
+          # - django-types
+          - git+https://github.com/laggron42/django-types@patch-1
           - django-debug-toolbar
           - django-nonrelated-inlines
           - social-auth-app-django

@@ -54,7 +54,7 @@ class CountryballsSelector(Pages):
         self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
     ):
         await interaction.response.defer(thinking=True)
-        ball_instance = await BallInstance.objects.aget(
+        ball_instance = await BallInstance.objects.prefetch_related("trade_player").aget(
             id=int(interaction.data.get("values")[0])  # type: ignore
         )
         await self.ball_selected(interaction, ball_instance)

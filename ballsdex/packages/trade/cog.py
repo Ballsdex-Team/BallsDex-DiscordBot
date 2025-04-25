@@ -414,8 +414,8 @@ class Trade(commands.GroupCog):
             .prefetch_related(
                 "player1",
                 "player2",
-                "tradeobjects__ballinstance__ball",
-                "tradeobjects__ballinstance__special",
+                "tradeobject_set__ballinstance__ball",
+                "tradeobject_set__ballinstance__special",
             )
             .aall()
         )
