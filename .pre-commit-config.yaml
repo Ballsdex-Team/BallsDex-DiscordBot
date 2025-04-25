@@ -48,6 +48,7 @@ repos:
           - django-admin-autocomplete-filter
           - django_admin_action_forms
           - django_admin_inline_paginator
+          - sentry-sdk[asyncpg]
   - repo: https://github.com/pycqa/flake8
     rev: 7.2.0
     hooks:

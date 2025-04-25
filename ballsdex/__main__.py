@@ -10,9 +10,11 @@ from pathlib import Path
 from signal import SIGTERM
 
 import discord
+import sentry_sdk
 import yarl
 from discord.ext.commands import when_mentioned_or
 from rich import print
+from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from tortoise import Tortoise
 
 from ballsdex import __version__ as bot_version
@@ -241,6 +243,17 @@ async def init_tortoise(db_url: str, *, skip_migrations: bool = False):
     await Tortoise.init(config=TORTOISE_ORM)
 
 
+async def init_sentry():
+    if settings.sentry_dsn:
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            environment=settings.sentry_environment,
+            release=bot_version,
+            integrations=[AsyncioIntegration()],
+        )  # TODO: Add breadcrumbs for clustering
+        log.info("Sentry initialized.")
+
+
 def main():
     bot = None
     server = None
@@ -306,6 +319,7 @@ def main():
             skip_tree_sync=cli_flags.skip_tree_sync,
         )
 
+        loop.run_until_complete(init_sentry())
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
         try:

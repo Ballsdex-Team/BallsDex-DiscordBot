@@ -41,6 +41,7 @@ dependencies = [
     "Pillow==10.4.0",
     "pyyaml==6.0.2",
     "cachetools==5.5.0",
+    "sentry-sdk[asyncpg]==2.27.0"
 ]
 
 [project.optional-dependencies]
