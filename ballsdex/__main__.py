@@ -250,7 +250,7 @@ async def init_sentry():
             environment=settings.sentry_environment,
             release=bot_version,
             integrations=[AsyncioIntegration()],
-        )
+        )  # TODO: Add breadcrumbs for clustering
         log.info("Sentry initialized.")
 
 
