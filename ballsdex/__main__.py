@@ -310,6 +310,8 @@ def main():
         if settings.sentry_dsn:
             sentry_sdk.init(
                 dsn=settings.sentry_dsn,
+                environment=settings.sentry_environment,
+                release=bot_version,
             )
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
