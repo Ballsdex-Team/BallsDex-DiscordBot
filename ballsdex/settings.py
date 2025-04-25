@@ -117,6 +117,9 @@ class Settings:
     client_id: str = ""
     client_secret: str = ""
 
+    # sentry details
+    sentry_dsn: str = ""
+
 
 settings = Settings()
 
@@ -178,6 +181,8 @@ def read_settings(path: "Path"):
         settings.client_id = admin.get("client-id")
         settings.client_secret = admin.get("client-secret")
         settings.admin_url = admin.get("url")
+
+    settings.sentry_dsn = content.get("sentry-dsn", "")
 
     log.info("Settings loaded.")
 
@@ -301,6 +306,10 @@ prometheus:
   port: 15260
 
 spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
+
+# sentry details, leave empty if you don't know what this is
+# https://sentry.io/ for error tracking
+sentry-dsn: ""
   """  # noqa: W291
     )
 
@@ -317,6 +326,7 @@ def update_settings(path: "Path"):
     add_packages = "packages:" not in content
     add_spawn_manager = "spawn-manager" not in content
     add_django = "Admin panel related settings" not in content
+    add_sentry = "sentry-dsn" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -402,6 +412,13 @@ admin-panel:
     # set to an empty string to disable those links entirely
     url: http://localhost:8000
 
+"""
+
+    if add_sentry:
+        content += """
+# sentry details, leave empty if you don't know what this is
+# https://sentry.io/ for error tracking
+sentry-dsn: ""
 """
 
     if any(

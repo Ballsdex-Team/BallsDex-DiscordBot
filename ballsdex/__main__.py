@@ -10,6 +10,7 @@ from pathlib import Path
 from signal import SIGTERM
 
 import discord
+import sentry_sdk
 import yarl
 from discord.ext.commands import when_mentioned_or
 from rich import print
@@ -306,6 +307,10 @@ def main():
             skip_tree_sync=cli_flags.skip_tree_sync,
         )
 
+        if settings.sentry_dsn:
+            sentry_sdk.init(
+                dsn=settings.sentry_dsn,
+            )
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
         try:
