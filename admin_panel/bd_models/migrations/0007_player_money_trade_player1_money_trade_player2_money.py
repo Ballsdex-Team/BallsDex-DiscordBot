@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("bd_models", "0005_alter_ball_short_name"),
+        ("bd_models", "0006_player_extra_data"),
     ]
 
     operations = [

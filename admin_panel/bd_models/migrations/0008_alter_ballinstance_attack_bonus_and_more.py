@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("bd_models", "0006_player_extra_data"),
+        ("bd_models", "0007_player_money_trade_player1_money_trade_player2_money"),
     ]
 
     operations = [
