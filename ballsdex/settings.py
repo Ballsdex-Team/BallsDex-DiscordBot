@@ -439,6 +439,7 @@ sentry:
             add_packages,
             add_spawn_manager,
             add_django,
+            add_sentry,
         )
     ):
         path.write_text(content)
