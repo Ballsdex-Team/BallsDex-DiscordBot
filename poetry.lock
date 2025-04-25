@@ -2635,6 +2635,7 @@ files = [
 ]
 
 [package.dependencies]
+asyncpg = {version = ">=0.23", optional = true, markers = "extra == \"asyncpg\""}
 certifi = "*"
 urllib3 = ">=1.26.11"
 
@@ -3368,4 +3369,4 @@ dev = ["black", "django-debug-toolbar", "django-types", "flake8", "flake8-pyproj
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "1a44075248a7778b351a5aa2f0d0d8fe8a88d9f58b1e501af28f4e5f41d65414"
+content-hash = "bf9075ba5c7e47e9b6e59eb67e5176b05300145e5d1873904351dce3118c7c6b"
