@@ -1,5 +1,5 @@
 import enum
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from tortoise.expressions import F, RawSQL
 
@@ -80,8 +80,8 @@ def sort_balls(
 
 
 def filter_balls(
-    filter: FilteringChoices, balls: "List[BallInstance]", guild_id: int | None = None
-) -> "List[BallInstance]":
+    filter: FilteringChoices, queryset: "QuerySet[BallInstance]", guild_id: int | None = None
+) -> "QuerySet[BallInstance]":
     """
     Edit a list of ball instances in place to apply the selected filtering options.
 
@@ -89,22 +89,24 @@ def filter_balls(
     ----------
     filter: FilteringChoices
         One of the supported filtering methods
-    balls: List[BallInstance]
-        A list of ball instances.
+    balls: QuerySet[BallInstance]
+        A ballinstance queryset.
     guild_id: int | None
         The ID of the server to filter by. Only used for the ``this_server`` filter.
         If not provided, this filter will be ignored.
 
     Returns
     -------
-    List[BallInstance]
-        The same list modified to apply the filtering.
+    QuerySet[BallInstance]
+        The modified query applying the filtering.
     """
     if filter == FilteringChoices.only_specials:
-        return [ball for ball in balls if ball.special]
+        return queryset.exclude(special=None)
     elif filter == FilteringChoices.non_specials:
-        return [ball for ball in balls if not ball.special]
+        return queryset.filter(special=None)
     elif filter == FilteringChoices.self_caught:
-        return [ball for ball in balls if not ball.trade_player]
-    elif filter == FilteringChoices.this_server:
-        return [ball for ball in balls if ball.server_id == guild_id]
+        return queryset.filter(trade_player=None)
+    elif filter == FilteringChoices.this_server and guild_id is not None:
+        return queryset.filter(server_id=guild_id)
+    else:
+        return queryset

@@ -173,6 +173,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         await player.fetch_related("balls")
         query = player.balls.all()
+        if filter:
+            query = filter_balls(filter, query, interaction.guild_id)
         if countryball:
             query = query.filter(ball__id=countryball.pk)
         if special:
@@ -181,11 +183,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             countryballs = await sort_balls(sort, query)
         else:
             countryballs = await query.order_by("-favorite")
-
-        if filter:
-            countryballs = filter_balls(
-                filter, countryballs, interaction.guild.id if interaction.guild else None
-            )
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""

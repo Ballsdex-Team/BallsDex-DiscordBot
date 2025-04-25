@@ -275,11 +275,9 @@ class Trade(commands.GroupCog):
             query = query.filter(special=special)
         if sort:
             query = sort_balls(sort, query)
-        balls = await query
         if filter:
-            balls = filter_balls(
-                filter, balls, interaction.guild.id if interaction.guild else None
-            )
+            query = filter_balls(filter, query, interaction.guild_id)
+        balls = await query
         if not balls:
             await interaction.followup.send(
                 f"No {settings.plural_collectible_name} found.", ephemeral=True
