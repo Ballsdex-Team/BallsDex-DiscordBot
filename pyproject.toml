@@ -38,7 +38,7 @@ dependencies = [
     # misc
     "rich==13.8.0",
     "python-dateutil==2.9.0",
-    "Pillow==10.4.0",
+    "Pillow==11.2.1",
     "pyyaml==6.0.2",
     "cachetools==5.5.0",
     "sentry-sdk[asyncpg]==2.27.0"
