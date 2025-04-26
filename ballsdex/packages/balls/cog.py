@@ -1,5 +1,6 @@
 import enum
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -9,7 +10,15 @@ from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
 from tortoise.functions import Count
 
-from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
+from ballsdex.core.models import (
+    BallInstance,
+    DonationPolicy,
+    Player,
+    Special,
+    Trade,
+    TradeObject,
+    balls,
+)
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
@@ -860,3 +869,75 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         pages = Pages(source=source, interaction=interaction, compact=True)
         await pages.start()
+
+    @app_commands.command()
+    async def collection(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        countryball: BallEnabledTransform | None = None,
+    ):
+        """
+        Show the collection of a specific countryball.
+
+        Parameters
+        ----------
+        countryball: Ball
+            The countryball you want to see the collection of
+        """
+        await interaction.response.defer(thinking=True)
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+
+        query = BallInstance.filter(player=player).prefetch_related(
+            "player", "trade_player", "special"
+        )
+        if countryball:
+            query = query.filter(ball=countryball)
+        balls = await query
+
+        if not balls:
+            if countryball:
+                await interaction.followup.send(
+                    f"You don't have any {countryball.country} "
+                    f"{settings.plural_collectible_name} yet."
+                )
+            else:
+
+                await interaction.followup.send(
+                    f"You don't have any {settings.plural_collectible_name} yet."
+                )
+            return
+        total = len(balls)
+        total_traded = len([x for x in balls if x.trade_player])
+        total_caught_self = total - total_traded
+        special_count = len([x for x in balls if x.special])
+        specials = defaultdict(int)
+        all_specials = await Special.filter(hidden=False)
+        special_emojis = {x.name: x.emoji for x in all_specials}
+        for ball in balls:
+            if ball.special:
+                specials[ball.special] += 1
+
+        desc = (
+            f"**Total**: {total:,} ({total_caught_self:,} caught, "
+            f"{total_traded:,} received from trade)\n"
+            f"**Total Specials**: {special_count:,}\n\n"
+        )
+        if specials:
+            desc += "**Specials**:\n"
+        for special, count in sorted(specials.items(), key=lambda x: x[1], reverse=True):
+            emoji = special_emojis.get(special.name, "")
+            desc += f"{emoji} {special.name}: {count:,}\n"
+
+        embed = discord.Embed(
+            title=f"Collection of {countryball.country}" if countryball else "Total Collection",
+            description=desc,
+            color=discord.Color.blurple(),
+        )
+        embed.set_author(
+            name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
+        )
+        if countryball:
+            emoji = self.bot.get_emoji(countryball.emoji_id)
+            if emoji:
+                embed.set_thumbnail(url=emoji.url)
+        await interaction.followup.send(embed=embed)
