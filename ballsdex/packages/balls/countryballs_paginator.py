@@ -50,19 +50,68 @@ class CountryballsSelector(Pages):
         self.select_ball_menu.options = options
 
     @discord.ui.select()
-    async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
+    async def select_ball_menu(
+        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
+    ):
         await interaction.response.defer(thinking=True)
         ball_instance = await BallInstance.get(
             id=int(interaction.data.get("values")[0])  # type: ignore
         )
         await self.ball_selected(interaction, ball_instance)
 
-    async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):
+    async def ball_selected(
+        self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance
+    ):
         raise NotImplementedError()
 
 
 class CountryballsViewer(CountryballsSelector):
-    async def ball_selected(self, interaction: discord.Interaction, ball_instance: BallInstance):
-        content, file = await ball_instance.prepare_for_message(interaction)
-        await interaction.followup.send(content=content, file=file)
+    async def ball_selected(
+        self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance
+    ):
+        content, file, view = await ball_instance.prepare_for_message(interaction)
+        await interaction.followup.send(content=content, file=file, view=view)
         file.close()
+
+
+class DuplicateSource(menus.ListPageSource):
+    def __init__(self, entries: List[str]):
+        super().__init__(entries, per_page=25)
+
+    async def format_page(self, menu, items):
+        menu.set_options(items)
+        return True  # signal to edit the page
+
+
+class DuplicateViewMenu(Pages):
+    def __init__(self, interaction: discord.Interaction["BallsDexBot"], list, dupe_type: str):
+        self.bot = interaction.client
+        self.dupe_type = dupe_type
+        source = DuplicateSource(list)
+        super().__init__(source, interaction=interaction)
+        self.add_item(self.dupe_ball_menu)
+
+    def set_options(self, items):
+        options: List[discord.SelectOption] = []
+        for item in items:
+            options.append(
+                discord.SelectOption(
+                    label=item["name"], description=f"Count: {item['count']}", emoji=item["emoji"]
+                )
+            )
+        self.dupe_ball_menu.options = options
+
+    @discord.ui.select()
+    async def dupe_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        if self.dupe_type == settings.plural_collectible_name:
+            balls = await BallInstance.filter(
+                ball__country=item.values[0], player__discord_id=interaction.user.id
+            ).count()
+        else:
+            balls = await BallInstance.filter(
+                special__name=item.values[0], player__discord_id=interaction.user.id
+            ).count()
+
+        plural = settings.collectible_name if balls == 1 else settings.plural_collectible_name
+        await interaction.followup.send(f"You have {balls:,} {item.values[0]} {plural}.")

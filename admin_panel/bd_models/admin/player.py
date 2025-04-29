@@ -32,12 +32,6 @@ class BallInstanceTabular(TabularInlinePaginated):
     classes = ("collapse",)
     can_delete = False
 
-    @admin.display(description="Time to catch")
-    def catch_time(self, obj: BallInstance):
-        if obj.spawned_time:
-            return str(obj.spawned_time - obj.catch_date)
-        return "-"
-
     # adding a countryball cannot work from here since all fields are readonly
     def has_add_permission(self, request: "HttpRequest", obj: "Player") -> bool:
         return False
@@ -62,7 +56,7 @@ class PlayerAdmin(admin.ModelAdmin):
 
     list_display = ("discord_id", "pk", "blacklisted")
     list_filter = (BlacklistedListFilter,)
-    show_facets = admin.ShowFacets.NEVER
+    show_facets = admin.ShowFacets.NEVER  # type: ignore
 
     search_fields = ("discord_id",)
     search_help_text = "Search for a Discord ID"

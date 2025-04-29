@@ -18,6 +18,8 @@ from ballsdex.settings import settings
 if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
 
+    from ballsdex.core.bot import BallsDexBot
+
 
 balls: dict[int, Ball] = {}
 regimes: dict[int, Regime] = {}
@@ -328,16 +330,16 @@ class BallInstance(models.Model):
         return text
 
     def draw_card(self) -> BytesIO:
-        image = draw_card(self)
+        image, kwargs = draw_card(self)
         buffer = BytesIO()
-        image.save(buffer, format="png")
+        image.save(buffer, **kwargs)
         buffer.seek(0)
         image.close()
         return buffer
 
     async def prepare_for_message(
-        self, interaction: discord.Interaction
-    ) -> Tuple[str, discord.File]:
+        self, interaction: discord.Interaction["BallsDexBot"]
+    ) -> Tuple[str, discord.File, discord.ui.View]:
         # message content
         trade_content = ""
         await self.fetch_related("trade_player", "special")
@@ -377,7 +379,8 @@ class BallInstance(models.Model):
         with ThreadPoolExecutor() as pool:
             buffer = await interaction.client.loop.run_in_executor(pool, self.draw_card)
 
-        return content, discord.File(buffer, "card.png")
+        view = discord.ui.View()
+        return content, discord.File(buffer, "card.webp"), view
 
     async def lock_for_trade(self):
         self.locked = timezone.now()
@@ -451,6 +454,7 @@ class Player(models.Model):
         description="How you want to handle trade accept cooldown",
         default=TradeCooldownPolicy.COOLDOWN,
     )
+    extra_data = fields.JSONField(default=dict)
     balls: fields.BackwardFKRelation[BallInstance]
 
     def __str__(self) -> str:

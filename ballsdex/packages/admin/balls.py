@@ -3,6 +3,7 @@ import logging
 import random
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import app_commands
@@ -19,8 +20,11 @@ from ballsdex.core.utils.transformers import (
     RegimeTransform,
     SpecialTransform,
 )
-from ballsdex.packages.countryballs.countryball import CountryBall
 from ballsdex.settings import settings
+
+if TYPE_CHECKING:
+    from ballsdex.packages.countryballs.cog import CountryBallsSpawner
+    from ballsdex.packages.countryballs.countryball import BallSpawnView
 
 log = logging.getLogger("ballsdex.packages.admin.balls")
 FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
@@ -47,6 +51,7 @@ class Balls(app_commands.Group):
     async def _spawn_bomb(
         self,
         interaction: discord.Interaction[BallsDexBot],
+        countryball_cls: type["BallSpawnView"],
         countryball: Ball | None,
         channel: discord.TextChannel,
         n: int,
@@ -57,7 +62,6 @@ class Balls(app_commands.Group):
         spawned = 0
 
         async def update_message_loop():
-            nonlocal spawned
             for i in range(5 * 12 * 10):  # timeout progress after 10 minutes
                 await interaction.followup.edit_message(
                     "@original",  # type: ignore
@@ -77,9 +81,9 @@ class Balls(app_commands.Group):
         try:
             for i in range(n):
                 if not countryball:
-                    ball = await CountryBall.get_random()
+                    ball = await countryball_cls.get_random(interaction.client)
                 else:
-                    ball = CountryBall(countryball)
+                    ball = countryball_cls(interaction.client, countryball)
                 ball.special = special
                 ball.atk_bonus = atk_bonus
                 ball.hp_bonus = hp_bonus
@@ -137,10 +141,32 @@ class Balls(app_commands.Group):
         # the transformer triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
             return
+        cog = cast("CountryBallsSpawner | None", interaction.client.get_cog("CountryBallsSpawner"))
+        if not cog:
+            prefix = (
+                settings.prefix
+                if interaction.client.intents.message_content or not interaction.client.user
+                else f"{interaction.client.user.mention} "
+            )
+            # do not replace `countryballs` with `settings.collectible_name`, it is intended
+            await interaction.response.send_message(
+                "The `countryballs` package is not loaded, this command is unavailable.\n"
+                "Please resolve the errors preventing this package from loading. Use "
+                f'"{prefix}reload countryballs" to try reloading it.',
+                ephemeral=True,
+            )
+            return
 
         if n > 1:
             await self._spawn_bomb(
-                interaction, countryball, channel or interaction.channel, n  # type: ignore
+                interaction,
+                cog.countryball_cls,
+                countryball,
+                channel or interaction.channel,  # type: ignore
+                n,
+                special,
+                atk_bonus,
+                hp_bonus,
             )
             await log_action(
                 f"{interaction.user} spawned {settings.collectible_name}"
@@ -152,9 +178,9 @@ class Balls(app_commands.Group):
 
         await interaction.response.defer(ephemeral=True, thinking=True)
         if not countryball:
-            ball = await CountryBall.get_random()
+            ball = await cog.countryball_cls.get_random(interaction.client)
         else:
-            ball = CountryBall(countryball)
+            ball = cog.countryball_cls(interaction.client, countryball)
         ball.special = special
         ball.atk_bonus = atk_bonus
         ball.hp_bonus = hp_bonus

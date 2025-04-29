@@ -86,7 +86,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: If self-hosting, inlcude the version of the bot you are using
+      description: If self-hosting, include the version of the bot you are using
       placeholder: 2.24.2
     validations:
       required: false
