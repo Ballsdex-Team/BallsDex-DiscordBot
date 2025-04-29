@@ -5,7 +5,6 @@ from discord import app_commands
 from discord.utils import format_dt
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import BallInstance, GuildConfig, Player
 from ballsdex.core.utils.enums import (
     DONATION_POLICY_MAP,
     FRIEND_POLICY_MAP,
@@ -13,6 +12,7 @@ from ballsdex.core.utils.enums import (
     PRIVATE_POLICY_MAP,
 )
 from ballsdex.settings import settings
+from bd_models.models import BallInstance, GuildConfig, Player
 
 
 class Info(app_commands.Group):
@@ -57,17 +57,17 @@ class Info(app_commands.Group):
                 return
 
         url = None
-        if config := await GuildConfig.get_or_none(guild_id=guild.id):
+        if config := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
             spawn_enabled = config.enabled and config.guild_id
             if settings.admin_url:
                 url = f"{settings.admin_url}/bd_models/guildconfig/{config.pk}/change/"
         else:
             spawn_enabled = False
 
-        total_server_balls = await BallInstance.filter(
+        total_server_balls = BallInstance.objects.prefetch_related("player").filter(
             catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
             server_id=guild.id,
-        ).prefetch_related("player")
+        )
         if guild.owner_id:
             owner = await interaction.client.fetch_user(guild.owner_id)
             embed = discord.Embed(
@@ -87,11 +87,11 @@ class Info(app_commands.Group):
         embed.add_field(name="Created at:", value=format_dt(guild.created_at, style="F"))
         embed.add_field(
             name=f"{settings.plural_collectible_name.title()} caught ({days} days):",
-            value=len(total_server_balls),
+            value=await total_server_balls.acount(),
         )
         embed.add_field(
             name=f"Amount of users who caught\n{settings.plural_collectible_name} ({days} days):",
-            value=len(set([x.player.discord_id for x in total_server_balls])),
+            value=len(set([x.player.discord_id async for x in total_server_balls])),
         )
 
         if guild.icon:
@@ -116,7 +116,7 @@ class Info(app_commands.Group):
             The amount of days to look back for the amount of countryballs caught.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
-        player = await Player.get_or_none(discord_id=user.id)
+        player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
             await interaction.followup.send("The user you gave does not exist.", ephemeral=True)
             return
@@ -125,10 +125,13 @@ class Info(app_commands.Group):
             if settings.admin_url
             else None
         )
-        total_user_balls = await BallInstance.filter(
-            catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
-            player=player,
-        )
+        total_user_balls = [
+            x
+            async for x in BallInstance.objects.filter(
+                catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
+                player=player,
+            )
+        ]
         embed = discord.Embed(
             title=f"{user} ({user.id})",
             url=url,
@@ -154,7 +157,7 @@ class Info(app_commands.Group):
         )
         embed.add_field(
             name=f"Total {settings.plural_collectible_name} caught:",
-            value=await BallInstance.filter(player__discord_id=user.id).count(),
+            value=await BallInstance.objects.filter(player__discord_id=user.id).acount(),
         )
         embed.add_field(
             name=f"Total unique {settings.plural_collectible_name} caught:",

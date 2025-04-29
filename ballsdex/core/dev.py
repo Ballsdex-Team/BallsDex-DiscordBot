@@ -16,28 +16,25 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from ballsdex.core import models
-from ballsdex.core.models import (
+from ballsdex.core.utils.formatting import pagify
+from bd_models import models
+from bd_models.enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy
+from bd_models.models import (
     Ball,
     BallInstance,
     BlacklistedGuild,
     BlacklistedID,
     BlacklistHistory,
     Block,
-    DonationPolicy,
     Economy,
-    FriendPolicy,
     Friendship,
     GuildConfig,
-    MentionPolicy,
     Player,
-    PrivacyPolicy,
     Regime,
     Special,
     Trade,
     TradeObject,
 )
-from ballsdex.core.utils.formatting import pagify
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

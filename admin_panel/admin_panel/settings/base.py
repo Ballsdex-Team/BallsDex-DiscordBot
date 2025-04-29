@@ -3,6 +3,7 @@
 # You should copy the production.example.py file as "production.py" and place your settings there
 # That file will not be tracked by git
 
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -12,12 +13,15 @@ from ballsdex.settings import read_settings, settings
 try:
     read_settings(Path("../config.yml"))
 except FileNotFoundError:
-    from rich import print
+    try:
+        read_settings(Path("./config.yml"))
+    except FileNotFoundError:
+        from rich import print
 
-    print(
-        "[yellow][bold]Could not find ../config.yml file.[/bold] "
-        "Please run the bot once to generate this file.[/yellow]"
-    )
+        print(
+            "[yellow][bold]Could not find ../config.yml file.[/bold] "
+            "Please run the bot once to generate this file.[/yellow]"
+        )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -136,6 +140,9 @@ LOGGING = {
         },
     },
 }
+if "startbot" in sys.argv:
+    del LOGGING["loggers"]["root"]
+    SILENCED_SYSTEM_CHECKS = ["staticfiles.W004"]
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

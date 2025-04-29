@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 if TYPE_CHECKING:
-    from ballsdex.core.models import BallInstance
+    from bd_models.models import BallInstance
 
 
 SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
@@ -60,10 +60,10 @@ def draw_card(
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             ball_credits += f" • {ball_instance.specialcard.credits}"
     else:
-        image = Image.open(media_path + ball.cached_regime.background)
+        image = Image.open(media_path + ball.cached_regime.background.name)
     image = image.convert("RGBA")
     icon = (
-        Image.open(media_path + ball.cached_economy.icon).convert("RGBA")
+        Image.open(media_path + ball.cached_economy.icon.name).convert("RGBA")
         if ball.cached_economy
         else None
     )
@@ -132,7 +132,7 @@ def draw_card(
         stroke_fill=(255, 255, 255, 255),
     )
 
-    artwork = Image.open(media_path + ball.collection_card).convert("RGBA")
+    artwork = Image.open(media_path + ball.collection_card.name).convert("RGBA")
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
 
     if icon:

@@ -9,7 +9,6 @@ import discord
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
 
-from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
@@ -17,6 +16,7 @@ from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
+from bd_models.models import BallInstance, Player, Trade, TradeObject
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -347,10 +347,14 @@ class TradeMenu:
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
 
-        trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
+        trade = await Trade.objects.acreate(
+            player1=self.trader1.player, player2=self.trader2.player
+        )
 
         for countryball in self.trader1.proposal:
-            await countryball.refresh_from_db()
+            await countryball.arefresh_from_db(
+                from_queryset=BallInstance.objects.prefetch_related("player")
+            )
             if countryball.player.discord_id != self.trader1.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
@@ -358,11 +362,14 @@ class TradeMenu:
             countryball.trade_player = self.trader1.player
             countryball.favorite = False
             valid_transferable_countryballs.append(countryball)
-            await TradeObject.create(
+            await TradeObject.objects.acreate(
                 trade=trade, ballinstance=countryball, player=self.trader1.player
             )
 
         for countryball in self.trader2.proposal:
+            await countryball.arefresh_from_db(
+                from_queryset=BallInstance.objects.prefetch_related("player")
+            )
             if countryball.player.discord_id != self.trader2.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
@@ -370,13 +377,13 @@ class TradeMenu:
             countryball.trade_player = self.trader2.player
             countryball.favorite = False
             valid_transferable_countryballs.append(countryball)
-            await TradeObject.create(
+            await TradeObject.objects.acreate(
                 trade=trade, ballinstance=countryball, player=self.trader2.player
             )
 
         for countryball in valid_transferable_countryballs:
             await countryball.unlock()
-            await countryball.save()
+            await countryball.asave()
 
     async def confirm(self, trader: TradingUser) -> bool:
         """
@@ -415,6 +422,9 @@ class TradeMenu:
                 result = False
 
         await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+        if result is False:
+            for ball in self.trader1.proposal + self.trader2.proposal:
+                await ball.unlock()
         return result
 
 
@@ -452,7 +462,7 @@ class CountryballsSelector(Pages):
                 continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
-            special = ball.special_emoji(self.bot, True)
+            special = ball.specialcard.emoji if ball.specialcard else ""
             options.append(
                 discord.SelectOption(
                     label=f"{favorite}{special}#{ball.pk:0X} {ball.countryball.country}",
@@ -471,8 +481,8 @@ class CountryballsSelector(Pages):
         self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
     ):
         for value in item.values:
-            ball_instance = await BallInstance.get(id=int(value)).prefetch_related(
-                "ball", "player"
+            ball_instance = await BallInstance.objects.prefetch_related("ball", "player").aget(
+                id=int(value)
             )
             self.balls_selected.add(ball_instance)
         await interaction.response.defer()
@@ -483,8 +493,8 @@ class CountryballsSelector(Pages):
     ):
         await interaction.response.defer(thinking=True, ephemeral=True)
         for ball in self.select_ball_menu.options:
-            ball_instance = await BallInstance.get(id=int(ball.value)).prefetch_related(
-                "ball", "player"
+            ball_instance = await BallInstance.objects.prefetch_related("ball", "player").aget(
+                id=int(ball.value)
             )
             if ball_instance not in self.balls_selected:
                 self.balls_selected.add(ball_instance)
@@ -625,7 +635,7 @@ class TradeViewMenu(Pages):
         self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
     ):
         await interaction.response.defer(thinking=True)
-        player = await Player.get(discord_id=int(item.values[0]))
+        player = await Player.objects.aget(discord_id=int(item.values[0]))
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
             return await interaction.followup.send(

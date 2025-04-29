@@ -3,11 +3,12 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from bd_models.models import Ball, Economy, Regime, Special
 from django.db import connection, migrations
 from django.db.models import Case, ImageField, When
 from django.db.models.expressions import F, Value
 from django.db.models.functions import Concat, Replace
+
+from bd_models.models import Ball, Economy, Regime, Special
 
 if TYPE_CHECKING:
     from django.apps.registry import Apps

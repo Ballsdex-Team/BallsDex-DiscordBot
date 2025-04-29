@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, Iterable
 import discord
 from discord.utils import format_dt
 
-from ballsdex.core.models import BlacklistHistory, Player
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.settings import settings
+from bd_models.models import BlacklistHistory, Player
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -36,9 +36,11 @@ class BlacklistViewFormat(menus.ListPageSource):
                 inline=True,
             )
         embed.add_field(name="Action Time", value=format_dt(blacklist.date, "R"), inline=True)
-        if settings.admin_url and (player := await Player.get_or_none(discord_id=self.header)):
+        if settings.admin_url and (
+            player := await Player.objects.aget_or_none(discord_id=self.header)
+        ):
             embed.add_field(
-                name="\u200B",
+                name="\u200b",
                 value="[View history online]"
                 f"(<{settings.admin_url}/bd_models/player/{player.pk}/change/>)",
                 inline=False,
