@@ -358,7 +358,7 @@ def update_settings(path: "Path"):
     add_spawn_manager = "spawn-manager" not in content
     add_django = "Admin panel related settings" not in content
     add_sentry = "sentry:" not in content
-    add_catch = "catch:" not in content
+    add_catch_messages = "catch:" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -455,7 +455,7 @@ sentry:
     environment: "production"
 """
 
-    if add_catch:
+    if add_catch_messages:
         content += """
 catch:
   # Add any number of messages to each of these categories. The bot will select a random
@@ -483,6 +483,7 @@ catch:
             add_spawn_manager,
             add_django,
             add_sentry,
+            add_catch_messages,
         )
     ):
         path.write_text(content)
