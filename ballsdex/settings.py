@@ -192,12 +192,13 @@ def read_settings(path: "Path"):
         settings.sentry_dsn = sentry.get("dsn")
         settings.sentry_environment = sentry.get("environment")
 
-    settings.spawn_messages = content["catch"]["spawn_msgs"] or ["A wild {1} appeared!"]
-    settings.caught_messages = content["catch"]["caught_msgs"] or ["{0} You caught **{2}**!"]
-    settings.wrong_messages = content["catch"]["wrong_msgs"] or ["{0} Wrong name!"]
-    settings.slow_messages = content["catch"]["slow_msgs"] or [
-        "{0} Sorry, this {1} was caught already!"
-    ]
+    if catch := content.get("catch"):
+        settings.spawn_messages = catch.get("spawn_msgs") or ["A wild {1} appeared!"]
+        settings.caught_messages = catch.get("caught_msgs") or ["{0} You caught **{2}**!"]
+        settings.wrong_messages = catch.get("wrong_msgs") or ["{0} Wrong name!"]
+        settings.slow_messages = catch.get("slow_msgs") or [
+            "{0} Sorry, this {1} was caught already!"
+        ]
 
     log.info("Settings loaded.")
 
