@@ -89,7 +89,6 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             )
             return
 
-        # Good to catch ball now
         ball, has_caught_before = await self.view.catch_ball(
             interaction.user, player=player, guild=interaction.guild
         )
