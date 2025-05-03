@@ -461,7 +461,8 @@ sentry:
 catch:
   # Add any number of messages to each of these categories. The bot will select a random
   # one each time.
-  # {user} is mention. {collectible} is collectible name. {ball} is ball name.
+  # {user} is mention. {collectible} is collectible name. {ball} is ball name, and
+  # {collectibles} is collectible plural.
   caught_msgs:
     - "{user} You caught **{ball}**!"
   wrong_msgs:
