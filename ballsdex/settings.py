@@ -347,7 +347,6 @@ catch:
 
 
 def update_settings(path: "Path"):
-    print("Updating yaml!")
     content = path.read_text()
 
     add_owners = True
