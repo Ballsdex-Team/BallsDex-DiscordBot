@@ -16,6 +16,7 @@ from discord.ext.commands import when_mentioned_or
 from rich import print
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from tortoise import Tortoise
+from yaml import YAMLError
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
@@ -265,13 +266,28 @@ def main():
         print("[yellow]Resetting configuration file.[/yellow]")
         reset_settings(cli_flags.config_file)
 
-    try:
-        read_settings(cli_flags.config_file)
-    except FileNotFoundError:
+    if not cli_flags.config_file.exists():
         print("[yellow]The config file could not be found, generating a default one.[/yellow]")
         reset_settings(cli_flags.config_file)
-    else:
-        update_settings(cli_flags.config_file)
+
+    update_settings(cli_flags.config_file)
+
+    try:
+        read_settings(cli_flags.config_file)
+    except YAMLError:
+        print(
+            "[red]Your YAML is invalid!\nError parsing config file, please check your config and"
+            "try again[/red]"
+        )
+        time.sleep(1)
+        sys.exit(0)
+    except KeyError as missing_key:
+        print(
+            f"[red]Config file missing key {missing_key}!\nError parsing config file, please check"
+            "your config and try again[/red]"
+        )
+        time.sleep(1)
+        sys.exit(0)
 
     print_welcome()
     queue_listener: logging.handlers.QueueListener | None = None
