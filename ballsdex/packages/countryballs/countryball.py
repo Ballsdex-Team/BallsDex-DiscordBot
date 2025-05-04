@@ -251,7 +251,6 @@ class BallSpawnView(View):
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
                 spawn_message = random.choice(settings.spawn_messages).format(
-                    user="@nobody",  # Can't mention a particular user in the spawn message
                     collectible=settings.collectible_name,
                     ball=self.name,
                     collectibles=settings.plural_collectible_name,
