@@ -250,8 +250,14 @@ class BallSpawnView(View):
         try:
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
+                spawn_message = random.choice(settings.spawn_messages).format(
+                    collectible=settings.collectible_name,
+                    ball=self.name,
+                    collectibles=settings.plural_collectible_name,
+                )
+
                 self.message = await channel.send(
-                    f"A wild {settings.collectible_name} appeared!",
+                    spawn_message,
                     view=self,
                     file=discord.File(file_location, filename=file_name),
                 )
