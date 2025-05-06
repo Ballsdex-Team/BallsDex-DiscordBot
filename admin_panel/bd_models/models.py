@@ -64,6 +64,11 @@ class FriendPolicy(models.IntegerChoices):
     DENY = 2
 
 
+class TradeCooldownPolicy(models.IntegerChoices):
+    COOLDOWN = 1
+    BYPASS = 2
+
+
 class Player(models.Model):
     discord_id = models.BigIntegerField(unique=True, help_text="Discord user ID")
     donation_policy = models.SmallIntegerField(
@@ -77,6 +82,9 @@ class Player(models.Model):
     )
     friend_policy = models.SmallIntegerField(
         choices=FriendPolicy.choices, help_text="Open or close your friend requests"
+    )
+    trade_cooldown_policy = models.SmallIntegerField(
+        choices=TradeCooldownPolicy.choices, help_text="To bypass or not the trade cooldown"
     )
     extra_data = models.JSONField(blank=True, default=dict)
 
