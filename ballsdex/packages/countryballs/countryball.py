@@ -76,7 +76,6 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         if not self.view.is_name_valid(self.name.value):
             if len(self.name.value) > 500:
-                # seems like about the right number
                 wrong_name = "Sorry, entered name too long"
             else:
                 wrong_name = self.name.value
