@@ -89,12 +89,11 @@ def draw_card(
             stroke_fill=(0, 0, 0, 255),
         )
 
-    capacity_description_lines = ball.capacity_description.splitlines()
-    capacity_description_lines = [
+    capacity_description_lines = (
         wrapped_line
-        for newline in capacity_description_lines
+        for newline in ball.capacity_description.splitlines()
         for wrapped_line in textwrap.wrap(newline, 32)
-    ]
+    )
 
     for i, line in enumerate(capacity_description_lines):
         draw.text(
