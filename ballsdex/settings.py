@@ -341,7 +341,9 @@ catch:
 
   # the message that appears when a user gets the name wrong
   # here and only here, you can use {wrong} to show the wrong name that was entered
+  # note that a user can put whatever they want into that field, so be careful
   wrong_msgs:
+    # - {user} Wrong name! You put: {wrong}
     - "{user} Wrong name!"
 
   # the message that appears above the spawn art
@@ -471,16 +473,18 @@ sentry:
 catch:
   # Add any number of messages to each of these categories. The bot will select a random
   # one each time.
-  # {user} is mention. {collectible} is collectible name. {ball} is ball name, and 
+  # {user} is mention. {collectible} is collectible name. {ball} is ball name, and
   # {collectibles} is collectible plural.
 
-  # the message that appears when a user catches a ball 
+  # the message that appears when a user catches a ball
   caught_msgs:
     - "{user} You caught **{ball}**!"
 
   # the message that appears when a user gets the name wrong
   # here and only here, you can use {wrong} to show the wrong name that was entered
+  # note that a user can put whatever they want into that field, so be careful
   wrong_msgs:
+    # - {user} Wrong name! You put: {wrong}
     - "{user} Wrong name!"
 
   # the message that appears above the spawn art
