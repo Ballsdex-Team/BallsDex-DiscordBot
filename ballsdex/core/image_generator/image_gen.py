@@ -90,6 +90,7 @@ def draw_card(
         )
 
     capacity_description_lines = ball.capacity_description.split("\n")
+    print(capacity_description_lines)
     capacity_description_lines = [
         wrapped_line
         for newline in capacity_description_lines
