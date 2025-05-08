@@ -75,12 +75,19 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             return
 
         if not self.view.is_name_valid(self.name.value):
+            if len(self.name.value) > 500:
+                # seems like about the right number
+                wrong_name = "Sorry, entered name too long"
+            else:
+                wrong_name = self.name.value
+
+
             wrong_message = random.choice(settings.wrong_messages).format(
                 user=interaction.user.mention,
                 collectible=settings.collectible_name,
                 ball=self.view.name,
                 collectibles=settings.plural_collectible_name,
-                wrong=self.name.value,
+                wrong=wrong_name,
             )
 
             await interaction.followup.send(
