@@ -81,7 +81,6 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             else:
                 wrong_name = self.name.value
 
-
             wrong_message = random.choice(settings.wrong_messages).format(
                 user=interaction.user.mention,
                 collectible=settings.collectible_name,
