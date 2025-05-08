@@ -90,12 +90,15 @@ def draw_card(
         )
 
     capacity_description_lines = ball.capacity_description.split("\n")
+    print(capacity_description_lines)
     capacity_description_lines = [
         textwrap.wrap(line, width=32) for line in capacity_description_lines
     ]
+    print(capacity_description_lines)
     capacity_description_lines = [
         line for sublist in capacity_description_lines for line in sublist
     ]  # flatten list
+    print(capacity_description_lines)
     for i, line in enumerate(capacity_description_lines):
         draw.text(
             (60, 1100 + 100 * len(cap_name) + 80 * i),
