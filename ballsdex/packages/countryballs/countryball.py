@@ -80,6 +80,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 collectible=settings.collectible_name,
                 ball=self.view.name,
                 collectibles=settings.plural_collectible_name,
+                wrong=self.name.value,
             )
 
             await interaction.followup.send(
