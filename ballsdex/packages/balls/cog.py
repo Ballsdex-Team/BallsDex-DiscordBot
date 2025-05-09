@@ -875,7 +875,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         countryball: BallEnabledTransform | None = None,
-        hide: bool = False,
+        ephemeral: bool = False,
     ):
         """
         Show the collection of a specific countryball.
@@ -884,13 +884,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         countryball: Ball
             The countryball you want to see the collection of
-        hide: bool
-            Whether or not to hide the command from other others
+        ephemeral: bool
+            Whether or not to send the command ephemerally.
         """
-        eph = False
-        if hide:
-            eph = True
-        await interaction.response.defer(thinking=True, ephemeral=eph)
+        await interaction.response.defer(thinking=True, ephemeral=ephemeral)
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
         query = BallInstance.filter(player=player).prefetch_related(
