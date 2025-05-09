@@ -1,8 +1,10 @@
+import inspect
 import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import yaml
+from typeguard import TypeCheckError, check_type
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -183,10 +185,10 @@ def read_settings(path: "Path"):
     )
 
     if admin := content.get("admin-panel"):
-        settings.webhook_url = admin.get("webhook-url")
-        settings.client_id = admin.get("client-id")
-        settings.client_secret = admin.get("client-secret")
-        settings.admin_url = admin.get("url")
+        settings.webhook_url = admin.get("webhook-url") or ""
+        settings.client_id = admin.get("client-id") or ""
+        settings.client_secret = admin.get("client-secret") or ""
+        settings.admin_url = admin.get("url") or ""
 
     if sentry := content.get("sentry"):
         settings.sentry_dsn = sentry.get("dsn")
@@ -489,3 +491,39 @@ catch:
         )
     ):
         path.write_text(content)
+
+
+def validate_settings() -> bool:
+    good_config = True
+
+    for attribute_name, annotation in inspect.get_annotations(Settings).items():
+        attribute = getattr(settings, attribute_name)
+        try:
+            check_type(attribute, annotation)
+        except TypeCheckError:
+            good_config = False
+
+            main_type = type(attribute).__name__
+            type_parameters = []
+
+            # find subtype for something like
+            # list[int] rather than list
+            if isinstance(attribute, list):
+                if attribute:
+                    type_parameters.append(type(attribute[0]).__name__)
+            elif isinstance(attribute, dict):
+                if attribute:
+                    key, val = next(iter(attribute.items()))
+                    type_parameters.append(type(key).__name__)
+                    type_parameters.append(type(val).__name__)
+
+            if type_parameters:
+                type_string = f"{main_type}[{','.join(type_parameters)}]"
+            else:
+                type_string = main_type
+
+            log.warning(
+                f"{attribute_name} is type {type_string} when it should be {str(annotation)}"
+            )
+
+    return good_config

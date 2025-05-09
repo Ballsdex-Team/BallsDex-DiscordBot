@@ -21,7 +21,13 @@ from yaml import YAMLError
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.logging import init_logger
-from ballsdex.settings import read_settings, settings, update_settings, write_default_settings
+from ballsdex.settings import (
+    read_settings,
+    settings,
+    update_settings,
+    validate_settings,
+    write_default_settings,
+)
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
 log = logging.getLogger("ballsdex")
@@ -285,6 +291,14 @@ def main():
         print(
             f"[red]Config file missing key {missing_key}!\nError parsing config file, please check"
             "your config and try again[/red]"
+        )
+        time.sleep(1)
+        sys.exit(0)
+
+    if not validate_settings():
+        print(
+            "[red]There is a type error in your config file! Read the above warnings, edit your "
+            "config file, and try again![/red]"
         )
         time.sleep(1)
         sys.exit(0)
