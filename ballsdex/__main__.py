@@ -280,11 +280,23 @@ def main():
 
     try:
         read_settings(cli_flags.config_file)
-    except YAMLError:
+    except YAMLError as exc:
+        if hasattr(exc, "problem_mark"):
+            # Pyright doesn't recognise the context attribute for whatever reason
+            problem = (
+                f"{exc.problem_mark}\n{exc.problem}"  # pyright: ignore[reportAttributeAccessIssue]
+            )
+
+            if exc.context:  # pyright: ignore[reportAttributeAccessIssue]
+                problem += str(exc.context)  # pyright: ignore[reportAttributeAccessIssue]
+
+            print(problem)
+
         print(
             "[red]Your YAML is invalid!\nError parsing config file, please check your config and"
             "try again[/red]"
         )
+
         time.sleep(1)
         sys.exit(0)
     except KeyError as missing_key:
