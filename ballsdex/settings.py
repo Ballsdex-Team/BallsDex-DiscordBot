@@ -170,37 +170,40 @@ def read_settings(path: "Path"):
     settings.max_attack_bonus = content.get("max-attack-bonus", 20)
     settings.max_health_bonus = content.get("max-health-bonus", 20)
 
-    settings.packages = content.get("packages") or [
-        "ballsdex.packages.admin",
-        "ballsdex.packages.balls",
-        "ballsdex.packages.config",
-        "ballsdex.packages.countryballs",
-        "ballsdex.packages.info",
-        "ballsdex.packages.players",
-        "ballsdex.packages.trade",
-    ]
+    settings.packages = content.get(
+        "packages",
+        [
+            "ballsdex.packages.admin",
+            "ballsdex.packages.balls",
+            "ballsdex.packages.config",
+            "ballsdex.packages.countryballs",
+            "ballsdex.packages.info",
+            "ballsdex.packages.players",
+            "ballsdex.packages.trade",
+        ],
+    )
 
     settings.spawn_manager = content.get(
         "spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager"
     )
 
     if admin := content.get("admin-panel"):
-        settings.webhook_url = admin.get("webhook-url") or ""
-        settings.client_id = admin.get("client-id") or ""
-        settings.client_secret = admin.get("client-secret") or ""
-        settings.admin_url = admin.get("url") or ""
+        settings.webhook_url = admin.get("webhook-url", "")
+        settings.client_id = admin.get("client-id", "")
+        settings.client_secret = admin.get("client-secret", "")
+        settings.admin_url = admin.get("url", "")
 
     if sentry := content.get("sentry"):
-        settings.sentry_dsn = sentry.get("dsn")
-        settings.sentry_environment = sentry.get("environment")
+        settings.sentry_dsn = sentry.get("dsn", "")
+        settings.sentry_environment = sentry.get("environment", "")
 
     if catch := content.get("catch"):
-        settings.spawn_messages = catch.get("spawn_msgs") or ["A wild {collectible} appeared!"]
-        settings.caught_messages = catch.get("caught_msgs") or ["{user} You caught **{ball}**!"]
-        settings.wrong_messages = catch.get("wrong_msgs") or ["{user} Wrong name!"]
-        settings.slow_messages = catch.get("slow_msgs") or [
-            "{user} Sorry, this {collectible} was caught already!"
-        ]
+        settings.spawn_messages = catch.get("spawn_msgs", ["A wild {collectible} appeared!"])
+        settings.caught_messages = catch.get("caught_msgs", ["{user} You caught **{ball}**!"])
+        settings.wrong_messages = catch.get("wrong_msgs", ["{user} Wrong name!"])
+        settings.slow_messages = catch.get(
+            "slow_msgs", ["{user} Sorry, this {collectible} was caught already!"]
+        )
 
     log.info("Settings loaded.")
 
@@ -494,7 +497,7 @@ catch:
 
 
 def validate_settings() -> bool:
-    good_config = True
+    good_config: bool = True
 
     for attribute_name, annotation in inspect.get_annotations(Settings).items():
         attribute = getattr(settings, attribute_name)
@@ -503,8 +506,8 @@ def validate_settings() -> bool:
         except TypeCheckError:
             good_config = False
 
-            main_type = type(attribute).__name__
-            type_parameters = []
+            main_type: str = type(attribute).__name__
+            type_parameters: list[str] = []
 
             # find subtype for something like
             # list[int] rather than list
