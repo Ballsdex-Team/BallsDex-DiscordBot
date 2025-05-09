@@ -885,7 +885,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         countryball: Ball
             The countryball you want to see the collection of
         hide: bool
-            Whether or not to hide the command from other others
+            Whether or not to hide the command from others
         """
         eph = False
         if hide:
