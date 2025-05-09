@@ -49,6 +49,9 @@ repos:
           - django_admin_action_forms
           - django_admin_inline_paginator
           - sentry-sdk[asyncpg]
+          - pyyaml
+          - typeguard
+
   - repo: https://github.com/pycqa/flake8
     rev: 7.2.0
     hooks:
