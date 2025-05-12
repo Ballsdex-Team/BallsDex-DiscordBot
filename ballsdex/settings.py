@@ -334,12 +334,24 @@ catch:
   # one each time.
   # {user} is mention. {collectible} is collectible name. {ball} is ball name, and 
   # {collectibles} is collectible plural.
+
+  # the message that appears when a user catches a ball 
   caught_msgs:
     - "{user} You caught **{ball}**!"
+
+  # the message that appears when a user gets the name wrong
+  # here and only here, you can use {wrong} to show the wrong name that was entered
+  # note that a user can put whatever they want into that field, so be careful
   wrong_msgs:
+    # - {user} Wrong name! You put: {wrong}
     - "{user} Wrong name!"
+
+  # the message that appears above the spawn art
+  # {user} is not available here, because who would it ping?
   spawn_msgs:
     - "A wild {collectible} appeared!"
+
+  # the message that appears when a user is to slow to catch a ball
   slow_msgs:
     - "{user} Sorry, this {collectible} was caught already!"
   """  # noqa: W291
@@ -463,12 +475,24 @@ catch:
   # one each time.
   # {user} is mention. {collectible} is collectible name. {ball} is ball name, and
   # {collectibles} is collectible plural.
+
+  # the message that appears when a user catches a ball
   caught_msgs:
     - "{user} You caught **{ball}**!"
+
+  # the message that appears when a user gets the name wrong
+  # here and only here, you can use {wrong} to show the wrong name that was entered
+  # note that a user can put whatever they want into that field, so be careful
   wrong_msgs:
+    # - {user} Wrong name! You put: {wrong}
     - "{user} Wrong name!"
+
+  # the message that appears above the spawn art
+  # {user} is not available here, because who would it ping?
   spawn_msgs:
     - "A wild {collectible} appeared!"
+
+  # the message that appears when a user is to slow to catch a ball
   slow_msgs:
     - "{user} Sorry, this {collectible} was caught already!"
 """
