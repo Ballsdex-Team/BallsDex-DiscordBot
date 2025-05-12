@@ -53,12 +53,13 @@ def draw_card(
     ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
     ball_credits = ball.credits
+    special_credits = ""
     card_name = ball.cached_regime.name
     if special_image := ball_instance.special_card:
         card_name = getattr(ball_instance.specialcard, "name", card_name)
         image = Image.open(media_path + special_image)
         if ball_instance.specialcard and ball_instance.specialcard.credits:
-            ball_credits += f" • {ball_instance.specialcard.credits}"
+            special_credits += f" • Special Author: {ball_instance.specialcard.credits}"
     else:
         image = Image.open(media_path + ball.cached_regime.background)
     image = image.convert("RGBA")
@@ -125,7 +126,7 @@ def draw_card(
         (30, 1870),
         # Modifying the line below is breaking the licence as you are removing credits
         # If you don't want to receive a DMCA, just don't
-        "Created by El Laggron\n" f"Artwork author: {ball_credits}",
+        f"Created by El Laggron{special_credits}\n" f"Artwork author: {ball_credits}",
         font=credits_font,
         fill=credits_color,
         stroke_width=0,
