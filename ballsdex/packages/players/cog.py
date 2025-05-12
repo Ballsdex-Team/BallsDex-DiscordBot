@@ -18,7 +18,7 @@ from ballsdex.core.models import (
     MentionPolicy,
 )
 from ballsdex.core.models import Player as PlayerModel
-from ballsdex.core.models import PrivacyPolicy, Trade, TradeObject, balls
+from ballsdex.core.models import PrivacyPolicy, Trade, TradeCooldownPolicy, TradeObject, balls
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.enums import (
     DONATION_POLICY_MAP,
@@ -26,6 +26,7 @@ from ballsdex.core.utils.enums import (
     MENTION_POLICY_MAP,
     PRIVATE_POLICY_MAP,
 )
+from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.settings import settings
 
@@ -184,6 +185,34 @@ class Player(commands.GroupCog):
         await player.save()
         await interaction.response.send_message(
             f"Your friend request policy has been set to **{policy.name.lower()}**.",
+            ephemeral=True,
+        )
+
+    @policy.command()
+    @app_commands.choices(
+        policy=[
+            app_commands.Choice(
+                name="Use 10s acceptance cooldown", value=TradeCooldownPolicy.COOLDOWN
+            ),
+            app_commands.Choice(
+                name="Bypass acceptance cooldown", value=TradeCooldownPolicy.BYPASS
+            ),
+        ]
+    )
+    async def trade_cooldown(self, interaction: discord.Interaction, policy: TradeCooldownPolicy):
+        """
+        Set your trade cooldown policy.
+
+        Parameters
+        ----------
+        policy: TradeCooldownPolicy
+            The new policy for trade acceptance cooldown.
+        """
+        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
+        player.trade_cooldown_policy = policy
+        await player.save()
+        await interaction.response.send_message(
+            f"Your trade acceptance cooldown policy has been set to **{policy.name.lower()}**.",
             ephemeral=True,
         )
 
@@ -571,6 +600,7 @@ class Player(commands.GroupCog):
             f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
             f"**Mention Policy:** {MENTION_POLICY_MAP[player.mention_policy]}\n"
             f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}\n"
+            f"**Trade Cooldown Policy:** {TRADE_POLICY_MAP[player.trade_cooldown_policy]}\n"
             f"**Amount of Friends:** {friends}\n"
             f"**Amount of Blocked Users:** {blocks}\n"
             "## Player Stats\n"
