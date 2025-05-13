@@ -1,5 +1,6 @@
 [project]
 name = "ballsdex"
+version = "1.0.0"
 description = ""
 authors = [
     { name = 'Auguste "laggron42" Charpentier', email = "laggron42@ballsdex.com" },
@@ -7,17 +8,16 @@ authors = [
 ]
 license = "MIT"
 requires-python = ">=3.13, <3.14"
-dynamic = ["version"]
 dependencies = [
     # asyncio
     "uvloop==0.21.0; sys_platform != 'win32'",
 
     # discord
-    "discord.py[speed]==2.5.0",
+    "discord.py[speed]==2.5.2",
 
     # django admin panel
-    "uvicorn[standard]==0.32.0",
-    "django==5.1.4",
+    "uvicorn[standard]==0.34.0",
+    "django==5.2.1",
     "django-allow-cidr (>=0.7.1,<0.8.0)",
     "django-nonrelated-inlines==0.2",
     "django-admin-autocomplete-filter==0.7.1",
@@ -29,14 +29,15 @@ dependencies = [
     "psycopg-binary==3.2.3",
 
     # metrics
-    "prometheus-client==0.20.0",
+    "prometheus-client==0.21.1",
+    "sentry-sdk[asyncpg]==2.27.0",
 
     # misc
-    "rich==13.8.0",
-    "python-dateutil==2.9.0",
-    "Pillow==10.4.0",
+    "rich==14.0.0",
+    "python-dateutil>=2.9.0",
+    "Pillow==11.2.1",
     "pyyaml==6.0.2",
-    "cachetools==5.5.0",
+    "cachetools==5.5.2",
 ]
 
 [project.optional-dependencies]
@@ -52,25 +53,19 @@ dev = [
     "django-types==0.20.0",
 ]
 
-[tool.poetry]
-packages = [{ include = "ballsdex" }]
-requires-poetry = ">=2.0"
-version = "0.0.0"
+[project.scripts]
+ballsdex = "ballsdex.__main__:main"
 
-[tool.poetry.requires-plugins]
-poetry-plugin-shell = ">=1.0"
-poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
+[tool.hatch.build.targets.sdist]
+include = ["ballsdex", "admin_panel"]
+exclude = ["result"]
 
-[tool.poetry-dynamic-versioning]
-enable = true
-
-[tool.poetry-dynamic-versioning.from-file]
-source = "ballsdex/__init__.py"
-pattern = '__version__ = "(?P<base>\d+\.\d+\.\d+)"'
+[tool.hatch.build.targets.wheel]
+include = ["ballsdex", "admin_panel"]
 
 [build-system]
-requires = ["poetry-core>=2.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.black]
 line-length = 99
