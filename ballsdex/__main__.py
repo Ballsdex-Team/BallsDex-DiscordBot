@@ -50,13 +50,9 @@ class CLIFlags(argparse.Namespace):
 
 
 def parse_cli_flags(arguments: list[str]) -> CLIFlags:
-    parser = argparse.ArgumentParser(
-        prog="BallsDex bot", description="Collect and exchange countryballs on Discord"
-    )
+    parser = argparse.ArgumentParser(prog="BallsDex bot", description="Collect and exchange countryballs on Discord")
     parser.add_argument("--version", "-V", action="store_true", help="Display the bot's version")
-    parser.add_argument(
-        "--config-file", type=Path, help="Set the path to config.yml", default=Path("./config.yml")
-    )
+    parser.add_argument("--config-file", type=Path, help="Set the path to config.yml", default=Path("./config.yml"))
     parser.add_argument(
         "--reset-settings",
         action="store_true",
@@ -100,11 +96,7 @@ def print_welcome():
     print("[blue]{0:^50}[/blue]".format("Discord bot made by El Laggron"))
     print("")
     print(" [red]{0:<20}[/red] [yellow]{1:>10}[/yellow]".format("Bot version:", bot_version))
-    print(
-        " [red]{0:<20}[/red] [yellow]{1:>10}[/yellow]".format(
-            "Discord.py version:", discord.__version__
-        )
-    )
+    print(" [red]{0:<20}[/red] [yellow]{1:>10}[/yellow]".format("Discord.py version:", discord.__version__))
     print("")
 
 
@@ -275,10 +267,7 @@ def main():
     try:
         read_settings(cli_flags.config_file)
     except YAMLError:
-        print(
-            "[red]Your YAML is invalid!\nError parsing config file, please check your config"
-            " and try again[/red]"
-        )
+        print("[red]Your YAML is invalid!\nError parsing config file, please check your config and try again[/red]")
         time.sleep(1)
         sys.exit(0)
     except KeyError as missing_key:
@@ -339,9 +328,7 @@ def main():
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
         try:
-            loop.add_signal_handler(
-                SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))
-            )
+            loop.add_signal_handler(SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM")))
         except NotImplementedError:
             log.warning("Cannot add signal handler for SIGTERM.")
 
