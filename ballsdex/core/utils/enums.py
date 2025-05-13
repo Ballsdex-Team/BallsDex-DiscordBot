@@ -13,6 +13,8 @@ MENTION_POLICY_MAP = {1: "Allow all mentions", 2: "Deny all mentions"}
 
 FRIEND_POLICY_MAP = {1: "Allow all friend requests", 2: "Deny all friend requests"}
 
+TRADE_COOLDOWN_POLICY_MAP = {1: "Use 10s acceptance cooldown", 2: "Bypass acceptance cooldown"}
+
 
 class SortingChoices(enum.Enum):
     alphabetic = "ball__country"
