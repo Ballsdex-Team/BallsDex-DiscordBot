@@ -43,7 +43,7 @@
         sourcePreference = "wheel";
       };
 
-      pkgs = nixpkgs.legacyPackages.aarch64-darwin;
+      pkgs = nixpkgs.legacyPackages.x86_64-linux;
       python = pkgs.python313;
 
       # Construct package set
@@ -64,17 +64,17 @@
       # Package a virtual environment as our main application.
       #
       # Enable no optional dependencies for production build.
-      packages.aarch64-darwin.default = pythonSet.mkVirtualEnv "ballsdex-env" workspace.deps.default;
+      packages.x86_64-linux.default = pythonSet.mkVirtualEnv "ballsdex-env" workspace.deps.default;
 
       # Make ballsdex runnable with `nix run`
-      apps.aarch64-darwin = {
+      apps.x86_64-linux = {
         default = {
           type = "app";
-          program = "${self.packages.aarch64-darwin.default}/bin/ballsdex";
+          program = "${self.packages.x86_64-linux.default}/bin/ballsdex";
         };
       };
 
-      devShells.aarch64-darwin.default =
+      devShells.x86_64-linux.default =
         let
           # Create an overlay enabling editable mode for all local dependencies.
           editableOverlay = workspace.mkEditablePyprojectOverlay {
