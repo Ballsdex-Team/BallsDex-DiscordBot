@@ -25,7 +25,8 @@ dependencies = [
     "django-admin-inline-paginator==0.4.0",
     "dj-database-url==2.3.0",
     "social-auth-app-django==5.4.2",
-    "psycopg",
+    "psycopg==3.2.3",
+    #"psycopg-binary==3.2.3",
 
     # metrics
     "prometheus-client==0.21.1",
@@ -36,6 +37,7 @@ dependencies = [
     "Pillow==11.2.1",
     "pyyaml==6.0.2",
     "cachetools==5.5.2",
+    "sentry-sdk[asyncpg]==2.27.0",
 ]
 
 [project.optional-dependencies]

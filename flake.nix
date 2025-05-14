@@ -43,6 +43,17 @@
         sourcePreference = "wheel";
       };
 
+      pyprojectOverrides = final: prev: {
+        psycopg = prev.psycopg.overrideAttrs (old: {
+          buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.postgresql_17 ];
+          nativeBuildInputs = old.nativeBuildInputs ++ [
+            (final.resolveBuildSystem {
+              setuptools = [ ];
+            })
+          ];
+        });
+      };
+
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
       python = pkgs.python313;
 
@@ -56,6 +67,7 @@
             lib.composeManyExtensions [
               pyproject-build-systems.overlays.default
               overlay
+              pyprojectOverrides
             ]
           );
 
@@ -126,6 +138,7 @@
           packages = [
             virtualenv
             pkgs.uv
+            pkgs.postgresql_17
           ];
 
           env = {
