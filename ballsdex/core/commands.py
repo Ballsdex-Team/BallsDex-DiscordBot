@@ -92,7 +92,11 @@ class Core(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def reloadconf(self, ctx: commands.Context):
-        read_settings(Path("/code/config.yml"))
+        """
+        Reload the config file
+        """
+
+        read_settings(Path("./config.yml"))
         await ctx.message.add_reaction("✅")
         await ctx.message.reply(
             """Config values have been updated.
