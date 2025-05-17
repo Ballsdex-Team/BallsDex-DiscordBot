@@ -26,6 +26,19 @@ regimes: dict[int, Regime] = {}
 economies: dict[int, Economy] = {}
 specials: dict[int, Special] = {}
 
+plevel_emojis=[
+    1366783917314674698,
+    1366783917314674698,
+    1366784186941177977,
+    1366784841487745034,
+    1366784908575510558,
+    1366785648370909327,
+    1366785660605698058,
+    1366786928338407424,
+    1366786943790088345,
+    1366788095227199569,
+    1366788107747328122
+]
 
 async def lower_catch_names(
     model: Type[Ball],
@@ -317,7 +330,7 @@ class BallInstance(models.Model):
     ) -> str:
         text = self.to_string(bot, is_trade=is_trade)
         if not short:
-            text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
+            text += f" (Power Level {int((self.attack_bonus + 10) / 10)})"
         if include_emoji:
             if not bot:
                 raise TypeError(
@@ -367,12 +380,28 @@ class BallInstance(models.Model):
                 else f"user with ID {self.trade_player.discord_id}"
             )
             trade_content = f"Obtained by trade with {original_player_name}.\n"
+
+        special_emoji = ""
+        special_name = ""
+        formatted_special_text = ""
+        if self.specialcard:
+            special_name = self.specialcard.name
+            special_emoji = self.special.emoji
+            formatted_special_text = f"({special_name} {special_emoji})"
+        emoji = interaction.client.get_emoji(self.countryball.emoji_id)
+        plevel = int((self.attack_bonus + 10) / 10)
+        if "Buzz Lightyear" in self.countryball.country:
+            plevel_emoji = interaction.client.get_emoji(1367815787078877244)
+        else:
+            plevel_emoji = interaction.client.get_emoji(plevel_emojis[plevel-1])
+        formatted_brawler_name = self.countryball.country
+        if " " in self.countryball.country:
+            formatted_brawler_name = self.countryball.country.replace(" ", "_")
         content = (
-            f"ID: `#{self.pk:0X}`\n"
+            f"[{self.countryball.country}](<https://brawldex.fandom.com/wiki/{formatted_brawler_name}>) {emoji} {formatted_special}"
+            f"ID: `#{self.pk:0X}` Power Level: {plevel_emoji}\n"
             f"Caught on {format_dt(self.catch_date)} ({format_dt(self.catch_date, style='R')}).\n"
-            f"{trade_content}\n"
-            f"ATK: {self.attack} ({self.attack_bonus:+d}%)\n"
-            f"HP: {self.health} ({self.health_bonus:+d}%)"
+            f"{trade_content}"
         )
 
         # draw image
@@ -429,6 +458,34 @@ class Player(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
+    credits = fields.IntField(
+    description="User Credits",
+    default=0,
+    validators=[validators.MaxValueValidator((1 << 63) - 1), validators.MinValueValidator(0)],
+    )
+    powerpoints = fields.IntField(
+    description="User Power Points",
+    default=0,
+    validators=[validators.MaxValueValidator((1 << 63) - 1), validators.MinValueValidator(0)],
+    )
+    sdcount = fields.IntField(
+    description="Number of Starr Drops the player owns",
+    validators=[validators.MaxValueValidator(50), validators.MinValueValidator(0)],
+    default=0,
+    )
+    dailycaught = fields.IntField(
+    description="Daily Caught Brawlers",
+    index=True,
+    validators=[validators.MaxValueValidator(1000), validators.MinValueValidator(0)],
+    default=0,
+    )
+    trophies = fields.IntField(
+    description="User Trophies",
+    default=0,
+    index=True,
+    validators=[validators.MaxValueValidator((1 << 63) - 1), validators.MinValueValidator(0)],
+    )
+    brawler_trophies = fields.JSONField(default={}, null=True)
     donation_policy = fields.IntEnumField(
         DonationPolicy,
         description="How you want to handle donations",
