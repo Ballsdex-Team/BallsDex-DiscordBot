@@ -338,7 +338,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             entries.append((f"__**Owned {settings.plural_collectible_name} - {len(owned_countryballs)} total**__", "Nothing yet."))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields(f"Missing {settings.plural_collectible_name} - {round(len(bot_countryballs) / len(owned_countryballs))} total", missing)
+            fill_fields(f"Missing {settings.plural_collectible_name} - {round(len(bot_countryballs) - len(owned_countryballs))} total", missing)
         else:
             entries.append(
                 (
