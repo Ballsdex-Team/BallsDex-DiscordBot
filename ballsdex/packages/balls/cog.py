@@ -113,7 +113,8 @@ class DuplicateType(enum.StrEnum):
     countryballs = settings.plural_collectible_name
     specials = "specials"
 
-
+@app_commands.allowed_installs(guilds=True, users=True)
+@app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
 class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     """
     View and manage your countryballs collection.
@@ -272,7 +273,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 return
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
-        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
+        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled and 3 <= y.economy_id <= 9 and not 19 <= y.regime_id <= 21 and not y.economy_id == 16}
 
         # Set of ball IDs owned by the player
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
@@ -281,7 +282,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
-                if y.enabled and (special.end_date is None or y.created_at < special.end_date)
+                if y.enabled and 3 <= y.economy_id <= 9 and not 19 <= y.regime_id <= 21 and not y.economy_id == 16 and (special.end_date is None or y.created_at < special.end_date)
             }
         if not bot_countryballs:
             await interaction.followup.send(
@@ -293,7 +294,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         owned_countryballs = set(
             x[0]
-            for x in await BallInstance.filter(**filters)
+            for x in await BallInstance.filter(**filters).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=22).exclude(ball__regime_id=23).exclude(ball__regime_id=24).exclude(ball__regime_id=25).exclude(ball__regime_id=26).exclude(ball__regime_id=27).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=34).exclude(ball__regime_id=35)
             .distinct()  # Do not query everything
             .values_list("ball_id")
         )
@@ -394,7 +395,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         Parameters
         ----------
-        user: discord.Member
+        user: discord.User
             The user you would like to see
         """
         user_obj = user if user else interaction.user
@@ -624,7 +625,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         cb_txt = (
             countryball.description(short=True, include_emoji=True, bot=self.bot, is_trade=True)
-            + f" (`{countryball.attack_bonus:+}%/{countryball.health_bonus:+}%`)"
+            + f" (`Power Level {int((countryball.health_bonus + 10) / 10)}`)"
         )
         if favorite:
             await interaction.followup.send(
