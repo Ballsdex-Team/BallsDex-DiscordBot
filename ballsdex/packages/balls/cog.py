@@ -331,14 +331,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if owned_countryballs:
             # Getting the list of emoji IDs from the IDs of the owned countryballs
             fill_fields(
-                f"Owned {settings.plural_collectible_name}",
+                f"Owned {settings.plural_collectible_name} - {len(owned_countryballs)} total",
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
-            entries.append((f"__**Owned {settings.plural_collectible_name}**__", "Nothing yet."))
+            entries.append((f"__**Owned {settings.plural_collectible_name} - {len(owned_countryballs)} total**__", "Nothing yet."))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields(f"Missing {settings.plural_collectible_name}", missing)
+            fill_fields(f"Missing {settings.plural_collectible_name} - {round(len(bot_countryballs) / len(owned_countryballs))} total", missing)
         else:
             entries.append(
                 (
@@ -352,7 +352,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         special_str = f" ({special.name})" if special else ""
         source.embed.description = (
             f"{settings.bot_name}{special_str} progression: "
-            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
+            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}% ({len(owned_countryballs)}/{len(bot_countryballs)})**"
         )
         source.embed.colour = discord.Colour.blurple()
         source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
