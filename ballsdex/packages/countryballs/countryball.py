@@ -4,13 +4,14 @@ import logging
 import math
 import random
 import string
-from datetime import datetime
-from typing import TYPE_CHECKING
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, cast
 
 import discord
-from discord.ui import Button, Modal, TextInput, View, button
+from discord.ui import Button, Modal, TextInput, View
 from tortoise.timezone import get_default_timezone
-from tortoise.timezone import now as tortoise_now
+from tortoise.timezone import now as datetime_now
+from tortoise.exceptions import ValidationError
 
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.models import (
@@ -18,6 +19,7 @@ from ballsdex.core.models import (
     BallInstance,
     Player,
     Special,
+    Regime,
     Trade,
     TradeObject,
     balls,
@@ -31,16 +33,20 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.countryballs")
 
 
-class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name}!"):
+class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
     name = TextInput(
-        label=f"Name of this {settings.collectible_name}",
+        label=f"Name of this collectible",
         style=discord.TextStyle.short,
         placeholder="Your guess",
     )
 
-    def __init__(self, view: BallSpawnView):
+    def __init__(self, view: BallSpawnView, button: Button):
         super().__init__()
         self.view = view
+        self.button = button
+        self.CollectibleName = view.RegimeName
+        self.name.label = f"Name of this {self.CollectibleName}"
+        self.title = f"Catch this {self.CollectibleName}!"
 
     async def on_error(
         self, interaction: discord.Interaction["BallsDexBot"], error: Exception, /  # noqa: W504
@@ -48,14 +54,24 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         log.exception("An error occured in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
             await interaction.followup.send(
-                f"An error occured with this {settings.collectible_name}.",
+                f"An error occured with this {self.CollectibleName}.",
             )
         else:
             await interaction.response.send_message(
-                f"An error occured with this {settings.collectible_name}.",
+                f"An error occured with this {self.CollectibleName}.",
             )
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
+        if self.view.timeout:
+            try:
+               await interaction.user.timeout(timedelta(seconds=self.view.timeout))
+               await interaction.response.send_message(f"{interaction.user.mention} GET OUT-\n-# they were timed out for {timedelta(seconds=self.ball.timeout)}!")
+               self.button.disabled = True
+               return
+            except Exception:
+               await interaction.response.send_message(f"{interaction.user.mention} GET OUT-\n-# they couldn't be timeouted.")
+               self.button.disabled = True
+               return
         await interaction.response.defer(thinking=True)
 
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
@@ -63,8 +79,20 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             slow_message = random.choice(settings.slow_messages).format(
                 user=interaction.user.mention,
                 collectible=settings.collectible_name,
-                ball=self.view.name,
+                ball=self.name,
                 collectibles=settings.plural_collectible_name,
+                regime=self.RegimeName,
+                Regime=self.RegimeName.capitalize(),
+                REGIME=self.RegimeName.upper(),
+                regimes=self.RegimeName+"s",
+                Regimes=self.RegimeName+"s".capitalize(),
+                REGIMES=self.RegimeName+"s".upper(),
+                name=self.name,
+                Name=self.name.capitalize(),
+                NAME=self.name.upper(),
+                names=self.name+"s",
+                Names=self.name+"s".capitalize(),
+                NAMES=self.name+"s".upper(),
             )
 
             await interaction.followup.send(
@@ -75,16 +103,28 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             return
 
         if not self.view.is_name_valid(self.name.value):
-            if len(self.name.value) > 500:
-                wrong_name = self.name.value[:500] + "..."
+            if len(self.name.value) > 72:
+                wrong_name = self.name.value[:72] + ".."
             else:
                 wrong_name = self.name.value
 
             wrong_message = random.choice(settings.wrong_messages).format(
                 user=interaction.user.mention,
                 collectible=settings.collectible_name,
-                ball=self.view.name,
+                ball=self.name,
                 collectibles=settings.plural_collectible_name,
+                regime=self.RegimeName,
+                Regime=self.RegimeName.capitalize(),
+                REGIME=self.RegimeName.upper(),
+                regimes=self.RegimeName+"s",
+                Regimes=self.RegimeName+"s".capitalize(),
+                REGIMES=self.RegimeName+"s".upper(),
+                name=self.name,
+                Name=self.name.capitalize(),
+                NAME=self.name.upper(),
+                names=self.name+"s",
+                Names=self.name+"s".capitalize(),
+                NAMES=self.name+"s".upper(),
                 wrong=wrong_name,
             )
 
@@ -147,6 +187,23 @@ class BallSpawnView(View):
         self.special: Special | None = None
         self.atk_bonus: int | None = None
         self.hp_bonus: int | None = None
+        self.RegimeName: str | None = None
+        self.fakespawn = False
+        self.buttondanger = False
+        self.buttontext = None
+        self.buttonemoji: discord.Emoji | None = None
+        self.timeout = False
+        self.BlockedList = {}
+        self.BlockedTimeout = 10
+        self.DontCount = False
+        
+        style = discord.ButtonStyle.danger if self.buttondanger else discord.ButtonStyle.primary
+        label = self.buttontext or "BRAWL!"
+        emoji = self.buttonemoji
+
+        self.catch_button = Button(style=style, label=label, emoji=emoji)
+        self.catch_button.callback = self.catch_button_cb
+        self.add_item(self.catch_button)
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
@@ -161,12 +218,13 @@ class BallSpawnView(View):
         if self.ballinstance and not self.caught:
             await self.ballinstance.unlock()
 
-    @button(style=discord.ButtonStyle.primary, label="Catch me!")
-    async def catch_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
-        if self.caught:
+    async def catch_button_cb(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+         if self.caught:
             await interaction.response.send_message("I was caught already!", ephemeral=True)
-        else:
-            await interaction.response.send_modal(CountryballNamePrompt(self))
+         elif self.BlockedList.get(interaction.user.id) and self.ball.BlockedList.get(interaction.user.id) > datetime.now(timezone.utc):
+            await interaction.response.send_message("I need time to heal", ephemeral=True)
+         else:
+            await interaction.response.send_modal(CountryballNamePrompt(self.ball, self.catch_button))
 
     @classmethod
     async def from_existing(cls, bot: "BallsDexBot", ball_instance: BallInstance):
@@ -245,6 +303,21 @@ class BallSpawnView(View):
             `True` if the operation succeeded, otherwise `False`. An error will be displayed
             in the logs if that's the case.
         """
+        rid = self.model.regime_id
+        if rid == 22 or rid == 23 or rid == 24 or rid == 25 or rid == 26 or rid == 27:
+            self.RegimeName = "skin"
+        elif rid == 28:
+            self.RegimeName = "gadget"
+        elif rid == 29:
+            self.RegimeName = "star power"
+        elif rid == 30 or rid == 31 or rid == 32:
+            self.RegimeName = "gear"
+        elif rid == 33:
+            self.RegimeName = "hypercharge"
+        elif rid == 34:
+            self.RegimeName = "mega box"
+        else:
+            self.RegimeName = "brawler"
 
         def generate_random_name():
             source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
@@ -260,6 +333,18 @@ class BallSpawnView(View):
                     collectible=settings.collectible_name,
                     ball=self.name,
                     collectibles=settings.plural_collectible_name,
+                    regime=self.RegimeName,
+                    Regime=self.RegimeName.capitalize(),
+                    REGIME=self.RegimeName.upper(),
+                    regimes=self.RegimeName+"s",
+                    Regimes=self.RegimeName+"s".capitalize(),
+                    REGIMES=self.RegimeName+"s".upper(),
+                    name=self.name,
+                    Name=self.name.capitalize(),
+                    NAME=self.name.upper(),
+                    names=self.name+"s",
+                    Names=self.name+"s".capitalize(),
+                    NAMES=self.name+"s".upper(),
                 )
 
                 self.message = await channel.send(
@@ -311,7 +396,7 @@ class BallSpawnView(View):
         *,
         player: Player | None,
         guild: discord.Guild | None,
-    ) -> tuple[BallInstance, bool]:
+    ) -> tuple[BallInstance, bool, int, bool]:
         """
         Mark this countryball as caught and assign a new `BallInstance` (or transfer ownership if
         attribute `ballinstance` was set).
@@ -340,6 +425,47 @@ class BallSpawnView(View):
             The `caught` attribute is already set to `True`. You should always check before calling
             this function that the ball was not caught.
         """
+        fullsd = False
+        if not self.DontCount:
+            try:
+                player.dailycaught += 1
+            except ValidationError:
+                pass
+            try:
+                sdyes = False
+                
+                if player.dailycaught in {1, 4, 8}:
+                    sdyes = True
+                    player.sdcount += 1
+
+                updatef = ["dailycaught",]
+                if sdyes:
+                    updatef.append("sdcount")
+                await player.save(update_fields=updatef)
+            except ValidationError:
+                fullsd = True
+
+        
+        options = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        weights = [5, 4, 5, 10, 8, 7, 8, 9, 10, 7]
+
+        result = random.choices(options, weights=weights, k=1)[0]
+        try:
+            player.trophies+=result ; await player.save(update_fields=("trophies",))
+            Reg = await Regime.get(id=self.model.regime_id)
+            if Reg.name.lower().strip().replace(" ", "_") in {"rare", "super_rare", "epic", "mythic", "legendary"}:
+                b_trophies = player.brawler_trophies.get(self.model.pk)
+                if b_trophies:
+                    b_trophies+=result ; await player.save(update_fields=("brawler_trophies",))
+        except ValidationError:
+            log.debug(f"{user.id} has reached the upper limit of trophies")
+
+        options = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        weights = [1500, 1000, 500, 250, 125, 75, 40, 25, 10, 4, 2] # 1500 being 30% weight and 42.4% chance, 75 being 1.5% weight and 2.1% chance
+
+        result = random.choices(options, weights=weights, k=1)[0]
+        bonus_attack = self.view.atk_bonus or result
+        bonus_health = self.view.hp_bonus or result
         if self.caught:
             raise RuntimeError("This ball was already caught!")
         self.caught = True
@@ -359,18 +485,7 @@ class BallSpawnView(View):
             self.ballinstance.locked = None  # type: ignore
             await self.ballinstance.save(update_fields=("player", "trade_player", "locked"))
             return self.ballinstance, is_new
-
-        # stat may vary by +/- 20% of base stat
-        bonus_attack = (
-            self.atk_bonus
-            if self.atk_bonus is not None
-            else random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
-        )
-        bonus_health = (
-            self.hp_bonus
-            if self.hp_bonus is not None
-            else random.randint(-settings.max_health_bonus, settings.max_health_bonus)
-        )
+            
 
         # check if we can spawn cards with a special background
         special: Special | None = self.special
@@ -402,7 +517,7 @@ class BallSpawnView(View):
                 spawn_algo=self.algo,
             ).inc()
 
-        return ball, is_new
+        return ball, is_new, player.dailycaught, fullsd
 
     def get_catch_message(self, ball: BallInstance, new_ball: bool, mention: str) -> str:
         """
@@ -421,16 +536,25 @@ class BallSpawnView(View):
             text += f"*{ball.specialcard.catch_phrase}*\n"
         if new_ball:
             text += (
-                f"This is a **new {settings.collectible_name}** "
-                "that has been added to your completion!"
+                f"You have unlocked a **new {self.CollectibleName}**! "
+                 "It is now added to your completion!"
             )
 
         caught_message = (
             random.choice(settings.caught_messages).format(
                 user=mention,
-                collectible=settings.collectible_name,
-                ball=self.name,
-                collectibles=settings.plural_collectible_name,
+                regime=self.RegimeName,
+                Regime=self.RegimeName.capitalize(),
+                REGIME=self.RegimeName.upper(),
+                regimes=self.RegimeName+"s",
+                Regimes=self.RegimeName+"s".capitalize(),
+                REGIMES=self.RegimeName+"s".upper(),
+                name=self.name,
+                Name=self.name.capitalize(),
+                NAME=self.name.upper(),
+                names=self.name+"s",
+                Names=self.name+"s".capitalize(),
+                NAMES=self.name+"s".upper(),
             )
             + " "
         )
