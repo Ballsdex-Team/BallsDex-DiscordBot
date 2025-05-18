@@ -201,10 +201,6 @@ class BallSpawnView(View):
         label = self.buttontext or "BRAWL!"
         emoji = self.buttonemoji
 
-        self.catch_button = Button(style=style, label=label, emoji=emoji)
-        self.catch_button.callback = self.catch_button_cb
-        self.add_item(self.catch_button)
-
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
 
@@ -218,6 +214,7 @@ class BallSpawnView(View):
         if self.ballinstance and not self.caught:
             await self.ballinstance.unlock()
 
+    @discord.ui.button(label=label, style=style, emoji=emoji)
     async def catch_button_cb(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
          if self.caught:
             await interaction.response.send_message("I was caught already!", ephemeral=True)
