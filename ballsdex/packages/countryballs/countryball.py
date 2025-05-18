@@ -205,8 +205,8 @@ class BallSpawnView(View):
 
         # Wrapper to provide both interaction and button
         async def catch_button_cb_wrapper(interaction: discord.Interaction["BallsDexBot"]):
-            await self.catch_button_cb(interaction, self.catch_button)
-
+            await BallSpawnView.catch_button_cb(self, interaction, self.catch_button)
+            
         self.catch_button.callback = catch_button_cb_wrapper
         self.add_item(self.catch_button)
 
