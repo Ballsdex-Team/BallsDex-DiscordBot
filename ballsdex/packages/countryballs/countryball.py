@@ -202,12 +202,7 @@ class BallSpawnView(View):
         emoji = self.buttonemoji
 
         self.catch_button = Button(style=style, label=label, emoji=emoji)
-
-        # Wrapper to provide both interaction and button
-        async def catch_button_cb_wrapper(interaction: discord.Interaction["BallsDexBot"]):
-            await BallSpawnView.catch_button_cb(self, interaction, self.catch_button)
-            
-        self.catch_button.callback = catch_button_cb_wrapper
+        self.catch_button.callback = self.catch_button_cb
         self.add_item(self.catch_button)
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
@@ -223,8 +218,7 @@ class BallSpawnView(View):
         if self.ballinstance and not self.caught:
             await self.ballinstance.unlock()
 
-    async def catch_button_cb(self, interaction: discord.Interaction["BallsDexBot"]):
-         button = self.catch_button
+    async def catch_button_cb(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
          if self.caught:
             await interaction.response.send_message("I was caught already!", ephemeral=True)
          elif self.BlockedList.get(interaction.user.id) and self.ball.BlockedList.get(interaction.user.id) > datetime.now(timezone.utc):
@@ -567,5 +561,5 @@ class BallSpawnView(View):
 
         return (
             caught_message
-            + f"`(#{ball.pk:0X}, Power Level {int(ball.attack_bonus + 10) / 10}))`\n\n{text}"
+            + f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n{text}"
         )
