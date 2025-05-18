@@ -543,6 +543,9 @@ class BallSpawnView(View):
         caught_message = (
             random.choice(settings.caught_messages).format(
                 user=mention,
+                collectible=settings.collectible_name,
+                ball=self.name,
+                collectibles=settings.plural_collectible_name,
                 regime=self.RegimeName,
                 Regime=self.RegimeName.capitalize(),
                 REGIME=self.RegimeName.upper(),
@@ -561,5 +564,5 @@ class BallSpawnView(View):
 
         return (
             caught_message
-            + f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n{text}"
+            + f"`(#{ball.pk:0X}, Power Level {int((ball.attack_bonus + 10) / 10)})`\n\n{text}"
         )
