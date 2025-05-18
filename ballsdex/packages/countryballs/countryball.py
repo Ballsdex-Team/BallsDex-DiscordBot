@@ -224,7 +224,7 @@ class BallSpawnView(View):
             await self.ballinstance.unlock()
 
     async def catch_button_cb(self, interaction: discord.Interaction["BallsDexBot"]):
-        button = self.catch_button
+         button = self.catch_button
          if self.caught:
             await interaction.response.send_message("I was caught already!", ephemeral=True)
          elif self.BlockedList.get(interaction.user.id) and self.ball.BlockedList.get(interaction.user.id) > datetime.now(timezone.utc):
