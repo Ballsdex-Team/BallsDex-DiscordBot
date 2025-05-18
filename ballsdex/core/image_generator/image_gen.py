@@ -78,7 +78,7 @@ def draw_card(
         stroke_fill=(0, 0, 0, 255),
     )
 
-    cap_name = textwrap.wrap(f{ball.capacity_name}", width=26)
+    cap_name = textwrap.wrap(f"{ball.capacity_name}", width=26)
 
     for i, line in enumerate(cap_name):
         draw.text(
