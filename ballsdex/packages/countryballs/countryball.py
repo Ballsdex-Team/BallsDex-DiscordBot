@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord.ui import Button, Modal, TextInput, View
 from tortoise.timezone import get_default_timezone
-from tortoise.timezone import now as datetime_now
+from tortoise.timezone import now as tortoise_now
 from tortoise.exceptions import ValidationError
 
 from ballsdex.core.metrics import caught_balls
