@@ -41,7 +41,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
     )
 
     def __init__(self, view: BallSpawnView, button: Button):
-        super().__init__()
+        super().__init__(timeout=300)
         self.view = view
         self.button = button
         self.CollectibleName = view.RegimeName
@@ -173,7 +173,7 @@ class BallSpawnView(View):
     """
 
     def __init__(self, bot: "BallsDexBot", model: Ball):
-        super().__init__(timeout=300)
+        super().__init__
         self.bot = bot
         self.model = model
         self.algo: str | None = None
