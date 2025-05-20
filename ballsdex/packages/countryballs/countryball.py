@@ -78,6 +78,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
         if self.view.caught:
             slow_message = random.choice(settings.slow_messages).format(
                 user=interaction.user.mention,
+                ball=self.name,
                 regime=self.RegimeName,
                 Regime=self.RegimeName.capitalize(),
                 REGIME=self.RegimeName.upper(),
@@ -107,6 +108,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
 
             wrong_message = random.choice(settings.wrong_messages).format(
                 user=interaction.user.mention,
+                ball=self.name,
                 regime=self.RegimeName,
                 Regime=self.RegimeName.capitalize(),
                 REGIME=self.RegimeName.upper(),
@@ -330,6 +332,7 @@ class BallSpawnView(View):
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
                 spawn_message = random.choice(settings.spawn_messages).format(
+                    ball=self.name,
                     regime=self.RegimeName,
                     Regime=self.RegimeName.capitalize(),
                     REGIME=self.RegimeName.upper(),
@@ -540,6 +543,7 @@ class BallSpawnView(View):
         caught_message = (
             random.choice(settings.caught_messages).format(
                 user=mention,
+                ball=self.name,
                 regime=self.RegimeName,
                 Regime=self.RegimeName.capitalize(),
                 REGIME=self.RegimeName.upper(),
