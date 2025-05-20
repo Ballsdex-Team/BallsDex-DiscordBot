@@ -131,7 +131,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
             )
             return
 
-        ball, has_caught_before, dailycaught, fullsd = await self.view.catch_ball(
+        ball, has_caught_before, dailycatch, fullsd = await self.view.catch_ball(
             interaction.user, player=player, guild=interaction.guild
         )
 
