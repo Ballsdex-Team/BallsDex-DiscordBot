@@ -114,11 +114,11 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
                 server_id=interaction.user.guild.id,
             )
 
-            data, file = await ball_instance.prepare_for_message(interaction)
+            data, file, view = await ball_instance.prepare_for_message(interaction)
             await interaction.edit_original_response(
                 content=f"You opened your {ounce.get('name').replace("_", " ").capitalize()} Starr Drop and got... **{'Shiny ' if is_special else ''}{claimed_ball.country}**!\n\n{data}",
                 attachments=[file],
-                view=None
+                view=view
             )
         elif result in {"powerpoints", "credits"}:
             options = [25, 50, 100, 250]
