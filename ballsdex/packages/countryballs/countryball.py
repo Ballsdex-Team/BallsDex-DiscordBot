@@ -549,6 +549,9 @@ class BallSpawnView(View):
         caught_message = (
             random.choice(settings.caught_messages).format(
                 user=mention,
+                collectible=settings.collectible_name,
+                ball=self.name,
+                collectibles=settings.plural_collectible_name,
                 regime=self.RegimeName,
                 Regime=self.RegimeName.capitalize(),
                 REGIME=self.RegimeName.upper(),
