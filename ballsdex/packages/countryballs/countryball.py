@@ -78,19 +78,19 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
         if self.view.caught:
             slow_message = random.choice(settings.slow_messages).format(
                 user=interaction.user.mention,
-                ball=self.name,
+                ball=self.view.name,
                 regime=self.view.RegimeName,
                 Regime=self.view.RegimeName.capitalize(),
                 REGIME=self.view.RegimeName.upper(),
                 regimes=self.view.RegimeName+"s",
                 Regimes=self.view.RegimeName+"s".capitalize(),
                 REGIMES=self.view.RegimeName+"s".upper(),
-                name=self.name,
-                Name=self.name.capitalize(),
-                NAME=self.name.upper(),
-                names=self.name+"s",
-                Names=self.name+"s".capitalize(),
-                NAMES=self.name+"s".upper(),
+                name=self.view.name,
+                Name=self.view.name.capitalize(),
+                NAME=self.view.name.upper(),
+                names=self.view.name+"s",
+                Names=self.view.name+"s".capitalize(),
+                NAMES=self.view.name+"s".upper(),
             )
 
             await interaction.followup.send(
@@ -108,19 +108,19 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
 
             wrong_message = random.choice(settings.wrong_messages).format(
                 user=interaction.user.mention,
-                ball=self.name,
+                ball=self.view.name,
                 regime=self.view.RegimeName,
                 Regime=self.view.RegimeName.capitalize(),
                 REGIME=self.view.RegimeName.upper(),
                 regimes=self.view.RegimeName+"s",
                 Regimes=self.view.RegimeName+"s".capitalize(),
                 REGIMES=self.view.RegimeName+"s".upper(),
-                name=self.name,
-                Name=self.name.capitalize(),
-                NAME=self.name.upper(),
-                names=self.name+"s",
-                Names=self.name+"s".capitalize(),
-                NAMES=self.name+"s".upper(),
+                name=self.view.name,
+                Name=self.view.name.capitalize(),
+                NAME=self.view.name.upper(),
+                names=self.view.name+"s",
+                Names=self.view.name+"s".capitalize(),
+                NAMES=self.view.name+"s".upper(),
                 wrong=wrong_name,
             )
 
