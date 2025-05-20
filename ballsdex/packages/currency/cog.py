@@ -152,9 +152,9 @@ class Credits(commands.GroupCog, group_name="credits"):
                 health_bonus=0,
                 server_id=interaction.guild.id
             )
-            data, file = await inst.prepare_for_message(interaction)
+            data, file, view = await inst.prepare_for_message(interaction)
             try:
-                await interaction.followup.send(interaction.user.mention+", your Brawler has been claimed.\n\n"+data, file=file)
+                await interaction.followup.send(interaction.user.mention+", your Brawler has been claimed.\n\n"+data, file=file, view=view)
             finally:
                 file.close()
                 log.debug(f"{interaction.user.id} claimed a {brawler.country}")       
@@ -262,9 +262,9 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
             await playerm.save(update_fields=("powerpoints",))
             brawler.health_bonus += 10; brawler.attack_bonus += 10
             await brawler.save()
-            data, file = await brawler.prepare_for_message(interaction)
+            data, file, view = await brawler.prepare_for_message(interaction)
             try:
-                await interaction.followup.send(interaction.user.mention+", your Brawler has been upgraded.\n\n"+data, file=file)
+                await interaction.followup.send(interaction.user.mention+", your Brawler has been upgraded.\n\n"+data, file=file, view=view)
             finally:
                 file.close()
                 log.debug(f"{interaction.user.id} upgraded a {brawler.id}")
