@@ -230,7 +230,7 @@ class BallSpawnView(View):
          elif self.BlockedList.get(interaction.user.id) and self.ball.BlockedList.get(interaction.user.id) > datetime.now(timezone.utc):
             await interaction.response.send_message("I need time to heal", ephemeral=True)
          else:
-            await interaction.response.send_modal(CountryballNamePrompt(self.ball, self.catch_button))
+            await interaction.response.send_modal(CountryballNamePrompt(self.catch_button))
 
     @classmethod
     async def from_existing(cls, bot: "BallsDexBot", ball_instance: BallInstance):
