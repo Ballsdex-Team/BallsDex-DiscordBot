@@ -470,8 +470,8 @@ class BallSpawnView(View):
         weights = [1500, 1000, 500, 250, 125, 75, 40, 25, 10, 4, 2] # 1500 being 30% weight and 42.4% chance, 75 being 1.5% weight and 2.1% chance
 
         result = random.choices(options, weights=weights, k=1)[0]
-        bonus_attack = self.view.atk_bonus or result
-        bonus_health = self.view.hp_bonus or result
+        bonus_attack = self.atk_bonus or result
+        bonus_health = self.hp_bonus or result
         if self.caught:
             raise RuntimeError("This ball was already caught!")
         self.caught = True
