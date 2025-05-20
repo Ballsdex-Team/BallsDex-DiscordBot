@@ -542,7 +542,7 @@ class BallSpawnView(View):
             text += f"*{ball.specialcard.catch_phrase}*\n"
         if new_ball:
             text += (
-                f"You have unlocked a **new {self.CollectibleName}**! "
+                f"You have unlocked a **new {self.RegimeName}**! "
                  "It is now added to your completion!"
             )
 
