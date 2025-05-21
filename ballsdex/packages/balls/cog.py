@@ -53,10 +53,7 @@ class DonationRequest(View):
         for item in self.children:
             item.disabled = True  # type: ignore
         try:
-            await self.original_interaction.followup.edit_message(
-                "@original",
-                view=self,  # type: ignore
-            )
+            await self.original_interaction.edit_original_response(view=self)
         except discord.NotFound:
             pass
         await self.countryball.unlock()

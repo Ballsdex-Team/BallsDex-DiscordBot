@@ -57,17 +57,13 @@ class Balls(app_commands.Group):
 
         async def update_message_loop():
             for i in range(5 * 12 * 10):  # timeout progress after 10 minutes
-                await interaction.followup.edit_message(
-                    "@original",  # type: ignore
+                await interaction.edit_original_response(
                     content=f"Spawn bomb in progress in {channel.mention}, "
                     f"{settings.collectible_name.title()}: {countryball or 'Random'}\n"
-                    f"{spawned}/{n} spawned ({round((spawned / n) * 100)}%)",
+                    f"{spawned}/{n} spawned ({round((spawned / n) * 100)}%)"
                 )
                 await asyncio.sleep(5)
-            await interaction.followup.edit_message(
-                "@original",
-                content="Spawn bomb seems to have timed out.",  # type: ignore
-            )
+            await interaction.edit_original_response(content="Spawn bomb seems to have timed out.")
 
         await interaction.response.send_message(f"Starting spawn bomb in {channel.mention}...", ephemeral=True)
         task = interaction.client.loop.create_task(update_message_loop())
@@ -83,18 +79,16 @@ class Balls(app_commands.Group):
                 result = await ball.spawn(channel)
                 if not result:
                     task.cancel()
-                    await interaction.followup.edit_message(
-                        "@original",  # type: ignore
+                    await interaction.edit_original_response(
                         content=f"A {settings.collectible_name} failed to spawn, probably "
                         "indicating a lack of permissions to send messages "
-                        f"or upload files in {channel.mention}.",
+                        f"or upload files in {channel.mention}."
                     )
                     return
                 spawned += 1
             task.cancel()
-            await interaction.followup.edit_message(
-                "@original",  # type: ignore
-                content=f"Successfully spawned {spawned} {settings.plural_collectible_name} in {channel.mention}!",
+            await interaction.edit_original_response(
+                content=f"Successfully spawned {spawned} {settings.plural_collectible_name} in {channel.mention}!"
             )
         finally:
             task.cancel()

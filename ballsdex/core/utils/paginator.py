@@ -96,11 +96,7 @@ class Pages(discord.ui.View):
         self._update_labels(page_number)
         if kwargs is not None:
             if interaction.response.is_done():
-                await interaction.followup.edit_message(
-                    "@original",
-                    **kwargs,
-                    view=self,  # type: ignore
-                )
+                await interaction.edit_original_response(**kwargs, view=self)
             else:
                 await interaction.response.edit_message(**kwargs, view=self)
 
@@ -157,10 +153,7 @@ class Pages(discord.ui.View):
         for item in self.children:
             item.disabled = True  # type: ignore
         try:
-            await self.original_interaction.followup.edit_message(
-                "@original",
-                view=self,  # type: ignore
-            )
+            await self.original_interaction.edit_original_response(view=self)
         except discord.HTTPException:
             pass
 
