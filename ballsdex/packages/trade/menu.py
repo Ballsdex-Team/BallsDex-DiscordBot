@@ -6,8 +6,10 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
+from asyncpg.exceptions import LockNotAvailableError
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
+from tortoise.transactions import atomic
 
 from ballsdex.core.models import BallInstance, Player, Trade, TradeCooldownPolicy, TradeObject
 from ballsdex.core.utils import menus
@@ -47,7 +49,6 @@ class TradeView(View):
 
     async def on_timeout(self):
         await self.trade.cancel(reason="The trade timed out.", colour=discord.Colour.red())
-        await self.trade.unlock_balls()
 
     @button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
     async def lock(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
@@ -152,8 +153,7 @@ class ConfirmView(View):
             return True
 
     async def on_timeout(self):
-        await self.trade.cancel(reason="The trade timed out.", colour=discord.Colour.red())
-        await self.trade.unlock_balls()
+        await self.trade.cancel(reason="The trade timed out.")
 
     @button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
@@ -270,12 +270,13 @@ class TradeMenu:
         """
 
         assert self.task
-        start_time = datetime.utcnow()
+        start_time = datetime.now(self.message.created_at.tzinfo)
 
         while True:
             await asyncio.sleep(15)
-            if datetime.utcnow() - start_time > timedelta(minutes=15):
-                self.embed.colour = discord.Colour.dark_red()
+            if datetime.now(self.message.created_at.tzinfo) - start_time > timedelta(
+                seconds=self.current_view.timeout or 15
+            ):
                 await self.cancel("The trade timed out")
                 return
 
@@ -310,16 +311,14 @@ class TradeMenu:
     async def cancel(
         self,
         reason: str = "The trade has been cancelled.",
-        colour: discord.Colour = discord.Colour.blurple(),
+        *,
+        colour: discord.Colour = discord.Colour.red(),
     ):
         """
         Cancel the trade immediately.
         """
         if self.task:
             self.task.cancel()
-
-        for countryball in self.trader1.proposal + self.trader2.proposal:
-            await countryball.unlock()
 
         self.current_view.stop()
         for item in self.current_view.children:
@@ -330,6 +329,7 @@ class TradeMenu:
         self.embed.colour = colour
         if getattr(self, "message", None):
             await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+        await self.unlock_balls()
 
     async def lock(self, trader: TradingUser):
         """
@@ -358,49 +358,71 @@ class TradeMenu:
         self.embed.colour = discord.Colour.red()
         await self.cancel()
 
+    @atomic()
     async def perform_trade(self):
+        """
+        Updates the ownership of the proposed items and conclude the trade.
+
+        This is an atomic operation with concurrency safeguards.
+
+        Raises
+        ------
+        InvalidTradeOperation
+            An illegal operation was detected while performing the operation, the trade should be
+            cancelled.
+
+            This can occur in the following scenarios:
+            - Some items listed in a player's proposal are no longer owned by them
+            - Some items are locked by the database (concurrent trade accross clusters)
+        """
+        try:
+            trader1_proposal = await BallInstance.filter(
+                id__in=[x.pk for x in self.trader1.proposal], player=self.trader1.player
+            ).select_for_update(nowait=True)
+            trader2_proposal = await BallInstance.filter(
+                id__in=[x.pk for x in self.trader2.proposal], player=self.trader2.player
+            ).select_for_update(nowait=True)
+        except LockNotAvailableError as e:
+            raise InvalidTradeOperation from e
+
+        if len(trader1_proposal) != len(self.trader1.proposal) or len(trader2_proposal) != len(
+            self.trader2.proposal
+        ):
+            raise InvalidTradeOperation
+
         trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
 
-        for countryball in self.trader1.proposal:
+        trade_objects: list[TradeObject] = []
+        for countryball in trader1_proposal:
             countryball.player = self.trader2.player
             countryball.trade_player = self.trader1.player
             countryball.favorite = False
-            await TradeObject.create(
-                trade=trade, ballinstance=countryball, player=self.trader1.player
+            countryball.locked = None  # type: ignore
+            trade_objects.append(
+                TradeObject(trade=trade, ballinstance=countryball, player=self.trader1.player)
             )
 
-        for countryball in self.trader2.proposal:
+        for countryball in trader2_proposal:
             countryball.player = self.trader1.player
             countryball.trade_player = self.trader2.player
             countryball.favorite = False
-            await TradeObject.create(
-                trade=trade, ballinstance=countryball, player=self.trader2.player
+            countryball.locked = None  # type: ignore
+            trade_objects.append(
+                TradeObject(trade=trade, ballinstance=countryball, player=self.trader2.player)
             )
 
-        await self.unlock_balls()
+        await TradeObject.bulk_create(trade_objects)
+        await BallInstance.bulk_update(
+            trader1_proposal + trader2_proposal,
+            fields=("player_id", "trade_player_id", "favorite", "locked"),
+        )
 
     async def unlock_balls(self):
         """
         This function unlocks collectibles that were locked during the trade.
         """
-        valid_transferable_countryballs: list[BallInstance] = []
-        for countryball in self.trader1.proposal:
-            await countryball.refresh_from_db()
-            if countryball.player.discord_id != self.trader1.player.discord_id:
-                # This is a invalid mutation, the player is not the owner of the countryball
-                raise InvalidTradeOperation()
-            valid_transferable_countryballs.append(countryball)
-
-        for countryball in self.trader2.proposal:
-            await countryball.refresh_from_db()
-            if countryball.player.discord_id != self.trader2.player.discord_id:
-                # This is a invalid mutation, the player is not the owner of the countryball
-                raise InvalidTradeOperation()
-            valid_transferable_countryballs.append(countryball)
-
-        for countryball in valid_transferable_countryballs:
+        for countryball in self.trader1.proposal + self.trader2.proposal:
             await countryball.unlock()
-            await countryball.save()
 
     async def confirm(self, trader: TradingUser) -> bool:
         """
@@ -425,7 +447,10 @@ class TradeMenu:
             try:
                 await self.perform_trade()
             except InvalidTradeOperation:
-                log.warning(f"Illegal trade operation between {self.trader1=} and {self.trader2=}")
+                log.warning(
+                    f"Illegal trade operation between {self.trader1=} and {self.trader2=}",
+                    exc_info=True,
+                )
                 self.embed.description = (
                     f":warning: An attempt to modify the {settings.plural_collectible_name} "
                     "during the trade was detected and the trade was cancelled."
@@ -439,6 +464,8 @@ class TradeMenu:
                 result = False
 
         await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+        if not result:
+            await self.unlock_balls()
         return result
 
 
