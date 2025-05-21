@@ -11,27 +11,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.13
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pypoetry
-          key: poetry-${{ hashFiles('poetry.lock') }}
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.poetry/bin" >> $GITHUB_PATH
-      - name: Check poetry dependenciess
-        run: poetry check
+          python-version-file: pyproject.toml
       - name: Install dependencies
-        run: poetry install --extras dev --no-interaction
-      - name: Run black
-        run: poetry run black --check --diff $(git ls-files "*.py")
-      - name: Run pre-commit checks
-        run: poetry run pre-commit run -a
+        run: uv sync --locked --all-extras --dev
+      - name: Check linter
+        run: ruff check --output-format=github
+      - name: Check formatter
+        run: ruff format --check --diff
+        # keep going even if previous failed
+        if: '!cancelled()'
+      - name: Check pyright
+        uses: jakebailey/pyright-action@v2
+        with:
+          version: PATH
