@@ -94,3 +94,6 @@ extraPaths = ["./admin_panel"]
 pythonVersion = "3.13"
 reportIncompatibleMethodOverride = "warning"
 reportIncompatibleVariableOverride = "warning"
+
+venvPath = "."
+venv = ".venv"
