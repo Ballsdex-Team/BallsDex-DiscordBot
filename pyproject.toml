@@ -43,14 +43,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pre-commit==4.2.0",
-    "black==25.1.0",
-    "flake8-pyproject==1.2.3",
-    "flake8==7.2.0",
+    "ruff>=0.11.10",
     "pyright==1.1.399",
-    "isort==6.0.1",
     "django-debug-toolbar==4.4.6",
     "pyinstrument==5.0.0",
-    "django-types==0.20.0",
+    "django-types",
 ]
 
 [project.scripts]
@@ -67,20 +64,29 @@ include = ["ballsdex", "admin_panel"]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.black]
-line-length = 99
+[tool.uv.sources]
+django-types = { git = "https://github.com/sbdchd/django-types.git", rev = "04d8bee5e503e23dc1064a498485110002a4dc23" }
 
-[tool.flake8]
-ignore = "W503,E203,E999"
-max-line-length = 99
-exclude = "./admin_panel/admin_panel/settings/*"
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py313"
 
-[tool.isort]
-profile = "black"
-py_version = "313"
-line_length = 99
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E203"]
+exclude = ["admin_panel/admin_panel/settings/*"]
+
+[tool.ruff.lint.isort]
 # list all django modules
-known_first_party = ["ballsdex", "bd_models", "admin_panel", "preview"]
+known-first-party = ["ballsdex", "bd_models", "admin_panel", "preview"]
 
 [tool.pyright]
 extraPaths = ["./admin_panel"]
