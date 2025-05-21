@@ -4,15 +4,8 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("bd_models", "0005_alter_ball_short_name"),
-    ]
+    dependencies = [("bd_models", "0005_alter_ball_short_name")]
 
     operations = [
-        migrations.AddField(
-            model_name="player",
-            name="extra_data",
-            field=models.JSONField(blank=True, default=dict),
-        ),
+        migrations.AddField(model_name="player", name="extra_data", field=models.JSONField(blank=True, default=dict))
     ]

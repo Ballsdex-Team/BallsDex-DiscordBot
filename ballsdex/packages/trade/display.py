@@ -33,9 +33,7 @@ class TradeViewFormat(menus.ListPageSource):
             url=self.url if self.is_admin else None,
             timestamp=trade.date,
         )
-        embed.set_footer(
-            text=f"Trade {menu.current_page + 1}/{menu.source.get_max_pages()} | Trade date: "
-        )
+        embed.set_footer(text=f"Trade {menu.current_page + 1}/{menu.source.get_max_pages()} | Trade date: ")
         fill_trade_embed_fields(
             embed,
             self.bot,
@@ -65,9 +63,7 @@ def _get_trader_name(trader: TradingUser, is_admin: bool = False) -> str:
         return f"{_get_prefix_emote(trader)} {trader.user.name}"
 
 
-def _build_list_of_strings(
-    trader: TradingUser, bot: "BallsDexBot", short: bool = False
-) -> list[str]:
+def _build_list_of_strings(trader: TradingUser, bot: "BallsDexBot", short: bool = False) -> list[str]:
     # this builds a list of strings always lower than 1024 characters
     # while not cutting in the middle of a line
     proposal: list[str] = [""]
@@ -129,16 +125,8 @@ def fill_trade_embed_fields(
     trader2_proposal = _build_list_of_strings(trader2, bot, compact)
 
     # then display the text. first page is easy
-    embed.add_field(
-        name=_get_trader_name(trader1, is_admin),
-        value=trader1_proposal[0],
-        inline=True,
-    )
-    embed.add_field(
-        name=_get_trader_name(trader2, is_admin),
-        value=trader2_proposal[0],
-        inline=True,
-    )
+    embed.add_field(name=_get_trader_name(trader1, is_admin), value=trader1_proposal[0], inline=True)
+    embed.add_field(name=_get_trader_name(trader2, is_admin), value=trader2_proposal[0], inline=True)
 
     if len(trader1_proposal) > 1 or len(trader2_proposal) > 1:
         # we'll have to trick for displaying the other pages
@@ -164,24 +152,20 @@ def fill_trade_embed_fields(
 
     if len(embed) > 6000:
         if not compact:
-            return fill_trade_embed_fields(
-                embed, bot, trader1, trader2, compact=True, is_admin=is_admin
-            )
+            return fill_trade_embed_fields(embed, bot, trader1, trader2, compact=True, is_admin=is_admin)
         else:
             embed.clear_fields()
             embed.add_field(
                 name=_get_trader_name(trader1, is_admin),
                 value=(
-                    f"Trade too long, only showing last page:\n{trader1_proposal[-1]}"
-                    f"\nTotal: {len(trader1.proposal)}"
+                    f"Trade too long, only showing last page:\n{trader1_proposal[-1]}\nTotal: {len(trader1.proposal)}"
                 ),
                 inline=True,
             )
             embed.add_field(
                 name=_get_trader_name(trader2, is_admin),
                 value=(
-                    f"Trade too long, only showing last page:\n{trader2_proposal[-1]}\n"
-                    f"Total: {len(trader2.proposal)}"
+                    f"Trade too long, only showing last page:\n{trader2_proposal[-1]}\nTotal: {len(trader2.proposal)}"
                 ),
                 inline=True,
             )

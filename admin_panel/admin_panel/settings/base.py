@@ -33,13 +33,8 @@ SECRET_KEY = None
 # https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Serving-the-admin-panel-online
 # THIS HAS SECURITY IMPLICATIONS, ENABLES PRIVILEGE ESCALATION AND REMOTE CODE EXECUTION
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-]
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+INTERNAL_IPS = ["127.0.0.1"]
 
 
 # Application definition
@@ -85,9 +80,9 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "social_django.context_processors.backends",
                 "social_django.context_processors.login_redirect",
-            ],
+            ]
         },
-    },
+    }
 ]
 
 WSGI_APPLICATION = "admin_panel.wsgi.application"
@@ -97,12 +92,8 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "filters": {
-        "require_debug_false": {
-            "()": "django.utils.log.RequireDebugFalse",
-        },
-        "require_debug_true": {
-            "()": "django.utils.log.RequireDebugTrue",
-        },
+        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+        "require_debug_true": {"()": "django.utils.log.RequireDebugTrue"},
     },
     "formatters": {
         "django.server": {
@@ -117,27 +108,12 @@ LOGGING = {
         },
     },
     "handlers": {
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "uvicorn",
-        },
-        "django.server": {
-            "level": "INFO",
-            "class": "logging.StreamHandler",
-            "formatter": "django.server",
-        },
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "uvicorn"},
+        "django.server": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "django.server"},
     },
     "loggers": {
-        "root": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
-        "django.server": {
-            "handlers": ["django.server"],
-            "level": "INFO",
-            "propagate": False,
-        },
+        "root": {"handlers": ["console"], "level": "INFO"},
+        "django.server": {"handlers": ["django.server"], "level": "INFO", "propagate": False},
     },
 }
 if "startbot" in sys.argv:
@@ -154,18 +130,10 @@ DATABASES = {"default": dj_database_url.config("BALLSDEXBOT_DB_URL")}
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 
@@ -223,6 +191,4 @@ if settings.client_id and settings.client_secret:
         "django.contrib.auth.backends.ModelBackend",
     ]
 else:
-    AUTHENTICATION_BACKENDS = [
-        "django.contrib.auth.backends.ModelBackend",
-    ]
+    AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]

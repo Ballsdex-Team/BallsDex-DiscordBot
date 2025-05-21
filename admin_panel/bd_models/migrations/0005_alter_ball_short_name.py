@@ -4,10 +4,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("bd_models", "0004_check_aerich_migrations_initial"),
-    ]
+    dependencies = [("bd_models", "0004_check_aerich_migrations_initial")]
 
     operations = [
         migrations.AlterField(
@@ -20,5 +17,5 @@ class Migration(migrations.Migration):
                 max_length=24,
                 null=True,
             ),
-        ),
+        )
     ]

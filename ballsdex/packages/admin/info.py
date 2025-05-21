@@ -5,12 +5,7 @@ from discord import app_commands
 from discord.utils import format_dt
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.utils.enums import (
-    DONATION_POLICY_MAP,
-    FRIEND_POLICY_MAP,
-    MENTION_POLICY_MAP,
-    PRIVATE_POLICY_MAP,
-)
+from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.settings import settings
 from bd_models.models import BallInstance, GuildConfig, Player
 
@@ -21,12 +16,7 @@ class Info(app_commands.Group):
     """
 
     @app_commands.command()
-    async def guild(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        guild_id: str,
-        days: int = 7,
-    ):
+    async def guild(self, interaction: discord.Interaction[BallsDexBot], guild_id: str, days: int = 7):
         """
         Show information about the server provided
 
@@ -46,14 +36,10 @@ class Info(app_commands.Group):
             try:
                 guild = await interaction.client.fetch_guild(int(guild_id))  # type: ignore
             except ValueError:
-                await interaction.followup.send(
-                    "The guild ID you gave is not valid.", ephemeral=True
-                )
+                await interaction.followup.send("The guild ID you gave is not valid.", ephemeral=True)
                 return
             except discord.NotFound:
-                await interaction.followup.send(
-                    "The given guild ID could not be found.", ephemeral=True
-                )
+                await interaction.followup.send("The given guild ID could not be found.", ephemeral=True)
                 return
 
         url = None
@@ -65,8 +51,7 @@ class Info(app_commands.Group):
             spawn_enabled = False
 
         total_server_balls = BallInstance.objects.prefetch_related("player").filter(
-            catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
-            server_id=guild.id,
+            catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days), server_id=guild.id
         )
         if guild.owner_id:
             owner = await interaction.client.fetch_user(guild.owner_id)
@@ -77,11 +62,7 @@ class Info(app_commands.Group):
                 color=discord.Color.blurple(),
             )
         else:
-            embed = discord.Embed(
-                title=f"{guild.name} ({guild.id})",
-                url=url,
-                color=discord.Color.blurple(),
-            )
+            embed = discord.Embed(title=f"{guild.name} ({guild.id})", url=url, color=discord.Color.blurple())
         embed.add_field(name="Members:", value=guild.member_count)
         embed.add_field(name="Spawn enabled:", value=spawn_enabled)
         embed.add_field(name="Created at:", value=format_dt(guild.created_at, style="F"))
@@ -99,12 +80,7 @@ class Info(app_commands.Group):
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command()
-    async def user(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-        days: int = 7,
-    ):
+    async def user(self, interaction: discord.Interaction[BallsDexBot], user: discord.User, days: int = 7):
         """
         Show information about the user provided
 
@@ -120,16 +96,11 @@ class Info(app_commands.Group):
         if not player:
             await interaction.followup.send("The user you gave does not exist.", ephemeral=True)
             return
-        url = (
-            f"{settings.admin_url}/bd_models/player/{player.pk}/change/"
-            if settings.admin_url
-            else None
-        )
+        url = f"{settings.admin_url}/bd_models/player/{player.pk}/change/" if settings.admin_url else None
         total_user_balls = [
             x
             async for x in BallInstance.objects.filter(
-                catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
-                player=player,
+                catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days), player=player
             )
         ]
         embed = discord.Embed(
@@ -144,8 +115,7 @@ class Info(app_commands.Group):
             color=discord.Color.blurple(),
         )
         embed.add_field(
-            name=f"{settings.plural_collectible_name.title()} caught ({days} days):",
-            value=len(total_user_balls),
+            name=f"{settings.plural_collectible_name.title()} caught ({days} days):", value=len(total_user_balls)
         )
         embed.add_field(
             name=f"Unique {settings.plural_collectible_name} caught ({days} days):",

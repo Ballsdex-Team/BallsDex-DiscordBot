@@ -24,8 +24,7 @@ class Command(BaseCommand):
             "If not provided, the first entry is used.",
         )
         parser.add_argument(
-            "--special",
-            help="The special event's background you want to use, otherwise regime is used",
+            "--special", help="The special event's background you want to use, otherwise regime is used"
         )
 
     async def generate_preview(self, *args, **options):
@@ -35,9 +34,7 @@ class Command(BaseCommand):
             try:
                 ball = await Ball.objects.aget(country__iexact=ball_name)
             except Ball.DoesNotExist as e:
-                raise CommandError(
-                    f'No {settings.collectible_name} found with the name "{ball_name}"'
-                ) from e
+                raise CommandError(f'No {settings.collectible_name} found with the name "{ball_name}"') from e
         else:
             ball = await Ball.objects.afirst()
             if ball is None:
@@ -52,9 +49,7 @@ class Command(BaseCommand):
 
         # use stderr to avoid piping
         self.stderr.write(
-            self.style.SUCCESS(
-                f"Generating card for {ball.country}" + (f" ({special.name})" if special else "")
-            )
+            self.style.SUCCESS(f"Generating card for {ball.country}" + (f" ({special.name})" if special else ""))
         )
 
         instance = BallInstance(ball=ball, special=special)

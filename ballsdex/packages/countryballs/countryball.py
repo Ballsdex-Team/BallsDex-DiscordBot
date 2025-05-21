@@ -13,16 +13,7 @@ from django.utils import timezone
 
 from ballsdex.core.metrics import caught_balls
 from ballsdex.settings import settings
-from bd_models.models import (
-    Ball,
-    BallInstance,
-    Player,
-    Special,
-    Trade,
-    TradeObject,
-    balls,
-    specials,
-)
+from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls, specials
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -32,9 +23,7 @@ log = logging.getLogger("ballsdex.packages.countryballs")
 
 class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name}!"):
     name = TextInput(
-        label=f"Name of this {settings.collectible_name}",
-        style=discord.TextStyle.short,
-        placeholder="Your guess",
+        label=f"Name of this {settings.collectible_name}", style=discord.TextStyle.short, placeholder="Your guess"
     )
 
     def __init__(self, view: BallSpawnView):
@@ -42,17 +31,16 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         self.view = view
 
     async def on_error(
-        self, interaction: discord.Interaction["BallsDexBot"], error: Exception, /  # noqa: W504
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        error: Exception,
+        /,  # noqa: W504
     ) -> None:
         log.exception("An error occured in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
-            await interaction.followup.send(
-                f"An error occured with this {settings.collectible_name}.",
-            )
+            await interaction.followup.send(f"An error occured with this {settings.collectible_name}.")
         else:
-            await interaction.response.send_message(
-                f"An error occured with this {settings.collectible_name}.",
-            )
+            await interaction.response.send_message(f"An error occured with this {settings.collectible_name}.")
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         await interaction.response.defer(thinking=True)
@@ -201,9 +189,7 @@ class BallSpawnView(View):
 
         weights = [x.rarity for x in population] + [common_weight]
         # None is added representing the common countryball
-        special: Special | None = random.choices(
-            population=population + [None], weights=weights, k=1
-        )[0]
+        special: Special | None = random.choices(population=population + [None], weights=weights, k=1)[0]
 
         return special
 
@@ -278,11 +264,7 @@ class BallSpawnView(View):
         return cname in possible_names
 
     async def catch_ball(
-        self,
-        user: discord.User | discord.Member,
-        *,
-        player: Player | None,
-        guild: discord.Guild | None,
+        self, user: discord.User | discord.Member, *, player: Player | None, guild: discord.Guild | None
     ) -> tuple[BallInstance, bool]:
         """
         Mark this countryball as caught and assign a new `BallInstance` (or transfer ownership if
@@ -392,11 +374,5 @@ class BallSpawnView(View):
         if ball.specialcard and ball.specialcard.catch_phrase:
             text += f"*{ball.specialcard.catch_phrase}*\n"
         if new_ball:
-            text += (
-                f"This is a **new {settings.collectible_name}** "
-                "that has been added to your completion!"
-            )
-        return (
-            f"You caught **{self.name}!** "
-            f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n{text}"
-        )
+            text += f"This is a **new {settings.collectible_name}** that has been added to your completion!"
+        return f"You caught **{self.name}!** `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n{text}"

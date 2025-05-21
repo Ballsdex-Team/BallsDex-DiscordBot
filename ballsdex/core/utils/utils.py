@@ -33,15 +33,12 @@ async def inventory_privacy(
     if is_staff(interaction):
         return True
     if privacy_policy == PrivacyPolicy.DENY:
-        await interaction.followup.send(
-            "This user has set their inventory to private.", ephemeral=True
-        )
+        await interaction.followup.send("This user has set their inventory to private.", ephemeral=True)
         return False
     elif privacy_policy == PrivacyPolicy.FRIENDS:
         if not await interacting_player.is_friend(player):
             await interaction.followup.send(
-                "This users inventory can only be viewed from users they have added as friends.",
-                ephemeral=True,
+                "This users inventory can only be viewed from users they have added as friends.", ephemeral=True
             )
             return False
     elif privacy_policy == PrivacyPolicy.SAME_SERVER:
@@ -53,9 +50,7 @@ async def inventory_privacy(
             )
             return False
         if interaction.guild is None:
-            await interaction.followup.send(
-                "This user has set their inventory to private.", ephemeral=True
-            )
+            await interaction.followup.send("This user has set their inventory to private.", ephemeral=True)
             return False
         elif interaction.guild.get_member(user_obj.id) is None:
             await interaction.followup.send("This user is not in the server.", ephemeral=True)

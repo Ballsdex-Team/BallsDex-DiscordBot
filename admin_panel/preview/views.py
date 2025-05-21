@@ -24,10 +24,7 @@ async def render_special(request: HttpRequest, special_pk: int) -> HttpResponse:
 
     ball = await Ball.objects.afirst()
     if ball is None:
-        messages.warning(
-            request,
-            "You must create a countryball before being able to generate a special's preview.",
-        )
+        messages.warning(request, "You must create a countryball before being able to generate a special's preview.")
         return HttpResponse(status_code=422)
 
     special = await Special.objects.aget(pk=special_pk)

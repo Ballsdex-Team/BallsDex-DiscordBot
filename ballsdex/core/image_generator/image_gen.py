@@ -47,8 +47,7 @@ def get_credit_color(image: Image.Image, region: tuple) -> tuple:
 
 
 def draw_card(
-    ball_instance: "BallInstance",
-    media_path: str = "./admin_panel/media/",
+    ball_instance: "BallInstance", media_path: str = "./admin_panel/media/"
 ) -> tuple[Image.Image, dict[str, Any]]:
     ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
@@ -62,20 +61,10 @@ def draw_card(
     else:
         image = Image.open(media_path + ball.cached_regime.background.name)
     image = image.convert("RGBA")
-    icon = (
-        Image.open(media_path + ball.cached_economy.icon.name).convert("RGBA")
-        if ball.cached_economy
-        else None
-    )
+    icon = Image.open(media_path + ball.cached_economy.icon.name).convert("RGBA") if ball.cached_economy else None
 
     draw = ImageDraw.Draw(image)
-    draw.text(
-        (50, 20),
-        ball.short_name or ball.country,
-        font=title_font,
-        stroke_width=2,
-        stroke_fill=(0, 0, 0, 255),
-    )
+    draw.text((50, 20), ball.short_name or ball.country, font=title_font, stroke_width=2, stroke_fill=(0, 0, 0, 255))
 
     cap_name = textwrap.wrap(f"Ability: {ball.capacity_name}", width=26)
 
@@ -117,15 +106,13 @@ def draw_card(
     if card_name in credits_color_cache:
         credits_color = credits_color_cache[card_name]
     else:
-        credits_color = get_credit_color(
-            image, (0, int(image.height * 0.8), image.width, image.height)
-        )
+        credits_color = get_credit_color(image, (0, int(image.height * 0.8), image.width, image.height))
         credits_color_cache[card_name] = credits_color
     draw.text(
         (30, 1870),
         # Modifying the line below is breaking the licence as you are removing credits
         # If you don't want to receive a DMCA, just don't
-        "Created by El Laggron\n" f"Artwork author: {ball_credits}",
+        f"Created by El Laggron\nArtwork author: {ball_credits}",
         font=credits_font,
         fill=credits_color,
         stroke_width=0,

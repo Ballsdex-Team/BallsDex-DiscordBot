@@ -12,16 +12,7 @@ from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from ballsdex.settings import settings
-from bd_models.models import (
-    Ball,
-    BallInstance,
-    Economy,
-    Regime,
-    Special,
-    balls,
-    economies,
-    regimes,
-)
+from bd_models.models import Ball, BallInstance, Economy, Regime, Special, balls, economies, regimes
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -29,13 +20,7 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.core.utils.transformers")
 T = TypeVar("T", bound=Model)
 
-__all__ = (
-    "BallTransform",
-    "BallInstanceTransform",
-    "SpecialTransform",
-    "RegimeTransform",
-    "EconomyTransform",
-)
+__all__ = ("BallTransform", "BallInstanceTransform", "SpecialTransform", "RegimeTransform", "EconomyTransform")
 
 
 class TradeCommandType(Enum):
@@ -108,18 +93,13 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
         """
         raise NotImplementedError()
 
-    async def autocomplete(
-        self, interaction: Interaction["BallsDexBot"], value: str
-    ) -> list[app_commands.Choice[int]]:
+    async def autocomplete(self, interaction: Interaction["BallsDexBot"], value: str) -> list[app_commands.Choice[int]]:
         t1 = time.time()
         choices: list[app_commands.Choice[int]] = []
         for option in await self.get_options(interaction, value):
             choices.append(option)
         t2 = time.time()
-        log.debug(
-            f"{self.name.title()} autocompletion took "
-            f"{round((t2 - t1) * 1000)}ms, {len(choices)} results"
-        )
+        log.debug(f"{self.name.title()} autocompletion took {round((t2 - t1) * 1000)}ms, {len(choices)} results")
         return choices
 
     async def transform(self, interaction: Interaction["BallsDexBot"], value: str) -> T | None:
@@ -133,8 +113,7 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
             await self.validate(interaction, instance)
         except (self.model.DoesNotExist, KeyError, ValueError):
             await interaction.response.send_message(
-                f"The {self.name} could not be found. Make sure to use the autocomplete "
-                "function on this command.",
+                f"The {self.name} could not be found. Make sure to use the autocomplete function on this command.",
                 ephemeral=True,
             )
             return None
@@ -157,9 +136,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         if item.player.discord_id != interaction.user.id:
             raise ValidationError(f"That {settings.collectible_name} doesn't belong to you.")
 
-    async def get_options(
-        self, interaction: Interaction["BallsDexBot"], value: str
-    ) -> list[app_commands.Choice[int]]:
+    async def get_options(self, interaction: Interaction["BallsDexBot"], value: str) -> list[app_commands.Choice[int]]:
         balls_queryset = BallInstance.objects.filter(player__discord_id=interaction.user.id)
 
         if (special := getattr(interaction.namespace, "special", None)) and special.isdigit():
@@ -168,10 +145,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         if interaction.command and (trade_type := interaction.command.extras.get("trade", None)):
             if trade_type == TradeCommandType.PICK:
                 balls_queryset = balls_queryset.filter(
-                    Q(
-                        Q(locked__isnull=True)
-                        | Q(locked__lt=timezone.now() - timedelta(minutes=30))
-                    )
+                    Q(Q(locked__isnull=True) | Q(locked__lt=timezone.now() - timedelta(minutes=30)))
                 )
             else:
                 balls_queryset = balls_queryset.filter(
@@ -237,9 +211,7 @@ class TTLModelTransformer(ModelTransformer[T]):
             self.last_refresh = t
             self.search_map = {x: self.key(x).lower() for x in self.items.values()}
 
-    async def get_options(
-        self, interaction: Interaction["BallsDexBot"], value: str
-    ) -> list[app_commands.Choice[str]]:
+    async def get_options(self, interaction: Interaction["BallsDexBot"], value: str) -> list[app_commands.Choice[str]]:
         await self.maybe_refresh()
 
         i = 0
@@ -268,15 +240,11 @@ class BallEnabledTransformer(BallTransformer):
     async def load_items(self) -> Iterable[Ball]:
         return {k: v for k, v in balls.items() if v.enabled}.values()
 
-    async def transform(
-        self, interaction: discord.Interaction["BallsDexBot"], value: str
-    ) -> Optional[Ball]:
+    async def transform(self, interaction: discord.Interaction["BallsDexBot"], value: str) -> Optional[Ball]:
         try:
             ball = await super().transform(interaction, value)
             if ball is None or not ball.enabled:
-                raise ValueError(
-                    f"This {settings.collectible_name} is disabled and will not be shown."
-                )
+                raise ValueError(f"This {settings.collectible_name} is disabled and will not be shown.")
             return ball
         except ValueError as e:
             await interaction.response.send_message(str(e), ephemeral=True)

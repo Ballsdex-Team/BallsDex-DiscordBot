@@ -24,9 +24,7 @@ def row_count_estimate(table_name: str, *, analyze: bool = True) -> int:
     """
     with connection.cursor() as cursor:
         # returns as a tuple the number of rows affected (always 1) and the result as a list
-        cursor.execute(
-            f"SELECT reltuples AS estimate FROM pg_class where relname = '{table_name}';"
-        )
+        cursor.execute(f"SELECT reltuples AS estimate FROM pg_class where relname = '{table_name}';")
         record = cursor.fetchone()
 
         # Record type: https://magicstack.github.io/asyncpg/current/api/index.html#record-objects

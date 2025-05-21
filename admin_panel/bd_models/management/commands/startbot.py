@@ -47,11 +47,7 @@ def print_welcome():
     print("[blue]{0:^50}[/blue]".format("Discord bot made by El Laggron"))
     print("")
     print(" [red]{0:<20}[/red] [yellow]{1:>10}[/yellow]".format("Bot version:", bot_version))
-    print(
-        " [red]{0:<20}[/red] [yellow]{1:>10}[/yellow]".format(
-            "Discord.py version:", discord.__version__
-        )
-    )
+    print(" [red]{0:<20}[/red] [yellow]{1:>10}[/yellow]".format("Discord.py version:", discord.__version__))
     print("")
 
 
@@ -147,10 +143,7 @@ def global_exception_handler(bot: BallsDexBot, loop: asyncio.AbstractEventLoop, 
     if exc is not None and isinstance(exc, (KeyboardInterrupt, SystemExit)):
         return
     log.critical(
-        "Caught unhandled exception in %s:\n%s",
-        context.get("future", "event loop"),
-        context["message"],
-        exc_info=exc,
+        "Caught unhandled exception in %s:\n%s", context.get("future", "event loop"), context["message"], exc_info=exc
     )
 
 
@@ -193,16 +186,9 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser: CommandParser):
+        parser.add_argument("--config-file", type=Path, help="Set the path to config.yml", default=Path("./config.yml"))
         parser.add_argument(
-            "--config-file",
-            type=Path,
-            help="Set the path to config.yml",
-            default=Path("./config.yml"),
-        )
-        parser.add_argument(
-            "--reset-settings",
-            action="store_true",
-            help="Reset the config file with the latest default configuration",
+            "--reset-settings", action="store_true", help="Reset the config file with the latest default configuration"
         )
         parser.add_argument("--disable-rich", action="store_true", help="Disable rich log format")
         parser.add_argument(
@@ -258,9 +244,7 @@ class Command(BaseCommand):
             db_url = os.environ.get("BALLSDEXBOT_DB_URL", None)
             if not db_url:
                 log.error("Database URL not found!")
-                raise CommandError(
-                    "You must provide a DB URL with the BALLSDEXBOT_DB_URL env var."
-                )
+                raise CommandError("You must provide a DB URL with the BALLSDEXBOT_DB_URL env var.")
 
             if settings.gateway_url is not None:
                 log.info("Using custom gateway URL: %s", settings.gateway_url)
@@ -281,9 +265,7 @@ class Command(BaseCommand):
             exc_handler = functools.partial(global_exception_handler, bot)
             loop.set_exception_handler(exc_handler)
             try:
-                loop.add_signal_handler(
-                    SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM"))
-                )
+                loop.add_signal_handler(SIGTERM, lambda: loop.create_task(shutdown_handler(bot, "SIGTERM")))
             except NotImplementedError:
                 log.warning("Cannot add signal handler for SIGTERM.")
 

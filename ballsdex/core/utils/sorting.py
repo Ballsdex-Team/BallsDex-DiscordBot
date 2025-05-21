@@ -43,13 +43,9 @@ def sort_balls[QS: QuerySet[BallInstance]](sort: SortingChoices, queryset: QS) -
         The same queryset modified to apply the ordering. Await it to obtain the result.
     """
     if sort == SortingChoices.duplicates:
-        return queryset.annotate(
-            count=RawSQL("COUNT(*) OVER (PARTITION BY ball_id)", ())
-        ).order_by("-count")
+        return queryset.annotate(count=RawSQL("COUNT(*) OVER (PARTITION BY ball_id)", ())).order_by("-count")
     elif sort == SortingChoices.stats_bonus:
-        return queryset.annotate(stats_bonus=F("health_bonus") + F("attack_bonus")).order_by(
-            "-stats_bonus"
-        )
+        return queryset.annotate(stats_bonus=F("health_bonus") + F("attack_bonus")).order_by("-stats_bonus")
     elif sort == SortingChoices.health or sort == SortingChoices.attack:
         # Use the sorting name as the annotation key to avoid issues when this function
         # is called multiple times. Using the same annotation name twice will error.

@@ -4,27 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("bd_models", "0006_player_extra_data"),
-    ]
+    dependencies = [("bd_models", "0006_player_extra_data")]
 
     operations = [
         migrations.AddField(
             model_name="player",
             name="money",
-            field=models.PositiveBigIntegerField(
-                default=0, help_text="Money posessed by the player"
-            ),
+            field=models.PositiveBigIntegerField(default=0, help_text="Money posessed by the player"),
         ),
-        migrations.AddField(
-            model_name="trade",
-            name="player1_money",
-            field=models.PositiveBigIntegerField(default=0),
-        ),
-        migrations.AddField(
-            model_name="trade",
-            name="player2_money",
-            field=models.PositiveBigIntegerField(default=0),
-        ),
+        migrations.AddField(model_name="trade", name="player1_money", field=models.PositiveBigIntegerField(default=0)),
+        migrations.AddField(model_name="trade", name="player2_money", field=models.PositiveBigIntegerField(default=0)),
     ]

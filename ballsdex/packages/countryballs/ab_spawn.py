@@ -70,9 +70,7 @@ class ABSpawner(BaseSpawnManager):
             msg = manager.__class__.__name__
         return result, msg
 
-    async def admin_explain(
-        self, interaction: "discord.Interaction[BallsDexBot]", guild: "discord.Guild"
-    ):
+    async def admin_explain(self, interaction: "discord.Interaction[BallsDexBot]", guild: "discord.Guild"):
         manager = self.get_manager(guild)
         await manager.admin_explain(interaction, guild)
         if manager == self.manager_a:

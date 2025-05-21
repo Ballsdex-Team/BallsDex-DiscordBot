@@ -9,26 +9,12 @@ from discord.utils import format_dt
 from django.db.models import Q
 
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.enums import (
-    DONATION_POLICY_MAP,
-    FRIEND_POLICY_MAP,
-    MENTION_POLICY_MAP,
-    PRIVATE_POLICY_MAP,
-)
+from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.settings import settings
 from bd_models.enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy
-from bd_models.models import (
-    BallInstance,
-    Block,
-    Friendship,
-)
+from bd_models.models import BallInstance, Block, Friendship, Trade, TradeObject, balls
 from bd_models.models import Player as PlayerModel
-from bd_models.models import (
-    Trade,
-    TradeObject,
-    balls,
-)
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -61,9 +47,7 @@ class Player(commands.GroupCog):
             app_commands.Choice(name="Same Server", value=PrivacyPolicy.SAME_SERVER),
         ]
     )
-    async def privacy(
-        self, interaction: discord.Interaction["BallsDexBot"], policy: PrivacyPolicy
-    ):
+    async def privacy(self, interaction: discord.Interaction["BallsDexBot"], policy: PrivacyPolicy):
         """
         Set your privacy policy.
 
@@ -74,9 +58,7 @@ class Player(commands.GroupCog):
         """
         player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
         if policy == PrivacyPolicy.SAME_SERVER and not self.bot.intents.members:
-            await interaction.response.send_message(
-                "I need the `members` intent to use this policy.", ephemeral=True
-            )
+            await interaction.response.send_message("I need the `members` intent to use this policy.", ephemeral=True)
             return
         player.privacy_policy = PrivacyPolicy(policy.value)
         await player.asave()
@@ -88,18 +70,12 @@ class Player(commands.GroupCog):
     @app_commands.choices(
         policy=[
             app_commands.Choice(name="Accept all donations", value=DonationPolicy.ALWAYS_ACCEPT),
-            app_commands.Choice(
-                name="Request your approval first", value=DonationPolicy.REQUEST_APPROVAL
-            ),
+            app_commands.Choice(name="Request your approval first", value=DonationPolicy.REQUEST_APPROVAL),
             app_commands.Choice(name="Deny all donations", value=DonationPolicy.ALWAYS_DENY),
-            app_commands.Choice(
-                name="Accept donations from friends only", value=DonationPolicy.FRIENDS_ONLY
-            ),
+            app_commands.Choice(name="Accept donations from friends only", value=DonationPolicy.FRIENDS_ONLY),
         ]
     )
-    async def donation(
-        self, interaction: discord.Interaction["BallsDexBot"], policy: DonationPolicy
-    ):
+    async def donation(self, interaction: discord.Interaction["BallsDexBot"], policy: DonationPolicy):
         """
         Change how you want to receive donations from /balls give
 
@@ -112,14 +88,12 @@ class Player(commands.GroupCog):
         player.donation_policy = DonationPolicy(policy.value)
         if policy.value == DonationPolicy.ALWAYS_ACCEPT:
             await interaction.response.send_message(
-                "Setting updated, you will now receive all donated "
-                f"{settings.plural_collectible_name} immediately.",
+                f"Setting updated, you will now receive all donated {settings.plural_collectible_name} immediately.",
                 ephemeral=True,
             )
         elif policy.value == DonationPolicy.REQUEST_APPROVAL:
             await interaction.response.send_message(
-                "Setting updated, you will now have to approve donation requests manually.",
-                ephemeral=True,
+                "Setting updated, you will now have to approve donation requests manually.", ephemeral=True
             )
         elif policy.value == DonationPolicy.ALWAYS_DENY:
             await interaction.response.send_message(
@@ -147,9 +121,7 @@ class Player(commands.GroupCog):
             app_commands.Choice(name="Deny all mentions", value=MentionPolicy.DENY),
         ]
     )
-    async def mention(
-        self, interaction: discord.Interaction["BallsDexBot"], policy: MentionPolicy
-    ):
+    async def mention(self, interaction: discord.Interaction["BallsDexBot"], policy: MentionPolicy):
         """
         Set your mention policy.
 
@@ -185,8 +157,7 @@ class Player(commands.GroupCog):
         player.friend_policy = policy
         await player.asave()
         await interaction.response.send_message(
-            f"Your friend request policy has been set to **{policy.name.lower()}**.",
-            ephemeral=True,
+            f"Your friend request policy has been set to **{policy.name.lower()}**.", ephemeral=True
         )
 
     @app_commands.command()
@@ -205,9 +176,7 @@ class Player(commands.GroupCog):
         await player.adelete()
 
     @friend.command(name="add")
-    async def friend_add(
-        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User
-    ):
+    async def friend_add(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
         """
         Add another user as a friend.
 
@@ -220,22 +189,16 @@ class Player(commands.GroupCog):
         player2, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
 
         if player1 == player2:
-            await interaction.response.send_message(
-                "You cannot add yourself as a friend.", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot add yourself as a friend.", ephemeral=True)
             return
         if user.bot:
             await interaction.response.send_message("You cannot add a bot.", ephemeral=True)
             return
         if player2.discord_id in self.bot.blacklist:
-            await interaction.response.send_message(
-                "You cannot add a blacklisted user as a friend.", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot add a blacklisted user as a friend.", ephemeral=True)
             return
         if player2.friend_policy == FriendPolicy.DENY:
-            await interaction.response.send_message(
-                "This user isn't accepting friend requests.", ephemeral=True
-            )
+            await interaction.response.send_message("This user isn't accepting friend requests.", ephemeral=True)
             return
 
         blocked = await player1.is_blocked(player2)
@@ -244,8 +207,7 @@ class Player(commands.GroupCog):
         if blocked:
             player_unblock = self.block_remove.extras.get("mention", "/player block remove")
             await interaction.response.send_message(
-                "You cannot add a blocked user. To unblock, use " f"{player_unblock}.",
-                ephemeral=True,
+                f"You cannot add a blocked user. To unblock, use {player_unblock}.", ephemeral=True
             )
             return
         if player2_blocked:
@@ -256,9 +218,7 @@ class Player(commands.GroupCog):
 
         friended = await player1.is_friend(player2)
         if friended:
-            await interaction.response.send_message(
-                "You are already friends with this user!", ephemeral=True
-            )
+            await interaction.response.send_message("You are already friends with this user!", ephemeral=True)
             return
 
         if self.active_friend_requests.get((player2.discord_id, player1.discord_id), False):
@@ -277,10 +237,7 @@ class Player(commands.GroupCog):
 
         await interaction.response.defer(thinking=True)
         view = ConfirmChoiceView(
-            interaction,
-            user=user,
-            accept_message="Friend request accepted!",
-            cancel_message="Friend request declined.",
+            interaction, user=user, accept_message="Friend request accepted!", cancel_message="Friend request declined."
         )
         await interaction.followup.send(
             f"{user.mention}, {interaction.user} has sent you a friend request!",
@@ -298,9 +255,7 @@ class Player(commands.GroupCog):
         self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
 
     @friend.command(name="remove")
-    async def friend_remove(
-        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User
-    ):
+    async def friend_remove(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
         """
         Remove a friend.
 
@@ -321,18 +276,13 @@ class Player(commands.GroupCog):
 
         friendship_exists = await player1.is_friend(player2)
         if not friendship_exists:
-            await interaction.response.send_message(
-                "You are not friends with this user.", ephemeral=True
-            )
+            await interaction.response.send_message("You are not friends with this user.", ephemeral=True)
             return
         else:
             await Friendship.objects.filter(
-                (Q(player1=player1) & Q(player2=player2))
-                | (Q(player1=player2) & Q(player2=player1))
+                (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
             ).adelete()
-            await interaction.response.send_message(
-                f"{user.name} has been removed as a friend.", ephemeral=True
-            )
+            await interaction.response.send_message(f"{user.name} has been removed as a friend.", ephemeral=True)
 
     @friend.command(name="list")
     async def friend_list(self, interaction: discord.Interaction["BallsDexBot"]):
@@ -350,9 +300,7 @@ class Player(commands.GroupCog):
         ]
 
         if not friendships:
-            await interaction.response.send_message(
-                "You currently do not have any friends added.", ephemeral=True
-            )
+            await interaction.response.send_message("You currently do not have any friends added.", ephemeral=True)
             return
 
         entries: list[tuple[str, str]] = []
@@ -364,9 +312,7 @@ class Player(commands.GroupCog):
                 friend = relation.player1
 
             since = format_dt(relation.since, style="f")
-            entries.append(
-                ("", f"**{idx}.** <@{friend.discord_id}> ({friend.discord_id})\nSince: {since}")
-            )
+            entries.append(("", f"**{idx}.** <@{friend.discord_id}> ({friend.discord_id})\nSince: {since}"))
 
         source = FieldPageSource(entries, per_page=5, inline=False)
         source.embed.title = "Friend List"
@@ -404,8 +350,7 @@ class Player(commands.GroupCog):
             return
         if self.active_friend_requests.get((player1.discord_id, player2.discord_id)):
             await interaction.followup.send(
-                "You cannot block a user to whom you have sent an active friend request.",
-                ephemeral=True,
+                "You cannot block a user to whom you have sent an active friend request.", ephemeral=True
             )
             return
 
@@ -417,9 +362,7 @@ class Player(commands.GroupCog):
                 cancel_message=f"Request cancelled, {user.name} is still your friend.",
             )
             await interaction.followup.send(
-                "This user is your friend, are you sure you want to block them?",
-                view=view,
-                ephemeral=True,
+                "This user is your friend, are you sure you want to block them?", view=view, ephemeral=True
             )
             await view.wait()
 
@@ -427,17 +370,14 @@ class Player(commands.GroupCog):
                 return
             else:
                 await Friendship.objects.filter(
-                    (Q(player1=player1) & Q(player2=player2))
-                    | (Q(player1=player2) & Q(player2=player1))
+                    (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
                 ).adelete()
 
         await Block.objects.acreate(player1=player1, player2=player2)
         await interaction.followup.send(f"You have now blocked {user.name}.", ephemeral=True)
 
     @blocked.command(name="remove")
-    async def block_remove(
-        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User
-    ):
+    async def block_remove(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
         """
         Unblock a user.
 
@@ -463,9 +403,7 @@ class Player(commands.GroupCog):
             return
         else:
             await Block.objects.filter((Q(player1=player1) & Q(player2=player2))).adelete()
-            await interaction.response.send_message(
-                f"{user.name} has been unblocked.", ephemeral=True
-            )
+            await interaction.response.send_message(f"{user.name} has been unblocked.", ephemeral=True)
 
     @blocked.command(name="list")
     async def blocked_list(self, interaction: discord.Interaction["BallsDexBot"]):
@@ -475,16 +413,11 @@ class Player(commands.GroupCog):
         player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
 
         blocked_relations = (
-            await Block.objects.filter(player1=player)
-            .select_related("player1", "player2")
-            .order_by("date")
-            .aall()
+            await Block.objects.filter(player1=player).select_related("player1", "player2").order_by("date").aall()
         )
 
         if not blocked_relations:
-            await interaction.response.send_message(
-                "You haven't blocked any users!", ephemeral=True
-            )
+            await interaction.response.send_message("You haven't blocked any users!", ephemeral=True)
             return
 
         entries: list[tuple[str, str]] = []
@@ -497,11 +430,7 @@ class Player(commands.GroupCog):
 
             since = format_dt(relation.date, style="f")
             entries.append(
-                (
-                    "",
-                    f"**{idx}.** <@{blocked_user.discord_id}> "
-                    f"({blocked_user.discord_id})\nBlocked at: {since}",
-                )
+                ("", f"**{idx}.** <@{blocked_user.discord_id}> ({blocked_user.discord_id})\nBlocked at: {since}")
             )
 
         source = FieldPageSource(entries, per_page=5, inline=False)
@@ -519,34 +448,21 @@ class Player(commands.GroupCog):
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
         try:
-            player = await PlayerModel.objects.prefetch_related("balls").aget(
-                discord_id=interaction.user.id
-            )
+            player = await PlayerModel.objects.prefetch_related("balls").aget(discord_id=interaction.user.id)
         except PlayerModel.DoesNotExist:
             await interaction.followup.send("You haven't got any info to show!", ephemeral=True)
             return
-        ball = (
-            await BallInstance.objects.prefetch_related("special", "trade_player")
-            .filter(player=player)
-            .aall()
-        )
+        ball = await BallInstance.objects.prefetch_related("special", "trade_player").filter(player=player).aall()
 
         user = interaction.user
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
         total_countryballs = len(bot_countryballs)
         owned_countryballs = set(
-            [
-                x[0]
-                async for x in player.balls.filter(ball__enabled=True)
-                .distinct()
-                .values_list("ball_id")
-            ]
+            [x[0] async for x in player.balls.filter(ball__enabled=True).distinct().values_list("ball_id")]
         )
 
         if total_countryballs > 0:
-            completion_percentage = (
-                f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
-            )
+            completion_percentage = f"{round(len(owned_countryballs) / total_countryballs * 100, 1)}%"
         else:
             completion_percentage = "0.0%"
 
@@ -570,8 +486,7 @@ class Player(commands.GroupCog):
         blocks = await Block.objects.filter(player1__discord_id=interaction.user.id).acount()
 
         embed = discord.Embed(
-            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**",
-            color=discord.Color.blurple(),
+            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=discord.Color.blurple()
         )
         embed.description = (
             "Here are your statistics and settings in the bot!\n"
@@ -601,9 +516,7 @@ class Player(commands.GroupCog):
         Check your balance.
         """
         player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
-        await interaction.response.send_message(
-            f"Your balance is **{player.money:,}**.", ephemeral=True
-        )
+        await interaction.response.send_message(f"Your balance is **{player.money:,}**.", ephemeral=True)
 
     @money.command()
     async def give(self, interaction: discord.Interaction, user: discord.User, amount: int):
@@ -619,31 +532,21 @@ class Player(commands.GroupCog):
         """
         player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
         if not player.can_afford(amount):
-            await interaction.response.send_message(
-                "You do not have enough coins to give.", ephemeral=True
-            )
+            await interaction.response.send_message("You do not have enough coins to give.", ephemeral=True)
             return
         if amount <= 0:
-            await interaction.response.send_message(
-                "The amount must be greater than zero.", ephemeral=True
-            )
+            await interaction.response.send_message("The amount must be greater than zero.", ephemeral=True)
             return
         if user.bot:
-            await interaction.response.send_message(
-                "You cannot give coins to a bot.", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot give coins to a bot.", ephemeral=True)
             return
         if user.id == interaction.user.id:
-            await interaction.response.send_message(
-                "You cannot give coins to yourself.", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot give coins to yourself.", ephemeral=True)
             return
         other_player, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
         await player.remove_money(amount)
         await other_player.add_money(amount)
-        await interaction.response.send_message(
-            f"{amount:,} coins have been given to {user.mention}.", ephemeral=True
-        )
+        await interaction.response.send_message(f"{amount:,} coins have been given to {user.mention}.", ephemeral=True)
 
     @app_commands.command()
     @app_commands.choices(
@@ -659,9 +562,7 @@ class Player(commands.GroupCog):
         """
         player = await PlayerModel.objects.aget_or_none(discord_id=interaction.user.id)
         if player is None:
-            await interaction.response.send_message(
-                "You don't have any player data to export.", ephemeral=True
-            )
+            await interaction.response.send_message("You don't have any player data to export.", ephemeral=True)
             return
         await interaction.response.defer()
         files = []
@@ -694,17 +595,13 @@ class Player(commands.GroupCog):
         zip_file.seek(0)
         if zip_file.tell() > 25_000_000:
             await interaction.followup.send(
-                "Your data is too large to export."
-                "Please contact the bot support for more information.",
-                ephemeral=True,
+                "Your data is too large to export.Please contact the bot support for more information.", ephemeral=True
             )
             return
         files = [discord.File(zip_file, "player_data.zip")]
         try:
             await interaction.user.send("Here is your player data:", files=files)
-            await interaction.followup.send(
-                "Your player data has been sent via DMs.", ephemeral=True
-            )
+            await interaction.followup.send("Your player data has been sent via DMs.", ephemeral=True)
         except discord.Forbidden:
             await interaction.followup.send(
                 "I couldn't send the player data to you in DM. "
@@ -717,13 +614,8 @@ async def get_items_csv(player: PlayerModel) -> BytesIO:
     """
     Get a CSV file with all items of the player.
     """
-    balls = BallInstance.objects.prefetch_related("ball", "trade_player", "special").filter(
-        player=player
-    )
-    txt = (
-        f"id,hex id,{settings.collectible_name},catch date,trade_player"
-        ",special,attack,attack bonus,hp,hp_bonus\n"
-    )
+    balls = BallInstance.objects.prefetch_related("ball", "trade_player", "special").filter(player=player)
+    txt = f"id,hex id,{settings.collectible_name},catch date,trade_player,special,attack,attack bonus,hp,hp_bonus\n"
     async for ball in balls:
         txt += (
             f"{ball.pk},{ball.pk:0X},{ball.countryball.country},{ball.catch_date},"
@@ -744,12 +636,8 @@ async def get_trades_csv(player: PlayerModel) -> BytesIO:
     )
     txt = "id,date,player1,player2,player1 received,player2 received\n"
     async for trade in trade_history:
-        player1_items = TradeObject.objects.prefetch_related("ballinstance").filter(
-            trade=trade, player=trade.player1
-        )
-        player2_items = TradeObject.objects.prefetch_related("ballinstance").filter(
-            trade=trade, player=trade.player2
-        )
+        player1_items = TradeObject.objects.prefetch_related("ballinstance").filter(trade=trade, player=trade.player1)
+        player2_items = TradeObject.objects.prefetch_related("ballinstance").filter(trade=trade, player=trade.player2)
         txt += (
             f"{trade.pk},{trade.date},{trade.player1.discord_id},{trade.player2.discord_id},"
             f"{','.join([str(i.ballinstance) async for i in player2_items])},"

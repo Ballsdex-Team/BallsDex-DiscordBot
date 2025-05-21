@@ -59,9 +59,7 @@ class BaseSpawnManager:
         raise NotImplementedError
 
     @abstractmethod
-    async def admin_explain(
-        self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild
-    ):
+    async def admin_explain(self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild):
         """
         Invoked by "/admin cooldown", this function should provide insights of the cooldown
         system for admins.
@@ -119,9 +117,7 @@ class SpawnCooldown:
         # this is a deque, not a list
         # its property is that, once the max length is reached (100 for us),
         # the oldest element is removed, thus we only have the last 100 messages in memory
-        self.message_cache.append(
-            CachedMessage(content=message.content, author_id=message.author.id)
-        )
+        self.message_cache.append(CachedMessage(content=message.content, author_id=message.author.id))
 
         if self.lock.locked():
             return False
@@ -188,14 +184,11 @@ class SpawnManager(BaseSpawnManager):
         cooldown.reset(message.created_at)
         return True
 
-    async def admin_explain(
-        self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild
-    ):
+    async def admin_explain(self, interaction: discord.Interaction["BallsDexBot"], guild: discord.Guild):
         cooldown = self.cooldowns.get(guild.id)
         if not cooldown:
             await interaction.response.send_message(
-                "No spawn manager could be found for that guild. Spawn may have been disabled.",
-                ephemeral=True,
+                "No spawn manager could be found for that guild. Spawn may have been disabled.", ephemeral=True
             )
             return
 

@@ -12,11 +12,7 @@ class Logs(app_commands.Group):
 
     @app_commands.command(name="catchlogs")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def logs_add(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-    ):
+    async def logs_add(self, interaction: discord.Interaction[BallsDexBot], user: discord.User):
         """
         Add or remove a user from catch logs.
 
@@ -27,20 +23,14 @@ class Logs(app_commands.Group):
         """
         if user.id in interaction.client.catch_log:
             interaction.client.catch_log.remove(user.id)
-            await interaction.response.send_message(
-                f"{user} removed from catch logs.", ephemeral=True
-            )
+            await interaction.response.send_message(f"{user} removed from catch logs.", ephemeral=True)
         else:
             interaction.client.catch_log.add(user.id)
             await interaction.response.send_message(f"{user} added to catch logs.", ephemeral=True)
 
     @app_commands.command(name="commandlogs")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def commandlogs_add(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-    ):
+    async def commandlogs_add(self, interaction: discord.Interaction[BallsDexBot], user: discord.User):
         """
         Add or remove a user from command logs.
 
@@ -51,11 +41,7 @@ class Logs(app_commands.Group):
         """
         if user.id in interaction.client.command_log:
             interaction.client.command_log.remove(user.id)
-            await interaction.response.send_message(
-                f"{user} removed from command logs.", ephemeral=True
-            )
+            await interaction.response.send_message(f"{user} removed from command logs.", ephemeral=True)
         else:
             interaction.client.command_log.add(user.id)
-            await interaction.response.send_message(
-                f"{user} added to command logs.", ephemeral=True
-            )
+            await interaction.response.send_message(f"{user} added to command logs.", ephemeral=True)

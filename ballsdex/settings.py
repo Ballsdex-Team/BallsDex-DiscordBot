@@ -132,9 +132,7 @@ def read_settings(path: "Path"):
     settings.co_owners = content.get("owners", {}).get("co-owners", [])
 
     settings.collectible_name = content["collectible-name"]
-    settings.plural_collectible_name = content.get(
-        "plural-collectible-name", content["collectible-name"] + "s"
-    )
+    settings.plural_collectible_name = content.get("plural-collectible-name", content["collectible-name"] + "s")
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
     settings.favorited_collectible_emoji = content.get("favorited-collectible-emoji", "❤️")
@@ -169,9 +167,7 @@ def read_settings(path: "Path"):
         "ballsdex.packages.trade",
     ]
 
-    settings.spawn_manager = content.get(
-        "spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager"
-    )
+    settings.spawn_manager = content.get("spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager")
 
     if admin := content.get("admin-panel"):
         settings.webhook_url = admin.get("webhook-url")

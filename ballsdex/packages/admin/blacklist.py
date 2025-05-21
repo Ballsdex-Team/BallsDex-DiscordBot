@@ -19,10 +19,7 @@ class Blacklist(app_commands.Group):
     @app_commands.command(name="add")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_add(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-        reason: str | None = None,
+        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, reason: str | None = None
     ):
         """
         Add a user to the blacklist. No reload is needed.
@@ -34,38 +31,28 @@ class Blacklist(app_commands.Group):
         reason: str | None
         """
         if user == interaction.user:
-            await interaction.response.send_message(
-                "You cannot blacklist yourself!", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot blacklist yourself!", ephemeral=True)
             return
 
         try:
-            await BlacklistedID.objects.acreate(
-                discord_id=user.id, reason=reason, moderator_id=interaction.user.id
-            )
+            await BlacklistedID.objects.acreate(discord_id=user.id, reason=reason, moderator_id=interaction.user.id)
             await BlacklistHistory.objects.acreate(
                 discord_id=user.id, reason=reason, moderator_id=interaction.user.id, id_type="user"
             )
         except IntegrityError:
-            await interaction.response.send_message(
-                "That user was already blacklisted.", ephemeral=True
-            )
+            await interaction.response.send_message("That user was already blacklisted.", ephemeral=True)
         else:
             interaction.client.blacklist.add(user.id)
             await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
             await log_action(
-                f"{interaction.user} blacklisted {user} ({user.id})"
-                f" for the following reason: {reason}.",
+                f"{interaction.user} blacklisted {user} ({user.id}) for the following reason: {reason}.",
                 interaction.client,
             )
 
     @app_commands.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_remove(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-        reason: str | None = None,
+        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, reason: str | None = None
     ):
         """
         Remove a user from the blacklist. No reload is needed.
@@ -91,19 +78,14 @@ class Blacklist(app_commands.Group):
                 action_type="unblacklist",
             )
             interaction.client.blacklist.remove(user.id)
-            await interaction.response.send_message(
-                "User is now removed from blacklist.", ephemeral=True
-            )
+            await interaction.response.send_message("User is now removed from blacklist.", ephemeral=True)
             await log_action(
-                f"{interaction.user} removed blacklist for user {user} ({user.id})."
-                f"\nReason: {reason}",
+                f"{interaction.user} removed blacklist for user {user} ({user.id}).\nReason: {reason}",
                 interaction.client,
             )
 
     @app_commands.command(name="info")
-    async def blacklist_info(
-        self, interaction: discord.Interaction[BallsDexBot], user: discord.User
-    ):
+    async def blacklist_info(self, interaction: discord.Interaction[BallsDexBot], user: discord.User):
         """
         Check if a user is blacklisted and show the corresponding reason.
 
@@ -124,13 +106,8 @@ class Blacklist(app_commands.Group):
                 )
             else:
                 moderator_msg = "Moderator: Unknown"
-            if settings.admin_url and (
-                player := await Player.objects.aget_or_none(discord_id=user.id)
-            ):
-                admin_url = (
-                    "\n[View history online]"
-                    f"(<{settings.admin_url}/bd_models/player/{player.pk}/change/>)"
-                )
+            if settings.admin_url and (player := await Player.objects.aget_or_none(discord_id=user.id)):
+                admin_url = f"\n[View history online](<{settings.admin_url}/bd_models/player/{player.pk}/change/>)"
             else:
                 admin_url = ""
             if blacklisted.date:
@@ -162,19 +139,13 @@ class Blacklist(app_commands.Group):
         try:
             _id = int(user_id)
         except ValueError:
-            await interaction.response.send_message(
-                "The ID you gave is not valid.", ephemeral=True
-            )
+            await interaction.response.send_message("The ID you gave is not valid.", ephemeral=True)
             return
 
-        history = [
-            x async for x in BlacklistHistory.objects.filter(discord_id=_id).order_by("-date")
-        ]
+        history = [x async for x in BlacklistHistory.objects.filter(discord_id=_id).order_by("-date")]
 
         if not history:
-            await interaction.response.send_message(
-                "No history found for that ID.", ephemeral=True
-            )
+            await interaction.response.send_message("No history found for that ID.", ephemeral=True)
             return
 
         source = BlacklistViewFormat(history, _id, interaction.client)
@@ -189,12 +160,7 @@ class BlacklistGuild(app_commands.Group):
 
     @app_commands.command(name="add")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def blacklist_add_guild(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        guild_id: str,
-        reason: str,
-    ):
+    async def blacklist_add_guild(self, interaction: discord.Interaction[BallsDexBot], guild_id: str, reason: str):
         """
         Add a guild to the blacklist. No reload is needed.
 
@@ -208,14 +174,10 @@ class BlacklistGuild(app_commands.Group):
         try:
             guild = await interaction.client.fetch_guild(int(guild_id))  # type: ignore
         except ValueError:
-            await interaction.response.send_message(
-                "The guild ID you gave is not valid.", ephemeral=True
-            )
+            await interaction.response.send_message("The guild ID you gave is not valid.", ephemeral=True)
             return
         except discord.NotFound:
-            await interaction.response.send_message(
-                "The given guild ID could not be found.", ephemeral=True
-            )
+            await interaction.response.send_message("The given guild ID could not be found.", ephemeral=True)
             return
 
         final_reason = f"{reason}\nBy: {interaction.user} ({interaction.user.id})"
@@ -225,31 +187,22 @@ class BlacklistGuild(app_commands.Group):
                 discord_id=guild.id, reason=final_reason, moderator_id=interaction.user.id
             )
             await BlacklistHistory.objects.acreate(
-                discord_id=guild.id,
-                reason=final_reason,
-                moderator_id=interaction.user.id,
-                id_type="guild",
+                discord_id=guild.id, reason=final_reason, moderator_id=interaction.user.id, id_type="guild"
             )
         except IntegrityError:
-            await interaction.response.send_message(
-                "That guild was already blacklisted.", ephemeral=True
-            )
+            await interaction.response.send_message("That guild was already blacklisted.", ephemeral=True)
         else:
             interaction.client.blacklist_guild.add(guild.id)
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
             await log_action(
-                f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
-                f"for the following reason: {reason}.",
+                f"{interaction.user} blacklisted the guild {guild}({guild.id}) for the following reason: {reason}.",
                 interaction.client,
             )
 
     @app_commands.command(name="remove")
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def blacklist_remove_guild(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        guild_id: str,
-        reason: str | None = None,
+        self, interaction: discord.Interaction[BallsDexBot], guild_id: str, reason: str | None = None
     ):
         """
         Remove a guild from the blacklist. No reload is needed.
@@ -265,22 +218,16 @@ class BlacklistGuild(app_commands.Group):
         try:
             guild = await interaction.client.fetch_guild(int(guild_id))  # type: ignore
         except ValueError:
-            await interaction.response.send_message(
-                "The guild ID you gave is not valid.", ephemeral=True
-            )
+            await interaction.response.send_message("The guild ID you gave is not valid.", ephemeral=True)
             return
         except discord.NotFound:
-            await interaction.response.send_message(
-                "The given guild ID could not be found.", ephemeral=True
-            )
+            await interaction.response.send_message("The given guild ID could not be found.", ephemeral=True)
             return
 
         try:
             blacklisted = await BlacklistedGuild.objects.aget(discord_id=guild.id)
         except BlacklistedGuild.DoesNotExist:
-            await interaction.response.send_message(
-                "That guild isn't blacklisted.", ephemeral=True
-            )
+            await interaction.response.send_message("That guild isn't blacklisted.", ephemeral=True)
         else:
             await blacklisted.adelete()
             await BlacklistHistory.objects.acreate(
@@ -291,21 +238,14 @@ class BlacklistGuild(app_commands.Group):
                 action_type="unblacklist",
             )
             interaction.client.blacklist_guild.remove(guild.id)
-            await interaction.response.send_message(
-                "Guild is now removed from blacklist.", ephemeral=True
-            )
+            await interaction.response.send_message("Guild is now removed from blacklist.", ephemeral=True)
             await log_action(
-                f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).\n"
-                f"Reason: {reason}",
+                f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).\nReason: {reason}",
                 interaction.client,
             )
 
     @app_commands.command(name="info")
-    async def blacklist_info_guild(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        guild_id: str,
-    ):
+    async def blacklist_info_guild(self, interaction: discord.Interaction[BallsDexBot], guild_id: str):
         """
         Check if a guild is blacklisted and show the corresponding reason.
 
@@ -318,22 +258,16 @@ class BlacklistGuild(app_commands.Group):
         try:
             guild = await interaction.client.fetch_guild(int(guild_id))  # type: ignore
         except ValueError:
-            await interaction.response.send_message(
-                "The guild ID you gave is not valid.", ephemeral=True
-            )
+            await interaction.response.send_message("The guild ID you gave is not valid.", ephemeral=True)
             return
         except discord.NotFound:
-            await interaction.response.send_message(
-                "The given guild ID could not be found.", ephemeral=True
-            )
+            await interaction.response.send_message("The given guild ID could not be found.", ephemeral=True)
             return
 
         try:
             blacklisted = await BlacklistedGuild.objects.aget(discord_id=guild.id)
         except BlacklistedGuild.DoesNotExist:
-            await interaction.response.send_message(
-                "That guild isn't blacklisted.", ephemeral=True
-            )
+            await interaction.response.send_message("That guild isn't blacklisted.", ephemeral=True)
         else:
             if blacklisted.moderator_id:
                 moderator_msg = (
@@ -342,13 +276,8 @@ class BlacklistGuild(app_commands.Group):
                 )
             else:
                 moderator_msg = "Moderator: Unknown"
-            if settings.admin_url and (
-                gconf := await GuildConfig.objects.aget_or_none(guild_id=guild.id)
-            ):
-                admin_url = (
-                    "\n[View history online]"
-                    f"(<{settings.admin_url}/bd_models/guildconfig/{gconf.pk}/change/>)"
-                )
+            if settings.admin_url and (gconf := await GuildConfig.objects.aget_or_none(guild_id=guild.id)):
+                admin_url = f"\n[View history online](<{settings.admin_url}/bd_models/guildconfig/{gconf.pk}/change/>)"
             else:
                 admin_url = ""
             if blacklisted.date:

@@ -89,9 +89,7 @@ class Pages(discord.ui.View):
         else:
             raise TypeError("Wrong page type returned")
 
-    async def show_page(
-        self, interaction: discord.Interaction["BallsDexBot"], page_number: int
-    ) -> None:
+    async def show_page(self, interaction: discord.Interaction["BallsDexBot"], page_number: int) -> None:
         page = await self.source.get_page(page_number)
         self.current_page = page_number
         kwargs = await self._get_kwargs_from_page(page)
@@ -99,7 +97,9 @@ class Pages(discord.ui.View):
         if kwargs is not None:
             if interaction.response.is_done():
                 await interaction.followup.edit_message(
-                    "@original", **kwargs, view=self  # type: ignore
+                    "@original",
+                    **kwargs,
+                    view=self,  # type: ignore
                 )
             else:
                 await interaction.response.edit_message(**kwargs, view=self)
@@ -109,9 +109,7 @@ class Pages(discord.ui.View):
         if self.compact:
             max_pages = self.source.get_max_pages()
             self.go_to_last_page.disabled = max_pages is None or (page_number + 1) >= max_pages
-            self.go_to_next_page.disabled = (
-                max_pages is not None and (page_number + 1) >= max_pages
-            )
+            self.go_to_next_page.disabled = max_pages is not None and (page_number + 1) >= max_pages
             self.go_to_previous_page.disabled = page_number == 0
             return
 
@@ -132,9 +130,7 @@ class Pages(discord.ui.View):
                 self.go_to_previous_page.disabled = True
                 self.go_to_previous_page.label = "…"
 
-    async def show_checked_page(
-        self, interaction: discord.Interaction["BallsDexBot"], page_number: int
-    ) -> None:
+    async def show_checked_page(self, interaction: discord.Interaction["BallsDexBot"], page_number: int) -> None:
         max_pages = self.source.get_max_pages()
         try:
             if max_pages is None:
@@ -149,10 +145,7 @@ class Pages(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction[BallsDexBot]) -> bool:
         if not await interaction.client.blacklist_check(interaction):
             return False
-        if interaction.user and interaction.user.id in (
-            self.bot.owner_id,
-            self.original_interaction.user.id,
-        ):
+        if interaction.user and interaction.user.id in (self.bot.owner_id, self.original_interaction.user.id):
             return True
         await interaction.response.send_message(
             "This pagination menu cannot be controlled by you, sorry!", ephemeral=True
@@ -165,24 +158,20 @@ class Pages(discord.ui.View):
             item.disabled = True  # type: ignore
         try:
             await self.original_interaction.followup.edit_message(
-                "@original", view=self  # type: ignore
+                "@original",
+                view=self,  # type: ignore
             )
         except discord.HTTPException:
             pass
 
     async def on_error(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        error: Exception,
-        item: discord.ui.Item,
+        self, interaction: discord.Interaction["BallsDexBot"], error: Exception, item: discord.ui.Item
     ) -> None:
         log.error("Error on pagination", exc_info=error)
         if interaction.response.is_done():
             await interaction.followup.send("An unknown error occurred, sorry", ephemeral=True)
         else:
-            await interaction.response.send_message(
-                "An unknown error occurred, sorry", ephemeral=True
-            )
+            await interaction.response.send_message("An unknown error occurred, sorry", ephemeral=True)
 
     async def start(self, *, content: Optional[str] = None, ephemeral: bool = False) -> None:
         if (
@@ -191,9 +180,7 @@ class Pages(discord.ui.View):
                 self.original_interaction.guild.me  # type: ignore
             ).embed_links
         ):
-            await self.send(
-                "Bot does not have embed links permission in this channel.", ephemeral=True
-            )
+            await self.send("Bot does not have embed links permission in this channel.", ephemeral=True)
             return
 
         await self.source._prepare_once()
@@ -206,44 +193,32 @@ class Pages(discord.ui.View):
         await self.send(**kwargs, view=self, ephemeral=ephemeral)
 
     @discord.ui.button(label="≪", style=discord.ButtonStyle.grey)
-    async def go_to_first_page(
-        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
-    ):
+    async def go_to_first_page(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
         """go to the first page"""
         await self.show_page(interaction, 0)
 
     @discord.ui.button(label="Back", style=discord.ButtonStyle.blurple)
-    async def go_to_previous_page(
-        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
-    ):
+    async def go_to_previous_page(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
         """go to the previous page"""
         await self.show_checked_page(interaction, self.current_page - 1)
 
     @discord.ui.button(label="Current", style=discord.ButtonStyle.grey, disabled=True)
-    async def go_to_current_page(
-        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
-    ):
+    async def go_to_current_page(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
         pass
 
     @discord.ui.button(label="Next", style=discord.ButtonStyle.blurple)
-    async def go_to_next_page(
-        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
-    ):
+    async def go_to_next_page(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
         """go to the next page"""
         await self.show_checked_page(interaction, self.current_page + 1)
 
     @discord.ui.button(label="≫", style=discord.ButtonStyle.grey)
-    async def go_to_last_page(
-        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
-    ):
+    async def go_to_last_page(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
         """go to the last page"""
         # The call here is safe because it's guarded by skip_if
         await self.show_page(interaction, self.source.get_max_pages() - 1)  # type: ignore
 
     @discord.ui.button(label="Skip to page...", style=discord.ButtonStyle.grey)
-    async def numbered_page(
-        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
-    ):
+    async def numbered_page(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
         """lets you type a page number to go to"""
 
         modal = NumberedPageModal(self.source.get_max_pages())
@@ -259,9 +234,7 @@ class Pages(discord.ui.View):
 
         value = str(modal.page.value)
         if not value.isdigit():
-            await modal.interaction.response.send_message(
-                f"Expected a number not {value!r}", ephemeral=True
-            )
+            await modal.interaction.response.send_message(f"Expected a number not {value!r}", ephemeral=True)
             return
 
         value = int(value)
@@ -271,9 +244,7 @@ class Pages(discord.ui.View):
             await modal.interaction.response.send_message(error, ephemeral=True)
 
     @discord.ui.button(label="Quit", style=discord.ButtonStyle.red)
-    async def stop_pages(
-        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
-    ):
+    async def stop_pages(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
         """stops the pagination session."""
         for item in self.children:
             item.disabled = True  # type: ignore
@@ -349,8 +320,6 @@ class SimplePages(Pages):
     Basically an embed with some normal formatting.
     """
 
-    def __init__(
-        self, entries, *, interaction: discord.Interaction["BallsDexBot"], per_page: int = 12
-    ):
+    def __init__(self, entries, *, interaction: discord.Interaction["BallsDexBot"], per_page: int = 12):
         super().__init__(SimplePageSource(entries, per_page=per_page), interaction=interaction)
         self.embed = discord.Embed(colour=discord.Colour.blurple())

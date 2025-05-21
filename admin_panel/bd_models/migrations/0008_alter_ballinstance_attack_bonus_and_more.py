@@ -5,68 +5,39 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("bd_models", "0007_player_money_trade_player1_money_trade_player2_money"),
-    ]
+    dependencies = [("bd_models", "0007_player_money_trade_player1_money_trade_player2_money")]
 
     operations = [
+        migrations.AlterField(model_name="ballinstance", name="attack_bonus", field=models.IntegerField(default=0)),
         migrations.AlterField(
-            model_name="ballinstance",
-            name="attack_bonus",
-            field=models.IntegerField(default=0),
+            model_name="ballinstance", name="catch_date", field=models.DateTimeField(auto_now_add=True)
         ),
-        migrations.AlterField(
-            model_name="ballinstance",
-            name="catch_date",
-            field=models.DateTimeField(auto_now_add=True),
-        ),
-        migrations.AlterField(
-            model_name="ballinstance",
-            name="favorite",
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AlterField(
-            model_name="ballinstance",
-            name="health_bonus",
-            field=models.IntegerField(default=0),
-        ),
+        migrations.AlterField(model_name="ballinstance", name="favorite", field=models.BooleanField(default=False)),
+        migrations.AlterField(model_name="ballinstance", name="health_bonus", field=models.IntegerField(default=0)),
         migrations.AlterField(
             model_name="ballinstance",
             name="locked",
             field=models.DateTimeField(
-                default=None,
-                help_text="If the instance was locked for a trade and when",
-                null=True,
+                default=None, help_text="If the instance was locked for a trade and when", null=True
             ),
         ),
         migrations.AlterField(
             model_name="ballinstance",
             name="player",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="balls",
-                to="bd_models.player",
+                on_delete=django.db.models.deletion.CASCADE, related_name="balls", to="bd_models.player"
             ),
         ),
         migrations.AlterField(
             model_name="ballinstance",
             name="server_id",
-            field=models.BigIntegerField(
-                help_text="Discord server ID where this ball was caught", null=True
-            ),
+            field=models.BigIntegerField(help_text="Discord server ID where this ball was caught", null=True),
         ),
-        migrations.AlterField(
-            model_name="ballinstance",
-            name="spawned_time",
-            field=models.DateTimeField(null=True),
-        ),
+        migrations.AlterField(model_name="ballinstance", name="spawned_time", field=models.DateTimeField(null=True)),
         migrations.AlterField(
             model_name="ballinstance",
             name="special",
-            field=models.ForeignKey(
-                null=True, on_delete=django.db.models.deletion.SET_NULL, to="bd_models.special"
-            ),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to="bd_models.special"),
         ),
         migrations.AlterField(
             model_name="ballinstance",
@@ -78,20 +49,14 @@ class Migration(migrations.Migration):
                 to="bd_models.player",
             ),
         ),
-        migrations.AlterField(
-            model_name="ballinstance",
-            name="tradeable",
-            field=models.BooleanField(default=True),
-        ),
+        migrations.AlterField(model_name="ballinstance", name="tradeable", field=models.BooleanField(default=True)),
         migrations.AlterField(
             model_name="blacklistedguild",
             name="moderator_id",
             field=models.BigIntegerField(blank=True, default=None, null=True),
         ),
         migrations.AlterField(
-            model_name="blacklistedguild",
-            name="reason",
-            field=models.TextField(blank=True, default=None, null=True),
+            model_name="blacklistedguild", name="reason", field=models.TextField(blank=True, default=None, null=True)
         ),
         migrations.AlterField(
             model_name="blacklistedid",
@@ -99,42 +64,30 @@ class Migration(migrations.Migration):
             field=models.BigIntegerField(blank=True, default=None, null=True),
         ),
         migrations.AlterField(
-            model_name="blacklistedid",
-            name="reason",
-            field=models.TextField(blank=True, default=None, null=True),
+            model_name="blacklistedid", name="reason", field=models.TextField(blank=True, default=None, null=True)
         ),
         migrations.AlterField(
             model_name="guildconfig",
             name="enabled",
-            field=models.BooleanField(
-                default=True, help_text="Whether the bot will spawn countryballs in this guild"
-            ),
+            field=models.BooleanField(default=True, help_text="Whether the bot will spawn countryballs in this guild"),
         ),
         migrations.AlterField(
             model_name="guildconfig",
             name="silent",
             field=models.BooleanField(
-                default=False,
-                help_text="Whether the responses of guesses get sent as ephemeral or not",
+                default=False, help_text="Whether the responses of guesses get sent as ephemeral or not"
             ),
         ),
         migrations.AlterField(
             model_name="guildconfig",
             name="spawn_channel",
-            field=models.BigIntegerField(
-                help_text="Discord channel ID where balls will spawn", null=True
-            ),
+            field=models.BigIntegerField(help_text="Discord channel ID where balls will spawn", null=True),
         ),
         migrations.AlterField(
             model_name="player",
             name="donation_policy",
             field=models.SmallIntegerField(
-                choices=[
-                    (1, "Always Accept"),
-                    (2, "Request Approval"),
-                    (3, "Always Deny"),
-                    (4, "Friends Only"),
-                ],
+                choices=[(1, "Always Accept"), (2, "Request Approval"), (3, "Always Deny"), (4, "Friends Only")],
                 default=1,
                 help_text="How you want to handle donations",
             ),
@@ -143,18 +96,14 @@ class Migration(migrations.Migration):
             model_name="player",
             name="friend_policy",
             field=models.SmallIntegerField(
-                choices=[(1, "Allow"), (2, "Deny")],
-                default=1,
-                help_text="Open or close your friend requests",
+                choices=[(1, "Allow"), (2, "Deny")], default=1, help_text="Open or close your friend requests"
             ),
         ),
         migrations.AlterField(
             model_name="player",
             name="mention_policy",
             field=models.SmallIntegerField(
-                choices=[(1, "Allow"), (2, "Deny")],
-                default=1,
-                help_text="Control the bot's mentions",
+                choices=[(1, "Allow"), (2, "Deny")], default=1, help_text="Control the bot's mentions"
             ),
         ),
         migrations.AlterField(
@@ -167,35 +116,28 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddIndex(
-            model_name="ballinstance",
-            index=models.Index(fields=["ball_id"], name="ballinstanc_ball_id_2d5440_idx"),
+            model_name="ballinstance", index=models.Index(fields=["ball_id"], name="ballinstanc_ball_id_2d5440_idx")
         ),
         migrations.AddIndex(
-            model_name="ballinstance",
-            index=models.Index(fields=["player_id"], name="ballinstanc_player__9c7405_idx"),
+            model_name="ballinstance", index=models.Index(fields=["player_id"], name="ballinstanc_player__9c7405_idx")
         ),
         migrations.AddIndex(
-            model_name="ballinstance",
-            index=models.Index(fields=["special_id"], name="ballinstanc_special_612f01_idx"),
+            model_name="ballinstance", index=models.Index(fields=["special_id"], name="ballinstanc_special_612f01_idx")
         ),
         migrations.AddIndex(
-            model_name="trade",
-            index=models.Index(fields=["player1_id"], name="trade_player1_3c0ba4_idx"),
+            model_name="trade", index=models.Index(fields=["player1_id"], name="trade_player1_3c0ba4_idx")
         ),
         migrations.AddIndex(
-            model_name="trade",
-            index=models.Index(fields=["player2_id"], name="trade_player2_c82825_idx"),
+            model_name="trade", index=models.Index(fields=["player2_id"], name="trade_player2_c82825_idx")
         ),
         migrations.AddIndex(
             model_name="tradeobject",
             index=models.Index(fields=["ballinstance_id"], name="tradeobject_ballins_64d733_idx"),
         ),
         migrations.AddIndex(
-            model_name="tradeobject",
-            index=models.Index(fields=["player_id"], name="tradeobject_player__fda68c_idx"),
+            model_name="tradeobject", index=models.Index(fields=["player_id"], name="tradeobject_player__fda68c_idx")
         ),
         migrations.AddIndex(
-            model_name="tradeobject",
-            index=models.Index(fields=["trade_id"], name="tradeobject_trade_i_1eed3d_idx"),
+            model_name="tradeobject", index=models.Index(fields=["trade_id"], name="tradeobject_trade_i_1eed3d_idx")
         ),
     ]

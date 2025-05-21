@@ -34,9 +34,7 @@ class Admin(commands.GroupCog):
         self.bot = bot
 
         assert self.__cog_app_commands_group__
-        self.__cog_app_commands_group__.add_command(
-            BallsGroup(name=settings.players_group_cog_name)
-        )
+        self.__cog_app_commands_group__.add_command(BallsGroup(name=settings.players_group_cog_name))
         self.__cog_app_commands_group__.add_command(BlacklistGroup())
         self.__cog_app_commands_group__.add_command(BlacklistGuildGroup())
         self.__cog_app_commands_group__.add_command(HistoryGroup())
@@ -96,10 +94,7 @@ class Admin(commands.GroupCog):
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def rarity(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        chunked: bool = True,
-        include_disabled: bool = False,
+        self, interaction: discord.Interaction["BallsDexBot"], chunked: bool = True, include_disabled: bool = False
     ):
         """
         Generate a list of countryballs ranked by rarity.
@@ -137,11 +132,7 @@ class Admin(commands.GroupCog):
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def cooldown(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        guild_id: str | None = None,
-    ):
+    async def cooldown(self, interaction: discord.Interaction["BallsDexBot"], guild_id: str | None = None):
         """
         Show the details of the spawn cooldown system for the given server
 
@@ -161,23 +152,15 @@ class Admin(commands.GroupCog):
         else:
             guild = interaction.guild
         if not guild:
-            await interaction.response.send_message(
-                "The given guild could not be found.", ephemeral=True
-            )
+            await interaction.response.send_message("The given guild could not be found.", ephemeral=True)
             return
 
-        spawn_manager = cast(
-            "CountryBallsSpawner", self.bot.get_cog("CountryBallsSpawner")
-        ).spawn_manager
+        spawn_manager = cast("CountryBallsSpawner", self.bot.get_cog("CountryBallsSpawner")).spawn_manager
         await spawn_manager.admin_explain(interaction, guild)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def guilds(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        user: discord.User,
-    ):
+    async def guilds(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
         """
         Shows the guilds shared with the specified user. Provide either user or user_id.
 
@@ -194,8 +177,7 @@ class Admin(commands.GroupCog):
         if not guilds:
             if self.bot.intents.members:
                 await interaction.response.send_message(
-                    f"The user does not own any server with {settings.bot_name}.",
-                    ephemeral=True,
+                    f"The user does not own any server with {settings.bot_name}.", ephemeral=True
                 )
             else:
                 await interaction.response.send_message(

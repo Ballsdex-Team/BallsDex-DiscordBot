@@ -7,11 +7,7 @@ from typing import TYPE_CHECKING
 import discord
 from asgiref.sync import sync_to_async
 from discord import app_commands
-from discord.app_commands.translator import (
-    TranslationContext,
-    TranslationContextLocation,
-    locale_str,
-)
+from discord.app_commands.translator import TranslationContext, TranslationContextLocation, locale_str
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
@@ -64,9 +60,7 @@ class Info(commands.Cog):
         """
         Get information about this bot.
         """
-        embed = discord.Embed(
-            title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple()
-        )
+        embed = discord.Embed(title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple())
 
         try:
             balls = await self._get_10_balls_emojis()
@@ -141,9 +135,7 @@ class Info(commands.Cog):
 
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         v = sys.version_info
-        embed.set_footer(
-            text=f"Python {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}"
-        )
+        embed.set_footer(text=f"Python {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}")
 
         await interaction.response.send_message(embed=embed, view=LicenseInfo())
 
@@ -153,9 +145,7 @@ class Info(commands.Cog):
         Show the list of commands from the bot.
         """
         assert self.bot.user
-        embed = discord.Embed(
-            title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple()
-        )
+        embed = discord.Embed(title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple())
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
         for cog in self.bot.cogs.values():
@@ -173,8 +163,6 @@ class Info(commands.Cog):
                 continue
             pages = pagify(content, page_length=1024)
             for i, page in enumerate(pages):
-                embed.add_field(
-                    name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False
-                )
+                embed.add_field(name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False)
 
         await interaction.response.send_message(embed=embed)

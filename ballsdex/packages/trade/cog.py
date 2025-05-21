@@ -77,11 +77,7 @@ class Trade(commands.GroupCog):
             return (None, None)
         to_remove: list[TradeMenu] = []
         for trade in self.trades[guild.id][channel.id]:
-            if (
-                trade.current_view.is_finished()
-                or trade.trader1.cancelled
-                or trade.trader2.cancelled
-            ):
+            if trade.current_view.is_finished() or trade.trader1.cancelled or trade.trader2.cancelled:
                 # remove what was supposed to have been removed
                 to_remove.append(trade)
                 continue
@@ -114,9 +110,7 @@ class Trade(commands.GroupCog):
             await interaction.response.send_message("You cannot trade with bots.", ephemeral=True)
             return
         if user.id == interaction.user.id:
-            await interaction.response.send_message(
-                "You cannot trade with yourself.", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot trade with yourself.", ephemeral=True)
             return
         player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
@@ -136,9 +130,7 @@ class Trade(commands.GroupCog):
         trade1, trader1 = self.get_trade(interaction)
         trade2, trader2 = self.get_trade(channel=interaction.channel, user=user)  # type: ignore
         if trade1 or trader1:
-            await interaction.response.send_message(
-                "You already have an ongoing trade.", ephemeral=True
-            )
+            await interaction.response.send_message("You already have an ongoing trade.", ephemeral=True)
             return
         if trade2 or trader2:
             await interaction.response.send_message(
@@ -149,14 +141,10 @@ class Trade(commands.GroupCog):
         player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
         if player2.discord_id in self.bot.blacklist:
-            await interaction.response.send_message(
-                "You cannot trade with a blacklisted user.", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot trade with a blacklisted user.", ephemeral=True)
             return
 
-        menu = TradeMenu(
-            self, interaction, TradingUser(interaction.user, player1), TradingUser(user, player2)
-        )
+        menu = TradeMenu(self, interaction, TradingUser(interaction.user, player1), TradingUser(user, player2))
         self.trades[interaction.guild.id][interaction.channel.id].append(menu)  # type: ignore
         await menu.start()
         await interaction.response.send_message("Trade started!", ephemeral=True)
@@ -193,8 +181,7 @@ class Trade(commands.GroupCog):
                 cancel_message="This request has been cancelled.",
             )
             await interaction.followup.send(
-                f"This {settings.collectible_name} is a favorite, "
-                "are you sure you want to trade it?",
+                f"This {settings.collectible_name} is a favorite, are you sure you want to trade it?",
                 view=view,
                 ephemeral=True,
             )
@@ -215,8 +202,7 @@ class Trade(commands.GroupCog):
             return
         if countryball in trader.proposal:
             await interaction.followup.send(
-                f"You already have this {settings.collectible_name} in your proposal.",
-                ephemeral=True,
+                f"You already have this {settings.collectible_name} in your proposal.", ephemeral=True
             )
             return
         if await countryball.is_locked():
@@ -229,9 +215,7 @@ class Trade(commands.GroupCog):
 
         await countryball.lock_for_trade()
         trader.proposal.append(countryball)
-        await interaction.followup.send(
-            f"{countryball.countryball.country} added.", ephemeral=True
-        )
+        await interaction.followup.send(f"{countryball.countryball.country} added.", ephemeral=True)
 
     @bulk.command(name="add", extras={"trade": TradeCommandType.PICK})
     async def bulk_add(
@@ -265,9 +249,7 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        query = BallInstance.objects.filter(
-            player__discord_id=interaction.user.id
-        ).prefetch_related("player")
+        query = BallInstance.objects.filter(player__discord_id=interaction.user.id).prefetch_related("player")
         if countryball:
             query = query.filter(ball=countryball)
         if special:
@@ -275,9 +257,7 @@ class Trade(commands.GroupCog):
         if sort:
             query = sort_balls(sort, query)
         if not await query.aexists():
-            await interaction.followup.send(
-                f"No {settings.plural_collectible_name} found.", ephemeral=True
-            )
+            await interaction.followup.send(f"No {settings.plural_collectible_name} found.", ephemeral=True)
             return
         balls = [x async for x in query if x.is_tradeable]
 
@@ -310,9 +290,7 @@ class Trade(commands.GroupCog):
 
         trade, trader = self.get_trade(interaction)
         if not trade or not trader:
-            await interaction.response.send_message(
-                "You do not have an ongoing trade.", ephemeral=True
-            )
+            await interaction.response.send_message("You do not have an ongoing trade.", ephemeral=True)
             return
         if trader.locked:
             await interaction.response.send_message(
@@ -327,9 +305,7 @@ class Trade(commands.GroupCog):
             )
             return
         trader.proposal.remove(countryball)
-        await interaction.response.send_message(
-            f"{countryball.countryball.country} removed.", ephemeral=True
-        )
+        await interaction.response.send_message(f"{countryball.countryball.country} removed.", ephemeral=True)
         await countryball.unlock()
 
     @app_commands.command()
@@ -339,9 +315,7 @@ class Trade(commands.GroupCog):
         """
         trade, trader = self.get_trade(interaction)
         if not trade or not trader:
-            await interaction.response.send_message(
-                "You do not have an ongoing trade.", ephemeral=True
-            )
+            await interaction.response.send_message("You do not have an ongoing trade.", ephemeral=True)
             return
 
         await trade.user_cancel(trader)
@@ -395,9 +369,7 @@ class Trade(commands.GroupCog):
                 | (Q(player1__discord_id=trade_user.id, player2__discord_id=user.id))
             )
         else:
-            queryset = TradeModel.objects.filter(
-                Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id)
-            )
+            queryset = TradeModel.objects.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
 
         if days is not None and days > 0:
             end_date = datetime.datetime.now()
@@ -412,10 +384,7 @@ class Trade(commands.GroupCog):
         history = (
             await queryset.order_by(sort_value)
             .prefetch_related(
-                "player1",
-                "player2",
-                "tradeobject_set__ballinstance__ball",
-                "tradeobject_set__ballinstance__special",
+                "player1", "player2", "tradeobject_set__ballinstance__ball", "tradeobject_set__ballinstance__special"
             )
             .aall()
         )
@@ -429,18 +398,13 @@ class Trade(commands.GroupCog):
         await pages.start()
 
     @app_commands.command()
-    async def view(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-    ):
+    async def view(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         View the countryballs added to an ongoing trade.
         """
         trade, trader = self.get_trade(interaction)
         if not trade or not trader:
-            await interaction.response.send_message(
-                "You do not have an ongoing trade.", ephemeral=True
-            )
+            await interaction.response.send_message("You do not have an ongoing trade.", ephemeral=True)
             return
 
         source = TradeViewMenu(interaction, [trade.trader1, trade.trader2], self)

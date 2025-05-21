@@ -33,9 +33,9 @@ class CountryBallsSpawner(commands.Cog):
 
     async def load_cache(self):
         i = 0
-        async for config in GuildConfig.objects.filter(
-            enabled=True, spawn_channel__isnull=False
-        ).only("guild_id", "spawn_channel"):
+        async for config in GuildConfig.objects.filter(enabled=True, spawn_channel__isnull=False).only(
+            "guild_id", "spawn_channel"
+        ):
             self.cache[config.guild_id] = cast(int, config.spawn_channel)
             i += 1
         grammar = "" if i == 1 else "s"
@@ -73,10 +73,7 @@ class CountryBallsSpawner(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ballsdex_settings_change(
-        self,
-        guild: discord.Guild,
-        channel: discord.TextChannel | None = None,
-        enabled: bool | None = None,
+        self, guild: discord.Guild, channel: discord.TextChannel | None = None, enabled: bool | None = None
     ):
         if guild.id not in self.cache:
             if enabled is False:

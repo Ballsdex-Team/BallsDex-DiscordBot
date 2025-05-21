@@ -27,28 +27,18 @@ class BlacklistViewFormat(menus.ListPageSource):
         if blacklist.moderator_id:
             moderator = await self.bot.fetch_user(blacklist.moderator_id)
             embed.add_field(
-                name=(
-                    "Blacklisted by"
-                    if blacklist.action_type == "blacklist"
-                    else "Unblacklisted by"
-                ),
+                name=("Blacklisted by" if blacklist.action_type == "blacklist" else "Unblacklisted by"),
                 value=f"{moderator.display_name} ({moderator.id})",
                 inline=True,
             )
         embed.add_field(name="Action Time", value=format_dt(blacklist.date, "R"), inline=True)
-        if settings.admin_url and (
-            player := await Player.objects.aget_or_none(discord_id=self.header)
-        ):
+        if settings.admin_url and (player := await Player.objects.aget_or_none(discord_id=self.header)):
             embed.add_field(
                 name="\u200b",
-                value="[View history online]"
-                f"(<{settings.admin_url}/bd_models/player/{player.pk}/change/>)",
+                value=f"[View history online](<{settings.admin_url}/bd_models/player/{player.pk}/change/>)",
                 inline=False,
             )
         embed.set_footer(
-            text=(
-                f"Blacklist History {menu.current_page + 1}/{menu.source.get_max_pages()}"
-                " | Blacklist date: "
-            )
+            text=(f"Blacklist History {menu.current_page + 1}/{menu.source.get_max_pages()} | Blacklist date: ")
         )
         return embed

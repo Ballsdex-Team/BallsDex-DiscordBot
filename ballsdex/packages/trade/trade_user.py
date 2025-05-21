@@ -21,14 +21,8 @@ class TradingUser:
     blacklisted: bool | None = None
 
     @classmethod
-    async def from_trade_model(
-        cls, trade: "Trade", player: "Player", bot: "BallsDexBot", is_admin: bool = False
-    ):
+    async def from_trade_model(cls, trade: "Trade", player: "Player", bot: "BallsDexBot", is_admin: bool = False):
         proposal = trade.tradeobject_set.filter(player=player).prefetch_related("ballinstance")
         user = await bot.fetch_user(player.discord_id)
-        blacklisted = (
-            await BlacklistedID.objects.filter(discord_id=player.discord_id).aexists()
-            if is_admin
-            else None
-        )
+        blacklisted = await BlacklistedID.objects.filter(discord_id=player.discord_id).aexists() if is_admin else None
         return cls(user, player, [x.ballinstance async for x in proposal], blacklisted=blacklisted)

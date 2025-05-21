@@ -75,7 +75,7 @@ target-version = "py313"
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
-skip-magic-trailing-comma = false
+skip-magic-trailing-comma = true
 line-ending = "lf"
 docstring-code-format = true
 
@@ -87,6 +87,7 @@ exclude = ["admin_panel/admin_panel/settings/*"]
 [tool.ruff.lint.isort]
 # list all django modules
 known-first-party = ["ballsdex", "bd_models", "admin_panel", "preview"]
+split-on-trailing-comma = false
 
 [tool.pyright]
 extraPaths = ["./admin_panel"]

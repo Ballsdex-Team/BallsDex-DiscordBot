@@ -26,20 +26,14 @@ class Money(app_commands.Group):
         await interaction.response.defer(ephemeral=True, thinking=True)
         player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
-            await interaction.followup.send(
-                f"This user does not have a {settings.bot_name} account.", ephemeral=True
-            )
+            await interaction.followup.send(f"This user does not have a {settings.bot_name} account.", ephemeral=True)
             return
 
-        await interaction.followup.send(
-            f"{user.mention} currently has {player.money:,} coins.", ephemeral=True
-        )
+        await interaction.followup.send(f"{user.mention} currently has {player.money:,} coins.", ephemeral=True)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def add(
-        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int
-    ):
+    async def add(self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int):
         """
         Add coins to the user provided
 
@@ -53,32 +47,23 @@ class Money(app_commands.Group):
         await interaction.response.defer(ephemeral=True, thinking=True)
         player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
-            await interaction.followup.send(
-                f"This user does not have a {settings.bot_name} account.", ephemeral=True
-            )
+            await interaction.followup.send(f"This user does not have a {settings.bot_name} account.", ephemeral=True)
             return
 
         if amount <= 0:
-            await interaction.followup.send(
-                "The amount must be greater than zero.", ephemeral=True
-            )
+            await interaction.followup.send("The amount must be greater than zero.", ephemeral=True)
             return
 
         await player.add_money(amount)
-        await interaction.followup.send(
-            f"{amount:,} coins have been added to {user.mention}.", ephemeral=True
-        )
+        await interaction.followup.send(f"{amount:,} coins have been added to {user.mention}.", ephemeral=True)
         await log_action(
-            f"{interaction.user} ({interaction.user.id}) added {amount:,} coins to "
-            f"{user} ({user.id})",
+            f"{interaction.user} ({interaction.user.id}) added {amount:,} coins to {user} ({user.id})",
             interaction.client,
         )
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def remove(
-        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int
-    ):
+    async def remove(self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int):
         """
         Remove coins from the user provided
 
@@ -92,37 +77,27 @@ class Money(app_commands.Group):
         await interaction.response.defer(ephemeral=True, thinking=True)
         player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
-            await interaction.followup.send(
-                f"This user does not have a {settings.bot_name} account.", ephemeral=True
-            )
+            await interaction.followup.send(f"This user does not have a {settings.bot_name} account.", ephemeral=True)
             return
 
         if amount <= 0:
-            await interaction.followup.send(
-                "The amount must be greater than zero.", ephemeral=True
-            )
+            await interaction.followup.send("The amount must be greater than zero.", ephemeral=True)
             return
         if not player.can_afford(amount):
             await interaction.followup.send(
-                f"This user does not have enough coins to remove (balance={player.money:,}).",
-                ephemeral=True,
+                f"This user does not have enough coins to remove (balance={player.money:,}).", ephemeral=True
             )
             return
         await player.remove_money(amount)
-        await interaction.followup.send(
-            f"{amount:,} coins have been removed from {user.mention}.", ephemeral=True
-        )
+        await interaction.followup.send(f"{amount:,} coins have been removed from {user.mention}.", ephemeral=True)
         await log_action(
-            f"{interaction.user} ({interaction.user.id}) removed {amount:,} coins from "
-            f"{user} ({user.id})",
+            f"{interaction.user} ({interaction.user.id}) removed {amount:,} coins from {user} ({user.id})",
             interaction.client,
         )
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def set(
-        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int
-    ):
+    async def set(self, interaction: discord.Interaction[BallsDexBot], user: discord.User, amount: int):
         """
         Set the balance of the user provided
 
@@ -142,18 +117,13 @@ class Money(app_commands.Group):
             return
 
         if amount < 0:
-            await interaction.followup.send(
-                "The amount must be greater than or equal to zero.", ephemeral=True
-            )
+            await interaction.followup.send("The amount must be greater than or equal to zero.", ephemeral=True)
             return
 
         player.money = amount
         await player.asave()
-        await interaction.followup.send(
-            f"{user.mention} now has {amount:,} coins.", ephemeral=True
-        )
+        await interaction.followup.send(f"{user.mention} now has {amount:,} coins.", ephemeral=True)
         await log_action(
-            f"{interaction.user} ({interaction.user.id}) set the balance of "
-            f"{user} ({user.id}) to {amount:,} coins",
+            f"{interaction.user} ({interaction.user.id}) set the balance of {user} ({user.id}) to {amount:,} coins",
             interaction.client,
         )

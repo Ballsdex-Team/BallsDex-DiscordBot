@@ -23,9 +23,7 @@ class BlacklistedListFilter(admin.SimpleListFilter):
     title = "blacklisted"
     parameter_name = "blacklisted"
 
-    def lookups(
-        self, request: "HttpRequest", model_admin: "PlayerAdmin | GuildAdmin"
-    ) -> list[tuple[Any, str]]:
+    def lookups(self, request: "HttpRequest", model_admin: "PlayerAdmin | GuildAdmin") -> list[tuple[Any, str]]:
         return [(True, "True"), (False, "False")]
 
     def queryset(

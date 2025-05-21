@@ -115,9 +115,7 @@ async def send_interactive(
         else:
             text = page
         if time_taken and idx == len(messages):
-            time = (
-                f"{round(time_taken * 1000)}ms" if time_taken < 1 else f"{round(time_taken, 3)}s"
-            )
+            time = f"{round(time_taken * 1000)}ms" if time_taken < 1 else f"{round(time_taken, 3)}s"
             text += f"\n-# Took {time}"
         msg = await ctx.channel.send(text)
         ret.append(msg)
@@ -137,11 +135,7 @@ async def send_interactive(
                 prompt_text.format(count=n_remaining, command_1="`more`", command_2="`file`")
             )
             try:
-                resp = await ctx.bot.wait_for(
-                    "message",
-                    check=predicate,
-                    timeout=15,
-                )
+                resp = await ctx.bot.wait_for("message", check=predicate, timeout=15)
             except asyncio.TimeoutError:
                 with contextlib.suppress(discord.HTTPException):
                     await query.delete()
@@ -204,9 +198,7 @@ class Dev(commands.Cog):
         """
         if e.text is None:
             return cls.get_pages("{0.__class__.__name__}: {0}".format(e))
-        return cls.get_pages(
-            "{0.text}\n{1:>{0.offset}}\n{2}: {0}".format(e, "^", type(e).__name__)
-        )
+        return cls.get_pages("{0.text}\n{1:>{0.offset}}\n{2}: {0}".format(e, "^", type(e).__name__))
 
     @staticmethod
     def get_pages(msg: str):
@@ -298,9 +290,7 @@ class Dev(commands.Cog):
             return
         except Exception as e:
             t2 = time.time()
-            await send_interactive(
-                ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1
-            )
+            await send_interactive(ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1)
             return
         t2 = time.time()
 
@@ -347,9 +337,7 @@ class Dev(commands.Cog):
             return await send_interactive(ctx, self.get_syntax_error(e), time_taken=t2 - t1)
         except Exception as e:
             t2 = time.time()
-            await send_interactive(
-                ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1
-            )
+            await send_interactive(ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1)
             return
         t2 = time.time()
 

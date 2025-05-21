@@ -28,9 +28,7 @@ if TYPE_CHECKING:
 
 
 def transform_media(path: str) -> str:
-    return path.replace("/static/uploads/", "").replace(
-        "/ballsdex/core/image_generator/src/", "default/"
-    )
+    return path.replace("/static/uploads/", "").replace("/ballsdex/core/image_generator/src/", "default/")
 
 
 def image_display(image_link: str) -> SafeText:
@@ -73,12 +71,8 @@ else:
 
 class GuildConfig(models.Model):
     guild_id = models.BigIntegerField(unique=True, help_text="Discord guild ID")
-    spawn_channel = models.BigIntegerField(
-        null=True, help_text="Discord channel ID where balls will spawn"
-    )
-    enabled = models.BooleanField(
-        help_text="Whether the bot will spawn countryballs in this guild", default=True
-    )
+    spawn_channel = models.BigIntegerField(null=True, help_text="Discord channel ID where balls will spawn")
+    enabled = models.BooleanField(help_text="Whether the bot will spawn countryballs in this guild", default=True)
     silent = models.BooleanField(
         help_text="Whether the responses of guesses get sent as ephemeral or not", default=False
     )
@@ -102,19 +96,13 @@ class Player(models.Model):
         default=DonationPolicy.ALWAYS_ACCEPT,
     )
     privacy_policy = models.SmallIntegerField(
-        choices=PrivacyPolicy.choices,
-        help_text="How you want to handle inventory privacy",
-        default=PrivacyPolicy.DENY,
+        choices=PrivacyPolicy.choices, help_text="How you want to handle inventory privacy", default=PrivacyPolicy.DENY
     )
     mention_policy = models.SmallIntegerField(
-        choices=MentionPolicy.choices,
-        help_text="Control the bot's mentions",
-        default=MentionPolicy.ALLOW,
+        choices=MentionPolicy.choices, help_text="Control the bot's mentions", default=MentionPolicy.ALLOW
     )
     friend_policy = models.SmallIntegerField(
-        choices=FriendPolicy.choices,
-        help_text="Open or close your friend requests",
-        default=FriendPolicy.ALLOW,
+        choices=FriendPolicy.choices, help_text="Open or close your friend requests", default=FriendPolicy.ALLOW
     )
     extra_data = models.JSONField(blank=True, default=dict)
 
@@ -127,10 +115,7 @@ class Player(models.Model):
         db_table = "player"
 
     def __str__(self) -> str:
-        return (
-            f"{'\N{NO MOBILE PHONES} ' if self.is_blacklisted() else ''}#"
-            f"{self.pk} ({self.discord_id})"
-        )
+        return f"{'\N{NO MOBILE PHONES} ' if self.is_blacklisted() else ''}#{self.pk} ({self.discord_id})"
 
     def is_blacklisted(self) -> bool:
         # this should only be used for the admin panel
@@ -140,17 +125,14 @@ class Player(models.Model):
         blacklist = cast(
             list[int],
             cache.get_or_set(
-                "blacklist",
-                BlacklistedID.objects.all().values_list("discord_id", flat=True),
-                timeout=300,
+                "blacklist", BlacklistedID.objects.all().values_list("discord_id", flat=True), timeout=300
             ),
         )
         return self.discord_id in blacklist
 
     async def is_friend(self, other_player: "Player") -> bool:
         return await Friendship.objects.filter(
-            (Q(player1=self) & Q(player2=other_player))
-            | (Q(player1=other_player) & Q(player2=self))
+            (Q(player1=self) & Q(player2=other_player)) | (Q(player1=other_player) & Q(player2=self))
         ).aexists()
 
     async def is_blocked(self, other_player: "Player") -> bool:
@@ -224,10 +206,7 @@ class SpecialEnabledManager(Manager["Special"]):
 class Special(models.Model):
     name = models.CharField(max_length=64)
     catch_phrase = models.CharField(
-        max_length=128,
-        blank=True,
-        null=True,
-        help_text="Sentence sent in bonus when someone catches a special card",
+        max_length=128, blank=True, null=True, help_text="Sentence sent in bonus when someone catches a special card"
     )
     start_date = models.DateTimeField(
         blank=True, null=True, help_text="Start time of the event. If blank, starts immediately"
@@ -235,25 +214,14 @@ class Special(models.Model):
     end_date = models.DateTimeField(
         blank=True, null=True, help_text="End time of the event. If blank, the event is permanent"
     )
-    rarity = models.FloatField(
-        help_text="Value between 0 and 1, chances of using this special background."
-    )
+    rarity = models.FloatField(help_text="Value between 0 and 1, chances of using this special background.")
     emoji = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        help_text="Either a unicode character or a discord emoji ID",
+        max_length=20, blank=True, null=True, help_text="Either a unicode character or a discord emoji ID"
     )
-    background = models.ImageField(
-        max_length=200, blank=True, null=True, help_text="1428x2000 PNG image"
-    )
-    tradeable = models.BooleanField(
-        help_text="Whether balls of this event can be traded", default=True
-    )
+    background = models.ImageField(max_length=200, blank=True, null=True, help_text="1428x2000 PNG image")
+    tradeable = models.BooleanField(help_text="Whether balls of this event can be traded", default=True)
     hidden = models.BooleanField(help_text="Hides the event from user commands", default=False)
-    credits = models.CharField(
-        max_length=64, help_text="Author of the special event artwork", null=True
-    )
+    credits = models.CharField(max_length=64, help_text="Author of the special event artwork", null=True)
 
     objects: Manager[Self] = Manager()
     enabled_objects = SpecialEnabledManager()
@@ -272,50 +240,28 @@ class Ball(models.Model):
     attack = models.IntegerField(help_text="Ball attack stat")
     rarity = models.FloatField(help_text="Rarity of this ball")
     emoji_id = models.BigIntegerField(help_text="Emoji ID for this ball")
-    wild_card = models.ImageField(
-        max_length=200,
-        help_text="Image used when a new ball spawns in the wild",
-    )
-    collection_card = models.ImageField(
-        max_length=200, help_text="Image used when displaying balls"
-    )
+    wild_card = models.ImageField(max_length=200, help_text="Image used when a new ball spawns in the wild")
+    collection_card = models.ImageField(max_length=200, help_text="Image used when displaying balls")
     credits = models.CharField(max_length=64, help_text="Author of the collection artwork")
     capacity_name = models.CharField(max_length=64, help_text="Name of the countryball's capacity")
-    capacity_description = models.CharField(
-        max_length=256, help_text="Description of the countryball's capacity"
-    )
-    capacity_logic = models.JSONField(
-        help_text="Effect of this capacity", blank=True, default=dict
-    )
-    enabled = models.BooleanField(
-        help_text="Enables spawning and show in completion", default=True
-    )
+    capacity_description = models.CharField(max_length=256, help_text="Description of the countryball's capacity")
+    capacity_logic = models.JSONField(help_text="Effect of this capacity", blank=True, default=dict)
+    enabled = models.BooleanField(help_text="Enables spawning and show in completion", default=True)
     short_name = models.CharField(
         max_length=24,
         blank=True,
         null=True,
-        help_text="An alternative shorter name used only when generating the card, "
-        "if the base name is too long.",
+        help_text="An alternative shorter name used only when generating the card, if the base name is too long.",
     )
     catch_names = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Additional possible names for catching this ball, separated by semicolons",
+        blank=True, null=True, help_text="Additional possible names for catching this ball, separated by semicolons"
     )
-    tradeable = models.BooleanField(
-        help_text="Whether this ball can be traded with others", default=True
-    )
+    tradeable = models.BooleanField(help_text="Whether this ball can be traded with others", default=True)
     economy = models.ForeignKey(
-        Economy,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        help_text="Economical regime of this country",
+        Economy, on_delete=models.SET_NULL, blank=True, null=True, help_text="Economical regime of this country"
     )
     economy_id: int | None
-    regime = models.ForeignKey(
-        Regime, on_delete=models.CASCADE, help_text="Political regime of this country"
-    )
+    regime = models.ForeignKey(Regime, on_delete=models.CASCADE, help_text="Political regime of this country")
     regime_id: int
     created_at = models.DateTimeField(blank=True, null=True, auto_now_add=True, editable=False)
     translations = models.TextField(blank=True, null=True)
@@ -354,7 +300,6 @@ class Ball(models.Model):
         using: str | None = None,
         update_fields: Iterable[str] | None = None,
     ) -> None:
-
         def lower_catch_names(names: str | None) -> str | None:
             if names:
                 return ";".join([x.strip() for x in names.split(";")]).lower()
@@ -374,23 +319,16 @@ class BallInstance(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="balls")
     player_id: int
     trade_player = models.ForeignKey(
-        Player,
-        on_delete=models.SET_NULL,
-        related_name="ballinstance_trade_player_set",
-        null=True,
+        Player, on_delete=models.SET_NULL, related_name="ballinstance_trade_player_set", null=True
     )
     trade_player_id: int | None
     favorite = models.BooleanField(default=False)
     special = models.ForeignKey(Special, on_delete=models.SET_NULL, null=True)
     special_id: int | None
-    server_id = models.BigIntegerField(
-        null=True, help_text="Discord server ID where this ball was caught"
-    )
+    server_id = models.BigIntegerField(null=True, help_text="Discord server ID where this ball was caught")
     tradeable = models.BooleanField(default=True)
     extra_data = models.JSONField(blank=True, default=dict)
-    locked = models.DateTimeField(
-        null=True, help_text="If the instance was locked for a trade and when", default=None
-    )
+    locked = models.DateTimeField(null=True, help_text="If the instance was locked for a trade and when", default=None)
     spawned_time = models.DateTimeField(null=True)
 
     objects: Manager[Self] = Manager()
@@ -434,11 +372,7 @@ class BallInstance(models.Model):
 
     @property
     def is_tradeable(self) -> bool:
-        return (
-            self.tradeable
-            and self.countryball.tradeable
-            and getattr(self.specialcard, "tradeable", True)
-        )
+        return self.tradeable and self.countryball.tradeable and getattr(self.specialcard, "tradeable", True)
 
     @property
     def attack(self) -> int:
@@ -488,9 +422,7 @@ class BallInstance(models.Model):
             text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
         if include_emoji:
             if not bot:
-                raise TypeError(
-                    "You need to provide the bot argument when using with include_emoji=True"
-                )
+                raise TypeError("You need to provide the bot argument when using with include_emoji=True")
             if isinstance(self.countryball, Ball):
                 emoji = bot.get_emoji(self.countryball.emoji_id)
                 if emoji:
@@ -515,23 +447,17 @@ class BallInstance(models.Model):
             # we want to avoid calling fetch_user if possible (heavily rate-limited call)
             if interaction.guild:
                 try:
-                    original_player = await interaction.guild.fetch_member(
-                        int(self.trade_player.discord_id)
-                    )
+                    original_player = await interaction.guild.fetch_member(int(self.trade_player.discord_id))
                 except discord.NotFound:
                     pass
             elif original_player is None:  # try again if not found in guild
                 try:
-                    original_player = await interaction.client.fetch_user(
-                        int(self.trade_player.discord_id)
-                    )
+                    original_player = await interaction.client.fetch_user(int(self.trade_player.discord_id))
                 except discord.NotFound:
                     pass
 
             original_player_name = (
-                original_player.name
-                if original_player
-                else f"user with ID {self.trade_player.discord_id}"
+                original_player.name if original_player else f"user with ID {self.trade_player.discord_id}"
             )
             trade_content = f"Obtained by trade with {original_player_name}.\n"
         content = (
@@ -623,10 +549,7 @@ class Trade(models.Model):
     class Meta:
         managed = True
         db_table = "trade"
-        indexes = (
-            models.Index(fields=("player1_id",)),
-            models.Index(fields=("player2_id",)),
-        )
+        indexes = (models.Index(fields=("player1_id",)), models.Index(fields=("player2_id",)))
 
 
 class TradeObject(models.Model):
@@ -653,9 +576,7 @@ class Friendship(models.Model):
     since = models.DateTimeField(auto_now_add=True, editable=False)
     player1 = models.ForeignKey(Player, on_delete=models.CASCADE)
     player1_id: int
-    player2 = models.ForeignKey(
-        Player, on_delete=models.CASCADE, related_name="friendship_player2_set"
-    )
+    player2 = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="friendship_player2_set")
     player2_id: int
 
     objects: Manager[Self] = Manager()

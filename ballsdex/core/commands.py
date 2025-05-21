@@ -26,12 +26,8 @@ class SimpleCheckView(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"]) -> bool:
         return interaction.user == self.ctx.author
 
-    @discord.ui.button(
-        style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
-    )
-    async def confirm_button(
-        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
-    ):
+    @discord.ui.button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
+    async def confirm_button(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
         await interaction.response.edit_message(content="Starting upload...", view=None)
         self.value = True
         self.stop()
@@ -147,9 +143,7 @@ class Core(commands.Cog):
                 to_upload.append((ball, emote))
 
         if len(already_uploaded) == len(balls):
-            await ctx.send(
-                f"All of your {settings.plural_collectible_name} already use application emojis."
-            )
+            await ctx.send(f"All of your {settings.plural_collectible_name} already use application emojis.")
             return
         if len(to_upload) + len(application_emojis) > 2000:
             await ctx.send(
@@ -165,15 +159,10 @@ class Core(commands.Cog):
             text += f"### {len(not_found)} emojis not found\n{not_found_str}\n"
         if matching_name:
             matching_name_str = ", ".join(f"{x[1]} {x[0].country}" for x in matching_name)
-            text += (
-                f"### {len(matching_name)} emojis with conflicting names\n{matching_name_str}\n"
-            )
+            text += f"### {len(matching_name)} emojis with conflicting names\n{matching_name_str}\n"
         if already_uploaded:
             already_uploaded_str = ", ".join(f"{x[1]} {x[0].country}" for x in already_uploaded)
-            text += (
-                f"### {len(already_uploaded)} emojis are already "
-                f"application emojis\n{already_uploaded_str}\n"
-            )
+            text += f"### {len(already_uploaded)} emojis are already application emojis\n{already_uploaded_str}\n"
         if to_upload:
             to_upload_str = ", ".join(f"{x[1]} {x[0].country}" for x in to_upload)
             text += f"## {len(to_upload)} emojis to migrate\n{to_upload_str}"
@@ -195,19 +184,14 @@ class Core(commands.Cog):
         async def update_message_loop():
             for i in range(5 * 12 * 10):  # timeout progress after 10 minutes
                 print(f"Updating msg {uploaded}")
-                await msg.edit(
-                    content=f"Uploading emojis... ({uploaded}/{len(to_upload)})",
-                    view=None,
-                )
+                await msg.edit(content=f"Uploading emojis... ({uploaded}/{len(to_upload)})", view=None)
                 await asyncio.sleep(5)
 
         task = self.bot.loop.create_task(update_message_loop())
         try:
             async with ctx.typing():
                 for ball, emote in to_upload:
-                    new_emote = await self.bot.create_application_emoji(
-                        name=emote.name, image=await emote.read()
-                    )
+                    new_emote = await self.bot.create_application_emoji(name=emote.name, image=await emote.read())
                     ball.emoji_id = new_emote.id
                     await ball.asave()
                     uploaded += 1

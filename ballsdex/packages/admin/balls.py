@@ -12,12 +12,7 @@ from discord.utils import format_dt
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
-from ballsdex.core.utils.transformers import (
-    BallTransform,
-    EconomyTransform,
-    RegimeTransform,
-    SpecialTransform,
-)
+from ballsdex.core.utils.transformers import BallTransform, EconomyTransform, RegimeTransform, SpecialTransform
 from ballsdex.settings import settings
 from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 
@@ -70,12 +65,11 @@ class Balls(app_commands.Group):
                 )
                 await asyncio.sleep(5)
             await interaction.followup.edit_message(
-                "@original", content="Spawn bomb seems to have timed out."  # type: ignore
+                "@original",
+                content="Spawn bomb seems to have timed out.",  # type: ignore
             )
 
-        await interaction.response.send_message(
-            f"Starting spawn bomb in {channel.mention}...", ephemeral=True
-        )
+        await interaction.response.send_message(f"Starting spawn bomb in {channel.mention}...", ephemeral=True)
         task = interaction.client.loop.create_task(update_message_loop())
         try:
             for i in range(n):
@@ -100,8 +94,7 @@ class Balls(app_commands.Group):
             task.cancel()
             await interaction.followup.edit_message(
                 "@original",  # type: ignore
-                content=f"Successfully spawned {spawned} {settings.plural_collectible_name} "
-                f"in {channel.mention}!",
+                content=f"Successfully spawned {spawned} {settings.plural_collectible_name} in {channel.mention}!",
             )
         finally:
             task.cancel()
@@ -186,9 +179,7 @@ class Balls(app_commands.Group):
         result = await ball.spawn(channel or interaction.channel)  # type: ignore
 
         if result:
-            await interaction.followup.send(
-                f"{settings.collectible_name.title()} spawned.", ephemeral=True
-            )
+            await interaction.followup.send(f"{settings.collectible_name.title()} spawned.", ephemeral=True)
             special_attrs = []
             if special is not None:
                 special_attrs.append(f"special={special.name}")
@@ -199,7 +190,7 @@ class Balls(app_commands.Group):
             await log_action(
                 f"{interaction.user} spawned {settings.collectible_name} {ball.name} "
                 f"in {channel or interaction.channel}"
-                f"{f" ({", ".join(special_attrs)})" if special_attrs else ""}.",
+                f"{f' ({", ".join(special_attrs)})' if special_attrs else ''}.",
                 interaction.client,
             )
 
@@ -279,9 +270,7 @@ class Balls(app_commands.Group):
             )
             return
         try:
-            ball = await BallInstance.objects.prefetch_related(
-                "player", "trade_player", "special"
-            ).aget(id=pk)
+            ball = await BallInstance.objects.prefetch_related("player", "trade_player", "special").aget(id=pk)
         except BallInstance.DoesNotExist:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
@@ -289,9 +278,7 @@ class Balls(app_commands.Group):
             return
         spawned_time = format_dt(ball.spawned_time, style="R") if ball.spawned_time else "N/A"
         catch_time = (
-            (ball.catch_date - ball.spawned_time).total_seconds()
-            if ball.catch_date and ball.spawned_time
-            else "N/A"
+            (ball.catch_date - ball.spawned_time).total_seconds() if ball.catch_date and ball.spawned_time else "N/A"
         )
         admin_url = (
             f"[View online](<{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/>)"
@@ -318,9 +305,7 @@ class Balls(app_commands.Group):
 
     @app_commands.command(name="delete")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_delete(
-        self, interaction: discord.Interaction[BallsDexBot], countryball_id: str
-    ):
+    async def balls_delete(self, interaction: discord.Interaction[BallsDexBot], countryball_id: str):
         """
         Delete a countryball.
 
@@ -352,10 +337,7 @@ class Balls(app_commands.Group):
     @app_commands.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_transfer(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        countryball_id: str,
-        user: discord.User,
+        self, interaction: discord.Interaction[BallsDexBot], countryball_id: str, user: discord.User
     ):
         """
         Transfer a countryball to another user.
@@ -389,21 +371,16 @@ class Balls(app_commands.Group):
         trade = await Trade.objects.acreate(player1=original_player, player2=player)
         await TradeObject.objects.acreate(trade=trade, ballinstance=ball, player=original_player)
         await interaction.response.send_message(
-            f"Transfered {ball}({ball.pk}) from {original_player} to {user}.",
-            ephemeral=True,
+            f"Transfered {ball}({ball.pk}) from {original_player} to {user}.", ephemeral=True
         )
         await log_action(
-            f"{interaction.user} transferred {ball}({ball.pk}) from {original_player} to {user}.",
-            interaction.client,
+            f"{interaction.user} transferred {ball}({ball.pk}) from {original_player} to {user}.", interaction.client
         )
 
     @app_commands.command(name="reset")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_reset(
-        self,
-        interaction: discord.Interaction[BallsDexBot],
-        user: discord.User,
-        percentage: int | None = None,
+        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, percentage: int | None = None
     ):
         """
         Reset a player's countryballs.
@@ -417,34 +394,23 @@ class Balls(app_commands.Group):
         """
         player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
-            await interaction.response.send_message(
-                "The user you gave does not exist.", ephemeral=True
-            )
+            await interaction.response.send_message("The user you gave does not exist.", ephemeral=True)
             return
         if percentage and not 0 < percentage < 100:
-            await interaction.response.send_message(
-                "The percentage must be between 1 and 99.", ephemeral=True
-            )
+            await interaction.response.send_message("The percentage must be between 1 and 99.", ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         if not percentage:
             text = f"Are you sure you want to delete {user}'s {settings.plural_collectible_name}?"
         else:
-            text = (
-                f"Are you sure you want to delete {percentage}% of "
-                f"{user}'s {settings.plural_collectible_name}?"
-            )
+            text = f"Are you sure you want to delete {percentage}% of {user}'s {settings.plural_collectible_name}?"
         view = ConfirmChoiceView(
             interaction,
             accept_message=f"Confirmed, deleting the {settings.plural_collectible_name}...",
             cancel_message="Request cancelled.",
         )
-        await interaction.followup.send(
-            text,
-            view=view,
-            ephemeral=True,
-        )
+        await interaction.followup.send(text, view=view, ephemeral=True)
         await view.wait()
         if not view.value:
             return
@@ -457,12 +423,10 @@ class Balls(app_commands.Group):
         else:
             count = await BallInstance.objects.filter(player=player).adelete()
         await interaction.followup.send(
-            f"{count} {settings.plural_collectible_name} from {user} have been deleted.",
-            ephemeral=True,
+            f"{count} {settings.plural_collectible_name} from {user} have been deleted.", ephemeral=True
         )
         await log_action(
-            f"{interaction.user} deleted {percentage or 100}% of "
-            f"{player}'s {settings.plural_collectible_name}.",
+            f"{interaction.user} deleted {percentage or 100}% of {player}'s {settings.plural_collectible_name}.",
             interaction.client,
         )
 
@@ -502,13 +466,11 @@ class Balls(app_commands.Group):
         special_str = f"{special.name} " if special else ""
         if user:
             await interaction.followup.send(
-                f"{user} has {balls} {special_str}"
-                f"{country}{settings.collectible_name}{plural}."
+                f"{user} has {balls} {special_str}{country}{settings.collectible_name}{plural}."
             )
         else:
             await interaction.followup.send(
-                f"There {verb} {balls} {special_str}"
-                f"{country}{settings.collectible_name}{plural}."
+                f"There {verb} {balls} {special_str}{country}{settings.collectible_name}{plural}."
             )
 
     @app_commands.command(name="create")
@@ -561,15 +523,11 @@ class Balls(app_commands.Group):
             return
 
         if not emoji_id.isnumeric():
-            await interaction.response.send_message(
-                "`emoji_id` is not a valid number.", ephemeral=True
-            )
+            await interaction.response.send_message("`emoji_id` is not a valid number.", ephemeral=True)
             return
         emoji = interaction.client.get_emoji(int(emoji_id))
         if not emoji:
-            await interaction.response.send_message(
-                "The bot does not have access to the given emoji.", ephemeral=True
-            )
+            await interaction.response.send_message("The bot does not have access to the given emoji.", ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
 

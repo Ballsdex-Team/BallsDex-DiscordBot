@@ -27,15 +27,11 @@ class ConfirmChoiceView(View):
         self.interaction_response = interaction
 
         if interaction.user != self.user:
-            await interaction.response.send_message(
-                "You cannot interact with this view.", ephemeral=True
-            )
+            await interaction.response.send_message("You cannot interact with this view.", ephemeral=True)
             return False
 
         if self.value is not None:
-            await interaction.response.send_message(
-                "You've already made a choice.", ephemeral=True
-            )
+            await interaction.response.send_message("You've already made a choice.", ephemeral=True)
             return False
         return True
 
@@ -47,12 +43,8 @@ class ConfirmChoiceView(View):
         except discord.NotFound:
             pass
 
-    @discord.ui.button(
-        style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
-    )
-    async def confirm_button(
-        self, interaction: discord.Interaction["BallsDexBot"], button: Button
-    ):
+    @discord.ui.button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
+    async def confirm_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         for item in self.children:
             item.disabled = True  # type: ignore
 
@@ -61,17 +53,12 @@ class ConfirmChoiceView(View):
         else:
             content = ""
 
-        await interaction.response.edit_message(
-            content=f"{content}\n{self.accept_message}", view=self
-        )
+        await interaction.response.edit_message(content=f"{content}\n{self.accept_message}", view=self)
 
         self.value = True
         self.stop()
 
-    @discord.ui.button(
-        style=discord.ButtonStyle.danger,
-        emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
-    )
+    @discord.ui.button(style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}")
     async def cancel_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         for item in self.children:
             item.disabled = True  # type: ignore
@@ -81,9 +68,7 @@ class ConfirmChoiceView(View):
         else:
             content = ""
 
-        await interaction.response.edit_message(
-            content=f"{content}\n{self.cancel_message}", view=self
-        )
+        await interaction.response.edit_message(content=f"{content}\n{self.cancel_message}", view=self)
 
         self.value = False
         self.stop()

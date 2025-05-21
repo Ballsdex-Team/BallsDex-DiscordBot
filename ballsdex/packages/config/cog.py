@@ -37,15 +37,9 @@ class Config(commands.GroupCog):
 
     @app_commands.command()
     @app_commands.checks.has_permissions(manage_guild=True)
-    @app_commands.checks.bot_has_permissions(
-        read_messages=True,
-        send_messages=True,
-        embed_links=True,
-    )
+    @app_commands.checks.bot_has_permissions(read_messages=True, send_messages=True, embed_links=True)
     async def channel(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        channel: Optional[discord.TextChannel] = None,
+        self, interaction: discord.Interaction["BallsDexBot"], channel: Optional[discord.TextChannel] = None
     ):
         """
         Set or change the channel where countryballs will spawn.
@@ -105,8 +99,7 @@ class Config(commands.GroupCog):
                     )
                 else:
                     await interaction.response.send_message(
-                        "The spawning channel specified in the configuration is not available.",
-                        ephemeral=True,
+                        "The spawning channel specified in the configuration is not available.", ephemeral=True
                     )
             else:
                 await interaction.response.send_message(

@@ -52,9 +52,7 @@ def owner_check(ctx: commands.Context[BallsDexBot]):
 
 
 class Translator(app_commands.Translator):
-    async def translate(
-        self, string: locale_str, locale: Locale, context: TranslationContextTypes
-    ) -> str | None:
+    async def translate(self, string: locale_str, locale: Locale, context: TranslationContextTypes) -> str | None:
         return (
             string.message.replace("countryballs", settings.plural_collectible_name)
             .replace("countryball", settings.collectible_name)
@@ -65,18 +63,14 @@ class Translator(app_commands.Translator):
 
 # observing the duration and status code of HTTP requests through aiohttp TraceConfig
 async def on_request_start(
-    session: aiohttp.ClientSession,
-    trace_ctx: types.SimpleNamespace,
-    params: aiohttp.TraceRequestStartParams,
+    session: aiohttp.ClientSession, trace_ctx: types.SimpleNamespace, params: aiohttp.TraceRequestStartParams
 ):
     # register t1 before sending request
     trace_ctx.start = session.loop.time()
 
 
 async def on_request_end(
-    session: aiohttp.ClientSession,
-    trace_ctx: types.SimpleNamespace,
-    params: aiohttp.TraceRequestEndParams,
+    session: aiohttp.ClientSession, trace_ctx: types.SimpleNamespace, params: aiohttp.TraceRequestEndParams
 ):
     time = session.loop.time() - trace_ctx.start
 
@@ -105,10 +99,7 @@ class CommandTree(app_commands.CommandTree):
         if not self.disable_time_check:
             delta = datetime.now(tz=interaction.created_at.tzinfo) - interaction.created_at
             if delta.total_seconds() >= 2.8:
-                log.warning(
-                    f"Skipping interaction {interaction.id}, "
-                    f"running {delta.total_seconds()}s late."
-                )
+                log.warning(f"Skipping interaction {interaction.id}, running {delta.total_seconds()}s late.")
                 return False
 
         bot = interaction.client
@@ -143,10 +134,7 @@ class BallsDexBot(commands.AutoShardedBot):
         # guild_messages: spawning is based on messages sent, content is not necessary
         # emojis_and_stickers: DB holds emoji IDs for the balls which are fetched from 3 servers
         intents = discord.Intents(
-            guilds=True,
-            guild_messages=True,
-            emojis_and_stickers=True,
-            message_content=not disable_message_content,
+            guilds=True, guild_messages=True, emojis_and_stickers=True, message_content=not disable_message_content
         )
         if disable_message_content:
             log.warning("Message content disabled, this will make spam detection harder")
@@ -179,14 +167,10 @@ class BallsDexBot(commands.AutoShardedBot):
         self.owner_ids: set[int]
 
     async def start_prometheus_server(self):
-        self.prometheus_server = PrometheusServer(
-            self, settings.prometheus_host, settings.prometheus_port
-        )
+        self.prometheus_server = PrometheusServer(self, settings.prometheus_host, settings.prometheus_port)
         await self.prometheus_server.run()
 
-    def assign_ids_to_app_groups(
-        self, group: app_commands.Group, synced_commands: list[app_commands.AppCommandGroup]
-    ):
+    def assign_ids_to_app_groups(self, group: app_commands.Group, synced_commands: list[app_commands.AppCommandGroup]):
         for synced_command in synced_commands:
             bot_command = group.get_command(synced_command.name)
             if not bot_command:
@@ -260,13 +244,9 @@ class BallsDexBot(commands.AutoShardedBot):
             raise RuntimeError("This is only available on the production bot instance.")
 
         try:
-            base_url = str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY).replace(
-                "ws://", "http://"
-            )
+            base_url = str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY).replace("ws://", "http://")
             async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"{base_url}/health", timeout=ClientTimeout(total=10)
-                ) as resp:
+                async with session.get(f"{base_url}/health", timeout=ClientTimeout(total=10)) as resp:
                     return resp.status == 200
         except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
             return False
@@ -310,9 +290,7 @@ class BallsDexBot(commands.AutoShardedBot):
         if len(self.owner_ids) > 1:
             log.info(f"{len(self.owner_ids)} users are set as bot owner.")
         else:
-            log.info(
-                f"{await self.fetch_user(next(iter(self.owner_ids)))} is the owner of this bot."
-            )
+            log.info(f"{await self.fetch_user(next(iter(self.owner_ids)))} is the owner of this bot.")
 
         await self.load_cache()
         grammar = "" if len(self.blacklist) == 1 else "s"
@@ -356,9 +334,7 @@ class BallsDexBot(commands.AutoShardedBot):
                     continue
                 synced_commands = await self.tree.sync(guild=guild)
                 grammar = "" if len(synced_commands) == 1 else "s"
-                log.info(
-                    f"Synced {len(synced_commands)} admin command{grammar} for guild {guild.id}."
-                )
+                log.info(f"Synced {len(synced_commands)} admin command{grammar} for guild {guild.id}.")
 
         if settings.prometheus_enabled:
             try:
@@ -366,17 +342,13 @@ class BallsDexBot(commands.AutoShardedBot):
             except Exception:
                 log.exception("Failed to start Prometheus server, stats will be unavailable.")
 
-        print(
-            f"\n    [bold][red]{settings.bot_name} bot[/red] [green]"
-            "is now operational![/green][/bold]\n"
-        )
+        print(f"\n    [bold][red]{settings.bot_name} bot[/red] [green]is now operational![/green][/bold]\n")
 
     async def blacklist_check(self, interaction: discord.Interaction[Self]) -> bool:
         if interaction.user.id in self.blacklist:
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
-                    "You are blacklisted from the bot."
-                    "\nYou can appeal this blacklist in our support server: {}".format(
+                    "You are blacklisted from the bot.\nYou can appeal this blacklist in our support server: {}".format(
                         settings.discord_invite
                     ),
                     ephemeral=True,
@@ -386,9 +358,7 @@ class BallsDexBot(commands.AutoShardedBot):
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
                     "This server is blacklisted from the bot."
-                    "\nYou can appeal this blacklist in our support server: {}".format(
-                        settings.discord_invite
-                    ),
+                    "\nYou can appeal this blacklist in our support server: {}".format(settings.discord_invite),
                     ephemeral=True,
                 )
             return False
@@ -400,9 +370,7 @@ class BallsDexBot(commands.AutoShardedBot):
             )
         return True
 
-    async def on_command_error(
-        self, context: commands.Context, exception: commands.errors.CommandError
-    ):
+    async def on_command_error(self, context: commands.Context, exception: commands.errors.CommandError):
         if isinstance(exception, (commands.CommandNotFound, commands.DisabledCommand)):
             return
 
@@ -437,13 +405,8 @@ class BallsDexBot(commands.AutoShardedBot):
             return
 
         if isinstance(exception, commands.CommandInvokeError):
-            await context.send(
-                "An error occured when running the command. Contact support if this persists."
-            )
-            log.error(
-                f"Unknown error in text command {context.command.qualified_name}",
-                exc_info=exception,
-            )
+            await context.send("An error occured when running the command. Contact support if this persists.")
+            log.error(f"Unknown error in text command {context.command.qualified_name}", exc_info=exception)
 
     async def on_application_command_error(
         self, interaction: discord.Interaction[Self], error: app_commands.AppCommandError
@@ -455,10 +418,7 @@ class BallsDexBot(commands.AutoShardedBot):
                 await interaction.response.send_message(content, ephemeral=True)
 
         if isinstance(error, app_commands.CommandOnCooldown):
-            await send(
-                "This command is on cooldown. Please retry "
-                f"<t:{math.ceil(time.time() + error.retry_after)}:R>."
-            )
+            await send(f"This command is on cooldown. Please retry <t:{math.ceil(time.time() + error.retry_after)}:R>.")
             return
 
         if isinstance(error, app_commands.CheckFailure):
@@ -492,8 +452,7 @@ class BallsDexBot(commands.AutoShardedBot):
                 await send("The bot does not have the permission to do something.")
                 # log to know where permissions are lacking
                 log.warning(
-                    f"Missing permissions for app command {interaction.command.qualified_name}",
-                    exc_info=error.original,
+                    f"Missing permissions for app command {interaction.command.qualified_name}", exc_info=error.original
                 )
                 return
 
@@ -507,18 +466,11 @@ class BallsDexBot(commands.AutoShardedBot):
                 )
                 # still including traceback because it may be a programming error
 
-            log.error(
-                f"Error in slash command {interaction.command.qualified_name}",
-                exc_info=error.original,
-            )
-            await send(
-                "An error occured when running the command. Contact support if this persists."
-            )
+            log.error(f"Error in slash command {interaction.command.qualified_name}", exc_info=error.original)
+            await send("An error occured when running the command. Contact support if this persists.")
             return
 
-        if isinstance(
-            error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)
-        ):
+        if isinstance(error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)):
             await send("Commands desynchronized, contact support to fix this.")
             log.error(error.args[0])
 
@@ -528,8 +480,5 @@ class BallsDexBot(commands.AutoShardedBot):
     async def on_error(self, event_method: str, /, *args, **kwargs):
         formatted_args = ", ".join((repr(x) for x in args))
         formatted_kwargs = " ".join(f"{x}={y:r}" for x, y in kwargs.items())
-        log.error(
-            f"Error in event {event_method}. Args: {formatted_args}. Kwargs: {formatted_kwargs}",
-            exc_info=True,
-        )
+        log.error(f"Error in event {event_method}. Args: {formatted_args}. Kwargs: {formatted_kwargs}", exc_info=True)
         self.tree.interaction_check

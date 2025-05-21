@@ -50,25 +50,19 @@ class CountryballsSelector(Pages):
         self.select_ball_menu.options = options
 
     @discord.ui.select()
-    async def select_ball_menu(
-        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
-    ):
+    async def select_ball_menu(self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select):
         await interaction.response.defer(thinking=True)
         ball_instance = await BallInstance.objects.prefetch_related("trade_player").aget(
             id=int(interaction.data.get("values")[0])  # type: ignore
         )
         await self.ball_selected(interaction, ball_instance)
 
-    async def ball_selected(
-        self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance
-    ):
+    async def ball_selected(self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance):
         raise NotImplementedError()
 
 
 class CountryballsViewer(CountryballsSelector):
-    async def ball_selected(
-        self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance
-    ):
+    async def ball_selected(self, interaction: discord.Interaction["BallsDexBot"], ball_instance: BallInstance):
         content, file, view = await ball_instance.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file, view=view)
         file.close()
@@ -95,9 +89,7 @@ class DuplicateViewMenu(Pages):
         options: List[discord.SelectOption] = []
         for item in items:
             options.append(
-                discord.SelectOption(
-                    label=item["name"], description=f"Count: {item['count']}", emoji=item["emoji"]
-                )
+                discord.SelectOption(label=item["name"], description=f"Count: {item['count']}", emoji=item["emoji"])
             )
         self.dupe_ball_menu.options = options
 

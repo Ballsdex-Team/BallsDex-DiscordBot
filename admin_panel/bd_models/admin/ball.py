@@ -22,9 +22,7 @@ class RegimeAdmin(admin.ModelAdmin):
 
     @admin.display()
     def background_image(self, obj: Regime):
-        return mark_safe(
-            f'<img src="/media/{transform_media(str(obj.background))}" height=60px />'
-        )
+        return mark_safe(f'<img src="/media/{transform_media(str(obj.background))}" height=60px />')
 
     def get_deleted_objects(
         self, objs: "list[Regime]", request: "HttpRequest"
@@ -34,22 +32,16 @@ class RegimeAdmin(admin.ModelAdmin):
             "regimes": len(regime_ids),
             "balls": Ball.objects.filter(regime_id__in=regime_ids).count(),
             "ball instances": BallInstance.objects.filter(ball__regime_id__in=regime_ids).count(),
-            "trade objects": TradeObject.objects.filter(
-                ballinstance__ball__regime_id__in=regime_ids
-            ).count(),
+            "trade objects": TradeObject.objects.filter(ballinstance__ball__regime_id__in=regime_ids).count(),
         }
 
         def format_callback(obj: "Model"):
             opts = obj._meta
             admin_url = reverse(
-                "%s:%s_%s_change" % (self.admin_site.name, opts.app_label, opts.model_name),
-                None,
-                (quote(obj.pk),),
+                "%s:%s_%s_change" % (self.admin_site.name, opts.app_label, opts.model_name), None, (quote(obj.pk),)
             )
             # Display a link to the admin page.
-            return format_html(
-                '{}: <a href="{}">{}</a>', capfirst(opts.verbose_name), admin_url, obj
-            )
+            return format_html('{}: <a href="{}">{}</a>', capfirst(opts.verbose_name), admin_url, obj)
 
         text = []
         for regime in objs:
@@ -61,8 +53,7 @@ class RegimeAdmin(admin.ModelAdmin):
 
         return (
             [
-                "Displaying Ball related objects (instances and trade objects) "
-                "is too expensive and has been disabled.",
+                "Displaying Ball related objects (instances and trade objects) is too expensive and has been disabled.",
                 *text,
             ],
             model_count,
@@ -87,91 +78,40 @@ class BallAdmin(admin.ModelAdmin):
     readonly_fields = ("collection_image", "spawn_image")
     save_on_top = True
     fieldsets = [
-        (
-            None,
-            {
-                "fields": [
-                    "country",
-                    "health",
-                    "attack",
-                    "rarity",
-                    "emoji_id",
-                    "economy",
-                    "regime",
-                ],
-            },
-        ),
+        (None, {"fields": ["country", "health", "attack", "rarity", "emoji_id", "economy", "regime"]}),
         (
             "Assets",
             {
-                "description": "You must have permission from the copyright holder "
-                "to use the files you're uploading!",
-                "fields": [
-                    "spawn_image",
-                    "wild_card",
-                    "collection_image",
-                    "collection_card",
-                    "credits",
-                ],
+                "description": "You must have permission from the copyright holder to use the files you're uploading!",
+                "fields": ["spawn_image", "wild_card", "collection_image", "collection_card", "credits"],
             },
         ),
         (
             "Ability",
-            {
-                "description": "The ability of the countryball",
-                "fields": ["capacity_name", "capacity_description"],
-            },
+            {"description": "The ability of the countryball", "fields": ["capacity_name", "capacity_description"]},
         ),
         (
             "Advanced",
             {
                 "description": "Advanced settings",
                 "classes": ["collapse"],
-                "fields": [
-                    "enabled",
-                    "tradeable",
-                    "short_name",
-                    "catch_names",
-                    "translations",
-                    "capacity_logic",
-                ],
+                "fields": ["enabled", "tradeable", "short_name", "catch_names", "translations", "capacity_logic"],
             },
         ),
     ]
 
-    list_display = [
-        "country",
-        "pk",
-        "emoji",
-        "rarity",
-        "capacity_name",
-        "health",
-        "attack",
-        "enabled",
-    ]
+    list_display = ["country", "pk", "emoji", "rarity", "capacity_name", "health", "attack", "enabled"]
     list_editable = ["enabled", "rarity"]
     list_filter = ["enabled", "tradeable", "regime", "economy", "created_at"]
     ordering = ["-created_at"]
 
-    search_fields = [
-        "country",
-        "capacity_name",
-        "capacity_description",
-        "catch_names",
-        "translations",
-        "credits",
-        "pk",
-    ]
-    search_help_text = (
-        "Search for countryball name, ID, ability name/content, "
-        "credits, catch names or translations"
-    )
+    search_fields = ["country", "capacity_name", "capacity_description", "catch_names", "translations", "credits", "pk"]
+    search_help_text = "Search for countryball name, ID, ability name/content, credits, catch names or translations"
 
     @admin.display(description="Emoji")
     def emoji(self, obj: Ball):
         return mark_safe(
-            f'<img src="https://cdn.discordapp.com/emojis/{obj.emoji_id}.png?size=40" '
-            f'title="ID: {obj.emoji_id}" />'
+            f'<img src="https://cdn.discordapp.com/emojis/{obj.emoji_id}.png?size=40" title="ID: {obj.emoji_id}" />'
         )
 
     def formfield_for_dbfield(
