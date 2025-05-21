@@ -9,7 +9,9 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 
-def is_staff(interaction: discord.Interaction) -> bool:
+def is_staff(interaction: discord.Interaction["BallsDexBot"]) -> bool:
+    if interaction.user.id in interaction.client.owner_ids:
+        return True
     if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
         roles = settings.admin_role_ids + settings.root_role_ids
         if any(role.id in roles for role in interaction.user.roles):  # type: ignore
@@ -19,7 +21,7 @@ def is_staff(interaction: discord.Interaction) -> bool:
 
 async def inventory_privacy(
     bot: "BallsDexBot",
-    interaction: discord.Interaction,
+    interaction: discord.Interaction["BallsDexBot"],
     player: Player,
     user_obj: Union[discord.User, discord.Member],
 ):

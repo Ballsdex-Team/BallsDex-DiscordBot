@@ -43,10 +43,12 @@ class BallInstanceAdmin(admin.ModelAdmin):
         ),
     ]
 
-    list_display = ("description", "ball__country", "player", "health_bonus", "attack_bonus")
+    list_display = ("description", "player", "server_id", "catch_time")
     list_select_related = ("ball", "special", "player")
     list_filter = (SpecialFilter, BallFilter, PlayerFilter, "tradeable", "favorite")
-    show_facets = admin.ShowFacets.NEVER  # hide filtered counts (considerable slowdown)
+    show_facets = (
+        admin.ShowFacets.NEVER  # type: ignore
+    )  # hide filtered counts (considerable slowdown)
     show_full_result_count = False
     paginator = ApproxCountPaginator
 

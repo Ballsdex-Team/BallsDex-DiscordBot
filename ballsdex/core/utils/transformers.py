@@ -178,17 +178,23 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
                 balls_queryset = balls_queryset.filter(
                     locked__isnull=False, locked__gt=tortoise_now() - timedelta(minutes=30)
                 )
-        balls_queryset = (
-            balls_queryset.select_related("ball")
-            .annotate(
-                searchable=RawSQL(
-                    "to_hex(ballinstance.id) || ' ' || ballinstance__ball.country || "
-                    "' ' || ballinstance__ball.catch_names"
+
+        if value.startswith("="):
+            ball_name = value[1:]
+            balls_queryset = balls_queryset.filter(ball__country__iexact=ball_name)
+        else:
+            balls_queryset = (
+                balls_queryset.select_related("ball")
+                .annotate(
+                    searchable=RawSQL(
+                        "to_hex(ballinstance.id) || ' ' || ballinstance__ball.country || ' ' || "
+                        "COALESCE(ballinstance__ball.catch_names, '') || ' ' || "
+                        "COALESCE(ballinstance__ball.translations, '')"
+                    )
                 )
+                .filter(searchable__icontains=value.replace(".", ""))
             )
-            .filter(searchable__icontains=value.replace(".", ""))
-            .limit(25)
-        )
+        balls_queryset = balls_queryset.limit(25)
 
         choices: list[app_commands.Choice] = [
             app_commands.Choice(name=x.description(bot=interaction.client), value=str(x.pk))

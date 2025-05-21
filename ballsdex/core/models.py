@@ -13,9 +13,12 @@ from tortoise.contrib.postgres.indexes import PostgreSQLIndex
 from tortoise.expressions import Q
 
 from ballsdex.core.image_generator.image_gen import draw_card
+from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
+
+    from ballsdex.core.bot import BallsDexBot
 
 
 balls: dict[int, Ball] = {}
@@ -124,7 +127,7 @@ class Ball(models.Model):
 
     country = fields.CharField(max_length=48, unique=True, description="Name of this countryball")
     short_name = fields.CharField(
-        max_length=12,
+        max_length=24,
         null=True,
         default=None,
         description="Alternative shorter name to be used in card design, "
@@ -276,7 +279,7 @@ class BallInstance(models.Model):
         if bot and self.pk in bot.locked_balls and not is_trade:  # type: ignore
             emotes += "🔒"
         if self.favorite and not is_trade:
-            emotes += "❤️"
+            emotes += settings.favorited_collectible_emoji
         if emotes:
             emotes += " "
         if self.specialcard:
@@ -327,16 +330,16 @@ class BallInstance(models.Model):
         return text
 
     def draw_card(self) -> BytesIO:
-        image = draw_card(self)
+        image, kwargs = draw_card(self)
         buffer = BytesIO()
-        image.save(buffer, format="png")
+        image.save(buffer, **kwargs)
         buffer.seek(0)
         image.close()
         return buffer
 
     async def prepare_for_message(
-        self, interaction: discord.Interaction
-    ) -> Tuple[str, discord.File]:
+        self, interaction: discord.Interaction["BallsDexBot"]
+    ) -> Tuple[str, discord.File, discord.ui.View]:
         # message content
         trade_content = ""
         await self.fetch_related("trade_player", "special")
@@ -376,7 +379,8 @@ class BallInstance(models.Model):
         with ThreadPoolExecutor() as pool:
             buffer = await interaction.client.loop.run_in_executor(pool, self.draw_card)
 
-        return content, discord.File(buffer, "card.png")
+        view = discord.ui.View()
+        return content, discord.File(buffer, "card.webp"), view
 
     async def lock_for_trade(self):
         self.locked = timezone.now()
@@ -416,6 +420,11 @@ class FriendPolicy(IntEnum):
     DENY = 2
 
 
+class TradeCooldownPolicy(IntEnum):
+    COOLDOWN = 1
+    BYPASS = 2
+
+
 class Player(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
@@ -440,6 +449,12 @@ class Player(models.Model):
         description="How you want to handle friend requests",
         default=FriendPolicy.ALLOW,
     )
+    trade_cooldown_policy = fields.IntEnumField(
+        TradeCooldownPolicy,
+        description="How you want to handle trade accept cooldown",
+        default=TradeCooldownPolicy.COOLDOWN,
+    )
+    extra_data = fields.JSONField(default=dict)
     balls: fields.BackwardFKRelation[BallInstance]
 
     def __str__(self) -> str:

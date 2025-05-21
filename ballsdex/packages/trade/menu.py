@@ -9,7 +9,7 @@ import discord
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
 
-from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
+from ballsdex.core.models import BallInstance, Player, Trade, TradeCooldownPolicy, TradeObject
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
@@ -34,7 +34,7 @@ class TradeView(View):
         super().__init__(timeout=60 * 30)
         self.trade = trade
 
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         try:
             self.trade._get_trader(interaction.user)
         except RuntimeError:
@@ -46,7 +46,7 @@ class TradeView(View):
             return True
 
     @button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
-    async def lock(self, interaction: discord.Interaction, button: Button):
+    async def lock(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
         if trader.locked:
             await interaction.response.send_message(
@@ -68,28 +68,66 @@ class TradeView(View):
             )
 
     @button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
-    async def clear(self, interaction: discord.Interaction, button: Button):
+    async def clear(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
         if trader.locked:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You have locked your proposal, it cannot be edited! "
                 "You can click the cancel button to stop the trade instead.",
                 ephemeral=True,
             )
-        else:
-            for countryball in trader.proposal:
-                await countryball.unlock()
-            trader.proposal.clear()
-            await interaction.response.send_message("Proposal cleared.", ephemeral=True)
+            return
+
+        view = ConfirmChoiceView(
+            interaction,
+            accept_message="Clearing your proposal...",
+            cancel_message="This request has been cancelled.",
+        )
+        await interaction.followup.send(
+            "Are you sure you want to clear your proposal?", view=view, ephemeral=True
+        )
+        await view.wait()
+        if not view.value:
+            return
+
+        if trader.locked:
+            await interaction.followup.send(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return
+
+        for countryball in trader.proposal:
+            await countryball.unlock()
+
+        trader.proposal.clear()
+        await interaction.followup.send("Proposal cleared.", ephemeral=True)
 
     @button(
         label="Cancel trade",
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
         style=discord.ButtonStyle.danger,
     )
-    async def cancel(self, interaction: discord.Interaction, button: Button):
+    async def cancel(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        view = ConfirmChoiceView(
+            interaction,
+            accept_message="Cancelling the trade...",
+            cancel_message="This request has been cancelled.",
+        )
+        await interaction.followup.send(
+            "Are you sure you want to cancel this trade?", view=view, ephemeral=True
+        )
+        await view.wait()
+        if not view.value:
+            return
+
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
-        await interaction.response.send_message("Trade has been cancelled.", ephemeral=True)
+        await interaction.followup.send("Trade has been cancelled.", ephemeral=True)
 
 
 class ConfirmView(View):
@@ -98,7 +136,7 @@ class ConfirmView(View):
         self.trade = trade
         self.cooldown_duration = timedelta(seconds=10)
 
-    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         try:
             self.trade._get_trader(interaction.user)
         except RuntimeError:
@@ -112,21 +150,22 @@ class ConfirmView(View):
     @discord.ui.button(
         style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
-    async def accept_button(self, interaction: discord.Interaction, button: Button):
+    async def accept_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
-        if self.trade.cooldown_start_time is None:
-            return
+        if trader.player.trade_cooldown_policy == TradeCooldownPolicy.COOLDOWN:
+            if self.trade.cooldown_start_time is None:
+                return
 
-        elapsed = datetime.now(timezone.utc) - self.trade.cooldown_start_time
-        if elapsed < self.cooldown_duration:
-            remaining_time = datetime.now(timezone.utc) + (self.cooldown_duration - elapsed)
-            remaining = format_dt(remaining_time, style="R")
-            await interaction.response.send_message(
-                f"This trade can only be approved {remaining}, please use this "
-                "time to double check the items to prevent any unwanted trades.",
-                ephemeral=True,
-            )
-            return
+            elapsed = datetime.now(timezone.utc) - self.trade.cooldown_start_time
+            if elapsed < self.cooldown_duration:
+                remaining_time = datetime.now(timezone.utc) + (self.cooldown_duration - elapsed)
+                remaining = format_dt(remaining_time, style="R")
+                await interaction.response.send_message(
+                    f"This trade can only be approved {remaining}, please use this "
+                    "time to double check the items to prevent any unwanted trades.",
+                    ephemeral=True,
+                )
+                return
         if trader.accepted:
             await interaction.response.send_message(
                 "You have already accepted this trade.", ephemeral=True
@@ -150,9 +189,23 @@ class ConfirmView(View):
         style=discord.ButtonStyle.danger,
         emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
     )
-    async def deny_button(self, interaction: discord.Interaction, button: Button):
+    async def deny_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        view = ConfirmChoiceView(
+            interaction,
+            accept_message="Cancelling the trade...",
+            cancel_message="This request has been cancelled.",
+        )
+        await interaction.followup.send(
+            "Are you sure you want to cancel this trade?", view=view, ephemeral=True
+        )
+        await view.wait()
+        if not view.value:
+            return
+
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
-        await interaction.response.send_message("Trade has been cancelled.", ephemeral=True)
+        await interaction.followup.send("Trade has been cancelled.", ephemeral=True)
 
 
 class TradeMenu:
@@ -399,7 +452,7 @@ class CountryballsSelector(Pages):
             if ball.is_tradeable is False:
                 continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
-            favorite = "❤️ " if ball.favorite else ""
+            favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
             special = ball.special_emoji(self.bot, True)
             options.append(
                 discord.SelectOption(
@@ -415,7 +468,9 @@ class CountryballsSelector(Pages):
         self.select_ball_menu.max_values = len(options)
 
     @discord.ui.select(min_values=1, max_values=25)
-    async def select_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
+    async def select_ball_menu(
+        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
+    ):
         for value in item.values:
             ball_instance = await BallInstance.get(id=int(value)).prefetch_related(
                 "ball", "player"
@@ -424,7 +479,9 @@ class CountryballsSelector(Pages):
         await interaction.response.defer()
 
     @discord.ui.button(label="Select Page", style=discord.ButtonStyle.secondary)
-    async def select_all_button(self, interaction: discord.Interaction, button: Button):
+    async def select_all_button(
+        self, interaction: discord.Interaction["BallsDexBot"], button: Button
+    ):
         await interaction.response.defer(thinking=True, ephemeral=True)
         for ball in self.select_ball_menu.options:
             ball_instance = await BallInstance.get(id=int(ball.value)).prefetch_related(
@@ -441,7 +498,9 @@ class CountryballsSelector(Pages):
         )
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
-    async def confirm_button(self, interaction: discord.Interaction, button: Button):
+    async def confirm_button(
+        self, interaction: discord.Interaction["BallsDexBot"], button: Button
+    ):
         await interaction.response.defer(thinking=True, ephemeral=True)
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
@@ -504,7 +563,7 @@ class CountryballsSelector(Pages):
         self.balls_selected.clear()
 
     @discord.ui.button(label="Clear", style=discord.ButtonStyle.danger)
-    async def clear_button(self, interaction: discord.Interaction, button: Button):
+    async def clear_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
         self.balls_selected.clear()
         await interaction.followup.send(

@@ -34,7 +34,9 @@ class Settings:
         Usually "BallsDex", can be replaced when possible
     players_group_cog_name: str
         Set the name of the base command of the "players" cog, /balls by default
-    max_favorites:
+    favorited_collectible_emoji: str
+        Set the emoji used to represent a favorited countryball, "❤️" by default.
+    max_favorites: int
         Set the maximum amount of favorited countryballs a user can have, 50 by default.
     max_attack_bonus:
         Set the biggest/smallest attack bonus that a spawned countryball can have.
@@ -77,6 +79,7 @@ class Settings:
     plural_collectible_name: str = "countryballs"
     bot_name: str = "BallsDex"
     players_group_cog_name: str = "balls"
+    favorited_collectible_emoji: str = "❤️"
 
     max_favorites: int = 50
     max_attack_bonus: int = 20
@@ -114,6 +117,15 @@ class Settings:
     client_id: str = ""
     client_secret: str = ""
 
+    # sentry details
+    sentry_dsn: str = ""
+    sentry_environment: str = "production"
+
+    caught_messages: list[str] = field(default_factory=list)
+    wrong_messages: list[str] = field(default_factory=list)
+    spawn_messages: list[str] = field(default_factory=list)
+    slow_messages: list[str] = field(default_factory=list)
+
 
 settings = Settings()
 
@@ -134,6 +146,7 @@ def read_settings(path: "Path"):
     )
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
+    settings.favorited_collectible_emoji = content.get("favorited-collectible-emoji", "❤️")
 
     settings.about_description = content["about"]["description"]
     settings.github_link = content["about"]["github-link"]
@@ -175,6 +188,18 @@ def read_settings(path: "Path"):
         settings.client_secret = admin.get("client-secret")
         settings.admin_url = admin.get("url")
 
+    if sentry := content.get("sentry"):
+        settings.sentry_dsn = sentry.get("dsn")
+        settings.sentry_environment = sentry.get("environment")
+
+    if catch := content.get("catch"):
+        settings.spawn_messages = catch.get("spawn_msgs") or ["A wild {collectible} appeared!"]
+        settings.caught_messages = catch.get("caught_msgs") or ["{user} You caught **{ball}**!"]
+        settings.wrong_messages = catch.get("wrong_msgs") or ["{user} Wrong name!"]
+        settings.slow_messages = catch.get("slow_msgs") or [
+            "{user} Sorry, this {collectible} was caught already!"
+        ]
+
     log.info("Settings loaded.")
 
 
@@ -200,10 +225,10 @@ about:
   github-link: https://github.com/laggron42/BallsDex-DiscordBot
 
   # valid invite for a Discord server
-  discord-invite: https://discord.gg/ballsdex  # BallsDex official server
+  discord-invite: https://discord.gg/INVITE_CODE
 
-  terms-of-service: https://gist.github.com/laggron42/52ae099c55c6ee1320a260b0a3ecac4e
-  privacy-policy: https://gist.github.com/laggron42/1eaa122013120cdfcc6d27f9485fe0bf
+  terms-of-service: https://gist.github.com/ # replace with your own link
+  privacy-policy: https://gist.github.com/ # replace with your own link
 
 # WORK IN PROGRESS, DOES NOT FULLY WORK
 # override the name "countryball" in the bot
@@ -220,6 +245,9 @@ bot-name: BallsDex
 # players group cog command name
 # this is /balls by default, but you can change it for /animals or /rocks for example
 players-group-cog-name: balls
+
+# emoji used to represent a favorited collectible
+favorited-collectible-emoji: ❤️
 
 # maximum amount of favorites that are allowed
 max-favorites: 50
@@ -294,6 +322,38 @@ prometheus:
   port: 15260
 
 spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
+
+# sentry details, leave empty if you don't know what this is
+# https://sentry.io/ for error tracking
+sentry:
+    dsn: ""
+    environment: "production"
+
+catch:
+  # Add any number of messages to each of these categories. The bot will select a random
+  # one each time.
+  # {user} is mention. {collectible} is collectible name. {ball} is ball name, and 
+  # {collectibles} is collectible plural.
+
+  # the message that appears when a user catches a ball 
+  caught_msgs:
+    - "{user} You caught **{ball}**!"
+
+  # the message that appears when a user gets the name wrong
+  # here and only here, you can use {wrong} to show the wrong name that was entered
+  # note that a user can put whatever they want into that field, so be careful
+  wrong_msgs:
+    # - {user} Wrong name! You put: {wrong}
+    - "{user} Wrong name!"
+
+  # the message that appears above the spawn art
+  # {user} is not available here, because who would it ping?
+  spawn_msgs:
+    - "A wild {collectible} appeared!"
+
+  # the message that appears when a user is to slow to catch a ball
+  slow_msgs:
+    - "{user} Sorry, this {collectible} was caught already!"
   """  # noqa: W291
     )
 
@@ -310,6 +370,8 @@ def update_settings(path: "Path"):
     add_packages = "packages:" not in content
     add_spawn_manager = "spawn-manager" not in content
     add_django = "Admin panel related settings" not in content
+    add_sentry = "sentry:" not in content
+    add_catch_messages = "catch:" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -397,6 +459,44 @@ admin-panel:
 
 """
 
+    if add_sentry:
+        content += """
+# sentry details, leave empty if you don't know what this is
+# https://sentry.io/ for error tracking
+sentry:
+    dsn: ""
+    environment: "production"
+"""
+
+    if add_catch_messages:
+        content += """
+catch:
+  # Add any number of messages to each of these categories. The bot will select a random
+  # one each time.
+  # {user} is mention. {collectible} is collectible name. {ball} is ball name, and
+  # {collectibles} is collectible plural.
+
+  # the message that appears when a user catches a ball
+  caught_msgs:
+    - "{user} You caught **{ball}**!"
+
+  # the message that appears when a user gets the name wrong
+  # here and only here, you can use {wrong} to show the wrong name that was entered
+  # note that a user can put whatever they want into that field, so be careful
+  wrong_msgs:
+    # - {user} Wrong name! You put: {wrong}
+    - "{user} Wrong name!"
+
+  # the message that appears above the spawn art
+  # {user} is not available here, because who would it ping?
+  spawn_msgs:
+    - "A wild {collectible} appeared!"
+
+  # the message that appears when a user is to slow to catch a ball
+  slow_msgs:
+    - "{user} Sorry, this {collectible} was caught already!"
+"""
+
     if any(
         (
             add_owners,
@@ -408,6 +508,8 @@ admin-panel:
             add_packages,
             add_spawn_manager,
             add_django,
+            add_sentry,
+            add_catch_messages,
         )
     ):
         path.write_text(content)

@@ -10,11 +10,13 @@ from pathlib import Path
 from signal import SIGTERM
 
 import discord
+import sentry_sdk
 import yarl
-from aerich import Command
 from discord.ext.commands import when_mentioned_or
 from rich import print
+from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from tortoise import Tortoise
+from yaml import YAMLError
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
@@ -28,7 +30,7 @@ TORTOISE_ORM = {
     "connections": {"default": os.environ.get("BALLSDEXBOT_DB_URL")},
     "apps": {
         "models": {
-            "models": ["ballsdex.core.models", "aerich.models"],
+            "models": ["ballsdex.core.models"],
             "default_connection": "default",
         },
     },
@@ -241,15 +243,16 @@ async def init_tortoise(db_url: str, *, skip_migrations: bool = False):
     log.debug(f"Database URL: {db_url}")
     await Tortoise.init(config=TORTOISE_ORM)
 
-    if skip_migrations:
-        return
 
-    # migrations
-    command = Command(TORTOISE_ORM, app="models")
-    await command.init()
-    migrations = await command.upgrade()
-    if migrations:
-        log.info(f"Ran {len(migrations)} migrations: {', '.join(migrations)}")
+async def init_sentry():
+    if settings.sentry_dsn:
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            environment=settings.sentry_environment,
+            release=bot_version,
+            integrations=[AsyncioIntegration()],
+        )  # TODO: Add breadcrumbs for clustering
+        log.info("Sentry initialized.")
 
 
 def main():
@@ -263,13 +266,28 @@ def main():
         print("[yellow]Resetting configuration file.[/yellow]")
         reset_settings(cli_flags.config_file)
 
-    try:
-        read_settings(cli_flags.config_file)
-    except FileNotFoundError:
+    if not cli_flags.config_file.exists():
         print("[yellow]The config file could not be found, generating a default one.[/yellow]")
         reset_settings(cli_flags.config_file)
-    else:
-        update_settings(cli_flags.config_file)
+
+    update_settings(cli_flags.config_file)
+
+    try:
+        read_settings(cli_flags.config_file)
+    except YAMLError:
+        print(
+            "[red]Your YAML is invalid!\nError parsing config file, please check your config and"
+            "try again[/red]"
+        )
+        time.sleep(1)
+        sys.exit(0)
+    except KeyError as missing_key:
+        print(
+            f"[red]Config file missing key {missing_key}!\nError parsing config file, please check"
+            "your config and try again[/red]"
+        )
+        time.sleep(1)
+        sys.exit(0)
 
     print_welcome()
     queue_listener: logging.handlers.QueueListener | None = None
@@ -312,11 +330,12 @@ def main():
             command_prefix=when_mentioned_or(prefix),
             dev=cli_flags.dev,  # type: ignore
             shard_count=settings.shard_count,
-            disable_messsage_content=cli_flags.disable_message_content,
+            disable_message_content=cli_flags.disable_message_content,
             disable_time_check=cli_flags.disable_time_check,
             skip_tree_sync=cli_flags.skip_tree_sync,
         )
 
+        loop.run_until_complete(init_sentry())
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
         try:

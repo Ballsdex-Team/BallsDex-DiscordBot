@@ -5,6 +5,7 @@ import inspect
 import io
 import re
 import textwrap
+import time
 import traceback
 from contextlib import redirect_stdout
 from copy import copy
@@ -68,6 +69,8 @@ async def send_interactive(
     messages: Iterable[str],
     *,
     timeout: int = 15,
+    time_taken: float | None = None,
+    block: str | None = "py",
 ) -> list[discord.Message]:
     """
     Send multiple messages interactively.
@@ -78,22 +81,15 @@ async def send_interactive(
 
     Parameters
     ----------
-    channel : discord.abc.Messageable
-        The channel to send the messages to.
+    ctx : discord.ext.commands.Context
+        The context to send the messages to.
     messages : `iterable` of `str`
         The messages to send.
-    user : discord.User
-        The user that can respond to the prompt.
-        When this is ``None``, any user can respond.
-    box_lang : Optional[str]
-        If specified, each message will be contained within a code block of
-        this language.
     timeout : int
         How long the user has to respond to the prompt before it times out.
         After timing out, the bot deletes its prompt message.
-    join_character : str
-        The character used to join all the messages when the file output
-        is selected.
+    time_taken: float | None
+        The time (in seconds) taken to complete the evaluation.
 
     Returns
     -------
@@ -117,7 +113,16 @@ async def send_interactive(
     ret = []
 
     for idx, page in enumerate(messages, 1):
-        msg = await ctx.channel.send(box(page, lang="py"))
+        if block:
+            text = box(page, lang=block)
+        else:
+            text = page
+        if time_taken and idx == len(messages):
+            time = (
+                f"{round(time_taken * 1000)}ms" if time_taken < 1 else f"{round(time_taken, 3)}s"
+            )
+            text += f"\n-# Took {time}"
+        msg = await ctx.channel.send(text)
         ret.append(msg)
         n_remaining = len(messages) - idx
         if n_remaining > 0:
@@ -209,7 +214,7 @@ class Dev(commands.Cog):
     @staticmethod
     def get_pages(msg: str):
         """Pagify the given message for output to the user."""
-        return pagify(msg, delims=["\n", " "], priority=True, shorten_by=10)
+        return pagify(msg, delims=["\n", " "], priority=True, shorten_by=25)
 
     @staticmethod
     def sanitize_output(ctx: commands.Context, input_: str) -> str:
@@ -286,21 +291,27 @@ class Dev(commands.Cog):
         env = self.get_environment(ctx)
         code = self.cleanup_code(code)
 
+        t1 = time.time()
         try:
             compiled = self.async_compile(code, "<string>", "eval")
             result = await self.maybe_await(eval(compiled, env))
         except SyntaxError as e:
-            await send_interactive(ctx, self.get_syntax_error(e))
+            t2 = time.time()
+            await send_interactive(ctx, self.get_syntax_error(e), time_taken=t2 - t1)
             return
         except Exception as e:
-            await send_interactive(ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)))
+            t2 = time.time()
+            await send_interactive(
+                ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1
+            )
             return
+        t2 = time.time()
 
         self._last_result = result
         result = self.sanitize_output(ctx, str(result))
 
         await ctx.message.add_reaction("✅")
-        await send_interactive(ctx, self.get_pages(result))
+        await send_interactive(ctx, self.get_pages(result), time_taken=t2 - t1)
 
     @commands.command(name="eval")
     @commands.is_owner()
@@ -330,11 +341,20 @@ class Dev(commands.Cog):
 
         to_compile = "async def func():\n%s" % textwrap.indent(body, "  ")
 
+        t1 = time.time()
         try:
             compiled = self.async_compile(to_compile, "<string>", "exec")
             exec(compiled, env)
         except SyntaxError as e:
-            return await send_interactive(ctx, self.get_syntax_error(e))
+            t2 = time.time()
+            return await send_interactive(ctx, self.get_syntax_error(e), time_taken=t2 - t1)
+        except Exception as e:
+            t2 = time.time()
+            await send_interactive(
+                ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1
+            )
+            return
+        t2 = time.time()
 
         func = env["func"]
         result = None
@@ -354,7 +374,7 @@ class Dev(commands.Cog):
             msg = printed
         msg = self.sanitize_output(ctx, msg)
 
-        await send_interactive(ctx, self.get_pages(msg))
+        await send_interactive(ctx, self.get_pages(msg), time_taken=t2 - t1)
 
     @commands.command()
     @commands.is_owner()
