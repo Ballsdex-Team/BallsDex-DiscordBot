@@ -3,9 +3,10 @@
 files: .*\.py$
 
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.7.6
     hooks:
+<<<<<<< HEAD
       - id: trailing-whitespace
         exclude: settings\.py
       - id: end-of-file-fixer
@@ -26,11 +27,21 @@ repos:
           - --profile
           - black
           - --filter-files
+=======
+      - id: uv-lock
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.10
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+>>>>>>> a82ad7d (ci: update pre-commit and GH actions)
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.390
     hooks:
       - id: pyright
         language_version: python3.13
+<<<<<<< HEAD
         additional_dependencies:
           - discord.py==2.5.0
           - cachetools
@@ -55,3 +66,5 @@ repos:
       - id: flake8
         additional_dependencies:
           - Flake8-pyproject==1.2.3
+=======
+>>>>>>> a82ad7d (ci: update pre-commit and GH actions)
