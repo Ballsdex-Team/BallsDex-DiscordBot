@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class SpecialAdmin(admin.ModelAdmin):
     save_on_top = True
     fieldsets = [
-        (None, {"fields": ["name", "catch_phrase", "rarity", "emoji", "background"]}),
+        (None, {"fields": ["name", "catch_phrase", "rarity", "emoji", "background", "credits"]}),
         (
             "Time range",
             {

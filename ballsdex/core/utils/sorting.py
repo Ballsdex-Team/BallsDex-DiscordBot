@@ -9,6 +9,13 @@ if TYPE_CHECKING:
     from bd_models.models import BallInstance
 
 
+class FilteringChoices(enum.Enum):
+    only_specials = "special"
+    non_specials = "non_special"
+    self_caught = "self_caught"
+    this_server = "this_server"
+
+
 class SortingChoices(enum.Enum):
     alphabetic = "ball__country"
     catch_date = "-catch_date"
@@ -62,3 +69,36 @@ def sort_balls[QS: QuerySet[BallInstance]](sort: SortingChoices, queryset: QS) -
         return queryset.order_by(sort.value, "ball__country")
     else:
         return queryset.order_by(sort.value)
+
+
+def filter_balls(
+    filter: FilteringChoices, queryset: "QuerySet[BallInstance]", guild_id: int | None = None
+) -> "QuerySet[BallInstance]":
+    """
+    Edit a list of ball instances in place to apply the selected filtering options.
+
+    Parameters
+    ----------
+    filter: FilteringChoices
+        One of the supported filtering methods
+    balls: QuerySet[BallInstance]
+        A ballinstance queryset.
+    guild_id: int | None
+        The ID of the server to filter by. Only used for the ``this_server`` filter.
+        If not provided, this filter will be ignored.
+
+    Returns
+    -------
+    QuerySet[BallInstance]
+        The modified query applying the filtering.
+    """
+    if filter == FilteringChoices.only_specials:
+        return queryset.exclude(special=None)
+    elif filter == FilteringChoices.non_specials:
+        return queryset.filter(special=None)
+    elif filter == FilteringChoices.self_caught:
+        return queryset.filter(trade_player=None)
+    elif filter == FilteringChoices.this_server and guild_id is not None:
+        return queryset.filter(server_id=guild_id)
+    else:
+        return queryset

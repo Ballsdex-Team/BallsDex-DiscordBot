@@ -4,15 +4,19 @@ import logging
 import logging.handlers
 import os
 import sys
+import time
 from pathlib import Path
 from signal import SIGTERM
 from typing import TypedDict, Unpack
 
 import discord
+import sentry_sdk
 import yarl
 from discord.ext.commands import when_mentioned_or
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from rich import print
+from sentry_sdk.integrations.asyncio import AsyncioIntegration
+from yaml import YAMLError
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
@@ -166,6 +170,17 @@ def bot_exception_handler(bot: BallsDexBot, bot_task: asyncio.Future):
         asyncio.create_task(shutdown_handler(bot))
 
 
+async def init_sentry():
+    if settings.sentry_dsn:
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            environment=settings.sentry_environment,
+            release=bot_version,
+            integrations=[AsyncioIntegration()],
+        )  # TODO: Add breadcrumbs for clustering
+        log.info("Sentry initialized.")
+
+
 class RemoveWSBehindMsg(logging.Filter):
     """Filter used when gateway proxy is set, the "behind" message is meaningless in this case."""
 
@@ -219,13 +234,25 @@ class Command(BaseCommand):
             print("[yellow]Resetting configuration file.[/yellow]")
             reset_settings(options["config_file"])
 
-        try:
-            read_settings(options["config_file"])
-        except FileNotFoundError:
+        if not options["config_file"].exists():
             print("[yellow]The config file could not be found, generating a default one.[/yellow]")
             reset_settings(options["config_file"])
-        else:
-            update_settings(options["config_file"])
+
+        update_settings(options["config_file"])
+
+        try:
+            read_settings(options["config_file"])
+        except YAMLError:
+            print("[red]Your YAML is invalid!\nError parsing config file, please check your config andtry again[/red]")
+            time.sleep(1)
+            sys.exit(0)
+        except KeyError as missing_key:
+            print(
+                f"[red]Config file missing key {missing_key}!\nError parsing config file, please check"
+                "your config and try again[/red]"
+            )
+            time.sleep(1)
+            sys.exit(0)
 
         print_welcome()
         queue_listener: logging.handlers.QueueListener | None = None
@@ -262,6 +289,7 @@ class Command(BaseCommand):
                 skip_tree_sync=options["skip_tree_sync"],
             )
 
+            loop.run_until_complete(init_sentry())
             exc_handler = functools.partial(global_exception_handler, bot)
             loop.set_exception_handler(exc_handler)
             try:

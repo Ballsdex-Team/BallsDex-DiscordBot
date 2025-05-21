@@ -23,3 +23,8 @@ class MentionPolicy(models.IntegerChoices):
 class FriendPolicy(models.IntegerChoices):
     ALLOW = 1
     DENY = 2
+
+
+class TradeCooldownPolicy(models.IntegerChoices):
+    COOLDOWN = 1
+    BYPASS = 2

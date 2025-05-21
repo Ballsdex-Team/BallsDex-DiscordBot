@@ -47,29 +47,44 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         if self.view.caught:
+            slow_message = random.choice(settings.slow_messages).format(
+                user=interaction.user.mention,
+                collectible=settings.collectible_name,
+                ball=self.view.name,
+                collectibles=settings.plural_collectible_name,
+            )
+
             await interaction.followup.send(
-                f"{interaction.user.mention} I was caught already!",
-                ephemeral=True,
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                slow_message, ephemeral=True, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned)
             )
             return
 
-        if self.view.is_name_valid(self.name.value):
-            ball, has_caught_before = await self.view.catch_ball(
-                interaction.user, player=player, guild=interaction.guild
+        if not self.view.is_name_valid(self.name.value):
+            if len(self.name.value) > 500:
+                wrong_name = self.name.value[:500] + "..."
+            else:
+                wrong_name = self.name.value
+
+            wrong_message = random.choice(settings.wrong_messages).format(
+                user=interaction.user.mention,
+                collectible=settings.collectible_name,
+                ball=self.view.name,
+                collectibles=settings.plural_collectible_name,
+                wrong=wrong_name,
             )
 
             await interaction.followup.send(
-                f"{interaction.user.mention} {self.view.get_message(ball, has_caught_before)}",
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                wrong_message, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned), ephemeral=False
             )
-            await interaction.followup.edit_message(self.view.message.id, view=self.view)
-        else:
-            await interaction.followup.send(
-                f"{interaction.user.mention} Wrong name!",
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
-                ephemeral=False,
-            )
+            return
+
+        ball, has_caught_before = await self.view.catch_ball(interaction.user, player=player, guild=interaction.guild)
+
+        await interaction.followup.send(
+            self.view.get_catch_message(ball, has_caught_before, interaction.user.mention),
+            allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+        )
+        await interaction.followup.edit_message(self.view.message.id, view=self.view)
 
 
 class BallSpawnView(View):
@@ -220,10 +235,12 @@ class BallSpawnView(View):
         try:
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
+                spawn_message = random.choice(settings.spawn_messages).format(
+                    collectible=settings.collectible_name, ball=self.name, collectibles=settings.plural_collectible_name
+                )
+
                 self.message = await channel.send(
-                    f"A wild {settings.collectible_name} appeared!",
-                    view=self,
-                    file=discord.File(file_location, filename=file_name),
+                    spawn_message, view=self, file=discord.File(file_location, filename=file_name)
                 )
                 return True
             else:
@@ -358,7 +375,7 @@ class BallSpawnView(View):
 
         return ball, is_new
 
-    def get_message(self, ball: BallInstance, new_ball: bool) -> str:
+    def get_catch_message(self, ball: BallInstance, new_ball: bool, mention: str) -> str:
         """
         Generate a user-facing message after a ball has been caught.
 
@@ -375,4 +392,15 @@ class BallSpawnView(View):
             text += f"*{ball.specialcard.catch_phrase}*\n"
         if new_ball:
             text += f"This is a **new {settings.collectible_name}** that has been added to your completion!"
-        return f"You caught **{self.name}!** `(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n{text}"
+
+        caught_message = (
+            random.choice(settings.caught_messages).format(
+                user=mention,
+                collectible=settings.collectible_name,
+                ball=self.name,
+                collectibles=settings.plural_collectible_name,
+            )
+            + " "
+        )
+
+        return caught_message + f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n{text}"

@@ -21,7 +21,7 @@ from django.utils.timezone import now
 from ballsdex.core.image_generator.image_gen import draw_card
 from ballsdex.settings import settings
 
-from .enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy
+from .enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy, TradeCooldownPolicy
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -103,6 +103,9 @@ class Player(models.Model):
     )
     friend_policy = models.SmallIntegerField(
         choices=FriendPolicy.choices, help_text="Open or close your friend requests", default=FriendPolicy.ALLOW
+    )
+    trade_cooldown_policy = models.SmallIntegerField(
+        choices=TradeCooldownPolicy.choices, help_text="To bypass or not the trade cooldown"
     )
     extra_data = models.JSONField(blank=True, default=dict)
 
@@ -235,7 +238,7 @@ class Special(models.Model):
 
 
 class Ball(models.Model):
-    country = models.CharField(unique=True, max_length=48)
+    country = models.CharField(unique=True, max_length=48, verbose_name="Name")
     health = models.IntegerField(help_text="Ball health stat")
     attack = models.IntegerField(help_text="Ball attack stat")
     rarity = models.FloatField(help_text="Rarity of this ball")
@@ -273,6 +276,8 @@ class Ball(models.Model):
     class Meta:
         managed = True
         db_table = "ball"
+        verbose_name = settings.collectible_name
+        verbose_name_plural = settings.plural_collectible_name
 
     @property
     def cached_regime(self) -> Regime:
@@ -338,6 +343,7 @@ class BallInstance(models.Model):
         managed = True
         db_table = "ballinstance"
         unique_together = (("player", "id"),)
+        verbose_name = f"{settings.collectible_name} instance"
         indexes = (
             models.Index(fields=("ball_id",)),
             models.Index(fields=("player_id",)),

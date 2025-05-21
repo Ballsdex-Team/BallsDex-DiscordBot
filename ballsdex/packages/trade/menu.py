@@ -16,6 +16,7 @@ from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
+from bd_models.enums import TradeCooldownPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 
 if TYPE_CHECKING:
@@ -133,19 +134,20 @@ class ConfirmView(View):
     @discord.ui.button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
     async def accept_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
-        if self.trade.cooldown_start_time is None:
-            return
+        if trader.player.trade_cooldown_policy == TradeCooldownPolicy.COOLDOWN:
+            if self.trade.cooldown_start_time is None:
+                return
 
-        elapsed = datetime.now(timezone.utc) - self.trade.cooldown_start_time
-        if elapsed < self.cooldown_duration:
-            remaining_time = datetime.now(timezone.utc) + (self.cooldown_duration - elapsed)
-            remaining = format_dt(remaining_time, style="R")
-            await interaction.response.send_message(
-                f"This trade can only be approved {remaining}, please use this "
-                "time to double check the items to prevent any unwanted trades.",
-                ephemeral=True,
-            )
-            return
+            elapsed = datetime.now(timezone.utc) - self.trade.cooldown_start_time
+            if elapsed < self.cooldown_duration:
+                remaining_time = datetime.now(timezone.utc) + (self.cooldown_duration - elapsed)
+                remaining = format_dt(remaining_time, style="R")
+                await interaction.response.send_message(
+                    f"This trade can only be approved {remaining}, please use this "
+                    "time to double check the items to prevent any unwanted trades.",
+                    ephemeral=True,
+                )
+                return
         if trader.accepted:
             await interaction.response.send_message("You have already accepted this trade.", ephemeral=True)
             return

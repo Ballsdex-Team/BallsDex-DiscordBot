@@ -1,5 +1,6 @@
 import enum
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -10,7 +11,7 @@ from django.db.models import Count
 
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
-from ballsdex.core.utils.sorting import SortingChoices, sort_balls
+from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
@@ -21,7 +22,7 @@ from ballsdex.core.utils.utils import inventory_privacy, is_staff
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer, DuplicateViewMenu
 from ballsdex.settings import settings
 from bd_models.enums import DonationPolicy
-from bd_models.models import BallInstance, Player, Trade, TradeObject, balls
+from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -114,6 +115,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         reverse: bool = False,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        filter: FilteringChoices | None = None,
     ):
         """
         List your countryballs.
@@ -130,6 +132,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Filter the list by a specific countryball.
         special: Special
             Filter the list by a specific special event.
+        filter: FilteringChoices
+            Filter the list by a specific filter.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -158,6 +162,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         query = player.balls.all()
+        if filter:
+            query = filter_balls(filter, query, interaction.guild_id)
         if countryball:
             query = query.filter(ball__id=countryball.pk)
         if special:
@@ -797,3 +803,70 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         pages = Pages(source=source, interaction=interaction, compact=True)
         await pages.start()
+
+    @app_commands.command()
+    async def collection(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        countryball: BallEnabledTransform | None = None,
+        ephemeral: bool = False,
+    ):
+        """
+        Show the collection of a specific countryball.
+
+        Parameters
+        ----------
+        countryball: Ball
+            The countryball you want to see the collection of
+        ephemeral: bool
+            Whether or not to send the command ephemerally.
+        """
+        await interaction.response.defer(thinking=True, ephemeral=ephemeral)
+        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+
+        query = BallInstance.objects.filter(player=player).prefetch_related("player", "trade_player", "special")
+        if countryball:
+            query = query.filter(ball=countryball)
+        balls = await query.aall()
+
+        if not balls:
+            if countryball:
+                await interaction.followup.send(
+                    f"You don't have any {countryball.country} {settings.plural_collectible_name} yet."
+                )
+            else:
+                await interaction.followup.send(f"You don't have any {settings.plural_collectible_name} yet.")
+            return
+        total = len(balls)
+        total_traded = len([x for x in balls if x.trade_player])
+        total_caught_self = total - total_traded
+        special_count = len([x for x in balls if x.special])
+        specials: dict[Special, int] = defaultdict(int)
+        all_specials = Special.objects.filter(hidden=False)
+        special_emojis = {x.name: x.emoji async for x in all_specials}
+        for ball in balls:
+            if ball.special:
+                specials[ball.special] += 1
+
+        desc = (
+            f"**Total**: {total:,} ({total_caught_self:,} caught, "
+            f"{total_traded:,} received from trade)\n"
+            f"**Total Specials**: {special_count:,}\n\n"
+        )
+        if specials:
+            desc += "**Specials**:\n"
+        for special, count in sorted(specials.items(), key=lambda x: x[1], reverse=True):
+            emoji = special_emojis.get(special.name, "")
+            desc += f"{emoji} {special.name}: {count:,}\n"
+
+        embed = discord.Embed(
+            title=f"Collection of {countryball.country}" if countryball else "Total Collection",
+            description=desc,
+            color=discord.Color.blurple(),
+        )
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
+        if countryball:
+            emoji = self.bot.get_emoji(countryball.emoji_id)
+            if emoji:
+                embed.set_thumbnail(url=emoji.url)
+        await interaction.followup.send(embed=embed)

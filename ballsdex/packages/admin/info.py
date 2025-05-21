@@ -6,6 +6,7 @@ from discord.utils import format_dt
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
+from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
 from ballsdex.settings import settings
 from bd_models.models import BallInstance, GuildConfig, Player
 
@@ -110,7 +111,8 @@ class Info(app_commands.Group):
                 f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
                 f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
                 f"**Mention Policy:** {MENTION_POLICY_MAP[player.mention_policy]}\n"
-                f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}"
+                f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}\n"
+                f"**Trade Cooldown Policy:** {TRADE_POLICY_MAP[player.trade_cooldown_policy]}\n"
             ),
             color=discord.Color.blurple(),
         )

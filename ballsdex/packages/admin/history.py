@@ -135,7 +135,7 @@ class History(app_commands.Group):
             )
             return
 
-        ball = await BallInstance.objects.aget(id=pk)
+        ball = await BallInstance.objects.aget_or_none(id=pk)
         if not ball:
             await interaction.response.send_message(
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
