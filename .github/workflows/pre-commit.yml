@@ -21,7 +21,7 @@ jobs:
         with:
           python-version-file: pyproject.toml
       - name: Install dependencies
-        run: uv sync --locked --all-extras --dev
+        run: uv sync --locked --all-extras --dev && echo "$PWD/.venv/bin" >> $GITHUB_PATH
       - name: Check linter
         run: ruff check --output-format=github
       - name: Check formatter
@@ -29,6 +29,7 @@ jobs:
         # keep going even if previous failed
         if: '!cancelled()'
       - name: Check pyright
+        if: '!cancelled()'
         uses: jakebailey/pyright-action@v2
         with:
           version: PATH
