@@ -11,7 +11,7 @@ from django.utils.text import capfirst
 from ..models import Ball, BallInstance, Economy, Regime, TradeObject, transform_media
 
 if TYPE_CHECKING:
-    from django.db.models import Field, Model
+    from django.db.models import Field, Model, QuerySet
     from django.http import HttpRequest
 
 
@@ -25,7 +25,7 @@ class RegimeAdmin(admin.ModelAdmin):
         return mark_safe(f'<img src="/media/{transform_media(str(obj.background))}" height=60px />')
 
     def get_deleted_objects(
-        self, objs: "list[Regime]", request: "HttpRequest"
+        self, objs: "QuerySet[Regime]", request: "HttpRequest"
     ) -> tuple[list[Any], dict[str, int], set[Any], list[Any]]:
         regime_ids = [x.pk for x in objs]
         model_count = {
@@ -122,7 +122,7 @@ class BallAdmin(admin.ModelAdmin):
         return super().formfield_for_dbfield(db_field, request, **kwargs)  # type: ignore
 
     def get_deleted_objects(
-        self, objs: "list[Ball]", request: "HttpRequest"
+        self, objs: "QuerySet[Ball]", request: "HttpRequest"
     ) -> tuple[list[str], dict[str, int], set[Any], list[Any]]:
         instances = BallInstance.objects.filter(ball_id__in=set(x.pk for x in objs))
         if len(instances) < 500:
