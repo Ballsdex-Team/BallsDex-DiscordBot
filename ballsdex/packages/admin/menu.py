@@ -1,31 +1,31 @@
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 import discord
 from discord.utils import format_dt
 
 from ballsdex.core.utils import menus
-from ballsdex.core.utils.paginator import Pages
 from ballsdex.settings import settings
 from bd_models.models import BlacklistHistory, Player
 
 if TYPE_CHECKING:
-    from ballsdex.core.bot import BallsDexBot
+    from django.db.models import QuerySet
 
 
-class BlacklistViewFormat(menus.ListPageSource):
-    def __init__(self, entries: Iterable[BlacklistHistory], user_id: int, bot: "BallsDexBot"):
-        self.header = user_id
-        self.bot = bot
-        super().__init__(entries, per_page=1)
+class BlacklistViewFormat(menus.ModelPageSource[BlacklistHistory]):
+    @classmethod
+    async def new_blacklistview(cls, queryset: "QuerySet[BlacklistHistory]", user_id: int):
+        cls.header = user_id
+        return await super().new(queryset, per_page=1)
 
-    async def format_page(self, menu: Pages, blacklist: BlacklistHistory) -> discord.Embed:
+    async def format_page(self, menu, page) -> discord.Embed:
+        blacklist = page[0]
         embed = discord.Embed(
             title=f"Blacklist History for {self.header}",
             description=f"Type: {blacklist.action_type}\nReason: {blacklist.reason}",
             timestamp=blacklist.date,
         )
         if blacklist.moderator_id:
-            moderator = await self.bot.fetch_user(blacklist.moderator_id)
+            moderator = await menu.bot.fetch_user(blacklist.moderator_id)
             embed.add_field(
                 name=("Blacklisted by" if blacklist.action_type == "blacklist" else "Unblacklisted by"),
                 value=f"{moderator.display_name} ({moderator.id})",
