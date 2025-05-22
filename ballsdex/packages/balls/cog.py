@@ -234,6 +234,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
+        self_caught: bool | None = None,
     ):
         """
         Show your current completion of the BallsDex.
@@ -244,6 +245,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user whose completion you want to view, if not yours.
         special: Special
             The special you want to see the completion of
+        self_caught: bool
+            Filter only for countryballs that the user themself caught/didn't catch (ie no trades)
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -283,6 +286,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 for x, y in balls.items()
                 if y.enabled and (special.end_date is None or y.created_at < special.end_date)
             }
+
+        if self_caught is not None:
+            filters["trade_player_id__isnull"] = self_caught
+
         if not bot_countryballs:
             await interaction.followup.send(
                 f"There are no {extra_text}{settings.plural_collectible_name}"
@@ -349,8 +356,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
         special_str = f" ({special.name})" if special else ""
+        original_catcher_string = (
+            f" ({'not ' if self_caught is False else ''}self-caught)"
+            if self_caught is not None
+            else ""
+        )
         source.embed.description = (
-            f"{settings.bot_name}{special_str} progression: "
+            f"{settings.bot_name}{original_catcher_string}{special_str} progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
