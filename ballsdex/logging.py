@@ -29,6 +29,9 @@ def init_logger(disable_rich: bool = False, debug: bool = False) -> logging.hand
     root.setLevel(logging.INFO)
     log.setLevel(logging.DEBUG if debug else logging.INFO)
 
+    tortoise = logging.getLogger("tortoise")
+    tortoise.setLevel(logging.DEBUG)
+
     queue_listener = logging.handlers.QueueListener(queue, stream_handler, file_handler)
     queue_listener.start()
 

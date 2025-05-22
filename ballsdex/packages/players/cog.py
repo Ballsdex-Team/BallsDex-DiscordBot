@@ -11,7 +11,7 @@ from django.db.models import Q
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
-from ballsdex.core.utils.paginator import FieldPageSource, Pages
+from ballsdex.core.utils.menus import FieldPageSource, Menu
 from ballsdex.settings import settings
 from bd_models.enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy, TradeCooldownPolicy
 from bd_models.models import BallInstance, Block, Friendship, Trade, TradeObject, balls
@@ -343,7 +343,7 @@ class Player(commands.GroupCog):
         source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
         source.embed.set_footer(text="To add a friend, use the command /player friend add.")
 
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Menu(source=source, interaction=interaction, compact=True)
         await pages.start(ephemeral=True)
 
     @blocked.command(name="add")
@@ -462,7 +462,7 @@ class Player(commands.GroupCog):
         source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
         source.embed.set_footer(text="To block a user, use the command /player block add.")
 
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Menu(source=source, interaction=interaction, compact=True)
         await pages.start(ephemeral=True)
 
     @app_commands.command()

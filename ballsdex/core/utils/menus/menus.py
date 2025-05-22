@@ -1,17 +1,27 @@
-# TODO: credits
+"""
+Menu implementation for discord.py.
+This provides an easy way to paginate large responses using buttons and other components.
+
+This code was based of RoboDanny's paginator, licensed under MPL 2.0
+https://github.com/Rapptz/RoboDanny/blob/39af9d71ffd5f099094a05352c18b987a1dc5d04/cogs/utils/paginator.py
+
+Consequently, this file (ballsdex/core/utils/menus/menus.py) is not licensed under MIT but MPL 2.0.
+This license can be found in the folder of this file.
+"""
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 import discord
-from discord.ext.commands import Paginator as CommandPaginator
-
-from ballsdex.core.utils import menus
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+
+    from .source import PageSource
+
+__all__ = ("Menu",)
 
 log = logging.getLogger("ballsdex.core.utils.paginator")
 
@@ -19,36 +29,34 @@ log = logging.getLogger("ballsdex.core.utils.paginator")
 class NumberedPageModal(discord.ui.Modal, title="Go to page"):
     page = discord.ui.TextInput(label="Page", placeholder="Enter a number", min_length=1)
 
-    def __init__(self, max_pages: Optional[int]) -> None:
+    def __init__(self, max_pages: int | None):
         super().__init__()
         if max_pages is not None:
             as_string = str(max_pages)
             self.page.placeholder = f"Enter a number between 1 and {as_string}"
             self.page.max_length = len(as_string)
 
-    async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]) -> None:
+    async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         self.interaction = interaction
         self.stop()
 
 
-class Pages(discord.ui.View):
+class Menu[P](discord.ui.View):
     def __init__(
         self,
-        source: menus.PageSource,
-        *,
+        source: PageSource[P],
         interaction: discord.Interaction["BallsDexBot"],
         check_embeds: bool = False,
         compact: bool = False,
     ):
         super().__init__()
-        self.source: menus.PageSource = source
-        self.check_embeds: bool = check_embeds
+        self.source = source
+        self.check_embeds = check_embeds
         self.original_interaction = interaction
         self.bot = self.original_interaction.client
         self.current_page: int = 0
-        self.compact: bool = compact
+        self.compact = compact
         self.clear_items()
-        self.fill_items()
 
     async def send(self, *args, **kwargs):
         if self.original_interaction.response.is_done():
@@ -76,18 +84,21 @@ class Pages(discord.ui.View):
                 self.add_item(self.numbered_page)
         self.add_item(self.stop_pages)
 
-    async def _get_kwargs_from_page(self, page: int) -> Dict[str, Any]:
-        value = await discord.utils.maybe_coroutine(self.source.format_page, self, page)
-        if isinstance(value, dict):
-            return value
-        elif isinstance(value, str):
-            return {"content": value, "embed": None}
-        elif isinstance(value, discord.Embed):
-            return {"embed": value, "content": None}
-        elif value is True:
-            return {}
-        else:
-            raise TypeError("Wrong page type returned")
+    async def _get_kwargs_from_page(self, page: P) -> dict[str, Any]:
+        value = await self.source.format_page(self, page)
+        match value:
+            case str():
+                return {"content": value}
+            case discord.Embed():
+                return {"embed": value}
+            case dict():
+                return value
+            case _:
+                self.clear_items()
+                self.fill_items()
+                for item in value:
+                    self.add_item(item)
+                return {}
 
     async def show_page(self, interaction: discord.Interaction["BallsDexBot"], page_number: int) -> None:
         page = await self.source.get_page(page_number)
@@ -95,10 +106,7 @@ class Pages(discord.ui.View):
         kwargs = await self._get_kwargs_from_page(page)
         self._update_labels(page_number)
         if kwargs is not None:
-            if interaction.response.is_done():
-                await interaction.edit_original_response(**kwargs, view=self)
-            else:
-                await interaction.response.edit_message(**kwargs, view=self)
+            await interaction.edit_original_response(**kwargs, view=self)
 
     def _update_labels(self, page_number: int) -> None:
         self.go_to_first_page.disabled = page_number == 0
@@ -166,7 +174,7 @@ class Pages(discord.ui.View):
         else:
             await interaction.response.send_message("An unknown error occurred, sorry", ephemeral=True)
 
-    async def start(self, *, content: Optional[str] = None, ephemeral: bool = False) -> None:
+    async def start(self, *, content: str | None = None, ephemeral: bool = False) -> None:
         if (
             self.check_embeds
             and not self.original_interaction.channel.permissions_for(  # type: ignore
@@ -176,7 +184,8 @@ class Pages(discord.ui.View):
             await self.send("Bot does not have embed links permission in this channel.", ephemeral=True)
             return
 
-        await self.source._prepare_once()
+        self.fill_items()
+        await self.source.prepare()
         page = await self.source.get_page(0)
         kwargs = await self._get_kwargs_from_page(page)
         if content:
@@ -243,76 +252,3 @@ class Pages(discord.ui.View):
             item.disabled = True  # type: ignore
         await interaction.response.edit_message(view=self)
         self.stop()
-
-
-class FieldPageSource(menus.ListPageSource):
-    """A page source that requires (field_name, field_value) tuple items."""
-
-    def __init__(
-        self,
-        entries: list[tuple[Any, Any]],
-        *,
-        per_page: int = 12,
-        inline: bool = False,
-        clear_description: bool = True,
-    ) -> None:
-        super().__init__(entries, per_page=per_page)
-        self.embed: discord.Embed = discord.Embed(colour=discord.Colour.blurple())
-        self.clear_description: bool = clear_description
-        self.inline: bool = inline
-
-    async def format_page(self, menu: Pages, entries: list[tuple[Any, Any]]) -> discord.Embed:
-        self.embed.clear_fields()
-        if self.clear_description:
-            self.embed.description = None
-
-        for key, value in entries:
-            self.embed.add_field(name=key, value=value, inline=self.inline)
-
-        maximum = self.get_max_pages()
-        if maximum > 1:
-            text = f"Page {menu.current_page + 1}/{maximum}"
-            self.embed.set_footer(text=text)
-
-        return self.embed
-
-
-class TextPageSource(menus.ListPageSource):
-    def __init__(self, text, *, prefix="```", suffix="```", max_size=2000):
-        pages = CommandPaginator(prefix=prefix, suffix=suffix, max_size=max_size - 200)
-        for line in text.split("\n"):
-            pages.add_line(line)
-
-        super().__init__(entries=pages.pages, per_page=1)
-
-    async def format_page(self, menu: Pages, content):
-        maximum = self.get_max_pages()
-        if maximum > 1:
-            return f"{content}\nPage {menu.current_page + 1}/{maximum}"
-        return content
-
-
-class SimplePageSource(menus.ListPageSource):
-    async def format_page(self, menu: SimplePages, entries):
-        pages = []
-        for index, entry in enumerate(entries, start=menu.current_page * self.per_page):
-            pages.append(f"{index + 1}. {entry}")
-
-        maximum = self.get_max_pages()
-        if maximum > 1:
-            footer = f"Page {menu.current_page + 1}/{maximum}"
-            menu.embed.set_footer(text=footer)
-
-        menu.embed.description = "\n".join(pages)
-        return menu.embed
-
-
-class SimplePages(Pages):
-    """A simple pagination session reminiscent of the old Pages interface.
-
-    Basically an embed with some normal formatting.
-    """
-
-    def __init__(self, entries, *, interaction: discord.Interaction["BallsDexBot"], per_page: int = 12):
-        super().__init__(SimplePageSource(entries, per_page=per_page), interaction=interaction)
-        self.embed = discord.Embed(colour=discord.Colour.blurple())
