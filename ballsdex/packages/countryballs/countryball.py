@@ -357,7 +357,7 @@ class BallSpawnView(View):
             self.ballinstance.trade_player = self.ballinstance.player
             self.ballinstance.player = player
             self.ballinstance.locked = None  # type: ignore
-            await self.ballinstance.save(update_fields=("player", "trade_player", "locked"))
+            await self.ballinstance.save(update_fields=("player_id", "trade_player_id", "locked"))
             return self.ballinstance, is_new
 
         # stat may vary by +/- 20% of base stat
