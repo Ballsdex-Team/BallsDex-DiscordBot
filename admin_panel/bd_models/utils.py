@@ -14,8 +14,7 @@ if TYPE_CHECKING:
 
 class ApproxCountPaginator(Paginator):
     @cached_property
-    def count(self):
-
+    def count(self) -> int:  # pyright: ignore [reportIncompatibleMethodOverride]
         # if this object isn't empty, then it's a paginator that has been applied filters or search
         if self.object_list.query.where.children:  # type: ignore
             return super().count
@@ -41,7 +40,9 @@ class BlacklistTabular(NonrelatedTabularInline):
     readonly_fields = ("date", "moderator_id", "action_type")
     classes = ("collapse",)
 
-    def has_add_permission(self, request: "HttpRequest", obj: "Player | GuildConfig") -> bool:
+    def has_add_permission(  # pyright: ignore [reportIncompatibleMethodOverride]
+        self, request: "HttpRequest", obj: "Player | GuildConfig"
+    ) -> bool:
         return False
 
     def get_form_queryset(self, obj: "Player | GuildConfig"):
