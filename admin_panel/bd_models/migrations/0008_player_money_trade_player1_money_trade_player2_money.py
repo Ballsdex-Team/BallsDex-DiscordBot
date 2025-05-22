@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("bd_models", "0006_player_extra_data")]
+    dependencies = [("bd_models", "0007_player_trade_cooldown_policy")]
 
     operations = [
         migrations.AddField(
