@@ -90,7 +90,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
             await interaction.followup.send(
                 wrong_message,
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                allowed_mentions=discord.AllowedMentions(
+                    users=player.can_be_mentioned, everyone=False, roles=False
+                ),
                 ephemeral=False,
             )
             return
