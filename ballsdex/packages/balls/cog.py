@@ -294,7 +294,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         owned_countryballs = set(
             x[0]
-            for x in await BallInstance.filter(**filters).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=22).exclude(ball__regime_id=23).exclude(ball__regime_id=24).exclude(ball__regime_id=25).exclude(ball__regime_id=26).exclude(ball__regime_id=27).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=34).exclude(ball__regime_id=35)
+            for x in await BallInstance.filter(**filters).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=22).exclude(ball__regime_id=23).exclude(ball__regime_id=24).exclude(ball__regime_id=25).exclude(ball__regime_id=26).exclude(ball__regime_id=27).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=35).exclude(ball__regime_id=37).exclude(ball__regime_id=38).exclude(ball__regime_id=39).exclude(ball__regime_id=40)
             .distinct()  # Do not query everything
             .values_list("ball_id")
         )
