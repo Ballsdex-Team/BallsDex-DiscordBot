@@ -306,7 +306,7 @@ class BallSpawnView(View):
             in the logs if that's the case.
         """
         rid = self.model.regime_id
-        if rid == 22 or rid == 23 or rid == 24 or rid == 25 or rid == 26 or rid == 27:
+        if rid == 22 or rid == 23 or rid == 24 or rid == 25 or rid == 26 or rid == 27 or rid == 35 or rid == 37 or rid == 38 or rid == 39 or rid == 40:
             self.RegimeName = "skin"
         elif rid == 28:
             self.RegimeName = "gadget"
@@ -316,8 +316,6 @@ class BallSpawnView(View):
             self.RegimeName = "gear"
         elif rid == 33:
             self.RegimeName = "hypercharge"
-        elif rid == 34:
-            self.RegimeName = "mega box"
         else:
             self.RegimeName = "brawler"
 
