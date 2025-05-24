@@ -392,7 +392,11 @@ class BallInstance(models.Model):
         plevel = int((self.attack_bonus + 10) / 10)
         if "Buzz Lightyear" in self.countryball.country:
             plevel_emoji = interaction.client.get_emoji(1367815787078877244)
-        elif (self.attack_bonus < 0 or self.attack_bonus > 100) and (self.health_bonus < 0 or self.health_bonus > 100):
+        elif (
+                 not (0 <= self.attack_bonus <= 100) or
+                 not (0 <= self.health_bonus <= 100) or
+                 self.attack_bonus != self.health_bonus
+             ):
             plevel_emoji = interaction.client.get_emoji(1366788841549336777)
         else:
             plevel_emoji = interaction.client.get_emoji(plevel_emojis[plevel-1])
