@@ -329,8 +329,18 @@ class BallInstance(models.Model):
         is_trade: bool = False,
     ) -> str:
         text = self.to_string(bot, is_trade=is_trade)
+        if "Buzz Lightyear" in self.countryball.country:
+                descplevel = "∞"
+            elif (
+                     not (0 <= self.attack_bonus <= 100) or
+                     not (0 <= self.health_bonus <= 100) or
+                     self.attack_bonus != self.health_bonus
+                 ):
+                descplevel = "?"
+            else:
+                descplevel = int((self.attack_bonus + 10) / 10)
         if not short:
-            text += f" (Power Level {int((self.attack_bonus + 10) / 10)})"
+            text += f" (Power Level {descplevel})"
         if include_emoji:
             if not bot:
                 raise TypeError(
