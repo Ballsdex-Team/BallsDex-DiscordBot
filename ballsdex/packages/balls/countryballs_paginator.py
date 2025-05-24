@@ -35,11 +35,21 @@ class CountryballsSelector(Pages):
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
             special = ball.special_emoji(self.bot, True)
+            if "Buzz Lightyear" in ball.countryball.country:
+                plevel = "∞"
+            elif (
+                     not (0 <= ball.attack_bonus <= 100) or
+                     not (0 <= ball.health_bonus <= 100) or
+                     ball.attack_bonus != ball.health_bonus
+                 ):
+                plevel = "?"
+            else:
+                plevel = int((ball.attack_bonus + 10) / 10)
             options.append(
                 discord.SelectOption(
                     label=f"{favorite}{special}#{ball.pk:0X} {ball.countryball.country}",
                     description=(
-                        f"• Power Level {int((ball.attack_bonus + 10) / 10)}) • "
+                        f"• Power Level {plevel} • "
                         f"{ball.catch_date.strftime('%Y/%m/%d | %H:%M')}"
                     ),
                     emoji=emoji,
