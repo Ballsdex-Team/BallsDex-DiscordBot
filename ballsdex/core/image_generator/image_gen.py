@@ -112,7 +112,7 @@ def draw_card(
             (60, 1160 + 80 * i + shadow_offset),
             line,
             font=capacity_description_font,
-            fill=shadow_color
+            fill=shadow_color,
             stroke_width=5,
             stroke_fill=(0, 0, 0, 255),
         )
