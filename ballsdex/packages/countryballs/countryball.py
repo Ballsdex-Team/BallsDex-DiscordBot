@@ -243,7 +243,7 @@ class BallSpawnView(View):
         # prevent countryball from being traded while spawned
         await ball_instance.lock_for_trade()
 
-        view = cls(bot, ball_instance.ball)
+        view = cls(bot, ball_instance.countryball)
         view.ballinstance = ball_instance
         return view
 
