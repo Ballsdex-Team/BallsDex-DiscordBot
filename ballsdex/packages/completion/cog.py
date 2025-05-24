@@ -81,7 +81,7 @@ class Completion(commands.GroupCog, group_name="completion"):
                 return
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
-        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled and 22 <= y.regime_id <= 27 or y.regime_id == 35}
+        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled and 22 <= y.regime_id <= 27 or 35 <= y.regime_id <= 40}
 
         # Set of ball IDs owned by the player
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
@@ -90,7 +90,7 @@ class Completion(commands.GroupCog, group_name="completion"):
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
-                if y.enabled and 22 <= y.regime_id <= 27 or y.regime_id == 35 and (special.end_date is None or y.created_at < special.end_date)
+                if y.enabled and 22 <= y.regime_id <= 27 or 35 <= y.regime_id <= 40 and (special.end_date is None or y.created_at < special.end_date)
             }
         if not bot_countryballs:
             await interaction.followup.send(
