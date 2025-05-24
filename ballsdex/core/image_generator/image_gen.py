@@ -70,6 +70,16 @@ def draw_card(
     )
 
     draw = ImageDraw.Draw(image)
+    shadow_color = "black"
+    shadow_offset = 3
+    draw.text(
+        (50, 20 + shadow_offset),
+        ball.short_name or ball.country,
+        font=title_font,
+        fill=shadow_color,
+        stroke_width=5,
+        stroke_fill=(0, 0, 0, 255),
+    )
     draw.text(
         (50, 20),
         ball.short_name or ball.country,
@@ -82,6 +92,14 @@ def draw_card(
 
     for i, line in enumerate(cap_name):
         draw.text(
+            (100, 1025 + 100 * i + shadow_offset),
+            line,
+            font=capacity_name_font,
+            fill=shadow_color,
+            stroke_width=5,
+            stroke_fill=(0, 0, 0, 255),
+        )
+        draw.text(
             (100, 1025 + 100 * i),
             line,
             font=capacity_name_font,
@@ -91,6 +109,14 @@ def draw_card(
         )
     for i, line in enumerate(textwrap.wrap(ball.capacity_description, width=40)):
         draw.text(
+            (60, 1160 + 80 * i + shadow_offset),
+            line,
+            font=capacity_description_font,
+            fill=shadow_color
+            stroke_width=5,
+            stroke_fill=(0, 0, 0, 255),
+        )
+        draw.text(
             (60, 1160 + 80 * i),
             line,
             font=capacity_description_font,
@@ -99,12 +125,29 @@ def draw_card(
         )
 
     draw.text(
+        (320, 1670 + shadow_offset),
+        str(ball_instance.health),
+        font=stats_font,
+        fill=shadow_color,
+        stroke_width=5,
+        stroke_fill=(0, 0, 0, 255),
+    )
+    draw.text(
         (320, 1670),
         str(ball_instance.health),
         font=stats_font,
         fill=ball_health,
         stroke_width=5,
         stroke_fill=(0, 0, 0, 255),
+    )
+    draw.text(
+        (1120, 1670 + shadow_offset),
+        str(ball_instance.attack),
+        font=stats_font,
+        fill=shadow_color,
+        stroke_width=5,
+        stroke_fill=(0, 0, 0, 255),
+        anchor="ra",
     )
     draw.text(
         (1120, 1670),
