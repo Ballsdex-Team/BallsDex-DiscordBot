@@ -71,7 +71,7 @@ def draw_card(
 
     draw = ImageDraw.Draw(image)
     shadow_color = "black"
-    shadow_offset = 3
+    shadow_offset = 5
     draw.text(
         (50, 20 + shadow_offset),
         ball.short_name or ball.country,
