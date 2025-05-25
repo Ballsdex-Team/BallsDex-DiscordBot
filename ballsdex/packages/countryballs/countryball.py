@@ -542,7 +542,7 @@ class BallSpawnView(View):
                  "It is now added to your completion!"
             )
         if dailycatch in {1, 4, 8}:
-                mj = interaction.client.get_emoji(1363188571099496699)
+                mj = self.bot.get_emoji(1363188571099496699)
                 pf = "th"
                 if dailycatch == 1:
                     pf = "st"
