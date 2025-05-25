@@ -113,14 +113,14 @@ class Completion(commands.GroupCog, group_name="completion"):
             # check if we need to add "(continued)" to the field name
             first_field_added = False
             buffer = ""
-            skin_emoji_1 = interaction.client.get_emoji(1371574815361732618)
-            skin_emoji_2 = interaction.client.get_emoji(1371576710386024519)
-            skin_emoji_3 = interaction.client.get_emoji(1371558580234227854)
-            skin_emoji_4 = interaction.client.get_emoji(1371558589537321013)
-            unlock_emoji = interaction.client.get_emoji(1363692398596853841)
-            lock_emoji = interaction.client.get_emoji(1363692380208890066)
-            no_skin_emoji = interaction.client.get_emoji(1349143586603667587)
-            completionist_emoji = interaction.client.get_emoji(1372373379939827744)
+            skin_emoji_1 = self.bot.get_emoji(1371574815361732618)
+            skin_emoji_2 = self.bot.get_emoji(1371576710386024519)
+            skin_emoji_3 = self.bot.get_emoji(1371558580234227854)
+            skin_emoji_4 = self.bot.get_emoji(1371558589537321013)
+            unlock_emoji = self.bot.get_emoji(1363692398596853841)
+            lock_emoji = self.bot.get_emoji(1363692380208890066)
+            no_skin_emoji = self.bot.get_emoji(1349143586603667587)
+            completionist_emoji = self.bot.get_emoji(1372373379939827744)
 
             for emoji_id in emoji_ids:
                 emoji = self.bot.get_emoji(emoji_id)
