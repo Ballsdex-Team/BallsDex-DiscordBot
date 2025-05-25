@@ -49,7 +49,7 @@ class CountryballsSelector(Pages):
                 discord.SelectOption(
                     label=f"{favorite}{special}#{ball.pk:0X} {ball.countryball.country}",
                     description=(
-                        f"• Power Level {plevel} • "
+                        f"Power Level {plevel} • "
                         f"{ball.catch_date.strftime('%Y/%m/%d | %H:%M')}"
                     ),
                     emoji=emoji,
