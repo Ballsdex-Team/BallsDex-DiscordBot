@@ -216,21 +216,6 @@ class Player(commands.GroupCog):
             ephemeral=True,
         )
 
-    @app_commands.command()
-    async def delete(self, interaction: discord.Interaction["BallsDexBot"]):
-        """
-        Delete your player data.
-        """
-        view = ConfirmChoiceView(interaction)
-        await interaction.response.send_message(
-            "Are you sure you want to delete your player data?", view=view, ephemeral=True
-        )
-        await view.wait()
-        if view.value is None or not view.value:
-            return
-        player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-        await player.delete()
-
     @friend.command(name="add")
     async def friend_add(
         self, interaction: discord.Interaction["BallsDexBot"], user: discord.User
@@ -614,74 +599,6 @@ class Player(commands.GroupCog):
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
         await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @app_commands.command()
-    @app_commands.choices(
-        type=[
-            app_commands.Choice(name=settings.collectible_name.title(), value="balls"),
-            app_commands.Choice(name="Trades", value="trades"),
-            app_commands.Choice(name="All", value="all"),
-        ]
-    )
-    async def export(self, interaction: discord.Interaction["BallsDexBot"], type: str):
-        """
-        Export your player data.
-        """
-        player = await PlayerModel.get_or_none(discord_id=interaction.user.id)
-        if player is None:
-            await interaction.response.send_message(
-                "You don't have any player data to export.", ephemeral=True
-            )
-            return
-        await interaction.response.defer()
-        files = []
-        if type == "balls":
-            data = await get_items_csv(player)
-            filename = f"{interaction.user.id}_{settings.collectible_name}.csv"
-            data.filename = filename  # type: ignore
-            files.append(data)
-        elif type == "trades":
-            data = await get_trades_csv(player)
-            filename = f"{interaction.user.id}_trades.csv"
-            data.filename = filename  # type: ignore
-            files.append(data)
-        elif type == "all":
-            balls = await get_items_csv(player)
-            trades = await get_trades_csv(player)
-            balls_filename = f"{interaction.user.id}_{settings.collectible_name}.csv"
-            trades_filename = f"{interaction.user.id}_trades.csv"
-            balls.filename = balls_filename  # type: ignore
-            trades.filename = trades_filename  # type: ignore
-            files.append(balls)
-            files.append(trades)
-        else:
-            await interaction.followup.send("Invalid input!", ephemeral=True)
-            return
-        zip_file = BytesIO()
-        with zipfile.ZipFile(zip_file, "w") as z:
-            for file in files:
-                z.writestr(file.filename, file.getvalue())
-        zip_file.seek(0)
-        if zip_file.tell() > 25_000_000:
-            await interaction.followup.send(
-                "Your data is too large to export."
-                "Please contact the bot support for more information.",
-                ephemeral=True,
-            )
-            return
-        files = [discord.File(zip_file, "player_data.zip")]
-        try:
-            await interaction.user.send("Here is your player data:", files=files)
-            await interaction.followup.send(
-                "Your player data has been sent via DMs.", ephemeral=True
-            )
-        except discord.Forbidden:
-            await interaction.followup.send(
-                "I couldn't send the player data to you in DM. "
-                "Either you blocked me or you disabled DMs in this server.",
-                ephemeral=True,
-            )
-
 
 async def get_items_csv(player: PlayerModel) -> BytesIO:
     """
