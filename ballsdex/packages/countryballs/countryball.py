@@ -62,7 +62,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
             )
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
-        if self.view.timeout:
+        if self.view.usertimeout:
             try:
                await interaction.user.timeout(timedelta(seconds=self.view.timeout))
                await interaction.response.send_message(f"{interaction.user.mention} GET OUT-\n-# they were timed out for {timedelta(seconds=self.view.timeout)}!")
@@ -173,7 +173,7 @@ class BallSpawnView(View):
     """
 
     def __init__(self, bot: "BallsDexBot", model: Ball):
-        super().__init__(timeout=300)
+        super().__init__
         self.bot = bot
         self.model = model
         self.algo: str | None = None
@@ -188,7 +188,7 @@ class BallSpawnView(View):
         self.buttondanger = False
         self.buttontext = None
         self.buttonemoji: discord.Emoji | None = None
-        self.timeout = False
+        self.usertimeout = False
         self.BlockedList = {}
         self.BlockedTimeout = 10
         self.DontCount = False
