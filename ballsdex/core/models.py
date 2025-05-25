@@ -108,7 +108,7 @@ class Economy(models.Model):
 class Special(models.Model):
     name = fields.CharField(max_length=64)
     catch_phrase = fields.CharField(
-        max_length=128,
+        max_length=512,
         description="Sentence sent in bonus when someone catches a special card",
         null=True,
         default=None,
@@ -186,7 +186,7 @@ class Ball(models.Model):
     collection_card = fields.CharField(
         max_length=200, description="Image used when displaying balls"
     )
-    credits = fields.CharField(max_length=64, description="Author of the collection artwork")
+    credits = fields.CharField(max_length=256, description="Author of the collection artwork")
     capacity_name = fields.CharField(
         max_length=64, description="Name of the countryball's ability"
     )
