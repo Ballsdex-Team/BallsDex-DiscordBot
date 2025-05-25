@@ -113,6 +113,12 @@ class Completion(commands.GroupCog, group_name="completion"):
             # check if we need to add "(continued)" to the field name
             first_field_added = False
             buffer = ""
+            skin_emoji_1 = interaction.client.get_emoji(1371574815361732618)
+            skin_emoji_2 = interaction.client.get_emoji(1371576710386024519)
+            skin_emoji_3 = interaction.client.get_emoji(1371558580234227854)
+            skin_emoji_4 = interaction.client.get_emoji(1371558589537321013)
+            unlock_emoji = interaction.client.get_emoji(1363692398596853841)
+            lock_emoji = interaction.client.get_emoji(1363692380208890066)
 
             for emoji_id in emoji_ids:
                 emoji = self.bot.get_emoji(emoji_id)
@@ -155,12 +161,11 @@ class Completion(commands.GroupCog, group_name="completion"):
                     "\u200B",
                 )
             )  # force empty field value
-
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
         special_str = f" ({special.name})" if special else ""
         source.embed.description = (
-            f"{settings.bot_name}{special_str} skin progression: "
-            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}% ({len(owned_countryballs)}/{len(bot_countryballs)})**"
+            f"{skin_emoji_1}{skin_emoji_2} SKINS\n"
+            f"{skin_emoji_3}{skin_emoji_4} {len(owned_countryballs)}/{len(bot_countryballs)} Collected\n"
         )
         source.embed.colour = discord.Colour.blurple()
         source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
