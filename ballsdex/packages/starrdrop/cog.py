@@ -90,7 +90,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
         log.debug(f"{interaction.user.id} Is Opening a {ounce.get('name')} Starr Drop!")
         
         if result == "ball":
-            available_balls = [ball for ball in balls.values() if ball.enabled and ball.rarity > 0]
+            available_balls = [ball for ball in balls.values() if ball.enabled]
             if not available_balls:
                 await interaction.followup.send(
                     "There are no brawlers available to claim at the moment.", ephemeral=True
