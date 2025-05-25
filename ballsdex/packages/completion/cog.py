@@ -119,6 +119,8 @@ class Completion(commands.GroupCog, group_name="completion"):
             skin_emoji_4 = interaction.client.get_emoji(1371558589537321013)
             unlock_emoji = interaction.client.get_emoji(1363692398596853841)
             lock_emoji = interaction.client.get_emoji(1363692380208890066)
+            no_skin_emoji = interaction.client.get_emoji(1349143586603667587)
+            completionist_emoji = interaction.client.get_emoji(1372373379939827744)
 
             for emoji_id in emoji_ids:
                 emoji = self.bot.get_emoji(emoji_id)
@@ -149,16 +151,14 @@ class Completion(commands.GroupCog, group_name="completion"):
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
-            entries.append((f"__**Owned skins**__ - {len(owned_countryballs)} total", "Nothing yet."))
+            entries.append((f"*Seems like you don't have any Skins... {no_skin_emoji}*"))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
             fill_fields(f"{lock_emoji} __{len(bot_countryballs) - len(owned_countryballs)} Skins to be Unlocked__ {lock_emoji}", missing)
         else:
             entries.append(
                 (
-                    f"__**:tada: No missing skins, "
-                    "congratulations! :tada:**__",
-                    "\u200B",
+                    f"*{completionist_emoji} Congrats, you are truly a Completionist! {completionist_emoji}*"
                 )
             )  # force empty field value
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
