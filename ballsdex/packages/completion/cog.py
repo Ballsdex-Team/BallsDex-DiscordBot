@@ -147,14 +147,14 @@ class Completion(commands.GroupCog, group_name="completion"):
         if owned_countryballs:
             # Getting the list of emoji IDs from the IDs of the owned countryballs
             fill_fields(
-                f"{skin_unlock_emoji} __{len(owned_countryballs)} Skins Unlocked__ {skin_unlock_emoji}",
+                f"{skin_unlock_emoji} {len(owned_countryballs)} Skins Unlocked {skin_unlock_emoji}",
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
             entries.append((f"*Seems like you don't have any Skins... {no_skin_emoji}*"))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields(f"{skin_lock_emoji} __{len(bot_countryballs) - len(owned_countryballs)} Skins to be Unlocked__ {skin_lock_emoji}", missing)
+            fill_fields(f"{skin_lock_emoji} {len(bot_countryballs) - len(owned_countryballs)} Skins to be Unlocked {skin_lock_emoji}", missing)
         else:
             entries.append(
                 (
