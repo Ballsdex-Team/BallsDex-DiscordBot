@@ -89,7 +89,7 @@ class Completion(commands.GroupCog, group_name="completion"):
                 return
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
-        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled and (22 <= y.regime_id <= 27 or 35 <= y.regime_id <= 40) and not y.regime_id == 36}
+        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled and 22 <= y.regime_id <= 27 or y.regime_id == 35 or 37 <= y.regime_id <= 40}
 
         # Set of ball IDs owned by the player
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
@@ -98,7 +98,7 @@ class Completion(commands.GroupCog, group_name="completion"):
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
-                if y.enabled and (22 <= y.regime_id <= 27 or 35 <= y.regime_id <= 40) and not y.regime_id == 36 and (special.end_date is None or y.created_at < special.end_date)
+                if y.enabled and 22 <= y.regime_id <= 27 or y.regime_id == 35 or 37 <= y.regime_id <= 40 and (special.end_date is None or y.created_at < special.end_date)
             }
         if not bot_countryballs:
             await interaction.followup.send(
@@ -110,7 +110,7 @@ class Completion(commands.GroupCog, group_name="completion"):
 
         owned_countryballs = set(
             x[0]
-            for x in await BallInstance.filter(**filters).exclude(ball__regime_id=5).exclude(ball__regime_id=6).exclude(ball__regime_id=7).exclude(ball__regime_id=8).exclude(ball__regime_id=16).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=34)
+            for x in await BallInstance.filter(**filters).exclude(ball__regime_id=5).exclude(ball__regime_id=6).exclude(ball__regime_id=7).exclude(ball__regime_id=8).exclude(ball__regime_id=16).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=34).exclude(ball_regime_id=36)
             .distinct()  # Do not query everything
             .values_list("ball_id")
         )
