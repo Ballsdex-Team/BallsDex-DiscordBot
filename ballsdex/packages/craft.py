@@ -174,7 +174,7 @@ class CraftingSession:
         emoji = self.bot.get_emoji(int(new.countryball.emoji_id))
         favorite = f"{settings.favorited_collectible_emoji} " if new.favorite else ""
         special = new.special_emoji(self.bot, True)
-        await interaction.followup.send(f"Crafted a {emoji}{favorite}{special}#{new.pk:0X} **{self.specname}**{self.ballname}! `(Power Level {int((new.attack_bonus + 10) / 10)}))`")
+        await interaction.followup.send(f"Crafted a {emoji}{favorite}{special}#{new.pk:0X} **{self.specname}**{self.ballname}! `(Power Level {int((new.attack_bonus + 10) / 10)})`")
 
 class QuickCraftingSession(CraftingSession):
     async def create(self):
