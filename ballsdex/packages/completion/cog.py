@@ -151,14 +151,15 @@ class Completion(commands.GroupCog, group_name="completion"):
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
-            entries.append((f"*Seems like you don't have any Skins... {no_skin_emoji}*"))
+            entries.append((f"*Seems like you don't have any Skins... {no_skin_emoji}*", ""))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
             fill_fields(f"{skin_lock_emoji} {len(bot_countryballs) - len(owned_countryballs)} Skins to be Unlocked {skin_lock_emoji}", missing)
         else:
             entries.append(
                 (
-                    f"*{completionist_emoji} Congrats, you are truly a Completionist! {completionist_emoji}*"
+                    f"*{completionist_emoji} Congrats, you are truly a Completionist! {completionist_emoji}*",
+                    ""
                 )
             )  # force empty field value
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
