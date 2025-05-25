@@ -309,8 +309,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             brawler_emoji_2 = self.bot.get_emoji(1371591872782401637)
             brawler_emoji_3 = self.bot.get_emoji(1371592384143556648)
             brawler_emoji_4 = self.bot.get_emoji(1371592712331198545)
-            unlock_emoji = self.bot.get_emoji(1363692398596853841)
-            lock_emoji = self.bot.get_emoji(1363692380208890066)
+            brawler_unlock_emoji = self.bot.get_emoji(1363692398596853841)
+            brawler_lock_emoji = self.bot.get_emoji(1363692380208890066)
             no_brawler_emoji = self.bot.get_emoji(1349143586603667587)
             completionist_emoji = self.bot.get_emoji(1372373379939827744)
 
@@ -339,14 +339,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if owned_countryballs:
             # Getting the list of emoji IDs from the IDs of the owned countryballs
             fill_fields(
-                f"{unlock_emoji} __{len(owned_countryballs)} Brawlers Unlocked__ {unlock_emoji}",
+                f"{brawler_unlock_emoji} __{len(owned_countryballs)} Brawlers Unlocked__ {brawler_unlock_emoji}",
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
             entries.append((f"*Seems like you don't have any Brawlers... {no_brawler_emoji}*"))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields(f"{lock_emoji} __{len(bot_countryballs) - len(owned_countryballs)} Brawlers to be Unlocked__ {lock_emoji}", missing)
+            fill_fields(f"{brawler_lock_emoji} __{len(bot_countryballs) - len(owned_countryballs)} Brawlers to be Unlocked__ {brawler_lock_emoji}", missing)
         else:
             entries.append(
                 (
