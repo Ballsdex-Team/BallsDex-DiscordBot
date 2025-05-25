@@ -138,7 +138,7 @@ class Regime(models.Model):
 class Special(models.Model):
     name = models.CharField(max_length=64)
     catch_phrase = models.CharField(
-        max_length=128,
+        max_length=512,
         blank=True,
         null=True,
         help_text="Sentence sent in bonus when someone catches a special card",
@@ -190,7 +190,7 @@ class Ball(models.Model):
     collection_card = models.ImageField(
         max_length=200, help_text="Image used when displaying balls"
     )
-    credits = models.CharField(max_length=64, help_text="Author of the collection artwork")
+    credits = models.CharField(max_length=256, help_text="Author of the collection artwork")
     capacity_name = models.CharField(max_length=64, help_text="Name of the countryball's capacity")
     capacity_description = models.CharField(
         max_length=256, help_text="Description of the countryball's capacity"
