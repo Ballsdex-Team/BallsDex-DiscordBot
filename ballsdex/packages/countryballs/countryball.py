@@ -216,7 +216,7 @@ class BallSpawnView(View):
             await interaction.response.send_modal(CountryballNamePrompt(self, self.catch_button))
 
     # Wrapper to provide both interaction and button
-    async def catch_button_cb_wrapper(interaction: discord.Interaction["BallsDexBot"]):
+    async def catch_button_cb_wrapper(self, interaction: discord.Interaction["BallsDexBot"]):
         await BallSpawnView.catch_button_cb(self, interaction)
 
     @classmethod
