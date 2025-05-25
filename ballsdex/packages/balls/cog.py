@@ -246,6 +246,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         special: Special
             The special you want to see the completion of
         """
+        brawler_emoji_1 = self.bot.get_emoji(1371591594867949588)
+        brawler_emoji_2 = self.bot.get_emoji(1371591872782401637)
+        brawler_emoji_3 = self.bot.get_emoji(1371592384143556648)
+        brawler_emoji_4 = self.bot.get_emoji(1371592712331198545)
+        brawler_unlock_emoji = self.bot.get_emoji(1363692398596853841)
+        brawler_lock_emoji = self.bot.get_emoji(1363692380208890066)
+        no_brawler_emoji = self.bot.get_emoji(1349143586603667587)
+        completionist_emoji = self.bot.get_emoji(1372373379939827744)
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
         extra_text = f"{special.name} " if special else ""
@@ -305,14 +313,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             # check if we need to add "(continued)" to the field name
             first_field_added = False
             buffer = ""
-            brawler_emoji_1 = self.bot.get_emoji(1371591594867949588)
-            brawler_emoji_2 = self.bot.get_emoji(1371591872782401637)
-            brawler_emoji_3 = self.bot.get_emoji(1371592384143556648)
-            brawler_emoji_4 = self.bot.get_emoji(1371592712331198545)
-            brawler_unlock_emoji = self.bot.get_emoji(1363692398596853841)
-            brawler_lock_emoji = self.bot.get_emoji(1363692380208890066)
-            no_brawler_emoji = self.bot.get_emoji(1349143586603667587)
-            completionist_emoji = self.bot.get_emoji(1372373379939827744)
 
             for emoji_id in emoji_ids:
                 emoji = self.bot.get_emoji(emoji_id)
