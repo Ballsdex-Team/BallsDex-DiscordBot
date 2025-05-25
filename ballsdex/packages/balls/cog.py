@@ -339,14 +339,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if owned_countryballs:
             # Getting the list of emoji IDs from the IDs of the owned countryballs
             fill_fields(
-                f"{brawler_unlock_emoji} __{len(owned_countryballs)} Brawlers Unlocked__ {brawler_unlock_emoji}",
+                f"{brawler_unlock_emoji} {len(owned_countryballs)} Brawlers Unlocked {brawler_unlock_emoji}",
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
             entries.append((f"*Seems like you don't have any Brawlers... {no_brawler_emoji}*"))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields(f"{brawler_lock_emoji} __{len(bot_countryballs) - len(owned_countryballs)} Brawlers to be Unlocked__ {brawler_lock_emoji}", missing)
+            fill_fields(f"{brawler_lock_emoji} {len(bot_countryballs) - len(owned_countryballs)} Brawlers to be Unlocked {brawler_lock_emoji}", missing)
         else:
             entries.append(
                 (
