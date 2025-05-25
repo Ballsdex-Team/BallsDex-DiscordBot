@@ -165,7 +165,7 @@ class Completion(commands.GroupCog, group_name="completion"):
         special_str = f" ({special.name})" if special else ""
         source.embed.description = (
             f"{skin_emoji_1}{skin_emoji_2} SKINS\n"
-            f"{skin_emoji_3}{skin_emoji_4} {len(owned_countryballs)}/{len(bot_countryballs)} Collected\n"
+            f"{skin_emoji_3}{skin_emoji_4} {len(owned_countryballs)}/{len(bot_countryballs)} Collected"
         )
         source.embed.colour = discord.Colour.blurple()
         source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
