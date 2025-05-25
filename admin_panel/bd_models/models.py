@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.db import models
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 from ballsdex.settings import settings
 
@@ -71,6 +72,34 @@ class TradeCooldownPolicy(models.IntegerChoices):
 
 class Player(models.Model):
     discord_id = models.BigIntegerField(unique=True, help_text="Discord user ID")
+    credits = models.BigIntegerField(
+    help_text="User Credits",
+    default=0,
+    validators=[MaxValueValidator((1 << 63) - 1), MinValueValidator(0)],
+    )
+    powerpoints = models.BigIntegerField(
+    help_text="User Power Points",
+    default=0,
+    validators=[MaxValueValidator((1 << 63) - 1), MinValueValidator(0)],
+    )
+    sdcount = models.IntegerField(
+    help_text="Number of Starr Drops the player owns",
+    validators=[MaxValueValidator(50), MinValueValidator(0)],
+    default=0,
+    )
+    dailycaught = models.IntegerField(
+    help_text="Daily Caught Brawlers",
+    validators=[MaxValueValidator(1000), MinValueValidator(0)],
+    default=0,
+    db_index=True,
+    )
+    trophies = models.BigIntegerField(
+    help_text="User Trophies",
+    default=0,
+    db_index=True,
+    validators=[MaxValueValidator((1 << 63) - 1), MinValueValidator(0)],
+    )
+    brawler_trophies = models.JSONField(default=dict, blank=True)
     donation_policy = models.SmallIntegerField(
         choices=DonationPolicy.choices, help_text="How you want to handle donations"
     )
