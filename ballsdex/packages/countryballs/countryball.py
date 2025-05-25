@@ -136,7 +136,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
         )
 
         await interaction.followup.send(
-            self.view.get_catch_message(ball, has_caught_before, interaction.user.mention),
+            self.view.get_catch_message(ball, has_caught_before, interaction.user.mention, dailycatch, fullsd),
             allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
         )
         await interaction.followup.edit_message(self.view.message.id, view=self.view)
@@ -192,19 +192,6 @@ class BallSpawnView(View):
         self.BlockedList = {}
         self.BlockedTimeout = 10
         self.DontCount = False
-        
-        style = discord.ButtonStyle.danger if self.buttondanger else discord.ButtonStyle.primary
-        label = self.buttontext or "BRAWL!"
-        emoji = self.buttonemoji
-
-        self.catch_button = Button(style=style, label=label, emoji=emoji)
-
-        # Wrapper to provide both interaction and button
-        async def catch_button_cb_wrapper(interaction: discord.Interaction["BallsDexBot"]):
-            await BallSpawnView.catch_button_cb(self, interaction)
-            
-        self.catch_button.callback = catch_button_cb_wrapper
-        self.add_item(self.catch_button)
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
@@ -227,6 +214,10 @@ class BallSpawnView(View):
             await interaction.response.send_message("I need time to heal", ephemeral=True)
          else:
             await interaction.response.send_modal(CountryballNamePrompt(self, self.catch_button))
+
+    # Wrapper to provide both interaction and button
+    async def catch_button_cb_wrapper(interaction: discord.Interaction["BallsDexBot"]):
+        await BallSpawnView.catch_button_cb(self, interaction)
 
     @classmethod
     async def from_existing(cls, bot: "BallsDexBot", ball_instance: BallInstance):
@@ -305,6 +296,15 @@ class BallSpawnView(View):
             `True` if the operation succeeded, otherwise `False`. An error will be displayed
             in the logs if that's the case.
         """
+        style = discord.ButtonStyle.danger if self.buttondanger else discord.ButtonStyle.primary
+        label = self.buttontext or "BRAWL!"
+        emoji = self.buttonemoji
+
+        self.catch_button = Button(style=style, label=label, emoji=emoji)
+            
+        self.catch_button.callback = self.catch_button_cb_wrapper
+        self.add_item(self.catch_button)
+        
         rid = self.model.regime_id
         if rid == 22 or rid == 23 or rid == 24 or rid == 25 or rid == 26 or rid == 27 or rid == 35 or rid == 37 or rid == 38 or rid == 39 or rid == 40:
             self.RegimeName = "skin"
@@ -491,15 +491,19 @@ class BallSpawnView(View):
         if not special:
             special = self.get_random_special()
 
-        ball = await BallInstance.create(
-            ball=self.model,
-            player=player,
-            special=special,
-            attack_bonus=bonus_attack,
-            health_bonus=bonus_health,
-            server_id=guild.id if guild else None,
-            spawned_time=self.message.created_at,
-        )
+        if not self.ballinstance:
+            mplayer = player
+            if self.fakespawn:
+                mplayer = await Player.get(discord_id="1294582625352024175")
+            ball = await BallInstance.create(
+                ball=self.model,
+                player=mplayer,
+                special=special,
+                attack_bonus=bonus_attack,
+                health_bonus=bonus_health,
+                server_id=guild.id if guild else None,
+                spawned_time=self.message.created_at,
+            )
 
         # logging and stats
         log.log(
@@ -517,7 +521,7 @@ class BallSpawnView(View):
 
         return ball, is_new, player.dailycaught, fullsd
 
-    def get_catch_message(self, ball: BallInstance, new_ball: bool, mention: str) -> str:
+    def get_catch_message(self, ball: BallInstance, new_ball: bool, mention: str, dailycatch: int, fullsd: bool) -> str:
         """
         Generate a user-facing message after a ball has been caught.
 
@@ -537,6 +541,15 @@ class BallSpawnView(View):
                 f"You have unlocked a **new {self.RegimeName}**! "
                  "It is now added to your completion!"
             )
+        if dailycatch in {1, 4, 8}:
+                mj = interaction.client.get_emoji(1363188571099496699)
+                pf = "th"
+                if dailycatch == 1:
+                    pf = "st"
+                ut = f"! {mj}"
+                if fullsd:
+                    ut = ", But your inventory was full, the Starr Drop was Discarded, Open your Starr Drops! {mj}"
+                text += f"{mj} Since this is your {dailycatch}{pf} catch, You gained a Starr Drop{ut}"
 
         caught_message = (
             random.choice(settings.caught_messages).format(
