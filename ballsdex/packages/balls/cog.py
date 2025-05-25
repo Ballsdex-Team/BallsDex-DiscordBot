@@ -343,7 +343,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 set(bot_countryballs[x] for x in owned_countryballs),
             )
         else:
-            entries.append((f"*Seems like you don't have any Brawlers... {no_brawler_emoji}*"))
+            entries.append((f"*Seems like you don't have any Brawlers... {no_brawler_emoji}*", ""))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
             fill_fields(f"{brawler_lock_emoji} {len(bot_countryballs) - len(owned_countryballs)} Brawlers to be Unlocked {brawler_lock_emoji}", missing)
@@ -351,6 +351,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             entries.append(
                 (
                     f"{completionist_emoji} Congrats, you are truly a Completionist! {completionist_emoji}*",
+                    ""
                 )
             )  # force empty field value
 
