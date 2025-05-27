@@ -225,7 +225,7 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
         Show Power Points Leveling Chart
         """
         
-        mj = self.bot.get_emoji(1338161029406003220)
+        mj = self.bot.get_emoji(1364807487106191471)
         embed = discord.Embed(
             title="Power Points Shop",
             description=f"Power Level 2: 20{mj} (Total: 20)\nPower Level 3: 30{mj} (Total: 50)\nPower Level 4: 50{mj} (Total: 100)\nPower Level 5: 80{mj} (Total: 180)\nPower Level 6: 130{mj} (Total: 310)\nPower Level 7: 210{mj} (Total: 520)\nPower Level 8: 340{mj} (Total: 860)\nPower Level 9: 550{mj} (Total: 1410)\nPower Level 10: 890{mj} (Total: 2300)\nPower Level 11: 1440{mj} (Total: 3740)\n\nNote: Each power level gives a +10% stat boost.",
