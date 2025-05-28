@@ -278,7 +278,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
 
         # Set of ball IDs owned by the player
-        filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
+        filters = {"player__discord_id": user_obj.id, "ball__enabled": True, "deleted": False}
         if special:
             filters["special"] = special
             bot_countryballs = {
@@ -436,7 +436,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
 
-        countryball = await player.balls.all().order_by("-id").first().select_related("ball")
+        countryball = (
+            await player.balls.filter(deleted=False).order_by("-id").first().select_related("ball")
+        )
         if not countryball:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
@@ -494,7 +496,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 if settings.max_favorites == 1
                 else f"{settings.plural_collectible_name}"
             )
-            if await player.balls.filter(favorite=True).count() >= settings.max_favorites:
+            if (
+                await player.balls.filter(favorite=True, deleted=False).count()
+                >= settings.max_favorites
+            ):
                 await interaction.response.send_message(
                     f"You cannot set more than {settings.max_favorites} favorite {grammar}.",
                     ephemeral=True,
@@ -675,7 +680,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         assert interaction.guild
-        filters = {}
+        filters = {"deleted": False}
         if countryball:
             filters["ball"] = countryball
         if special:
@@ -719,7 +724,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
         is_special = type == DuplicateType.specials
-        queryset = BallInstance.filter(player=player)
+        queryset = BallInstance.filter(player=player, deleted=False)
 
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
@@ -818,7 +823,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 "You cannot compare with a user that has you blocked.", ephemeral=True
             )
             return
-        queryset = BallInstance.filter(ball__enabled=True).distinct()
+        queryset = BallInstance.filter(ball__enabled=True, deleted=False).distinct()
         if special:
             queryset = queryset.filter(special=special)
         user1_balls = cast(
