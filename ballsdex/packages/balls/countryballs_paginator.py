@@ -106,11 +106,11 @@ class DuplicateViewMenu(Pages):
         await interaction.response.defer(thinking=True, ephemeral=True)
         if self.dupe_type == settings.plural_collectible_name:
             balls = await BallInstance.filter(
-                ball__country=item.values[0], player__discord_id=interaction.user.id
+                ball__country=item.values[0], player__discord_id=interaction.user.id, deleted=False
             ).count()
         else:
             balls = await BallInstance.filter(
-                special__name=item.values[0], player__discord_id=interaction.user.id
+                special__name=item.values[0], player__discord_id=interaction.user.id, deleted=False
             ).count()
 
         plural = settings.collectible_name if balls == 1 else settings.plural_collectible_name
