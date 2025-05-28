@@ -33,7 +33,9 @@ class BallInstanceTabular(TabularInlinePaginated):
     can_delete = False
 
     # adding a countryball cannot work from here since all fields are readonly
-    def has_add_permission(self, request: "HttpRequest", obj: "Player") -> bool:
+    def has_add_permission(  # pyright: ignore [reportIncompatibleMethodOverride]
+        self, request: "HttpRequest", obj: "Player"
+    ) -> bool:
         return False
 
     @admin.display(description="Server")
