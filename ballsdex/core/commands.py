@@ -97,9 +97,8 @@ class Core(commands.Cog):
         """
 
         read_settings(Path("./config.yml"))
-        await ctx.message.add_reaction("✅")
         await ctx.message.reply(
-            """Config values have been updated. Some changes may require a restart."""
+            "Config values have been updated. Some changes may require a restart."
         )
 
     @commands.command()
