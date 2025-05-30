@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "admin_panel.apps.BallsdexAdminConfig",
     "bd_models",
     "preview",
+    "media_management",
 ]
 
 MIDDLEWARE = [
