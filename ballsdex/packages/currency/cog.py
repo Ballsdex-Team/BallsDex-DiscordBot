@@ -97,7 +97,7 @@ class Credits(commands.GroupCog, group_name="credits"):
         Show Credits Shop Prices
         """
         
-        mjc = self.bot.get_emoji(1348376242243502110)
+        mjc = self.bot.get_emoji(1364877727601004634)
         mjrare = self.bot.get_emoji(1330493249235714189)
         mjsuperrare = self.bot.get_emoji(1330493410884456528)
         mjepic = self.bot.get_emoji(1330493427011555460)
