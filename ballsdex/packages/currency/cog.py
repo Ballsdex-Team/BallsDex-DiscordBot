@@ -36,7 +36,7 @@ class Credits(commands.GroupCog, group_name="credits"):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
         self.CostByRarity = {"rare": 160, "super_rare": 430, "epic": 925, "mythic": 1900, "legendary": 3800}
-        self.ExcludeOptions = ["shelly",]
+        self.ExcludeOptions = ["kaze",]
         
     @app_commands.command(name="show")
     @app_commands.checks.cooldown(3, 30, key=lambda i: i.user.id)
@@ -105,7 +105,7 @@ class Credits(commands.GroupCog, group_name="credits"):
         mjlegendary = self.bot.get_emoji(1330493465221529713)
         embed = discord.Embed(
             title="Credits Info",
-            description=f"{mjc} **Prices** {mjc} \n\nRare{mjrare}: 160{mjc} \nSuper Rare{mjsuperrare}: 430{mjc} \nEpic{mjepic}: 925{mjc} \nMythic{mjmythic}: 1900{mjc} \nLegendary{mjlegendary}: 3800{mjc} \n\n-# Excluded Brawlers: Shelly",
+            description=f"{mjc} **Prices** {mjc} \n\nRare{mjrare}: 160{mjc} \nSuper Rare{mjsuperrare}: 430{mjc} \nEpic{mjepic}: 925{mjc} \nMythic{mjmythic}: 1900{mjc} \nLegendary{mjlegendary}: 3800{mjc} \n\n-# Ultra Legendaries cannot be purchaseable.",
             color=discord.Color.og_blurple()
 )       
         await interaction.response.send_message(embed=embed)
