@@ -103,9 +103,10 @@ class Credits(commands.GroupCog, group_name="credits"):
         mjepic = self.bot.get_emoji(1330493427011555460)
         mjmythic = self.bot.get_emoji(1330493448469483580)
         mjlegendary = self.bot.get_emoji(1330493465221529713)
+        mjultra = self.bot.get_emoji(1368271368382320761)
         embed = discord.Embed(
             title="Credits Info",
-            description=f"{mjc} **Prices** {mjc} \n\nRare{mjrare}: 160{mjc} \nSuper Rare{mjsuperrare}: 430{mjc} \nEpic{mjepic}: 925{mjc} \nMythic{mjmythic}: 1900{mjc} \nLegendary{mjlegendary}: 3800{mjc} \n\n-# Ultra Legendaries cannot be purchaseable.",
+            description=f"{mjc} **Prices** {mjc} \n\nRare{mjrare}: 160{mjc} \nSuper Rare{mjsuperrare}: 430{mjc} \nEpic{mjepic}: 925{mjc} \nMythic{mjmythic}: 1900{mjc} \nLegendary{mjlegendary}: 3800{mjc} \n\n-# {mjultra} Ultra Legendaries are unpurchaseable.",
             color=discord.Color.og_blurple()
 )       
         await interaction.response.send_message(embed=embed)
