@@ -36,7 +36,7 @@ class Credits(commands.GroupCog, group_name="credits"):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
         self.CostByRarity = {"rare": 160, "super_rare": 430, "epic": 925, "mythic": 1900, "legendary": 3800}
-        self.ExcludeOptions = ["kaze",]
+        self.ExcludeOptions = ["ultra_legendary",]
         
     @app_commands.command(name="show")
     @app_commands.checks.cooldown(3, 30, key=lambda i: i.user.id)
@@ -127,10 +127,10 @@ class Credits(commands.GroupCog, group_name="credits"):
         brawler: Ball
             The Brawler you want.
         """
-        if brawler.country.lower().strip().replace(" ", "_") in self.ExcludeOptions:
+        Reg = await Regime.get(id=brawler.regime_id)
+        if Reg.lower().strip().replace(" ", "_") in self.ExcludeOptions:
             await interaction.response.send_message(f"{brawler.country} can not currently be claimed.",ephemeral=True)
             return
-        Reg = await Regime.get(id=brawler.regime_id)
         if Reg.name.lower().strip().replace(" ", "_") not in self.CostByRarity:
             await interaction.response.send_message(f"Non-brawlers can not currently be claimed.",ephemeral=True)
             return
