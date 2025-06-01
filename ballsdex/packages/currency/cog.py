@@ -129,8 +129,8 @@ class Credits(commands.GroupCog, group_name="credits"):
             The Brawler you want.
         """
         Reg = await Regime.get(id=brawler.regime_id)
-        if Reg.lower().strip().replace(" ", "_") in self.ExcludeOptions:
-            await interaction.response.send_message(f"{brawler.country} can not currently be claimed.",ephemeral=True)
+        if Reg.name.lower().strip().replace(" ", "_") in self.ExcludeOptions:
+            await interaction.response.send_message(f"{brawler.country} can not be claimed.",ephemeral=True)
             return
         if Reg.name.lower().strip().replace(" ", "_") not in self.CostByRarity:
             await interaction.response.send_message(f"Non-brawlers can not currently be claimed.",ephemeral=True)
