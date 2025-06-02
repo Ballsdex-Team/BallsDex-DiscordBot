@@ -14,7 +14,7 @@ from discord.app_commands.translator import (
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
-from ballsdex.core.models import Ball, BallInstance
+from ballsdex.core.models import Ball, BallInstance, Player
 from ballsdex.core.models import balls as countryballs
 from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.tortoise import row_count_estimate
@@ -179,11 +179,13 @@ class Info(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
         @app_commands.command()
+        @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
         async def profile(self, interaction: discord.Interaction["BallsDexBot"]):
             """
             Show your collection progressions and currency amounts.
             """
             user_obj = interaction.user
+            player_obj = await Player.get_or_create(discord_id=interaction.user.id)
             brawler_emoji = self.bot.get_emoji(1372376567153557514)
             skin_emoji = self.bot.get_emoji(1373356124681535582)
             pps_emoji = self.bot.get_emoji(1364817571819425833)
@@ -211,5 +213,8 @@ class Info(commands.Cog):
             )
             embed.set_thumbnail(url=user_obj.display_avatar.url)
             embed.description(
-                
+                f"# Statistics\n"
+                f"
+                f"
+                f"
             )
