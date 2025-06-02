@@ -221,6 +221,6 @@ class Info(commands.Cog):
             f"## Resources\n"
             f"> {player_obj.powerpoints}{pps_emoji}\n"
             f"> {player_obj.credits}{credits_emoji}\n"
-            f"> {player_obj.sdcount}{starrdrop_emoji}\n"
+            f"> {player_obj.sdcount}{starrdrops_emoji}\n"
         )
         await interaction.response.send_message(embed=embed)
