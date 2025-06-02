@@ -215,7 +215,7 @@ class Info(commands.Cog):
         embed.set_thumbnail(url=user_obj.display_avatar.url)
         embed.description(
             f"## Statistics\n"
-            f"> {collectible_count}{collectible_emoji}\n"
+            f"> {str(collectible_count)}{collectible_emoji}\n"
             f"> {len(owned_brawlers)}/{len(bot_brawlers)}{brawler_emoji}\n"
             f"> {len(owned_skins)}/{len(bot_skins)}{skin_emoji}\n"
             f"## Resources\n"
