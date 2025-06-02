@@ -219,4 +219,7 @@ class Info(commands.Cog):
                 f"> {len(owned_brawlers)}/{len(bot_brawlers)}{brawler_emoji}\n"
                 f"> {len(owned_skins)}/{len(bot_skins)}{skin_emoji}\n"
                 f"## Resources\n"
+                f"> {player_obj.powerpoints}{pps_emoji}\n"
+                f"> {player_obj.credits}{credits_emoji}\n"
+                f"> {player_obj.sdcount}{starrdrop_emoji}\n"
             )
