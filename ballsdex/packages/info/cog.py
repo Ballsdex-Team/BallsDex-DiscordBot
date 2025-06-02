@@ -184,6 +184,11 @@ class Info(commands.Cog):
             Show your collection progressions and currency amounts.
             """
             user_obj = interaction.user
+            brawler_emoji = self.bot.get_emoji(1372376567153557514)
+            skin_emoji = self.bot.get_emoji(1373356124681535582)
+            pps_emoji = self.bot.get_emoji(1364817571819425833)
+            credits_emoji = self.bot.get_emoji(1364877745032794192)
+            starrdrops_emoji = self.bot.get_emoji(1363188571099496699)
             embed = discord.Embed(
                 title=f"{user_obj.name}'s Profile",
                 color=discord.Colour.from_str("#ffff00")
