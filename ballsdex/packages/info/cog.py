@@ -213,7 +213,7 @@ class Info(commands.Cog):
             color=discord.Colour.from_str("#ffff00")
         )
         embed.set_thumbnail(url=user_obj.display_avatar.url)
-        embed.description(
+        embed.description = (
             f"## Statistics\n"
             f"> {collectible_count}{collectibles_emoji}\n"
             f"> {len(owned_brawlers)}/{len(bot_brawlers)}{brawler_emoji}\n"
