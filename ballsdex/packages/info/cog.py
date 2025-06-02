@@ -223,3 +223,4 @@ class Info(commands.Cog):
             f"> {player_obj.credits}{credits_emoji}\n"
             f"> {player_obj.sdcount}{starrdrop_emoji}\n"
         )
+        await interaction.response.send_message(embed=embed)
