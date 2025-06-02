@@ -66,7 +66,7 @@ class Credits(commands.GroupCog, group_name="credits"):
         if user is not None:
             if await inventory_privacy(self.bot, interaction, playerm, user_obj) is False:
                 return
-        interaction_player = await PlayerModel.get(discord_id=interaction.user.id)
+        interaction_player = await PlayerModel.get_or_create(discord_id=interaction.user.id)
 
         blocked = await playerm.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
@@ -136,7 +136,7 @@ class Credits(commands.GroupCog, group_name="credits"):
             await interaction.response.send_message(f"Non-brawlers can not currently be claimed.",ephemeral=True)
             return
         
-        playerm = await PlayerModel.get(discord_id=interaction.user.id)
+        playerm = await PlayerModel.get_or_create(discord_id=interaction.user.id)
         
         cost = self.CostByRarity[(await Regime.get(id=brawler.regime_id)).name.lower().strip().replace(" ", "_")]
         if cost is None:
@@ -195,7 +195,7 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
         if user is not None:
             if await inventory_privacy(self.bot, interaction, playerm, user_obj) is False:
                 return
-        interaction_player = await PlayerModel.get(discord_id=interaction.user.id)
+        interaction_player = await PlayerModel.get_or_create(discord_id=interaction.user.id)
 
         blocked = await playerm.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
