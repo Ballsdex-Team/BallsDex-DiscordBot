@@ -14,7 +14,7 @@ from discord.app_commands.translator import (
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
-from ballsdex.core.models import Ball
+from ballsdex.core.models import Ball, BallInstance
 from ballsdex.core.models import balls as countryballs
 from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.tortoise import row_count_estimate
@@ -189,6 +189,22 @@ class Info(commands.Cog):
             pps_emoji = self.bot.get_emoji(1364817571819425833)
             credits_emoji = self.bot.get_emoji(1364877745032794192)
             starrdrops_emoji = self.bot.get_emoji(1363188571099496699)
+            collectibles_emoji = self.bot.get_emoji(1379120934732042240)
+            bot_brawlers = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and 3 <= y.economy_id <= 9 and not 19 <= y.regime_id <= 21 and not y.economy_id == 16}
+            bot_skins = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and (22 <= y.regime_id <= 27 or y.regime_id == 35 or 37 <= y.regime_id <= 40)}
+            owned_brawlers = set(
+                x[0]
+                for x in await BallInstance.filter(**filters).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=22).exclude(ball__regime_id=23).exclude(ball__regime_id=24).exclude(ball__regime_id=25).exclude(ball__regime_id=26).exclude(ball__regime_id=27).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=35).exclude(ball__regime_id=37).exclude(ball__regime_id=38).exclude(ball__regime_id=39).exclude(ball__regime_id=40)
+                .distinct()  # Do not query everything
+                .values_list("ball_id")
+                )
+            owned_skins = set(
+                x[0]
+                for x in await BallInstance.filter(**filters).exclude(ball__regime_id=5).exclude(ball__regime_id=6).exclude(ball__regime_id=7).exclude(ball__regime_id=8).exclude(ball__regime_id=16).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=34).exclude(ball__regime_id=36)
+                .distinct()  # Do not query everything
+                .values_list("ball_id")
+                )
+            filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
             embed = discord.Embed(
                 title=f"{user_obj.name}'s Profile",
                 color=discord.Colour.from_str("#ffff00")
