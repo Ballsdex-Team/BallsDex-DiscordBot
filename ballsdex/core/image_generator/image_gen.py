@@ -77,14 +77,14 @@ def draw_card(
         ball.short_name or ball.country,
         font=title_font,
         fill=shadow_color,
-        stroke_width=5,
+        stroke_width=8,
         stroke_fill=(0, 0, 0, 255),
     )
     draw.text(
         (50, 20),
         ball.short_name or ball.country,
         font=title_font,
-        stroke_width=5,
+        stroke_width=8,
         stroke_fill=(0, 0, 0, 255),
     )
 
@@ -169,7 +169,7 @@ def draw_card(
         (30, 1870),
         # Modifying the line below is breaking the licence as you are removing credits
         # If you don't want to receive a DMCA, just don't
-        f"Created by El Laggron, BrawlDex by AngerRandom, Brawl Stars by Supercell\n" f"{ball_credits}",
+        f"Ballsdex by El Laggron, BrawlDex by AngerRandom, Brawl Stars by Supercell\n" f"{ball_credits}",
         font=credits_font,
         fill=credits_color,
         stroke_width=3,
