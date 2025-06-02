@@ -177,3 +177,13 @@ class Info(commands.Cog):
                 )
 
         await interaction.response.send_message(embed=embed)
+
+        @app_commands.command()
+        async def profile(self, interaction: discord.Interaction["BallsDexBot"]):
+            """
+            Show your collection progressions and currency amounts.
+            """
+            user = interaction.user
+            embed = discord.Embed(
+                title=f"{user.name}'s Profile"
+            
