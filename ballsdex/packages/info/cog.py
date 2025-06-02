@@ -183,7 +183,12 @@ class Info(commands.Cog):
             """
             Show your collection progressions and currency amounts.
             """
-            user = interaction.user
+            user_obj = interaction.user
             embed = discord.Embed(
-                title=f"{user.name}'s Profile"
-            
+                title=f"{user_obj.name}'s Profile",
+                color=discord.Colour.from_str("#ffff00")
+            )
+            embed.set_thumbnail(url=user_obj.display_avatar.url)
+            embed.description(
+                
+            )
