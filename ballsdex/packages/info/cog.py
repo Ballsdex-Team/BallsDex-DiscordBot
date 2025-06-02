@@ -178,48 +178,48 @@ class Info(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
-        @app_commands.command()
-        @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
-        async def profile(self, interaction: discord.Interaction["BallsDexBot"]):
-            """
-            Show your collection progressions and currency amounts.
-            """
-            user_obj = interaction.user
-            player_obj = await Player.get_or_create(discord_id=interaction.user.id)
-            brawler_emoji = self.bot.get_emoji(1372376567153557514)
-            skin_emoji = self.bot.get_emoji(1373356124681535582)
-            pps_emoji = self.bot.get_emoji(1364817571819425833)
-            credits_emoji = self.bot.get_emoji(1364877745032794192)
-            starrdrops_emoji = self.bot.get_emoji(1363188571099496699)
-            collectibles_emoji = self.bot.get_emoji(1379120934732042240)
-            collectible_count = await BallInstance.filter(player=player_obj).count()
-            bot_brawlers = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and 3 <= y.economy_id <= 9 and not 19 <= y.regime_id <= 21 and not y.economy_id == 16}
-            bot_skins = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and (22 <= y.regime_id <= 27 or y.regime_id == 35 or 37 <= y.regime_id <= 40)}
-            owned_brawlers = set(
-                x[0]
-                for x in await BallInstance.filter(**filters).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=22).exclude(ball__regime_id=23).exclude(ball__regime_id=24).exclude(ball__regime_id=25).exclude(ball__regime_id=26).exclude(ball__regime_id=27).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=35).exclude(ball__regime_id=37).exclude(ball__regime_id=38).exclude(ball__regime_id=39).exclude(ball__regime_id=40)
-                .distinct()  # Do not query everything
-                .values_list("ball_id")
-                )
-            owned_skins = set(
-                x[0]
-                for x in await BallInstance.filter(**filters).exclude(ball__regime_id=5).exclude(ball__regime_id=6).exclude(ball__regime_id=7).exclude(ball__regime_id=8).exclude(ball__regime_id=16).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=34).exclude(ball__regime_id=36)
-                .distinct()  # Do not query everything
-                .values_list("ball_id")
-                )
-            filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
-            embed = discord.Embed(
-                title=f"{user_obj.name}'s Profile",
-                color=discord.Colour.from_str("#ffff00")
+    @app_commands.command()
+    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    async def profile(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Show your collection progressions and currency amounts.
+        """
+        user_obj = interaction.user
+        player_obj = await Player.get_or_create(discord_id=interaction.user.id)
+        brawler_emoji = self.bot.get_emoji(1372376567153557514)
+        skin_emoji = self.bot.get_emoji(1373356124681535582)
+        pps_emoji = self.bot.get_emoji(1364817571819425833)
+        credits_emoji = self.bot.get_emoji(1364877745032794192)
+        starrdrops_emoji = self.bot.get_emoji(1363188571099496699)
+        collectibles_emoji = self.bot.get_emoji(1379120934732042240)
+        collectible_count = await BallInstance.filter(player=player_obj).count()
+        bot_brawlers = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and 3 <= y.economy_id <= 9 and not 19 <= y.regime_id <= 21 and not y.economy_id == 16}
+        bot_skins = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and (22 <= y.regime_id <= 27 or y.regime_id == 35 or 37 <= y.regime_id <= 40)}
+        owned_brawlers = set(
+            x[0]
+            for x in await BallInstance.filter(**filters).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=22).exclude(ball__regime_id=23).exclude(ball__regime_id=24).exclude(ball__regime_id=25).exclude(ball__regime_id=26).exclude(ball__regime_id=27).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=35).exclude(ball__regime_id=37).exclude(ball__regime_id=38).exclude(ball__regime_id=39).exclude(ball__regime_id=40)
+            .distinct()  # Do not query everything
+            .values_list("ball_id")
             )
-            embed.set_thumbnail(url=user_obj.display_avatar.url)
-            embed.description(
-                f"## Statistics\n"
-                f"> {collectible_count}{collectible_emoji}\n"
-                f"> {len(owned_brawlers)}/{len(bot_brawlers)}{brawler_emoji}\n"
-                f"> {len(owned_skins)}/{len(bot_skins)}{skin_emoji}\n"
-                f"## Resources\n"
-                f"> {player_obj.powerpoints}{pps_emoji}\n"
-                f"> {player_obj.credits}{credits_emoji}\n"
-                f"> {player_obj.sdcount}{starrdrop_emoji}\n"
+        owned_skins = set(
+            x[0]
+            for x in await BallInstance.filter(**filters).exclude(ball__regime_id=5).exclude(ball__regime_id=6).exclude(ball__regime_id=7).exclude(ball__regime_id=8).exclude(ball__regime_id=16).exclude(ball__regime_id=19).exclude(ball__regime_id=20).exclude(ball__regime_id=21).exclude(ball__regime_id=28).exclude(ball__regime_id=29).exclude(ball__regime_id=30).exclude(ball__regime_id=31).exclude(ball__regime_id=32).exclude(ball__regime_id=33).exclude(ball__regime_id=34).exclude(ball__regime_id=36)
+            .distinct()  # Do not query everything
+            .values_list("ball_id")
             )
+        filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
+        embed = discord.Embed(
+            title=f"{user_obj.name}'s Profile",
+            color=discord.Colour.from_str("#ffff00")
+        )
+        embed.set_thumbnail(url=user_obj.display_avatar.url)
+        embed.description(
+            f"## Statistics\n"
+            f"> {collectible_count}{collectible_emoji}\n"
+            f"> {len(owned_brawlers)}/{len(bot_brawlers)}{brawler_emoji}\n"
+            f"> {len(owned_skins)}/{len(bot_skins)}{skin_emoji}\n"
+            f"## Resources\n"
+            f"> {player_obj.powerpoints}{pps_emoji}\n"
+            f"> {player_obj.credits}{credits_emoji}\n"
+            f"> {player_obj.sdcount}{starrdrop_emoji}\n"
+        )
