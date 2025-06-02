@@ -185,7 +185,7 @@ class Info(commands.Cog):
         Show your collection progressions and currency amounts.
         """
         user_obj = interaction.user
-        player_obj, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        player_obj, _ = await Player.get_or_create(discord_id=user_obj.id)
         brawler_emoji = self.bot.get_emoji(1372376567153557514)
         skin_emoji = self.bot.get_emoji(1373356124681535582)
         pps_emoji = self.bot.get_emoji(1364817571819425833)
