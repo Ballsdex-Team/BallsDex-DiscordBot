@@ -193,6 +193,7 @@ class Info(commands.Cog):
         starrdrops_emoji = self.bot.get_emoji(1363188571099496699)
         collectibles_emoji = self.bot.get_emoji(1379120934732042240)
         collectible_count = await BallInstance.filter(player=player_obj).count()
+        filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
         bot_brawlers = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and 3 <= y.economy_id <= 9 and not 19 <= y.regime_id <= 21 and not y.economy_id == 16}
         bot_skins = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and (22 <= y.regime_id <= 27 or y.regime_id == 35 or 37 <= y.regime_id <= 40)}
         owned_brawlers = set(
@@ -207,7 +208,6 @@ class Info(commands.Cog):
             .distinct()  # Do not query everything
             .values_list("ball_id")
             )
-        filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
         embed = discord.Embed(
             title=f"{user_obj.name}'s Profile",
             color=discord.Colour.from_str("#ffff00")
