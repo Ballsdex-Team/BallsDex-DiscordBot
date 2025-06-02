@@ -192,6 +192,7 @@ class Info(commands.Cog):
             credits_emoji = self.bot.get_emoji(1364877745032794192)
             starrdrops_emoji = self.bot.get_emoji(1363188571099496699)
             collectibles_emoji = self.bot.get_emoji(1379120934732042240)
+            collectible_count = await BallInstance.filter(player=player_obj).count()
             bot_brawlers = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and 3 <= y.economy_id <= 9 and not 19 <= y.regime_id <= 21 and not y.economy_id == 16}
             bot_skins = {x: y.emoji_id for x, y in countryballs.items() if y.enabled and (22 <= y.regime_id <= 27 or y.regime_id == 35 or 37 <= y.regime_id <= 40)}
             owned_brawlers = set(
@@ -213,8 +214,9 @@ class Info(commands.Cog):
             )
             embed.set_thumbnail(url=user_obj.display_avatar.url)
             embed.description(
-                f"# Statistics\n"
-                f"
-                f"
-                f"
+                f"## Statistics\n"
+                f"> {collectible_count}{collectible_emoji}\n"
+                f"> {len(owned_brawlers)}/{len(bot_brawlers)}{brawler_emoji}\n"
+                f"> {len(owned_skins)}/{len(bot_skins)}{skin_emoji}\n"
+                f"## Resources\n"
             )
