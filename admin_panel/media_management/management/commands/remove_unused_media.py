@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 
 from bd_models.models import Ball, Economy, Regime, Special
@@ -11,12 +10,16 @@ class Command(BaseCommand):
     help = "Remove unused files"
 
     def boolean_input(self, question, default=None):
-        result = input("%s " % question)
-        if not result and default is not None:
-            return default
-        while len(result) < 1 or result[0].lower() not in "yn":
-            result = input("Please answer yes or no: ")
-        return result[0].lower() == "y"
+        query = f"{question} [{'y/n' if default is None else ('Y/n' if default else 'y/N')}]: "
+        result = None
+        while not result:
+            result = input(query)
+            if result == "" and default is not None:
+                return default
+            if result.lower() in ["y", "yes", "yeah", "yay", "ya"]:
+                return True
+            elif result.lower() in ["n", "no", "nay", "nah"]:
+                return False
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -26,27 +29,16 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.remove_unused_media(*args, **options))
+        self.remove_unused_media(*args, **options)
 
-    async def remove_unused_media(self, *args, **options):
+    def remove_unused_media(self, *args, **options):
         used_paths = set()
 
-        used_paths.update(
-            [filename async for filename in Ball.objects.values_list("wild_card", flat=True)]
-        )
-        used_paths.update(
-            [filename async for filename in Ball.objects.values_list("collection_card", flat=True)]
-        )
-        used_paths.update(
-            [filename async for filename in Special.objects.values_list("background", flat=True)]
-        )
-        used_paths.update(
-            [filename async for filename in Economy.objects.values_list("icon", flat=True)]
-        )
-        used_paths.update(
-            [filename async for filename in Regime.objects.values_list("background", flat=True)]
-        )
+        used_paths.update(Ball.objects.values_list("wild_card", flat=True))
+        used_paths.update(Ball.objects.values_list("collection_card", flat=True))
+        used_paths.update(Special.objects.values_list("background", flat=True))
+        used_paths.update(Economy.objects.values_list("icon", flat=True))
+        used_paths.update(Regime.objects.values_list("background", flat=True))
 
         unused_files = []
         if not (media_path := options.get("media-path")):
@@ -67,7 +59,7 @@ class Command(BaseCommand):
             self.stdout.write("No unused files!")
             return
 
-        if self.boolean_input("Do you want to remove these files? [y/n]: "):
+        if self.boolean_input("Do you want to remove these files?"):
             for file in unused_files:
-                if self.boolean_input(f"Remove {file.name}? [y/n]: ", default=True):
+                if self.boolean_input(f"Remove {file.name}?", default=True):
                     file.unlink()
