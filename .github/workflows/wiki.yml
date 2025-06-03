@@ -22,7 +22,7 @@ jobs:
         with:
           python-version-file: pyproject.toml
       - name: Install dependencies
-        run: uv sync --locked --extras docs && echo "$PWD/.venv/bin" >> $GITHUB_PATH
+        run: uv sync --locked --extra docs && echo "$PWD/.venv/bin" >> $GITHUB_PATH
       - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
       - uses: actions/cache@v4
         with:
