@@ -33,36 +33,13 @@ Italy now can spawn, but in reality, it decreased Germany and France's probabili
 
 ## Special rarity
 
-Specials are a bit similar to the system above, but while taking into account the existence of the "common" state, aka when no special should be assigned.
+Specials are a bit similar to the system above
 
 !!! warning
-    Unlike countryballs that allow any rarity above 0, it is important that specials have a rarity between 0 and 1. Going outside this range will most likely result in errors.
+    Unlike countryballs that allow any rarity above 0, it is important that specials have a rarity between 0 and 1. Going outside this range will most likely result in strange behavior.
 
-### With one special
+Special rarity has changed as of 2.27.0, and is now simpler than it was before.
 
-When you decide the rarity of your special event, you are deciding the percentage of chances it has to appear against the common state.
+Set each special rarity to the rarity that you want it to have. Eg, if you want a special to have a 20% chance of spawning, set its rarity to 0.2. If you want it to have a 1% chance of spawning, set its rarity to 0.01.
 
-- If your rarity is **0**, the special has **0%** chances of appearing, all balls will be common
-- If your rarity is **1**, the special has **100%** chances of appearing, completely disabling commons
-- If your rarity is **0.4**, the special has **40%** chances of appearing, the other 60% will be common
-
-### With two or more specials
-
-Things get more interesting if you have multiple active specials at once. The logic above is applied, but then they are "blended" together, with the common state accumulating odds from other specials.
-
-Let's imagine we have one special "Birthday" with a rarity of 0.4:
-![image](https://github.com/user-attachments/assets/da141a52-9c3a-4d16-84ca-a1d39279e05d)
-
-Now we want to add another special "Winter" with a rarity of 0.6:
-![image](https://github.com/user-attachments/assets/259e2786-af26-4184-8192-1027acb2f304)
-
-Now there is 50% chances of spawning a common, and 50% chances of spawning a special. If it's a special, 40% chances of being "Birthday" and 60% chances of being "Winter".
-
-Let's add a third event "Chinese New Year" with a rarity of 0.2:
-![image](https://github.com/user-attachments/assets/eec19583-dcd7-4cac-aae5-7a806d8634b8)
-
-This time, it reduced the odd of getting any kind of special at all, with balls now having 60% chances of being "common" and 40% chances of being special.
-
-The way you can see this is this:
-- We get the opposite odd (having a common) of every special and make the average of that: $\dfrac{\frac{3}{5}+\frac{2}{5}+\frac{4}{5}}{3}=\dfrac{3}{5}$
-- The opposite of that ($\frac{2}{5}$) is then shared to the specials, which follow the same rule as ball spawning
+If the special rarities sum to 1 or over 1, then commons will not spawn. Also, rarities will be "squashed" down to 100%, so if you have a Special A with a rarity set as 2, and Special B set as 3, then Special A will have a 2/5 chance of spawning (40%), Special B will have a 60% chance of spawning (60%), and commons will have a 0% chance of spawning (since the rarities sum to over one)
