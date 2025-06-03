@@ -1,7 +1,5 @@
 # Index
 
-# Welcome to the Ballsdex documentation.
-
 This documentation will contain both documentation and resources on how to use the Ballsdex Discord Bot, as well as resources for self-hosting it.
 
 
