@@ -21,7 +21,7 @@ Once you got this, you should also use [Cloudflare](https://www.cloudflare.com/)
 ----
 
 > [!CAUTION]
-> It is very important that you follow these requirements, **they have security implications**.\
+> It is very important that you follow these requirements, **they have security implications**.  
 > Failing to follow these will result in being exposed to a lot of risks and vulnerabilities if you don't exactly know what you're doing and how it works.
 
 ## Routing your domain name
@@ -123,11 +123,11 @@ In production, we need different settings for Django. An example `production.py`
 This `production.py` file should remain secret and never be pushed. It will be ignored by git.
 
 > [!WARNING]
-> Keep your `SECRET_KEY` secret. Running Django with a known `SECRET_KEY` defeats many of Django’s security protections, and can lead to privilege escalation and remote code execution vulnerabilities.\
+> Keep your `SECRET_KEY` secret. Running Django with a known `SECRET_KEY` defeats many of Django’s security protections, and can lead to privilege escalation and remote code execution vulnerabilities.  
 > https://docs.djangoproject.com/en/5.1/ref/settings/#secret-key
 
 > [!TIP]
-> Feel free to edit the `production.py` file to extend the configuration and add more settings, such as extensions or custom admin themes.\
+> Feel free to edit the `production.py` file to extend the configuration and add more settings, such as extensions or custom admin themes.  
 > Future updates will change settings in `base.py` and `production_base.py` and automatically apply to your configuration.
 
 ## Telling Django about your settings
@@ -166,7 +166,7 @@ If you have configured a Discord webhook, you will be notified for each new user
 > [!CAUTION]
 > Here's the very important part, **staff status is not automatically unassigned if you demote a user in Discord!!**
 >
-> When demoting someone (admin/root role removed, removed from the Developer team or the `co-owners` list), you must also go to the admin panel, "Users", edit the user (if they registered on the panel) and untick the "Is Active" box.\
+> When demoting someone (admin/root role removed, removed from the Developer team or the `co-owners` list), you must also go to the admin panel, "Users", edit the user (if they registered on the panel) and untick the "Is Active" box.  
 > You do not need to untick "Is staff", "Is superuser" or remove permissions groups. Unticking "Is Active" completely disables logging in and invalidates all sessions. If you want to re-enable the user, simply tick this box back.
 >
 > It is important that you do not delete the user, or you will be losing all audit logs!
@@ -188,11 +188,11 @@ Simply uncomment the line if you want to re-enable this.
 
 Whether you have Discord OAuth2 or not, you can always choose to create manual admin accounts with a login and a password.
 
-For that, open the admin panel and click the "+ Add" button next to "Users". Choose a login and a password. Once created, you can then edit the user's permissions.\
+For that, open the admin panel and click the "+ Add" button next to "Users". Choose a login and a password. Once created, you can then edit the user's permissions.  
 It is recommended that you ask users to reset their password as soon as they login for the first time. They can do so by clicking the button on the top right of the admin panel.
 
 > [!IMPORTANT]
-> If you need to delete a user, **do not actually delete it as you will be losing all audit logs!** Instead, untick the "Is active" checkbox, that will prevent them from logging in and invalidate all existing sessions.\
+> If you need to delete a user, **do not actually delete it as you will be losing all audit logs!** Instead, untick the "Is active" checkbox, that will prevent them from logging in and invalidate all existing sessions.  
 > To re-enable access, simply tick that box again. The previous permissions will apply.
 
 ### Creating a superuser account from the command line

@@ -2,8 +2,8 @@ The recommended way to run Ballsdex is using Docker, but you may have reasons to
 
 This install method is supported but only recommended for the advanced users, there are a lot of additional steps and dependencies to manage yourself.
 
-> [!NOTE]
-> Few commands will be given, but online guides are given instead. This is because instructions differ between operating systems, so you have to use what's best for you.
+!!! info
+    Few commands will be given, but online guides are given instead. This is because instructions differ between operating systems, so you have to use what's best for you.
 
 ## 1. Setting up the database
 
@@ -11,7 +11,7 @@ Install [PostgreSQL](https://www.postgresql.org/download/) and start it. Create 
 
 You must then have a link to connect to the database in the following format: `postgres://username:password@localhost:5432/database_name`
 
-Test that your database is up with the following command: `psql -c "\l" postgres://username:password@localhost:5432/database_name`\
+Test that your database is up with the following command: `psql -c "\l" postgres://username:password@localhost:5432/database_name`  
 Check that your database appears in the list and that your user is the owner.
 
 ## 2. Requirements
@@ -42,8 +42,8 @@ For now, don't copy your token, but keep the page open.
 
 Once this is configured, you also **need to enable message content intent**. Go to the "Bot" tab of your application, scroll down to "Privileged intents" and tick "Message content".
 
-> [!TIP]
-> You can fill the description of your application, it will appear under the "About me" section.
+!!! info
+    You can fill the description of your application, it will appear under the "About me" section.
 
 ## 3. Download the source code
 
@@ -83,14 +83,14 @@ Before running the bot, you must tell it about your database. Export the `BALLSD
 
 Then, run `python3 -m ballsdex` to start the bot! To shut it down, type Ctrl+C.
 
-> [!TIP]
-> There are multiple options available when running the bot, do `python3 -m ballsdex -h` to view them.
+!!! tip
+    There are multiple options available when running the bot, do `python3 -m ballsdex -h` to view them.
 
 ### Running the admin panel
 
 1. Open another shell with `poetry shell` enabled and the environment variables exported
 2. `cd admin_panel && uvicorn admin_panel.asgi:application`
-3. Follow [this guide](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Using-the-new-admin-panel) afterwards
+3. Follow [this guide](../admin-panel/getting-started.md) afterwards
 
 ---
 
