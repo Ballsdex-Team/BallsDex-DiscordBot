@@ -289,6 +289,57 @@ class Currency(commands.Cog):
         """
         Claim your daily freebie.
         """
+        fortunes = [
+                "¡Sin dolor no hay gloria!",
+                "All work and no Brawl makes Gus a dull boy.",
+                "An Edgar in the hand is worth two in the bush.",
+                "Apples = oranges.",
+                "Be the random you wish to see in the world.",
+                "Caw caw! (ancient Crow proverb)",
+                "Do or do not. There is no try.",
+                "Eat. Sleep. Brawl. Repeat.",
+                "Expect the unexpected.",
+                "Fall seven times, stand up eight.",
+                "Fortune favors the Brawl.",
+                "Git gud.",
+                "help, i am being held hostage in a fortune cookie factory",
+                "If at first you don't succeed, Brawl, Brawl again.",
+                "If your randoms are good... you are the bad random.",
+                "It could be worse!",
+                "Just one more Brawl.",
+                "Kit will use his Super on you from the bushes.",
+                "Live, laugh, Brawl.",
+                "Remember to Hypercharge your day!",
+                "Same time tomorrow?",
+                "Sometimes it really is just a skill issue.",
+                "Spike is ALWAYS watching.",
+                "Stay hydrated.",
+                "The Gems you seek are closer than they appear.",
+                "The journey to Pro begins with the first Brawl.",
+                "The next Starr Drop is Legendary. For sure.",
+                "The real Trophies are the friends we made along the way.",
+                "The trophy climb will be hard, but worth it.",
+                "There is a learning in every defeat.",
+                "Those in glass houses shouldn't activate Supers.",
+                "Today's matches will be legendary, just like that Brawler you're about to unlock.",
+                "Today is a good day to carry a random.",
+                "Today is the day. Do that trickshot!",
+                "Today is time to take on a new challenge... play Hank.",
+                "Touch grass. But come back tomorrow.",
+                "Victory is temporary. Brawl is forever.",
+                "Who do you think you are? I am.",
+                "You are Prawn ready!",
+                "You are the good random your team deserves. But not the one they need right now.",
+                "You can't choose your family but you can choose your Club!",
+                "You will find your perfect 2v2 partner.",
+                "You will not have bad randoms today.",
+                "Your favorite Brawler will receive a buff... eventually.",
+                "Your next teammates will be Mortis and Edgar.",
+                "Your Ranked Season will go smoothly.",
+                "[404 FORTUNE NOT FOUND]"
+        ]
+
+            
         options = ["powerpoints", "credits", "powerpoints10", "credits10"]
         chances = [96, 96, 4, 4]
 
