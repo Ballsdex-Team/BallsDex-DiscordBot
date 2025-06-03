@@ -338,12 +338,15 @@ class Currency(commands.Cog):
                 "Your Ranked Season will go smoothly.",
                 "[404 FORTUNE NOT FOUND]"
         ]
+        fortune_cookie_1 = self.bot.get_emoji(1364828492922880151)
+        fortune_cookie_2 = self.bot.get_emoji(1364828507581976586)
 
             
         options = ["powerpoints", "credits", "powerpoints10", "credits10"]
         chances = [96, 96, 4, 4]
 
         choice = random.choices(options, weights=chances, k=1)[0]
+        picked_fortune = random.choice(fortunes)
         
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)  
         await interaction.response.defer(thinking=True)    
@@ -355,4 +358,4 @@ class Currency(commands.Cog):
             cmnt *= 10
         setattr(player, choice, getattr(player, choice) + cmnt)
         await player.save(update_fields=(choice,))
-        await interaction.followup.send(f"You received your {cmnt} {jackpot}", ephemeral=True)
+        await interaction.followup.send(f"You received your {cmnt} {jackpot}\n{fortune_cookie_1}*{picked_fortune}*{fortune_cookie_2}", ephemeral=True)
