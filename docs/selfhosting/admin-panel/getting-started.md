@@ -6,7 +6,7 @@ If you are running Docker, the panel may already be running. Just do `docker com
 
 Without docker, the command to start the admin panel is `cd admin_panel && poetry run python3 manage.py migrate && poetry run python3 manage.py collectstatic --no-input && poetry run uvicorn admin_panel.asgi:application`
 
-The panel will then be accessible at http://localhost:8000
+The panel will then be accessible at [http://localhost:8000](http://localhost:8000)
 
 # Configuring the panel
 
@@ -33,8 +33,8 @@ This will only let the bot owner access the admin panel when logged in, no need 
 5. Add a new redirect URI: `http://localhost:8000/complete/discord/` (the trailing slash is important)
 6. Save the changes
 
-> [!CAUTION]
-> Keep your application secret hidden at all times, it must never be shared (like your bot token)! If you have suspicion this file was leaked, immediately reset it in your developer portal.
+!!! danger
+    Keep your application secret hidden at all times, it must never be shared (like your bot token)! If you have suspicion this file was leaked, immediately reset it in your developer portal.
 
 In addition, you can also create a webhook for notifications from the admin panel, such as a new user registering or more in the future. This is optional but recommended:
 
@@ -44,8 +44,8 @@ In addition, you can also create a webhook for notifications from the admin pane
 
 You should now be good to go. Run `docker compose up -d admin-panel` to start the admin panel (**if it was already running, restart it**), and open http://localhost:8000/ in your browser. Click the "Login with Discord" button and follow the steps. If you are the bot owner, then you will have the superuser status automatically assigned.
 
-> [!IMPORTANT]
-> If the application is owned by a team, set `team-members-are-owners` to true in the config file, otherwise you won't get access.
+!!! success "Developer teams"
+    If the application is owned by a team, set `team-members-are-owners` to true in the config file, otherwise you won't get access.
 
 # Using the panel
 
@@ -54,6 +54,7 @@ Once you are logged in, you will see the panel's home page, with multiple option
 The "Authentication and authorization" section should be ignored unless you serve the panel on the internet, it contains the user accounts and permission groups. "Python social auth" should also be ignored and not tampered with, it contains the Discord OAuth2 data that allows you to login.
 
 The "Ballsdex models" section is what you are looking for, it has all the models from the bot:
+
 - `BallInstances` represents instances of a ball that were obtained by a player. You can use that to give balls to players, delete then, modify attributes or look at its trade history. Searching via hexadecimal ID is supported.
 - `Balls` is where you create your countryballs (or whatever your bot is themed after). It's the first thing you want to visit, more details below.
 - `Economies` is for the little icon on the top right of cards. By default, you'll have communist and capitalist economies (but you can set none).
@@ -62,8 +63,8 @@ The "Ballsdex models" section is what you are looking for, it has all the models
 - `Specials` is for making some ball instances special with a custom background and a special catching phrase. They can have start and end dates for limited-time events, a custom phrase to display when caught, and ofc the special background to apply. Using a rarity of 0 renders it unobtainable by the public, but can still be applied by admins.
 - `Trades` has the list of all trades performed. Clicking on a trade will show all of its contents.
 
-> [!NOTE]
-> The admin panel will always use the Ballsdex vocabulary (countryballs). If you have set a custom name for your bot or your collectibles, don't worry, they will be used throughout the bot itself.
+!!! info
+    The admin panel will always use the Ballsdex vocabulary (countryballs). If you have set a custom name for your bot or your collectibles, don't worry, they will be used throughout the bot itself.
 
 ## Creating your first countryball
 
@@ -86,15 +87,15 @@ Then you have a section for assets. You must upload two files:
 - `Collection card`: The image used when generating the card. The size of the image should be 1359x731, or a ratio of approximatively 18:10 (it is automatically resized and centered).
 - `Credits`: This is where you credit the artists of both uploaded assets.
 
-> [!CAUTION]
-> ⚠️ **You must have the permission to use the images you are uploading!!** ⚠️
->
-> Not everything you find on Google is free to use, unless it is clearly labelled as **Creative commons** (there is a filter in Google images for that).\
-> Unless you are the artist, you must have explicit permission from the artist to use their assets in your bot. This may come at the cost of a license.
->
-> **Violating licenses exposes you to a DMCA complaint, which can lead to both your bot and your own account getting banned from Discord.**
->
-> All art used by Ballsdex is licensed to the Ballsdex Team and cannot be reused by other bots without permission from their artists. However, the MIT-licensed files included in the bot repository (such as the default backgrounds) are free to use.
+!!! danger
+    ⚠️ **You must have the permission to use the images you are uploading!!** ⚠️
+    
+    Not everything you find on Google is free to use, unless it is clearly labelled as **Creative commons** (there is a filter in Google images for that).  
+    Unless you are the artist, you must have explicit permission from the artist to use their assets in your bot. This may come at the cost of a license.
+    
+    **Violating licenses exposes you to a DMCA complaint, which can lead to both your bot and your own account getting banned from Discord.**
+    
+    All art used by Ballsdex is licensed to the Ballsdex Team and cannot be reused by other bots without permission from their artists. However, the MIT-licensed files included in the bot repository (such as the default backgrounds) are free to use.
 
 ### Ability
 
@@ -115,14 +116,14 @@ If you unroll this section, you will find a few settings you probably don't need
 
 Once you have filled everything needed, click the "Save and continue editing" button, this will show you a preview of what the card looks like in the sidebar! Once you're satisfied with the result, go to Discord and send `b.reloadcache` to your bot, and your ball should start spawning.
 
-> [!TIP]
-> It is always a good idea to test spawn your ball with `/admin balls spawn` and ensure it works as intended.
+!!! success
+    It is always a good idea to test spawn your ball with `/admin balls spawn` and ensure it works as intended.
 
-> [!TIP]
-> You can edit rarities and enable balls in bulk from the list of balls. There is a save button at the end.
+!!! tip
+    You can edit rarities and enable balls in bulk from the list of balls. There is a save button at the end.
 
-> [!WARNING]
-> Deleting a ball will delete all ball instances associated. This may be an extremely slow operation, and it is not reversible!
+!!! failure "Caution"
+    Deleting a ball will delete all ball instances associated. This may be an extremely slow operation, and it is not reversible!
 
 ## Creating your first special
 
@@ -130,8 +131,8 @@ A "special" is a way to override the attributes of a ball instance to make it sp
 
 Specials can have a start and end date to indicate that it will be limited in time, but you can also omit those to have a special active permanently.
 
-> [!WARNING]
-> If you want to end a special from being active, **do not delete it** as all ball instances will lose the special attribute. Instead, configure the end date or set its rarity to 0.
+!!! warning
+    If you want to end a special from being active, **do not delete it** as all ball instances will lose the special attribute. Instead, configure the end date or set its rarity to 0.
 
 ### Base fields
 
@@ -155,6 +156,6 @@ Creating balls and specials are the most important aspect of the admin panel, on
 
 There are many more tools this admin panel offers, but you should be able to understand by yourself how they work by exploring!
 
-> [!IMPORTANT]
-> If you want to expose your admin panel online, please follow [this tutorial](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Serving-the-admin-panel-online)!\
-> It's important that you do not expose the website yourself, the default configuration is insecure.
+!!! example "Important"
+    If you want to expose your admin panel online, please follow [this tutorial](./exposing-to-internet.md)!  
+    It's important that you do not expose the website yourself, the default configuration is insecure.

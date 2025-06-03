@@ -9,16 +9,57 @@ copyright: Copyright &copy; 2022 - 2025 Auguste "El Laggron" Charpentier
 theme:
   name: material
 
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to system preference
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to dark mode
+  
+
   features:
     - navigation.instant
     - navigation.tabs
     - navigation.path
     - navigation.top
+    - navigation.sections
+    - navigation.indexes
     - toc.follow
     - search.suggest
 
   icon:
     repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Selfhosting:
+      - selfhosting/index.md
+      - Installation:
+          - selfhosting/installation/installing-ballsdex.md
+          - selfhosting/installation/installing-ballsdex-no-docker.md
+      - Admin panel:
+          - selfhosting/admin-panel/index.md
+          - selfhosting/admin-panel/getting-started.md
+          - selfhosting/admin-panel/exposing-to-internet.md
+      - Misc:
+          - selfhosting/misc/index.md
+          - selfhosting/misc/rarity-mechanism.md
+          - selfhosting/misc/backup-and-transfers.md
+          - selfhosting/misc/migrating-git-install.md
+          - selfhosting/misc/migrating-windows-wsl.md
 
 plugins:
   - search
@@ -27,8 +68,17 @@ plugins:
 markdown_extensions:
   - admonition
   - footnotes
+  - attr_list
+  - md_in_html
   - pymdownx.arithmatex:
       generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
 
 extra_javascript:
   - javascripts/mathjax.js

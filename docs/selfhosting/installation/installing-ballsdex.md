@@ -6,8 +6,8 @@ While it can run on all operating systems, it is highly recommended to host Ball
 
 Windows can easily run Linux distributions thanks to [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) (Windows Subsystem for Linux). You must be running Windows 10 version 2004 and higher (Build 19041 and higher) or Windows 11.
 
-> [!WARNING]
-> You need about 30GB of free space on your main disk. Check now that you have enough space.
+!!! info
+    You need about 30GB of free space on your main disk. Check now that you have enough space.
 
 To install Ubuntu, press Win+X and click "PowerShell (administrator)" then run the following command:
 
@@ -21,15 +21,14 @@ This will take a while, and may require a restart of your PC. Once it is install
 
 To run Ballsdex, we need Docker and git.
 
-> [!IMPORTANT]
-> Throughout this tutorial, you will need to type a lot of commands. You need to check each command's output and verify that it doesn't produce any error.\
-> If you suspect a command failed and errored, **do not keep going** and fix the errors first.
+!!! warning
+    Throughout this tutorial, you will need to type a lot of commands. You need to check each command's output and verify that it doesn't produce any error.  
+    If you suspect a command failed and errored, **do not keep going** and fix the errors first.
 
-1. Type the following commands in your Linux terminal **one by one** to proceed.\
-   You will be asked to type the password you have chosen earlier to continue. What your type will be hidden but don't worry, keep typing and press enter, it will work.\
+1. Type the following commands in your Linux terminal **one by one** to proceed.  
+   You will be asked to type the password you have chosen earlier to continue. What your type will be hidden but don't worry, keep typing and press enter, it will work.  
    *If your terminal doesn't let you paste text with Ctrl+V, try right clicking instead.*
-
-   ```bash
+   ```bash { .copy }
    sudo apt update
    sudo apt install -y git apt-transport-https ca-certificates curl software-properties-common
    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -39,10 +38,10 @@ To run Ballsdex, we need Docker and git.
    sudo apt install -y docker-ce
    ```
 
-   At this point, you should have Docker running.
+    At this point, you should have Docker running.
 
 2. Verify that Docker is running with `sudo systemctl status docker`, you should have an output like this:
-   ```
+   ```text
    ● docker.service - Docker Application Container Engine
         Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
         Active: active (running) since Fri 2022-04-01 21:30:25 UTC; 22s ago
@@ -58,19 +57,19 @@ To run Ballsdex, we need Docker and git.
    Press `q` to exit this screen.
 
 3. Give your user the docker group. This will avoid having to use `sudo` every time you use Docker.
-   ```bash
+   ```bash { .copy }
    sudo usermod -aG docker ${USER}
    su - ${USER}
    ```
 
 4. Verify Docker is working by running a test
-   ```bash
+   ```bash { .copy }
    docker run hello-world
    ```
    You should see a welcome message from Docker if everything installed successfully!
 
-> [!NOTE]
-> If you are running macOS, you can use [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/) instead.
+!!! tip
+    If you are running macOS, you can use [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/) instead.
 
 ## 2. Create a Discord bot account
 
@@ -80,30 +79,31 @@ For now, don't copy your token, but keep the page open.
 
 Once this is configured, you also **need to enable message content intent**. Go to the "Bot" tab of your application, scroll down to "Privileged intents" and tick "Message content".
 
-> [!TIP]
-> You can fill the description of your application, it will appear under the "About me" section.
+!!! info
+    You can fill the description of your application, it will appear under the "About me" section.
 
 ## 3. Download the bot
 
 Type the following command to download the latest version of the bot:
-```bash
+```bash { .copy }
 git clone https://github.com/laggron42/BallsDex-DiscordBot.git
 ```
 
 Then you can use the command `cd` to change directory and open the folder you just downloaded:
-```bash
+```bash { .copy }
 cd BallsDex-DiscordBot
 ```
 
 From this point, every time you need to type commands for Ballsdex, **you must always open the bot's directory first**.
 
-> [!TIP]
-> If you want to explore the files and folders with a graphical interface, you can use the following commands to bring up your system's explorer:
-> - Windows (WSL): `explorer.exe .`
-> - macOS: `open .`
-> - Linux: `xdg-open .`
->
-> It will be useful later when we'll need to edit files. **Do not forget the trailing dot of each command**, otherwise it won't open the correct directory.
+!!! question "Navigating files"
+    If you want to explore the files and folders with a graphical interface, you can use the following commands to bring up your system's explorer:
+
+    - Windows (WSL): `explorer.exe .`
+    - macOS: `open .`
+    - Linux: `xdg-open .`
+
+    It will be useful later when we'll need to edit files. **Do not forget the trailing dot of each command**, otherwise it won't open the correct directory.
 
 ## 4. Installing the bot
 
@@ -118,21 +118,21 @@ The process should exit afterwards. If it doesn't, hit `Ctrl+C`.
 
 Open the new `config.yml` file with the editor of your choice. I recommend using [Visual Studio Code](https://code.visualstudio.com/) to get autocompletion and error highlighting. Once installed, you can run `code config.yml` to open VScode from your terminal (even in WSL).
 
-> [!NOTE]
-> In YAML files, everything after a `#` is a comment. Those lines are here to document and help you understand the possible values.
+!!! info
+    In YAML files, everything after a `#` is a comment. Those lines are here to document and help you understand the possible values.
 
 1. Go back to the Discord developer portal and click "Reset Token" to obtain a new one. Copy and paste it right after `discord-token: `. Make sure that there is a space between `discord-token:` and your token, otherwise it will not work.
 
-> [!CAUTION]
-> **Do not share your token!** It is the password of your bot, and allows anyone full access to its account if shared. Be sure to keep it secure, and immediately reset if you think it leaked.
+!!! danger
+    **Do not share your token!** It is the password of your bot, and allows anyone full access to its account if shared. Be sure to keep it secure, and immediately reset if you think it leaked.
 
-2. The `about` section defines a few traits of the `/about` command. Feel free to change the `description` and the `discord-invite`.
+1. The `about` section defines a few traits of the `/about` command. Feel free to change the `description` and the `discord-invite`.
 
-3. You can change `collectible-name` which will replace the word `countryball` in the bot. For instance if you set "rock", the bot will say "A wild rock spawned!" 
+2. You can change `collectible-name` which will replace the word `countryball` in the bot. For instance if you set "rock", the bot will say "A wild rock spawned!" 
 
-4. `bot-name` is used in various places like `/about` or `/balls completion`.
+3. `bot-name` is used in various places like `/about` or `/balls completion`.
 
-5. The `admin` section configures the `/admin` command. This command is only enabled in specific servers for specific roles.
+4. The `admin` section configures the `/admin` command. This command is only enabled in specific servers for specific roles.
 
    1. `guild-ids` is for the servers where you want to enable the `/admin` command. Copy the IDs of the servers you want, and paste them
 
@@ -140,30 +140,28 @@ Open the new `config.yml` file with the editor of your choice. I recommend using
 
    3. `admin-role-ids` is for the role IDs which will get **partial** access to the `/admin` command. Their access will be limited to blacklist control and seeing shared servers.
 
-> [!NOTE]
-> **General notice about IDs**
->
-> To obtain an ID, [enable developer mode](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-) and right click a server or a role, then select "Copy ID".
->
-> If you have just one ID, put it like this (for instance guild IDs)
-> ```yaml
-> guild-ids:
->   - 1049118743101452329
-> ```
->
-> If you have multiple IDs, they should be placed like this (for instance role IDs here):
-> ```yaml
-> root-role-ids:
->   - 1049119446372986921
->   - 1049119786988212296
-> ```
+!!! abstract "General notice about IDs"
+    To obtain an ID, [enable developer mode](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-) and right click a server or a role, then select "Copy ID".
+    
+    If you have just one ID, put it like this (for instance guild IDs)
+    ```yaml
+    guild-ids:
+      - 1049118743101452329
+    ```
+    
+    If you have multiple IDs, they should be placed like this (for instance role IDs here):
+    ```yaml
+    root-role-ids:
+      - 1049119446372986921
+      - 1049119786988212296
+    ```
 
 There may be other configuration values added over time, look at the comment to understand what they do. If an option is unclear to you, you should leave it to its default value.
 
 <details>
 <summary>Here's the <code>config.yml</code> file from Ballsdex if you want to compare and troubleshoot eventual issues:</summary>
 
-```yml
+```yaml
 # yaml-language-server: $schema=json-config-ref.json
 
 # paste the bot token after regenerating it here
@@ -277,4 +275,4 @@ To shut down the bot in this mode, run `docker compose down`.
 
 Even if your bot is online, there are no countryballs yet, they need to be added through the administration panel, your tool to control the bot's content.
 
-**The next step of this tutorial is here: https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Using-the-new-admin-panel**
+**The next step of this tutorial is [here](../admin-panel/getting-started.md)**
