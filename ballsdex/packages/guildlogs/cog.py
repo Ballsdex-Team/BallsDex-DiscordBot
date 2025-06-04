@@ -16,8 +16,13 @@ class GuildLogs(commands.Cog):
 
   @commands.Cog.listener()
   async def on_guild_join(self, guild):
+    join_time = datetime.now(timezone.utc)
+    timestamp = f"<t:{int(join_time.timestamp())}:f>"
     try:
-      await log_action(
-              f"BrawlDex joined 
+        await log_action(
+              f"BrawlDex joined {guild.name} {timestamp}. "
+              f"(ID: {guild.id})"
               self.bot,
             )
+    except Exception as e:
+         log.error(f"Failed to send the join log {e}")
