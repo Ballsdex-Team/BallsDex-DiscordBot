@@ -21,7 +21,7 @@ class GuildLogs(commands.Cog):
     await log_action(
               f"BrawlDex joined {guild.name} {timestamp}. ",
               f"(ID: {guild.id})",
-              self,
+              self.bot,
             )
 
   @commands.Cog.listener()
@@ -31,5 +31,5 @@ class GuildLogs(commands.Cog):
     await log_action(
               f"BrawlDex left {guild.name} {timestamp}. ",
               f"(ID: {guild.id})",
-              self,
+              self.bot,
             )
