@@ -18,17 +18,11 @@ class GuildLogs(commands.Cog):
     join_time = datetime.now(timezone.utc)
     timestamp = f"<t:{int(join_time.timestamp())}:R>"
     channel = self.bot.get_channel(settings.log_channel)
-    await channel.send(
-              f"BrawlDex joined {guild.name} {timestamp}. ",
-              f"(ID: {guild.id})"
-            )
+    await channel.send(f"BrawlDex joined {guild.name} {timestamp}. (ID: {guild.id})")
 
   @commands.Cog.listener()
   async def on_guild_remove(self, guild):
     leave_time = datetime.now(timezone.utc)
     timestamp = f"<t:{int(leave_time.timestamp())}:R>"
     channel = self.bot.get_channel(settings.log_channel)
-    await channel.send(
-              f"BrawlDex left {guild.name} {timestamp}. ",
-              f"(ID: {guild.id})"
-            )
+    await channel.send(f"BrawlDex left {guild.name} {timestamp}. (ID: {guild.id})")
