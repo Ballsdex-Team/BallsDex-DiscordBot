@@ -19,7 +19,7 @@ ENV PYTHONFAULTHANDLER=1 \
 RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community libraqm-dev && \
     apk add --no-cache tiff-dev jpeg-dev openjpeg-dev zlib-dev freetype-dev \
     lcms2-dev libwebp-dev tcl-dev tk-dev harfbuzz-dev fribidi-dev \
-    libimagequant-dev libxcb-dev libpng-dev libavif-dev
+    libimagequant-dev libxcb-dev libpng-dev libavif-dev ffmpeg
 
 ARG UID GID
 RUN addgroup -S ballsdex -g ${GID:-1000} && adduser -S ballsdex -G ballsdex -u ${UID:-1000}
