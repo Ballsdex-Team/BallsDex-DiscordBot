@@ -212,16 +212,16 @@ class BallSpawnView(View):
              "Brawl Pass": 1334774634826043433,
              "Brawl Pass Plus": 1335320375948607610,
          }
-        restricted_server_id = 1295410565145165884
-        if interaction.guild and interaction.guild.id == restricted_server_id:
-            if self.special:
-                required_role_id = special_role_map.get(self.special.name)
-                    if required_role_id:
-                        if isinstance(interaction.user, discord.Member):
-                            user_role_ids = {role.id for role in interaction.user.roles}
-                                if required_role_id not in user_role_ids:
-                                    await interaction.response.send_message(f"Only {self.special.name} members can catch this {self.RegimeName}.", ephemeral=True)
-                                    return
+         restricted_server_id = 1295410565145165884
+         if interaction.guild and interaction.guild.id == restricted_server_id:
+             if self.special:
+                 required_role_id = special_role_map.get(self.special.name)
+                     if required_role_id:
+                         if isinstance(interaction.user, discord.Member):
+                             user_role_ids = {role.id for role in interaction.user.roles}
+                                 if required_role_id not in user_role_ids:
+                                     await interaction.response.send_message(f"Only {self.special.name} members can catch this {self.RegimeName}.", ephemeral=True)
+                                     return
          if self.caught: 
             await interaction.response.send_message("I was caught already!", ephemeral=True)
          elif self.BlockedList.get(interaction.user.id) and self.ball.BlockedList.get(interaction.user.id) > datetime.now(timezone.utc):
@@ -553,7 +553,7 @@ class BallSpawnView(View):
         if new_ball:
             text += (
                 f"You have unlocked a **new {self.RegimeName}**! "
-                 "It is now added to your completion!"
+                 "It is now added to your completion!\n"
             )
         if dailycatch in {1, 4, 8}:
                 mj = self.bot.get_emoji(1363188571099496699)
@@ -563,7 +563,7 @@ class BallSpawnView(View):
                 ut = f"! {mj}"
                 if fullsd:
                     ut = ", But your inventory was full, the Starr Drop was Discarded, Open your Starr Drops! {mj}"
-                text += f"{mj} Since this is your {dailycatch}{pf} catch, You gained a Starr Drop{ut}"
+                text += f"{mj} Since this is your {dailycatch}{pf} daily catch, You gained a Starr Drop{ut}"
 
         caught_message = (
             random.choice(settings.caught_messages).format(
