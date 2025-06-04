@@ -67,7 +67,6 @@ class Command(BaseCommand):
 
         if to_convert:
             command = self._get_ffmpeg_command(to_convert)
-            print(command)
 
             result = subprocess.run(command, capture_output=True, text=True)
 
