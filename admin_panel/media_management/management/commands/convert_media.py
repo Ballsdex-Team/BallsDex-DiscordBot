@@ -17,7 +17,7 @@ class Command(BaseCommand):
             help=f"The path to the media folder."
             f"If not provided, {DEFAULT_MEDIA_PATH} is used.",
         )
-        parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm deletion")
+        parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm conversion")
 
     def handle(self, *args, **options):
         self.convert_media(*args, **options)
