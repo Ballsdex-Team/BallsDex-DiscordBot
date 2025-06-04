@@ -11,7 +11,7 @@ from ballsdex.core.utils.logging import log_action
 log = logging.getLogger("ballsdex.packages.guildlogs")
 
 class GuildLogs(commands.Cog):
-  def __init__(self, bot: "BallsDexBot"):
+  def __init__(self, bot: commands.Bot):
         self.bot = bot
 
   @commands.Cog.listener()
