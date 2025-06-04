@@ -218,7 +218,7 @@ class BallSpawnView(View):
                  required_role_id = special_role_map.get(self.special.name)
              if required_role_id:
                  if isinstance(interaction.user, discord.Member):
-                 user_role_ids = {role.id for role in interaction.user.roles}
+                     user_role_ids = {role.id for role in interaction.user.roles}
              if required_role_id not in user_role_ids:
                  await interaction.response.send_message(f"Only {self.special.name} members can catch this {self.RegimeName}.", ephemeral=True)
                  return
