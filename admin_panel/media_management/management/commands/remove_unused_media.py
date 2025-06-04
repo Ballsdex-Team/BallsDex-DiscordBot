@@ -1,25 +1,13 @@
 from pathlib import Path
 
-from bd_models.models import Ball, Economy, Regime, Special
+import media_management.management.commands._media_manager as media_manager
 from django.core.management.base import BaseCommand, CommandError
 
-DEFAULT_MEDIA_PATH: str = "./media/"
+DEFAULT_MEDIA_PATH: str = "/code/admin_panel/media/"
 
 
 class Command(BaseCommand):
     help = "Remove unused files"
-
-    def boolean_input(self, question, default=None):
-        query = f"{question} [{'y/n' if default is None else ('Y/n' if default else 'y/N')}]: "
-        result = None
-        while not result:
-            result = input(query)
-            if result == "" and default is not None:
-                return default
-            if result.lower() in ["y", "yes", "yeah", "yay", "ya"]:
-                return True
-            elif result.lower() in ["n", "no", "nay", "nah"]:
-                return False
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -27,28 +15,26 @@ class Command(BaseCommand):
             help=f"The path to the media folder."
             f"If not provided, {DEFAULT_MEDIA_PATH} is used.",
         )
+        parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm deletion")
 
     def handle(self, *args, **options):
         self.remove_unused_media(*args, **options)
 
     def remove_unused_media(self, *args, **options):
-        used_paths = set()
-
-        used_paths.update(Ball.objects.values_list("wild_card", flat=True))
-        used_paths.update(Ball.objects.values_list("collection_card", flat=True))
-        used_paths.update(Special.objects.values_list("background", flat=True))
-        used_paths.update(Economy.objects.values_list("icon", flat=True))
-        used_paths.update(Regime.objects.values_list("background", flat=True))
-
-        unused_files = []
-        if not (media_path := options.get("media-path")):
-            media_path = DEFAULT_MEDIA_PATH
-
-        if not Path(media_path).exists():
+        media_path = Path(options.get("media-path") or DEFAULT_MEDIA_PATH)
+        if not media_path.exists():
             raise CommandError("Provided media-path does not exist.")
 
+        medias = media_manager.all_media()
+        used_paths: set[Path] = set()
+        used_paths.update([path for (_, path, _) in medias])
+
+        unused_files = []
         for file in Path(media_path).iterdir():
-            if file.name not in used_paths:
+            if not file.is_file():
+                continue
+            # Django path is absolute so this has to be as well
+            if file.absolute() not in used_paths:
                 unused_files.append(file)
 
         if unused_files:
@@ -59,7 +45,11 @@ class Command(BaseCommand):
             self.stdout.write("No unused files!")
             return
 
-        if self.boolean_input("Do you want to remove these files?"):
+        if options["yes"] or media_manager.boolean_input(
+            "Do you want to remove any of these files?"
+        ):
             for file in unused_files:
-                if self.boolean_input(f"Remove {file.name}?", default=True):
+                if options["yes"] or media_manager.boolean_input(
+                    f"Remove {file.name}?", default=True
+                ):
                     file.unlink()
