@@ -215,16 +215,16 @@ class BallSpawnView(View):
         restricted_server_id = 1295410565145165884
         if interaction.guild and interaction.guild.id == restricted_server_id:
             if self.special:
-        required_role_id = special_role_map.get(self.special.name)
-                if required_role_id:
-                    if isinstance(interaction.user, discord.Member):
-                user_role_ids = {role.id for role in interaction.user.roles}
-                        if required_role_id not in user_role_ids:
-                            await interaction.response.send_message(
+                required_role_id = special_role_map.get(self.special.name)
+                    if required_role_id:
+                        if isinstance(interaction.user, discord.Member):
+                            user_role_ids = {role.id for role in interaction.user.roles}
+                                if required_role_id not in user_role_ids:
+                                    await interaction.response.send_message(
                         f"Only {self.special.name} members can catch this {self.RegimeName}.",
                         ephemeral=True,
                     )
-                            return
+                                    return
          if self.caught: 
             await interaction.response.send_message("I was caught already!", ephemeral=True)
          elif self.BlockedList.get(interaction.user.id) and self.ball.BlockedList.get(interaction.user.id) > datetime.now(timezone.utc):
