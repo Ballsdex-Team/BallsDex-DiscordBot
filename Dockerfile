@@ -19,7 +19,8 @@ ENV PYTHONFAULTHANDLER=1 \
 RUN echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
     apk add --no-cache tiff-dev jpeg-dev openjpeg-dev zlib-dev freetype-dev \
     lcms2-dev libwebp-dev tcl-dev tk-dev harfbuzz-dev fribidi-dev \
-    libimagequant-dev libxcb-dev libpng-dev libavif-dev libraqm-dev@testing
+    libimagequant-dev libxcb-dev libpng-dev libavif-dev libraqm-dev@testing \
+    ffmpeg
 
 ARG UID GID
 RUN addgroup -S ballsdex -g ${GID:-1000} && adduser -S ballsdex -G ballsdex -u ${UID:-1000}
