@@ -83,6 +83,8 @@ class Command(BaseCommand):
                 if model_image_path in to_convert:
                     model_image_field = getattr(model_instance, media_attr)
                     new_path = to_convert[model_image_path]
+
+                    # Django won't take a non-relative path here
                     model_image_field.name = str(new_path.relative_to(media_path))
                     model_instance.save()
 
