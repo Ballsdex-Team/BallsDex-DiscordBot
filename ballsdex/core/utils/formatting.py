@@ -12,6 +12,37 @@ def pagify(
     shorten_by: int = 8,
     page_length: int = 2000,
 ) -> Iterator[str]:
+    """
+    Generate multiple pages from the given text.
+
+    Parameters
+    ----------
+    text: str
+        The content to pagify and send.
+    delims: Sequence[str]
+        Characters where page breaks will occur. If no delimiters are found
+        in a page, the page will break after `page_length` characters.
+        By default this only contains the newline.
+
+    Other Parameters
+    ----------------
+    priority: bool
+        Set to `True` to choose the page break delimiter based on the
+        order of `delims`. Otherwise, the page will always break at the
+        last possible delimiter.
+    escape_mass_mentions: bool
+        If `True`, any mass mentions (here or everyone) will be
+        silenced.
+    shorten_by: int
+        How much to shorten each page by. Defaults to 8.
+    page_length: int
+        The maximum length of each page. Defaults to 2000.
+
+    Yields
+    ------
+    str
+        Pages of the given text.
+    """
     in_text = text
     page_length -= shorten_by
     while len(in_text) > page_length:
@@ -40,6 +71,23 @@ def pagify(
 
 
 def escape(text: str, *, mass_mentions: bool = False, formatting: bool = False) -> str:
+    """
+    Get text with all mass mentions or markdown escaped.
+
+    Parameters
+    ----------
+    text: str
+        The text to be escaped.
+    mass_mentions: bool
+        Set to `True` to escape mass mentions in the text.
+    formatting: bool
+        Set to `True` to escape any markdown formatting in the text.
+
+    Returns
+    -------
+    str
+        The escaped text.
+    """
     if mass_mentions:
         text = text.replace("@everyone", "@\u200beveryone")
         text = text.replace("@here", "@\u200bhere")

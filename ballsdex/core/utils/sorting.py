@@ -1,33 +1,13 @@
-import enum
 from typing import TYPE_CHECKING
 
 from django.db.models.expressions import F, RawSQL
 
+from .enums import FilteringChoices, SortingChoices
+
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
 
     from bd_models.models import BallInstance
-
-
-class FilteringChoices(enum.Enum):
-    only_specials = "special"
-    non_specials = "non_special"
-    self_caught = "self_caught"
-    this_server = "this_server"
-
-
-class SortingChoices(enum.Enum):
-    alphabetic = "ball__country"
-    catch_date = "-catch_date"
-    rarity = "ball__rarity"
-    special = "special__id"
-    health = "health"
-    attack = "attack"
-    health_bonus = "-health_bonus"
-    attack_bonus = "-attack_bonus"
-    stats_bonus = "stats"
-    total_stats = "total_stats"
-    duplicates = "duplicates"
 
 
 def sort_balls[QS: QuerySet[BallInstance]](sort: SortingChoices, queryset: QS) -> QS:
@@ -81,7 +61,7 @@ def filter_balls(
     ----------
     filter: FilteringChoices
         One of the supported filtering methods
-    balls: QuerySet[BallInstance]
+    queryset: QuerySet[BallInstance]
         A ballinstance queryset.
     guild_id: int | None
         The ID of the server to filter by. Only used for the ``this_server`` filter.

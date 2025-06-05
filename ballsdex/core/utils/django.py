@@ -8,7 +8,7 @@ def row_count_estimate(table_name: str, *, analyze: bool = True) -> int:
     Estimate the number of rows in a table. This is *insanely* faster than querying all rows,
     but the number given is an estimation, not the real value.
 
-    Source: https://stackoverflow.com/a/7945274
+    [Source](https://stackoverflow.com/a/7945274)
 
     Parameters
     ----------

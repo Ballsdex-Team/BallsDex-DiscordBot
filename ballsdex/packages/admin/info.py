@@ -23,8 +23,6 @@ class Info(app_commands.Group):
 
         Parameters
         ----------
-        guild: discord.Guild | None
-            The guild you want to get information about.
         guild_id: str | None
             The ID of the guild you want to get information about.
         days: int

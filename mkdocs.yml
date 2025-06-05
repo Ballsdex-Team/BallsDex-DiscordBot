@@ -60,10 +60,56 @@ nav:
           - selfhosting/misc/backup-and-transfers.md
           - selfhosting/misc/migrating-git-install.md
           - selfhosting/misc/migrating-windows-wsl.md
+  - API Reference:
+      - api/bot.md
+      - api/models.md
+      - Utils:
+          - api/utils/buttons.md
+          - api/utils/db.md
+          - api/utils/enums.md
+          - api/utils/formatting.md
+          - api/utils/logging.md
+          - api/utils/menus.md
+          - api/utils/sorting.md
+          - api/utils/transformers.md
+          - api/utils/utils.md
 
 plugins:
   - search
   - git-revision-date-localized
+  - mkdocstrings:
+      enable_inventory: true
+      default_handler: python
+      handlers:
+        python:
+          paths:
+            - .
+            - ./admin_panel
+          options:
+            extensions:
+              - griffe_modernized_annotations
+              - griffe_generics
+            summary: false
+            show_root_heading: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_submodules: true
+            inherited_members: false
+            docstring_style: numpy
+            docstring_section_style: list
+            merge_init_into_class: true
+            show_if_no_docstring: false
+            show_labels: false
+            show_source: true
+            show_signature: true
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
+            find_stubs_package: true
+          inventories:
+            - https://discordpy.readthedocs.io/en/latest/objects.inv
+            - https://docs.python.org/3/objects.inv
+            - https://docs.djangoproject.com/en/dev/objects.inv
 
 markdown_extensions:
   - admonition
@@ -76,10 +122,10 @@ markdown_extensions:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
+      default_lang: python
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
 
 extra_javascript:
-  - javascripts/mathjax.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js

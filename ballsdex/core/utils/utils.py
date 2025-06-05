@@ -11,6 +11,22 @@ if TYPE_CHECKING:
 
 
 def is_staff(interaction: discord.Interaction["BallsDexBot"]) -> bool:
+    """
+    Checks if an interacting user checks one of the following conditions:
+
+    - The user is a bot owner
+    - The user has a role considered root or admin
+
+    Parameters
+    ----------
+    interaction: Interaction[BallsDexBot]
+        The interaction of the user to check.
+
+    Returns
+    -------
+    bool
+        `True` if the user is a staff, `False` otherwise.
+    """
     if interaction.user.id in interaction.client.owner_ids:
         return True
     if settings.admin_channel_ids:
@@ -29,6 +45,26 @@ async def inventory_privacy(
     player: Player,
     user_obj: Union[discord.User, discord.Member],
 ):
+    """
+    Check if the inventory of a user is viewable in the given context. If not, a followup response will be sent with a
+    proper message.
+
+    Parameters
+    ----------
+    bot: BallsDexBot
+        Bot object
+    interaction: Interaction[BallsDexBot]
+        Interaction of the command.
+    player: Player
+        Ballsdex Player object of the user whose inventory is being inspected.
+    user_obj: discord.User | discord.Member
+        Discord user object of the user whose inventory is being inspected.
+
+    Returns
+    -------
+    bool
+        `True` if the inventory can be viewed, else `False`. If this is `False`, you should exit the command.
+    """
     privacy_policy = player.privacy_policy
     interacting_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
     if interaction.user.id == player.discord_id:

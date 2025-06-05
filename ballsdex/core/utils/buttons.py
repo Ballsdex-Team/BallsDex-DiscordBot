@@ -10,6 +10,39 @@ if TYPE_CHECKING:
 
 
 class ConfirmChoiceView(View):
+    """
+    An utility to prompt the user for confirmation.
+
+    Parameters
+    ----------
+    interaction: Interaction[BallsDexBot]
+        The original interaction.
+    user: discord.User | None
+        The user you're interacting with. If `None`, then `interaction.user` is used.
+    accept_message: str
+        The message appended to the message's content if the prompt is accepted.
+    cancel_message: str
+        The message appended to the message's content if the prompt is refused.
+
+    Attributes
+    ----------
+    value: bool | None
+        The user's choice. `None` if the interaction timed out or didn't finish. Call [`wait()`][discord.ui.View.wait]
+        first.
+
+    Example
+    -------
+        view = ConfirmChoiceView(interaction)
+        await interaction.response.send_message("Are you sure?", view=view)
+        await view.wait()
+        if view.value is True:
+            # user accepted
+        elif view.value is False:
+            # user denied
+        elif view.value is None:
+            # timed out
+    """
+
     def __init__(
         self,
         interaction: discord.Interaction["BallsDexBot"],

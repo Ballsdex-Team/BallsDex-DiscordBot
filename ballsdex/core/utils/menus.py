@@ -1205,7 +1205,7 @@ class AsyncIteratorPageSource(PageSource):
 
     Parameters
     ------------
-    iter: AsyncIterator[Any]
+    iterator: AsyncIterator[Any]
         The asynchronous iterator to paginate.
     per_page: :class:`int`
         How many elements to have per page.

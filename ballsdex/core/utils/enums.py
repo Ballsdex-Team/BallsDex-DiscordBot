@@ -31,3 +31,10 @@ class SortingChoices(enum.Enum):
     # manual sorts are not sorted by SQL queries but by our code
     # this may be do-able with SQL still, but I don't have much experience ngl
     duplicates = "manualsort-duplicates"
+
+
+class FilteringChoices(enum.Enum):
+    only_specials = "special"
+    non_specials = "non_special"
+    self_caught = "self_caught"
+    this_server = "this_server"

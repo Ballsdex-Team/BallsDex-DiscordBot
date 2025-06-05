@@ -133,7 +133,7 @@ class Blacklist(app_commands.Group):
 
         Parameters
         ----------
-        id: str
+        user_id: str
             The ID of the user or guild you want to check.
         """
         try:

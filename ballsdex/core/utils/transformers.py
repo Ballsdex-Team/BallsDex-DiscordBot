@@ -1,3 +1,8 @@
+"""
+This file contains [discord.py transformers][discord.app_commands.Transformer] used to provide autocompletion,
+parsing and validation for various Ballsdex models.
+"""
+
 import logging
 import time
 from datetime import timedelta
@@ -83,7 +88,7 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
 
         Raises
         ------
-        KeyError | tortoise.exceptions.DoesNotExist
+        KeyError | django.db.models.Model.DoesNotExist
             Entry does not exist
         """
         return await self.model.objects.aget(pk=value)

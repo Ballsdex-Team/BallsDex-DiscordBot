@@ -8,7 +8,7 @@ from django.db.models import Prefetch, Q
 from ..models import BallInstance, Player, Trade, TradeObject
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
     from django.http import HttpRequest, HttpResponse
 
 DUAL_ID_RE = re.compile(r"^[0-9]{17,20} [0-9]{17,20}$")

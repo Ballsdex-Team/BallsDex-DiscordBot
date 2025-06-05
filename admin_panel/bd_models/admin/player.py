@@ -18,7 +18,7 @@ from ..models import BallInstance, BlacklistedID, BlacklistHistory, GuildConfig,
 from ..utils import BlacklistTabular
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
     from django.http import HttpRequest
 
 

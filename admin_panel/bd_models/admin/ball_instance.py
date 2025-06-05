@@ -8,7 +8,7 @@ from ..models import BallInstance, Player, Trade, TradeObject
 from ..utils import ApproxCountPaginator
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
     from django.http import HttpRequest, HttpResponse
 
 
