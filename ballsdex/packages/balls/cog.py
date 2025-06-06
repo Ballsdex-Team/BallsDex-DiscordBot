@@ -879,14 +879,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await pages.start()
 
     @app_commands.command()
-    async def collection(
+    async def stats(
         self,
         interaction: discord.Interaction["BallsDexBot"],
         countryball: BallEnabledTransform | None = None,
         ephemeral: bool = False,
     ):
         """
-        Show the collection of a specific countryball.
+        Show the stats of a specific brawler collection.
 
         Parameters
         ----------
