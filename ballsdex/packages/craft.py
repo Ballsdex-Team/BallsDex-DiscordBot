@@ -238,7 +238,7 @@ async def ball_autocomplete(interaction:discord.Interaction["BallsDexBot"],curre
 
 @app_commands.allowed_installs(guilds=True, users=True)
 @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
-class Fame(commands.GroupCog):
+class Fame(commands.Cog):
     def __init__(self,bot:BallsDexBot):
         self.bot=bot
     @app_commands.command(name="begin",description=f"Craft a {settings.collectible_name}")
@@ -247,7 +247,7 @@ class Fame(commands.GroupCog):
     @app_commands.describe(quick=f"Automatically load the last 10 non-favorited {settings.plural_collectible_name} for quick crafting")
     @app_commands.autocomplete(fame=type_autocomplete)
     @app_commands.autocomplete(brawler=ball_autocomplete)
-    async def begin(self,interaction:discord.Interaction["BallsDexBot"],fame:int,brawler:int,quick:bool=False):
+    async def fame(self,interaction:discord.Interaction["BallsDexBot"],fame:int,brawler:int,quick:bool=False):
         spec = fame
         ball = brawler
         if spec not in tiers:
