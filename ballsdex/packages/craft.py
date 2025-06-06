@@ -241,17 +241,17 @@ async def ball_autocomplete(interaction:discord.Interaction["BallsDexBot"],curre
 class Fame(commands.Cog):
     def __init__(self,bot:BallsDexBot):
         self.bot=bot
-    @app_commands.command(name="begin",description=f"Craft a {settings.collectible_name}")
+    @app_commands.command(name="fame",description=f"Fame a {settings.collectible_name}/skin.")
     @app_commands.describe(fame=f"The fame to craft")
-    @app_commands.describe(brawler=f"Which {settings.collectible_name} to craft")
-    @app_commands.describe(quick=f"Automatically load the last 10 non-favorited {settings.plural_collectible_name} for quick crafting")
+    @app_commands.describe(brawler=f"Which {settings.collectible_name}/skin to fame")
+    @app_commands.describe(quick=f"Automatically load the last 10 non-favorited {settings.plural_collectible_name}/skins for quick faming")
     @app_commands.autocomplete(fame=type_autocomplete)
     @app_commands.autocomplete(brawler=ball_autocomplete)
     async def fame(self,interaction:discord.Interaction["BallsDexBot"],fame:int,brawler:int,quick:bool=False):
         spec = fame
         ball = brawler
         if spec not in tiers:
-            await interaction.response.send_message(f"Invalid {settings.collectible_name} type.")
+            await interaction.response.send_message(f"Invalid {settings.collectible_name}/skin type.")
             return
         b = await Ball.get(pk=ball)
         if b.regime_id not in allowed_regimes:
