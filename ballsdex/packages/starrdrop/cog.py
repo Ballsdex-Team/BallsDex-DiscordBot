@@ -27,7 +27,7 @@ class ContinueView(discord.ui.View):
 
 @app_commands.allowed_installs(guilds=True, users=True)
 @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
-class StarrDrop(commands.GroupCog, group_name="starrdrop"):
+class StarrDrop(commands.Cog):
     """
     The daily starr drop command.
     """
@@ -37,7 +37,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
         
     @app_commands.command()
     @app_commands.checks.cooldown(2, 30, key=lambda i: i.user.id)
-    async def claim(self, interaction: discord.Interaction):
+    async def starrdrop(self, interaction: discord.Interaction):
         """
         Open one of your Starr Drops.
         """
