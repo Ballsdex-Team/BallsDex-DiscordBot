@@ -47,6 +47,7 @@ class Collection(commands.Cog):
     async def collection(
         self,
         interaction: discord.Interaction["BallsDexBot"],
+        collection_type: str
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
     ):
