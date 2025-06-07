@@ -340,6 +340,10 @@ class Currency(commands.Cog):
         ]
         fortune_cookie_1 = self.bot.get_emoji(1364828492922880151)
         fortune_cookie_2 = self.bot.get_emoji(1364828507581976586)
+        funny_freebie_sticker = self.bot.get_sticker(1376630320144715809)
+        sticker_array = []
+        sticker_array.append(funny_freebie_sticker)
+        sticker_server_id = 1295410565145165884
 
             
         options = ["powerpoints", "credits", "powerpoints10", "credits10"]
@@ -358,4 +362,6 @@ class Currency(commands.Cog):
             cmnt *= 10
         setattr(player, choice, getattr(player, choice) + cmnt)
         await player.save(update_fields=(choice,))
-        await interaction.followup.send(f"You received your {cmnt} {jackpot}\n{fortune_cookie_1}*{picked_fortune}*{fortune_cookie_2}", ephemeral=True)
+        cmd_msg = await interaction.followup.send(f"You received your {cmnt} {jackpot}\n{fortune_cookie_1}*{picked_fortune}*{fortune_cookie_2}", ephemeral=True)
+        if interaction.guild and interaction.guild.id == sticker_server_id:
+            await interaction.channel.send(stickers=sticker_array, reference=cmd_msg)
