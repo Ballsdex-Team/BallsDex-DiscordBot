@@ -91,7 +91,7 @@ class Collection(commands.Cog):
 
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
-            if collection_type == "brawlers":
+        if collection_type == "brawlers":
                     bot_countryballs = {
                         x: y.emoji_id
                         for x, y in balls.items()
@@ -189,7 +189,7 @@ class Collection(commands.Cog):
                     pages = Pages(source=source, interaction=interaction, compact=True)
                     await pages.start()
 
-            elif collection_type == "skins":
+        elif collection_type == "skins":
                     bot_countryballs = {
                         x: y.emoji_id
                         for x, y in balls.items()
@@ -280,7 +280,7 @@ class Collection(commands.Cog):
                     pages = Pages(source=source, interaction=interaction, compact=True)
                     await pages.start()
 
-            elif collection_type == "buzzlightyear":
+        elif collection_type == "buzzlightyear":
                     bot_countryballs = {
                         x: y.emoji_id
                         for x, y in balls.items()
