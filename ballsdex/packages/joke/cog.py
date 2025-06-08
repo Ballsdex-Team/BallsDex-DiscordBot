@@ -11,7 +11,7 @@ from ballsdex.core.bot import BallsDexBot
 log = logging.getLogger("ballsdex.packages.joke")
 
 
-*ALLOWED_GUILDS = settings.admin_guild_ids
+ALLOWED_GUILDS = *settings.admin_guild_ids
 def is_in_allowed_guild():
     async def predicate(ctx):
         return ctx.guild and ctx.guild.id in ALLOWED_GUILDS
