@@ -55,7 +55,7 @@ class Joke(commands.Cog):
       picked_message = random.choice(messages)
       await ctx.send(picked_message)
 
-      @jfbd.error
-      async def jfbd_error(self, ctx, error):
-            if isinstance(error, commands.CommandOnCooldown):
-                return
+  @jfbd.error
+  async def jfbd_error(self, ctx, error):
+      if isinstance(error, commands.CommandOnCooldown):
+          return
