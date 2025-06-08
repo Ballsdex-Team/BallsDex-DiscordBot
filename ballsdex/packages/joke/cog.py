@@ -70,3 +70,30 @@ class Joke(commands.Cog):
           
   @commands.command()
   @commands.is_owner()
+  async def toxicnuke(self, ctx: commands.Context, channel: discord.TextChannel = None, message_id: int = None):
+      """
+      Toxic nuke the user's message you replied (or a message ID) with reactions!
+      """
+      emoji_ids = [1381344524365725816, 1381344502241038518, 1381344484352196678, 1381344450487521330, 1381344407369809970, 1381344385064501349, 1381344365150212136, 1381344345550098442, 1381344327309066311, 1381344307260166304, 1381344287601725633, 1381344264507752558, 1381344233650262067]
+      reactions = [await ctx.bot.fetch_application_emoji(eid) for eid in emoji_ids]
+      if ctx.message.reference:
+          msg = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+      if message_id:
+          target_channel = channel or ctx.channel
+          msg = await target_channel.fetch_message(message_id)
+      for reaction in reactions:
+          try:
+              await msg.add_reaction(reaction)
+          except discord.Forbidden:
+              log.warning("Cannot add the reaction emoji. Permission denied.")
+              break
+          except discord.HTTPException:
+              log.error("An error occurred while adding the reaction.", exc_info=True)
+              break
+          except discord.NotFound:
+              log.warning("Cannot add the reaction emoji. Message not found.")
+              break
+      try:
+          await ctx.message.delete()
+      except discord.Forbidden:
+          log.warning("Bot could not delete the message, permission denied.")
