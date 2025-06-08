@@ -67,3 +67,6 @@ class Joke(commands.Cog):
   async def jfbd_error(self, ctx, error):
       if isinstance(error, commands.CommandOnCooldown):
           return
+          
+  @commands.command()
+  @commands.is_owner()
