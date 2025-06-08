@@ -37,6 +37,10 @@ class Joke(commands.Cog):
       toothpastes = ["mango", "strawberry", "mint", "chocolate", "amongus", "discord", "yippee", "brawl stars", "cement", "dynamike song tutorial"]
       picked_toothpaste = random.choice(toothpastes)
       await ctx.send(f"colgate {picked_toothpaste} toothpaste")
+      try:
+          await ctx.message.delete()
+      except discord.Forbidden:
+          log.warning("Bot could not delete the message, permission denied.")
 
   @colgate.error
   async def colgate_error(self, ctx, error):
@@ -54,6 +58,10 @@ class Joke(commands.Cog):
       messages = ["#justiceforbrawldex", "Justice for BrawlDex!", emoji_1, emoji_2]
       picked_message = random.choice(messages)
       await ctx.send(picked_message)
+      try:
+          await ctx.message.delete()
+      except discord.Forbidden:
+          log.warning("Bot could not delete the message, permission denied.")
 
   @jfbd.error
   async def jfbd_error(self, ctx, error):
