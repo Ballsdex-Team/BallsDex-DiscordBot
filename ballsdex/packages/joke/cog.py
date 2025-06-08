@@ -25,3 +25,11 @@ class Joke(commands.Cog):
   
   def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
+
+  @commands.command()
+  @commands.cooldown(1, 300, commands.BucketType.user)
+  async def colgate(self, ctx: commands.Context):
+      """
+      What Colgate toothpaste will you get today? Try your luck!
+      """
+      toothpastes = [
