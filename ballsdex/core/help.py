@@ -22,9 +22,7 @@ class HelpCommand(commands.DefaultHelpCommand):
         base = f"{self.context.clean_prefix}{name}"
 
         for param in command.clean_params.values():
-            if inspect.isclass(param.converter) and issubclass(
-                param.converter, commands.FlagConverter
-            ):
+            if inspect.isclass(param.converter) and issubclass(param.converter, commands.FlagConverter):
                 continue
             param_str = param.displayed_name or param.name
             if param.displayed_default:
@@ -43,9 +41,7 @@ class HelpCommand(commands.DefaultHelpCommand):
 
         flag_converter: type[commands.FlagConverter] | None = None
         for param in arguments:
-            if inspect.isclass(param.converter) and issubclass(
-                param.converter, commands.FlagConverter
-            ):
+            if inspect.isclass(param.converter) and issubclass(param.converter, commands.FlagConverter):
                 if flag_converter:
                     raise RuntimeError("This formatter only supports one FlagConverter")
                 flag_converter = param.converter
@@ -61,7 +57,7 @@ class HelpCommand(commands.DefaultHelpCommand):
                 name = argument.displayed_name or argument.name
                 width = max_size - (get_width(name) - len(name))
                 description = argument.description or self.default_argument_description
-                entry = f'{self.indent * " "}{name:<{width}} {description}'
+                entry = f"{self.indent * ' '}{name:<{width}} {description}"
                 # we do not want to shorten the default value, if any.
                 entry = self.shorten_text(entry)
                 if argument.displayed_default is not None:
@@ -83,14 +79,14 @@ class HelpCommand(commands.DefaultHelpCommand):
             names = joiner.join(f"{prefix}{x}" for x in (flag.name, *flag.aliases))
             if flag.required:
                 required_once = True
-                entry = f"{(self.indent - 1) * " "}*{names}"
+                entry = f"{(self.indent - 1) * ' '}*{names}"
             else:
-                entry = f"{self.indent * " "}{names}"
+                entry = f"{self.indent * ' '}{names}"
             if flag.default:
                 entry += f"={flag.default}"
             entry = self.shorten_text(entry)
             if flag.description:
-                entry += self.shorten_text(f"\n{self.indent * 2 * " "}{flag.description}")
+                entry += self.shorten_text(f"\n{self.indent * 2 * ' '}{flag.description}")
 
             self.paginator.add_line(entry)
 
