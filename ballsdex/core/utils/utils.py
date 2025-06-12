@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING, Union
 
 import discord
 
-from ballsdex.core.models import Player, PrivacyPolicy
 from ballsdex.settings import settings
+from bd_models.enums import PrivacyPolicy
+from bd_models.models import Player
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -26,21 +27,18 @@ async def inventory_privacy(
     user_obj: Union[discord.User, discord.Member],
 ):
     privacy_policy = player.privacy_policy
-    interacting_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+    interacting_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
     if interaction.user.id == player.discord_id:
         return True
     if is_staff(interaction):
         return True
     if privacy_policy == PrivacyPolicy.DENY:
-        await interaction.followup.send(
-            "This user has set their inventory to private.", ephemeral=True
-        )
+        await interaction.followup.send("This user has set their inventory to private.", ephemeral=True)
         return False
     elif privacy_policy == PrivacyPolicy.FRIENDS:
         if not await interacting_player.is_friend(player):
             await interaction.followup.send(
-                "This users inventory can only be viewed from users they have added as friends.",
-                ephemeral=True,
+                "This users inventory can only be viewed from users they have added as friends.", ephemeral=True
             )
             return False
     elif privacy_policy == PrivacyPolicy.SAME_SERVER:
@@ -52,9 +50,7 @@ async def inventory_privacy(
             )
             return False
         if interaction.guild is None:
-            await interaction.followup.send(
-                "This user has set their inventory to private.", ephemeral=True
-            )
+            await interaction.followup.send("This user has set their inventory to private.", ephemeral=True)
             return False
         elif interaction.guild.get_member(user_obj.id) is None:
             await interaction.followup.send("This user is not in the server.", ephemeral=True)

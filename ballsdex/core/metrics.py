@@ -13,9 +13,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.core.metrics")
 
-caught_balls = Counter(
-    "caught_cb", "Caught countryballs", ["country", "special", "guild_size", "spawn_algo"]
-)
+caught_balls = Counter("caught_cb", "Caught countryballs", ["country", "special", "guild_size", "spawn_algo"])
 
 
 class PrometheusServer:
@@ -36,9 +34,7 @@ class PrometheusServer:
         self.app.add_routes((web.get("/metrics", self.get),))
 
         self.guild_count = Gauge("guilds", "Number of guilds the server is in", ["size"])
-        self.shards_latecy = Histogram(
-            "gateway_latency", "Shard latency with the Discord gateway", ["shard_id"]
-        )
+        self.shards_latecy = Histogram("gateway_latency", "Shard latency with the Discord gateway", ["shard_id"])
         self.asyncio_delay = Histogram(
             "asyncio_delay",
             "How much time asyncio takes to give back control",

@@ -3,6 +3,11 @@ from typing import TYPE_CHECKING, Literal
 
 import aiohttp
 from asgiref.sync import async_to_sync, sync_to_async
+from django.contrib import messages
+from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
+
+from ballsdex.settings import settings
 from bd_models.models import (
     Ball,
     BallInstance,
@@ -19,11 +24,6 @@ from bd_models.models import (
     Trade,
     TradeObject,
 )
-from django.contrib import messages
-from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.models import ContentType
-
-from ballsdex.settings import settings
 
 from .webhook import notify_admins
 
@@ -33,9 +33,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
     from social_core.backends.base import BaseAuth
 
-type perm_dict = dict[
-    "type[Model]", list[Literal["view", "add", "change", "delete"]] | Literal["*"]
-]
+type perm_dict = dict["type[Model]", list[Literal["view", "add", "change", "delete"]] | Literal["*"]]
 
 DISCORD_API = "https://discord.com/api/v10/"
 
@@ -59,9 +57,7 @@ async def get_permissions(permissions: perm_dict) -> list[Permission]:
             perms = ["add", "change", "delete", "view"]
         for perm in perms:
             result.append(
-                await Permission.objects.aget(
-                    content_type=content_type, codename=f"{perm}_{model._meta.model_name}"
-                )
+                await Permission.objects.aget(content_type=content_type, codename=f"{perm}_{model._meta.model_name}")
             )
     return result
 
@@ -127,9 +123,7 @@ async def assign_status(request: "HttpRequest", response: dict, user: "User", st
         message = "You were assigned the superuser status because you are a co-owner in config.yml"
     elif status == Status.OWNER:
         user.is_superuser = True
-        message = (
-            "You were assigned the superuser status because you are the owner of the application."
-        )
+        message = "You were assigned the superuser status because you are the owner of the application."
     else:
         raise ValueError(f"Unknown status: {status}")
     await user.asave()
@@ -149,9 +143,7 @@ async def configure_status(
     if backend.name != "discord":
         return
     if response["mfa_enabled"] is False:
-        messages.error(
-            request, "You cannot use an account without multi-factor authentication enabled."
-        )
+        messages.error(request, "You cannot use an account without multi-factor authentication enabled.")
         return
     discord_id = int(uid)
 
@@ -161,21 +153,14 @@ async def configure_status(
         return
 
     headers = {"Authorization": f"Bot {settings.bot_token}"}
-    async with aiohttp.ClientSession(
-        base_url=DISCORD_API, headers=headers, raise_for_status=True
-    ) as session:
-
+    async with aiohttp.ClientSession(base_url=DISCORD_API, headers=headers, raise_for_status=True) as session:
         # check if user owns the application, or is part of the team and team members are co owners
         async with session.get("applications/@me") as resp:
             info = await resp.json()
             if info["owner"]["id"] == uid:
                 await assign_status(request, response, user, Status.OWNER)
                 return
-            if (
-                settings.team_owners
-                and info["team"]
-                and uid in (x["user"]["id"] for x in info["team"]["members"])
-            ):
+            if settings.team_owners and info["team"] and uid in (x["user"]["id"] for x in info["team"]["members"]):
                 await assign_status(request, response, user, Status.TEAM_MEMBER)
                 return
 

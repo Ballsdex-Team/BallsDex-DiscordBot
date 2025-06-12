@@ -52,12 +52,7 @@ class TradeAdmin(admin.ModelAdmin):
             except Player.DoesNotExist:
                 messages.error(request, f"Second player ({id2}) does not exist")
                 return queryset.none(), False
-            return (
-                queryset.filter(
-                    Q(player1=player1, player2=player2) | Q(player2=player1, player1=player2)
-                ),
-                False,
-            )
+            return (queryset.filter(Q(player1=player1, player2=player2) | Q(player2=player1, player1=player2)), False)
         try:
             return queryset.filter(id=int(search_term, 16)), False
         except ValueError:
@@ -69,9 +64,7 @@ class TradeAdmin(admin.ModelAdmin):
         return qs.prefetch_related(
             "player1",
             "player2",
-            Prefetch(
-                "tradeobject_set", queryset=TradeObject.objects.prefetch_related("ballinstance")
-            ),
+            Prefetch("tradeobject_set", queryset=TradeObject.objects.prefetch_related("ballinstance")),
         )
 
     # It is important to use .all() and manually filter in python rather than using .filter.count
@@ -92,11 +85,7 @@ class TradeAdmin(admin.ModelAdmin):
 
     # This adds extra context to the template, needed for the display of TradeObject models
     def change_view(
-        self,
-        request: "HttpRequest",
-        object_id: str,
-        form_url: str = "",
-        extra_context: dict[str, Any] | None = None,
+        self, request: "HttpRequest", object_id: str, form_url: str = "", extra_context: dict[str, Any] | None = None
     ) -> "HttpResponse":
         obj = self.get_object(request, object_id)
 

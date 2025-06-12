@@ -1,20 +1,14 @@
 import discord
 from discord.ext import commands
 from discord.utils import format_dt
-from tortoise.exceptions import DoesNotExist, IntegrityError
+from django.db import IntegrityError
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import (
-    BlacklistedGuild,
-    BlacklistedID,
-    BlacklistHistory,
-    GuildConfig,
-    Player,
-)
 from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.admin.menu import BlacklistViewFormat
 from ballsdex.settings import settings
+from bd_models.models import BlacklistedGuild, BlacklistedID, BlacklistHistory, GuildConfig, Player
 
 
 @commands.hybrid_group()
@@ -27,9 +21,7 @@ async def blacklist(ctx: commands.Context[BallsDexBot]):
 
 
 @blacklist.command(name="add")
-async def blacklist_add(
-    ctx: commands.Context[BallsDexBot], user: discord.User, *, reason: str | None = None
-):
+async def blacklist_add(ctx: commands.Context[BallsDexBot], user: discord.User, *, reason: str | None = None):
     """
     Add a user to the blacklist. No reload is needed.
 
@@ -45,8 +37,8 @@ async def blacklist_add(
         return
 
     try:
-        await BlacklistedID.create(discord_id=user.id, reason=reason, moderator_id=ctx.author.id)
-        await BlacklistHistory.create(
+        await BlacklistedID.objects.acreate(discord_id=user.id, reason=reason, moderator_id=ctx.author.id)
+        await BlacklistHistory.objects.acreate(
             discord_id=user.id, reason=reason, moderator_id=ctx.author.id, id_type="user"
         )
     except IntegrityError:
@@ -54,16 +46,11 @@ async def blacklist_add(
     else:
         ctx.bot.blacklist.add(user.id)
         await ctx.send("User is now blacklisted.", ephemeral=True)
-        await log_action(
-            f"{ctx.author} blacklisted {user} ({user.id}) for the following reason: {reason}.",
-            ctx.bot,
-        )
+        await log_action(f"{ctx.author} blacklisted {user} ({user.id}) for the following reason: {reason}.", ctx.bot)
 
 
 @blacklist.command(name="remove")
-async def blacklist_remove(
-    ctx: commands.Context[BallsDexBot], user: discord.User, *, reason: str | None = None
-):
+async def blacklist_remove(ctx: commands.Context[BallsDexBot], user: discord.User, *, reason: str | None = None):
     """
     Remove a user from the blacklist. No reload is needed.
 
@@ -75,24 +62,17 @@ async def blacklist_remove(
         The reason for unblacklisting the user.
     """
     try:
-        blacklisted = await BlacklistedID.get(discord_id=user.id)
-    except DoesNotExist:
+        blacklisted = await BlacklistedID.objects.aget(discord_id=user.id)
+    except BlacklistedID.DoesNotExist:
         await ctx.send("That user isn't blacklisted.", ephemeral=True)
     else:
-        await blacklisted.delete()
-        await BlacklistHistory.create(
-            discord_id=user.id,
-            reason=reason,
-            moderator_id=ctx.author.id,
-            id_type="user",
-            action_type="unblacklist",
+        await blacklisted.adelete()
+        await BlacklistHistory.objects.acreate(
+            discord_id=user.id, reason=reason, moderator_id=ctx.author.id, id_type="user", action_type="unblacklist"
         )
         ctx.bot.blacklist.remove(user.id)
         await ctx.send("User is now removed from blacklist.", ephemeral=True)
-        await log_action(
-            f"{ctx.author} removed blacklist for user {user} ({user.id}).\nReason: {reason}",
-            ctx.bot,
-        )
+        await log_action(f"{ctx.author} removed blacklist for user {user} ({user.id}).\nReason: {reason}", ctx.bot)
 
 
 @blacklist.command(name="info")
@@ -106,22 +86,18 @@ async def blacklist_info(ctx: commands.Context[BallsDexBot], user: discord.User)
         The user you want to check, if available in the current server.
     """
     try:
-        blacklisted = await BlacklistedID.get(discord_id=user.id)
-    except DoesNotExist:
+        blacklisted = await BlacklistedID.objects.aget(discord_id=user.id)
+    except BlacklistedID.DoesNotExist:
         await ctx.send("That user isn't blacklisted.", ephemeral=True)
     else:
         if blacklisted.moderator_id:
             moderator_msg = (
-                f"Moderator: {await ctx.bot.fetch_user(blacklisted.moderator_id)}"
-                f" ({blacklisted.moderator_id})"
+                f"Moderator: {await ctx.bot.fetch_user(blacklisted.moderator_id)} ({blacklisted.moderator_id})"
             )
         else:
             moderator_msg = "Moderator: Unknown"
-        if settings.admin_url and (player := await Player.get_or_none(discord_id=user.id)):
-            admin_url = (
-                "\n[View history online]"
-                f"(<{settings.admin_url}/bd_models/player/{player.pk}/change/>)"
-            )
+        if settings.admin_url and (player := await Player.objects.aget_or_none(discord_id=user.id)):
+            admin_url = f"\n[View history online](<{settings.admin_url}/bd_models/player/{player.pk}/change/>)"
         else:
             admin_url = ""
         if blacklisted.date:
@@ -156,7 +132,7 @@ async def blacklist_history(ctx: commands.Context[BallsDexBot], user_id: str):
         await ctx.send("The ID you gave is not valid.", ephemeral=True)
         return
 
-    history = await BlacklistHistory.filter(discord_id=_id).order_by("-date")
+    history = await BlacklistHistory.objects.filter(discord_id=_id).order_by("-date").aall()
 
     if not history:
         await ctx.send("No history found for that ID.", ephemeral=True)
@@ -201,14 +177,9 @@ async def blacklist_add_guild(ctx: commands.Context[BallsDexBot], guild_id: str,
     final_reason = f"{reason}\nBy: {ctx.author} ({ctx.author.id})"
 
     try:
-        await BlacklistedGuild.create(
-            discord_id=guild.id, reason=final_reason, moderator_id=ctx.author.id
-        )
-        await BlacklistHistory.create(
-            discord_id=guild.id,
-            reason=final_reason,
-            moderator_id=ctx.author.id,
-            id_type="guild",
+        await BlacklistedGuild.objects.acreate(discord_id=guild.id, reason=final_reason, moderator_id=ctx.author.id)
+        await BlacklistHistory.objects.acreate(
+            discord_id=guild.id, reason=final_reason, moderator_id=ctx.author.id, id_type="guild"
         )
     except IntegrityError:
         await ctx.send("That guild was already blacklisted.", ephemeral=True)
@@ -216,16 +187,12 @@ async def blacklist_add_guild(ctx: commands.Context[BallsDexBot], guild_id: str,
         ctx.bot.blacklist_guild.add(guild.id)
         await ctx.send("Guild is now blacklisted.", ephemeral=True)
         await log_action(
-            f"{ctx.author} blacklisted the guild {guild}({guild.id}) "
-            f"for the following reason: {reason}.",
-            ctx.bot,
+            f"{ctx.author} blacklisted the guild {guild}({guild.id}) for the following reason: {reason}.", ctx.bot
         )
 
 
 @blacklistguild.command(name="remove")
-async def blacklist_remove_guild(
-    ctx: commands.Context[BallsDexBot], guild_id: str, *, reason: str | None = None
-):
+async def blacklist_remove_guild(ctx: commands.Context[BallsDexBot], guild_id: str, *, reason: str | None = None):
     """
     Remove a guild from the blacklist. No reload is needed.
 
@@ -247,24 +214,17 @@ async def blacklist_remove_guild(
         return
 
     try:
-        blacklisted = await BlacklistedGuild.get(discord_id=guild.id)
-    except DoesNotExist:
+        blacklisted = await BlacklistedGuild.objects.aget(discord_id=guild.id)
+    except BlacklistedGuild.DoesNotExist:
         await ctx.send("That guild isn't blacklisted.", ephemeral=True)
     else:
-        await blacklisted.delete()
-        await BlacklistHistory.create(
-            discord_id=guild.id,
-            reason=reason,
-            moderator_id=ctx.author.id,
-            id_type="guild",
-            action_type="unblacklist",
+        await blacklisted.adelete()
+        await BlacklistHistory.objects.acreate(
+            discord_id=guild.id, reason=reason, moderator_id=ctx.author.id, id_type="guild", action_type="unblacklist"
         )
         ctx.bot.blacklist_guild.remove(guild.id)
         await ctx.send("Guild is now removed from blacklist.", ephemeral=True)
-        await log_action(
-            f"{ctx.author} removed blacklist for guild {guild} ({guild.id}).\nReason: {reason}",
-            ctx.bot,
-        )
+        await log_action(f"{ctx.author} removed blacklist for guild {guild} ({guild.id}).\nReason: {reason}", ctx.bot)
 
 
 @blacklistguild.command(name="info")
@@ -288,22 +248,18 @@ async def blacklist_info_guild(ctx: commands.Context[BallsDexBot], guild_id: str
         return
 
     try:
-        blacklisted = await BlacklistedGuild.get(discord_id=guild.id)
-    except DoesNotExist:
+        blacklisted = await BlacklistedGuild.objects.aget(discord_id=guild.id)
+    except BlacklistedGuild.DoesNotExist:
         await ctx.send("That guild isn't blacklisted.", ephemeral=True)
     else:
         if blacklisted.moderator_id:
             moderator_msg = (
-                f"Moderator: {await ctx.bot.fetch_user(blacklisted.moderator_id)}"
-                f"({blacklisted.moderator_id})"
+                f"Moderator: {await ctx.bot.fetch_user(blacklisted.moderator_id)}({blacklisted.moderator_id})"
             )
         else:
             moderator_msg = "Moderator: Unknown"
-        if settings.admin_url and (gconf := await GuildConfig.get_or_none(guild_id=guild.id)):
-            admin_url = (
-                "\n[View history online]"
-                f"(<{settings.admin_url}/bd_models/guildconfig/{gconf.pk}/change/>)"
-            )
+        if settings.admin_url and (gconf := await GuildConfig.objects.aget_or_none(guild_id=guild.id)):
+            admin_url = f"\n[View history online](<{settings.admin_url}/bd_models/guildconfig/{gconf.pk}/change/>)"
         else:
             admin_url = ""
         if blacklisted.date:

@@ -7,28 +7,21 @@ from typing import TYPE_CHECKING, Any, Iterable
 import discord
 from discord import app_commands
 from discord.ext import commands
-from tortoise.exceptions import DoesNotExist
-from tortoise.expressions import Q, RawSQL
-from tortoise.timezone import now as tortoise_now
+from django.db.models import Model, Q
+from django.db.models.expressions import RawSQL
+from django.utils import timezone
 
-from ballsdex.core.models import Ball, BallInstance, Economy, Regime, Special
 from ballsdex.settings import settings
+from bd_models.models import Ball, BallInstance, Economy, Regime, Special
 
 if TYPE_CHECKING:
-    from tortoise.models import Model
-    from tortoise.queryset import QuerySet
+    from django.db.models import QuerySet
 
     from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.core.utils.transformers")
 
-__all__ = (
-    "BallTransform",
-    "BallInstanceTransform",
-    "SpecialTransform",
-    "RegimeTransform",
-    "EconomyTransform",
-)
+__all__ = ("BallTransform", "BallInstanceTransform", "SpecialTransform", "RegimeTransform", "EconomyTransform")
 
 
 class TradeCommandType(Enum):
@@ -65,7 +58,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
 
     name: str
     column: str = "name"
-    model: T
+    model: type[T]
 
     def __init__(self, **filters: Any):
         self.filters = filters
@@ -77,7 +70,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
         return getattr(model, self.column)
 
     def get_queryset(self) -> "QuerySet[T]":
-        return self.model.filter(**self.filters)
+        return self.model.objects.filter(**self.filters)
 
     async def validate(self, ctx: commands.Context["BallsDexBot"], item: T):
         """
@@ -99,7 +92,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
         KeyError | tortoise.exceptions.DoesNotExist
             Entry does not exist
         """
-        return await self.get_queryset().get(pk=value)
+        return await self.get_queryset().aget(pk=value)
 
     async def get_from_text(self, value: str) -> T:
         """
@@ -110,7 +103,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
         KeyError | tortoise.exceptions.DoesNotExist
             Entry does not exist
         """
-        return await self.get_queryset().get(**{f"{self.column}__iexact": value})
+        return await self.get_queryset().aget(**{f"{self.column}__iexact": value})
 
     async def get_options(
         self, interaction: discord.Interaction["BallsDexBot"], value: str
@@ -128,24 +121,18 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
         for option in await self.get_options(interaction, value):
             choices.append(option)
         t2 = time.time()
-        log.debug(
-            f"{self.name.title()} autocompletion took "
-            f"{round((t2 - t1) * 1000)}ms, {len(choices)} results"
-        )
+        log.debug(f"{self.name.title()} autocompletion took {round((t2 - t1) * 1000)}ms, {len(choices)} results")
         return choices
 
     async def transform(self, interaction: discord.Interaction["BallsDexBot"], value: str) -> T:
         if not value:
-            raise commands.BadArgument(
-                "You need to use the autocomplete function for the economy selection."
-            )
+            raise commands.BadArgument("You need to use the autocomplete function for the economy selection.")
         try:
             instance = await self.get_from_pk(int(value))
             await self.validate(await commands.Context.from_interaction(interaction), instance)
-        except (DoesNotExist, KeyError, ValueError):
+        except (self.model.DoesNotExist, KeyError, ValueError):
             raise commands.BadArgument(
-                f"The {self.name} could not be found. Make sure to use the autocomplete "
-                "function on this command.",
+                f"The {self.name} could not be found. Make sure to use the autocomplete function on this command."
             )
         else:
             return instance
@@ -154,7 +141,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
         try:
             instance = await self.get_from_text(argument)
             await self.validate(ctx, instance)
-        except DoesNotExist as e:
+        except self.model.DoesNotExist as e:
             raise commands.BadArgument(f"The {self.name} could not be found.") from e
         else:
             return instance
@@ -162,13 +149,16 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
 
 class BallInstanceTransformer(ModelTransformer[BallInstance]):
     name = settings.collectible_name
-    model = BallInstance  # type: ignore
+    model = BallInstance
 
     def get_queryset(self) -> "QuerySet[BallInstance]":
         return super().get_queryset().prefetch_related("player")
 
+    async def get_from_pk(self, value: int) -> BallInstance:
+        return await self.get_queryset().prefetch_related("player", "trade_player").aget(pk=value)
+
     async def get_from_text(self, value: str) -> BallInstance:
-        return await self.get_queryset().get(pk=int(value, 16))
+        return await self.get_queryset().aget(pk=int(value, 16))
 
     async def validate(self, ctx: commands.Context["BallsDexBot"], item: BallInstance):
         # checking if the ball does belong to user, and a custom ID wasn't forced
@@ -186,14 +176,11 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         if interaction.command and (trade_type := interaction.command.extras.get("trade", None)):
             if trade_type == TradeCommandType.PICK:
                 balls_queryset = balls_queryset.filter(
-                    Q(
-                        Q(locked__isnull=True)
-                        | Q(locked__lt=tortoise_now() - timedelta(minutes=30))
-                    )
+                    Q(Q(locked__isnull=True) | Q(locked__lt=timezone.now() - timedelta(minutes=30)))
                 )
             else:
                 balls_queryset = balls_queryset.filter(
-                    locked__isnull=False, locked__gt=tortoise_now() - timedelta(minutes=30)
+                    locked__isnull=False, locked__gt=timezone.now() - timedelta(minutes=30)
                 )
 
         if value.startswith("="):
@@ -204,18 +191,19 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
                 balls_queryset.select_related("ball")
                 .annotate(
                     searchable=RawSQL(
-                        "to_hex(ballinstance.id) || ' ' || ballinstance__ball.country || ' ' || "
-                        "COALESCE(ballinstance__ball.catch_names, '') || ' ' || "
-                        "COALESCE(ballinstance__ball.translations, '')"
+                        "to_hex(ballinstance.id) || ' ' || ball.country || ' ' || "
+                        "COALESCE(ball.catch_names, '') || ' ' || "
+                        "COALESCE(ball.translations, '')",
+                        (),
                     )
                 )
                 .filter(searchable__icontains=value.replace(".", ""))
             )
-        balls_queryset = balls_queryset.limit(25)
+        balls_queryset = balls_queryset[:25]
 
         choices: list[app_commands.Choice] = [
             app_commands.Choice(name=x.description(bot=interaction.client), value=str(x.pk))
-            for x in await balls_queryset
+            async for x in balls_queryset
         ]
         return choices
 
@@ -246,7 +234,7 @@ class TTLModelTransformer[T: "Model"](ModelTransformer[T]):
         """
         Query values to fill `items` with.
         """
-        return await self.get_queryset().all()
+        return [x async for x in self.model.objects.all()]
 
     async def maybe_refresh(self):
         t = time.time()
@@ -274,22 +262,22 @@ class TTLModelTransformer[T: "Model"](ModelTransformer[T]):
 class BallTransformer(TTLModelTransformer[Ball]):
     name = settings.collectible_name
     column = "country"
-    model = Ball()
+    model = Ball
 
 
 class SpecialTransformer(TTLModelTransformer[Special]):
     name = "special event"
-    model = Special()
+    model = Special
 
 
 class RegimeTransformer(TTLModelTransformer[Regime]):
     name = "regime"
-    model = Regime()
+    model = Regime
 
 
 class EconomyTransformer(TTLModelTransformer[Economy]):
     name = "economy"
-    model = Economy()
+    model = Economy
 
 
 BallTransform = app_commands.Transform[Ball, BallTransformer]

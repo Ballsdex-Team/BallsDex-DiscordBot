@@ -1,0 +1,10 @@
+admin_panel/media
+admin_panel/static
+pgbackups
+config.yml
+.env
+ballsdex.log*
+venv
+.venv
+.python-version
+__pycache__

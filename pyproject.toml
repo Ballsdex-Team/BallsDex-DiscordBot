@@ -1,5 +1,6 @@
 [project]
 name = "ballsdex"
+version = "1.0.0"
 description = ""
 authors = [
     { name = 'Auguste "laggron42" Charpentier', email = "laggron42@ballsdex.com" },
@@ -7,21 +8,16 @@ authors = [
 ]
 license = "MIT"
 requires-python = ">=3.13, <3.14"
-dynamic = ["version"]
 dependencies = [
     # asyncio
     "uvloop==0.21.0; sys_platform != 'win32'",
 
     # discord
-    "discord.py[speed]==2.5.0",
-
-    # database ORM
-    "tortoise-orm[asyncpg] ==0.22.2",
-    "tortoise-cli==0.1.2",
+    "discord.py[speed]==2.5.2",
 
     # django admin panel
-    "uvicorn[standard]==0.32.0",
-    "django==5.1.4",
+    "uvicorn[standard]==0.34.0",
+    "django==5.2.1",
     "django-allow-cidr (>=0.7.1,<0.8.0)",
     "django-nonrelated-inlines==0.2",
     "django-admin-autocomplete-filter==0.7.1",
@@ -33,61 +29,71 @@ dependencies = [
     "psycopg-binary==3.2.3",
 
     # metrics
-    "prometheus-client==0.20.0",
+    "prometheus-client==0.21.1",
+    "sentry-sdk[asyncpg]==2.27.0",
 
     # misc
-    "rich==13.8.0",
-    "python-dateutil==2.9.0",
-    "Pillow==10.4.0",
+    "rich==14.0.0",
+    "python-dateutil>=2.9.0",
+    "Pillow==11.2.1",
     "pyyaml==6.0.2",
-    "cachetools==5.5.0",
+    "cachetools==5.5.2",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit==3.7.1",
-    "black==24.8.0",
-    "flake8-pyproject==1.2.3",
-    "pyright==1.1.390",
-    "isort==5.13.2",
+    "pre-commit==4.2.0",
+    "ruff>=0.11.10",
+    "pyright==1.1.399",
     "django-debug-toolbar==4.4.6",
     "pyinstrument==5.0.0",
+    "django-types",
 ]
 
-[tool.poetry]
-packages = [{ include = "ballsdex" }]
-requires-poetry = ">=2.0"
-version = "0.0.0"
+[project.scripts]
+ballsdex = "ballsdex.__main__:main"
 
-[tool.poetry.requires-plugins]
-poetry-plugin-shell = ">=1.0"
-poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
+[tool.hatch.build.targets.sdist]
+include = ["ballsdex", "admin_panel"]
+exclude = ["result"]
 
-[tool.poetry-dynamic-versioning]
-enable = true
-
-[tool.poetry-dynamic-versioning.from-file]
-source = "ballsdex/__init__.py"
-pattern = '__version__ = "(?P<base>\d+\.\d+\.\d+)"'
+[tool.hatch.build.targets.wheel]
+include = ["ballsdex", "admin_panel"]
 
 [build-system]
-requires = ["poetry-core>=2.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.black]
-line-length = 99
+[tool.uv.sources]
+django-types = { git = "https://github.com/sbdchd/django-types.git", rev = "04d8bee5e503e23dc1064a498485110002a4dc23" }
 
-[tool.flake8]
-ignore = "W503,E203,E999"
-max-line-length = 99
-exclude = "./admin_panel/admin_panel/settings/*"
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py313"
 
-[tool.isort]
-profile = "black"
-line_length = 99
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = true
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E203"]
+exclude = ["admin_panel/admin_panel/settings/*"]
+
+[tool.ruff.lint.isort]
+# list all django modules
+known-first-party = ["ballsdex", "bd_models", "admin_panel", "preview"]
+split-on-trailing-comma = false
 
 [tool.pyright]
 extraPaths = ["./admin_panel"]
 pythonVersion = "3.13"
 reportIncompatibleMethodOverride = "warning"
 reportIncompatibleVariableOverride = "warning"
+
+venvPath = "."
+venv = ".venv"

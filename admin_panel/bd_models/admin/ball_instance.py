@@ -36,17 +36,16 @@ class BallInstanceAdmin(admin.ModelAdmin):
         ("Ownership", {"fields": ("player", "favorite", "catch_date", "trade_player")}),
         (
             "Advanced",
-            {
-                "classes": ("collapse",),
-                "fields": ("tradeable", "server_id", "spawned_time", "locked", "extra_data"),
-            },
+            {"classes": ("collapse",), "fields": ("tradeable", "server_id", "spawned_time", "locked", "extra_data")},
         ),
     ]
 
     list_display = ("description", "player", "server_id", "catch_time")
     list_select_related = ("ball", "special", "player")
     list_filter = (SpecialFilter, BallFilter, PlayerFilter, "tradeable", "favorite")
-    show_facets = admin.ShowFacets.NEVER  # hide filtered counts (considerable slowdown)
+    show_facets = (
+        admin.ShowFacets.NEVER  # type: ignore
+    )  # hide filtered counts (considerable slowdown)
     show_full_result_count = False
     paginator = ApproxCountPaginator
 
@@ -71,18 +70,12 @@ class BallInstanceAdmin(admin.ModelAdmin):
             return queryset.none(), False
 
     def change_view(
-        self,
-        request: "HttpRequest",
-        object_id: str,
-        form_url: str = "",
-        extra_context: dict[str, Any] | None = None,
+        self, request: "HttpRequest", object_id: str, form_url: str = "", extra_context: dict[str, Any] | None = None
     ) -> "HttpResponse":
         obj = BallInstance.objects.prefetch_related("player").get(id=object_id)
 
         def _get_trades():
-            trade_ids = TradeObject.objects.filter(ballinstance=obj).values_list(
-                "trade_id", flat=True
-            )
+            trade_ids = TradeObject.objects.filter(ballinstance=obj).values_list("trade_id", flat=True)
             for trade in (
                 Trade.objects.filter(id__in=trade_ids)
                 .order_by("-date")
@@ -91,22 +84,13 @@ class BallInstanceAdmin(admin.ModelAdmin):
                     "player2",
                     Prefetch(
                         "tradeobject_set",
-                        queryset=TradeObject.objects.prefetch_related(
-                            "ballinstance", "ballinstance__ball", "player"
-                        ),
+                        queryset=TradeObject.objects.prefetch_related("ballinstance", "ballinstance__ball", "player"),
                     ),
                 )
             ):
-                player1_proposal = [
-                    x for x in trade.tradeobject_set.all() if x.player_id == trade.player1_id
-                ]
-                player2_proposal = [
-                    x for x in trade.tradeobject_set.all() if x.player_id == trade.player2_id
-                ]
-                yield {
-                    "model": trade,
-                    "proposals": (player1_proposal, player2_proposal),
-                }
+                player1_proposal = [x for x in trade.tradeobject_set.all() if x.player_id == trade.player1_id]
+                player2_proposal = [x for x in trade.tradeobject_set.all() if x.player_id == trade.player2_id]
+                yield {"model": trade, "proposals": (player1_proposal, player2_proposal)}
 
         extra_context = extra_context or {}
         extra_context["trades"] = list(_get_trades())

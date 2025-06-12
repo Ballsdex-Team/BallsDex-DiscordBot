@@ -5,9 +5,9 @@ import discord
 from discord.ext import commands
 from discord.ui import Button
 
-from ballsdex.core.models import Ball, GuildConfig
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.settings import settings
+from bd_models.models import Ball, GuildConfig
 
 from .balls import balls as balls_group
 from .blacklist import blacklist as blacklist_group
@@ -16,6 +16,7 @@ from .flags import RarityFlags, StatusFlags
 from .history import history as history_group
 from .info import info as info_group
 from .logs import logs as logs_group
+from .money import money as money_group
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -36,10 +37,10 @@ class Admin(commands.Cog):
         self.admin.add_command(blacklist_guild_group)
         self.admin.add_command(history_group)
         self.admin.add_command(logs_group)
+        self.admin.add_command(money_group)
 
     @commands.hybrid_group(
-        default_permissions=discord.Permissions(administrator=True),
-        guild_ids=settings.admin_guild_ids,
+        default_permissions=discord.Permissions(administrator=True), guild_ids=settings.admin_guild_ids
     )
     async def admin(self, ctx: commands.Context):
         """
@@ -54,24 +55,18 @@ class Admin(commands.Cog):
         Change the status of the bot. Provide at least status or text.
         """
         if not flags.status and not flags.name and not flags.state:
-            await ctx.send(
-                "You must provide at least `status`, `name` or `state`.", ephemeral=True
-            )
+            await ctx.send("You must provide at least `status`, `name` or `state`.", ephemeral=True)
             return
 
         activity: discord.Activity | None = None
         if flags.activity_type == discord.ActivityType.custom and flags.name and not flags.state:
-            await ctx.send(
-                "You must provide `state` for custom activities. `name` is unused.", ephemeral=True
-            )
+            await ctx.send("You must provide `state` for custom activities. `name` is unused.", ephemeral=True)
             return
         if flags.activity_type != discord.ActivityType.custom and not flags.name:
             await ctx.send("You must provide `name` for pre-defined activities.", ephemeral=True)
             return
         if flags.name or flags.state:
-            activity = discord.Activity(
-                name=flags.name or flags.state, state=flags.state, type=flags.activity_type
-            )
+            activity = discord.Activity(name=flags.name or flags.state, state=flags.state, type=flags.activity_type)
         await self.bot.change_presence(status=flags.status, activity=activity)
         await ctx.send("Status updated.", ephemeral=True)
 
@@ -82,10 +77,10 @@ class Admin(commands.Cog):
         Generate a list of countryballs ranked by rarity.
         """
         text = ""
-        balls_queryset = Ball.all().order_by("rarity")
+        balls_queryset = Ball.objects.all().order_by("rarity")
         if not flags.include_disabled:
             balls_queryset = balls_queryset.filter(rarity__gt=0, enabled=True)
-        sorted_balls = await balls_queryset
+        sorted_balls = [x async for x in balls_queryset]
 
         if flags.chunked:
             indexes: dict[float, list[Ball]] = defaultdict(list)
@@ -129,9 +124,7 @@ class Admin(commands.Cog):
             await ctx.send("The given guild could not be found.", ephemeral=True)
             return
 
-        spawn_manager = cast(
-            "CountryBallsSpawner", self.bot.get_cog("CountryBallsSpawner")
-        ).spawn_manager
+        spawn_manager = cast("CountryBallsSpawner", self.bot.get_cog("CountryBallsSpawner")).spawn_manager
         await spawn_manager.admin_explain(ctx, guild)
 
     @admin.command()
@@ -152,10 +145,7 @@ class Admin(commands.Cog):
 
         if not guilds:
             if self.bot.intents.members:
-                await ctx.send(
-                    f"The user does not own any server with {settings.bot_name}.",
-                    ephemeral=True,
-                )
+                await ctx.send(f"The user does not own any server with {settings.bot_name}.", ephemeral=True)
             else:
                 await ctx.send(
                     f"The user does not own any server with {settings.bot_name}.\n"
@@ -167,7 +157,7 @@ class Admin(commands.Cog):
 
         entries: list[tuple[str, str]] = []
         for guild in guilds:
-            if config := await GuildConfig.get_or_none(guild_id=guild.id):
+            if config := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
                 spawn_enabled = config.enabled and config.guild_id
             else:
                 spawn_enabled = False

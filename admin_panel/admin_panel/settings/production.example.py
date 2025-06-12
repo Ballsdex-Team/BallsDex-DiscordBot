@@ -9,7 +9,7 @@ from .production_base import *
 SECRET_KEY = None
 
 ALLOWED_HOSTS = [
-    "localhost",
+    "localhost"
     # place the domain of your website here
     # "ballsdex.com"
 ]

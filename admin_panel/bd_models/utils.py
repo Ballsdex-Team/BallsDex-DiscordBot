@@ -14,18 +14,16 @@ if TYPE_CHECKING:
 
 class ApproxCountPaginator(Paginator):
     @cached_property
-    def count(self):
-
+    def count(self) -> int:  # pyright: ignore [reportIncompatibleMethodOverride]
         # if this object isn't empty, then it's a paginator that has been applied filters or search
         if self.object_list.query.where.children:  # type: ignore
             return super().count
 
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT reltuples AS estimate FROM pg_class where relname = "
-                f"'{self.object_list.model._meta.db_table}';"  # type: ignore
+                f"SELECT reltuples AS estimate FROM pg_class where relname = '{self.object_list.model._meta.db_table}';"  # type: ignore
             )
-            result = int(cursor.fetchone()[0])
+            result = int(cursor.fetchone()[0])  # type: ignore
             if result < 100000:
                 return super().count
             else:
@@ -41,7 +39,9 @@ class BlacklistTabular(NonrelatedTabularInline):
     readonly_fields = ("date", "moderator_id", "action_type")
     classes = ("collapse",)
 
-    def has_add_permission(self, request: "HttpRequest", obj: "Player | GuildConfig") -> bool:
+    def has_add_permission(  # pyright: ignore [reportIncompatibleMethodOverride]
+        self, request: "HttpRequest", obj: "Player | GuildConfig"
+    ) -> bool:
         return False
 
     def get_form_queryset(self, obj: "Player | GuildConfig"):

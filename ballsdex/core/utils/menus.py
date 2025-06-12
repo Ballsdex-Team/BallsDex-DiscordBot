@@ -85,11 +85,7 @@ class Position:
         return (self.bucket, self.number) < (other.bucket, other.number)
 
     def __eq__(self, other):
-        return (
-            isinstance(other, Position)
-            and other.bucket == self.bucket
-            and other.number == self.number
-        )
+        return isinstance(other, Position) and other.bucket == self.bucket and other.number == self.number
 
     def __le__(self, other):
         r = Position.__lt__(other, self)
@@ -252,13 +248,13 @@ def button(emoji, **kwargs):
 
         class MyMenu(Menu):
             async def send_initial_message(self, ctx, channel):
-                return await channel.send(f'Hello {ctx.author}')
+                return await channel.send(f"Hello {ctx.author}")
 
-            @button('\\N{THUMBS UP SIGN}')
+            @button("\\N{THUMBS UP SIGN}")
             async def on_thumbs_up(self, payload):
-                await self.message.edit(content=f'Thanks {self.ctx.author}!')
+                await self.message.edit(content=f"Thanks {self.ctx.author}!")
 
-            @button('\\N{THUMBS DOWN SIGN}')
+            @button("\\N{THUMBS DOWN SIGN}")
             async def on_thumbs_down(self, payload):
                 await self.message.edit(content=f"That's not nice {self.ctx.author}...")
 
@@ -598,16 +594,10 @@ class Menu(metaclass=_MenuMeta):
             # Ensure the name exists for the cancellation handling
             while self._running:
                 tasks = [
-                    asyncio.ensure_future(
-                        self.bot.wait_for("raw_reaction_add", check=self.reaction_check)
-                    ),
-                    asyncio.ensure_future(
-                        self.bot.wait_for("raw_reaction_remove", check=self.reaction_check)
-                    ),
+                    asyncio.ensure_future(self.bot.wait_for("raw_reaction_add", check=self.reaction_check)),
+                    asyncio.ensure_future(self.bot.wait_for("raw_reaction_remove", check=self.reaction_check)),
                 ]
-                done, pending = await asyncio.wait(
-                    tasks, timeout=self.timeout, return_when=asyncio.FIRST_COMPLETED
-                )
+                done, pending = await asyncio.wait(tasks, timeout=self.timeout, return_when=asyncio.FIRST_COMPLETED)
                 for task in pending:
                     task.cancel()
 
@@ -708,13 +698,7 @@ class Menu(metaclass=_MenuMeta):
         # which would require awaiting, such as stopping an erroring menu.
         log.exception("Unhandled exception during menu update.", exc_info=exc)
 
-    async def start(
-        self,
-        ctx: "commands.Context[BallsDexBot]",
-        *,
-        channel: discord.TextChannel = MISSING,
-        wait=False,
-    ):
+    async def start(self, ctx: "commands.Context[BallsDexBot]", *, channel: discord.TextChannel = MISSING, wait=False):
         """|coro|
 
         Starts the interactive menu session.
@@ -1169,9 +1153,7 @@ class GroupByPageSource(ListPageSource):
             size = len(g)
 
             # Chunk the nested pages
-            nested.extend(
-                _GroupByEntry(key=k, items=g[i : i + per_page]) for i in range(0, size, per_page)
-            )
+            nested.extend(_GroupByEntry(key=k, items=g[i : i + per_page]) for i in range(0, size, per_page))
 
         super().__init__(nested, per_page=1)
 

@@ -21,9 +21,7 @@ def command_count(cog: Admin) -> int:
             total += len(param.name) + len(param.description)
             for choice in param.choices:
                 total += len(choice.name) + (
-                    int(choice.value)
-                    if isinstance(choice.value, int | float)
-                    else len(choice.value)
+                    int(choice.value) if isinstance(choice.value, int | float) else len(choice.value)
                 )
     return total
 

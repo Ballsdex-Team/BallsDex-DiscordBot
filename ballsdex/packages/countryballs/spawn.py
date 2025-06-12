@@ -119,9 +119,7 @@ class SpawnCooldown:
         # this is a deque, not a list
         # its property is that, once the max length is reached (100 for us),
         # the oldest element is removed, thus we only have the last 100 messages in memory
-        self.message_cache.append(
-            CachedMessage(content=message.content, author_id=message.author.id)
-        )
+        self.message_cache.append(CachedMessage(content=message.content, author_id=message.author.id))
 
         if self.lock.locked():
             return False
@@ -192,8 +190,7 @@ class SpawnManager(BaseSpawnManager):
         cooldown = self.cooldowns.get(guild.id)
         if not cooldown:
             await ctx.send(
-                "No spawn manager could be found for that guild. Spawn may have been disabled.",
-                ephemeral=True,
+                "No spawn manager could be found for that guild. Spawn may have been disabled.", ephemeral=True
             )
             return
 
@@ -206,8 +203,7 @@ class SpawnManager(BaseSpawnManager):
         embed.colour = discord.Colour.orange()
 
         delta = (
-            (ctx.interaction.created_at if ctx.interaction else ctx.message.created_at)
-            - cooldown.time
+            (ctx.interaction.created_at if ctx.interaction else ctx.message.created_at) - cooldown.time
         ).total_seconds()
         # change how the threshold varies according to the member count, while nuking farm servers
         if guild.member_count < 5:

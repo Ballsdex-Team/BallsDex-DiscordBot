@@ -10,7 +10,6 @@ from discord.ext.commands import Context
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
 
-from ballsdex.core.models import BallInstance, Player, Trade, TradeObject
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
@@ -18,6 +17,8 @@ from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
+from bd_models.enums import TradeCooldownPolicy
+from bd_models.models import BallInstance, Player, Trade, TradeObject
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -39,9 +40,7 @@ class TradeView(View):
         try:
             self.trade._get_trader(interaction.user)
         except RuntimeError:
-            await interaction.response.send_message(
-                "You are not allowed to interact with this trade.", ephemeral=True
-            )
+            await interaction.response.send_message("You are not allowed to interact with this trade.", ephemeral=True)
             return False
         else:
             return True
@@ -50,22 +49,17 @@ class TradeView(View):
     async def lock(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
         if trader.locked:
-            await interaction.response.send_message(
-                "You have already locked your proposal!", ephemeral=True
-            )
+            await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
             return
         await interaction.response.defer(thinking=True, ephemeral=True)
         await self.trade.lock(trader)
         if self.trade.trader1.locked and self.trade.trader2.locked:
             await interaction.followup.send(
-                "Your proposal has been locked. Now confirm again to end the trade.",
-                ephemeral=True,
+                "Your proposal has been locked. Now confirm again to end the trade.", ephemeral=True
             )
         else:
             await interaction.followup.send(
-                "Your proposal has been locked. "
-                "You can wait for the other user to lock their proposal.",
-                ephemeral=True,
+                "Your proposal has been locked. You can wait for the other user to lock their proposal.", ephemeral=True
             )
 
     @button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
@@ -86,11 +80,17 @@ class TradeView(View):
             accept_message="Clearing your proposal...",
             cancel_message="This request has been cancelled.",
         )
-        await interaction.followup.send(
-            "Are you sure you want to clear your proposal?", view=view, ephemeral=True
-        )
+        await interaction.followup.send("Are you sure you want to clear your proposal?", view=view, ephemeral=True)
         await view.wait()
         if not view.value:
+            return
+
+        if trader.locked:
+            await interaction.followup.send(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
             return
 
         for countryball in trader.proposal:
@@ -112,9 +112,7 @@ class TradeView(View):
             accept_message="Cancelling the trade...",
             cancel_message="This request has been cancelled.",
         )
-        await interaction.followup.send(
-            "Are you sure you want to cancel this trade?", view=view, ephemeral=True
-        )
+        await interaction.followup.send("Are you sure you want to cancel this trade?", view=view, ephemeral=True)
         await view.wait()
         if not view.value:
             return
@@ -133,35 +131,30 @@ class ConfirmView(View):
         try:
             self.trade._get_trader(interaction.user)
         except RuntimeError:
-            await interaction.response.send_message(
-                "You are not allowed to interact with this trade.", ephemeral=True
-            )
+            await interaction.response.send_message("You are not allowed to interact with this trade.", ephemeral=True)
             return False
         else:
             return True
 
-    @discord.ui.button(
-        style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
-    )
+    @discord.ui.button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
     async def accept_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
-        if self.trade.cooldown_start_time is None:
-            return
+        if trader.player.trade_cooldown_policy == TradeCooldownPolicy.COOLDOWN:
+            if self.trade.cooldown_start_time is None:
+                return
 
-        elapsed = datetime.now(timezone.utc) - self.trade.cooldown_start_time
-        if elapsed < self.cooldown_duration:
-            remaining_time = datetime.now(timezone.utc) + (self.cooldown_duration - elapsed)
-            remaining = format_dt(remaining_time, style="R")
-            await interaction.response.send_message(
-                f"This trade can only be approved {remaining}, please use this "
-                "time to double check the items to prevent any unwanted trades.",
-                ephemeral=True,
-            )
-            return
+            elapsed = datetime.now(timezone.utc) - self.trade.cooldown_start_time
+            if elapsed < self.cooldown_duration:
+                remaining_time = datetime.now(timezone.utc) + (self.cooldown_duration - elapsed)
+                remaining = format_dt(remaining_time, style="R")
+                await interaction.response.send_message(
+                    f"This trade can only be approved {remaining}, please use this "
+                    "time to double check the items to prevent any unwanted trades.",
+                    ephemeral=True,
+                )
+                return
         if trader.accepted:
-            await interaction.response.send_message(
-                "You have already accepted this trade.", ephemeral=True
-            )
+            await interaction.response.send_message("You have already accepted this trade.", ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
         result = await self.trade.confirm(trader)
@@ -177,10 +170,7 @@ class ConfirmView(View):
                 "You have accepted the trade, waiting for the other user...", ephemeral=True
             )
 
-    @discord.ui.button(
-        style=discord.ButtonStyle.danger,
-        emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
-    )
+    @discord.ui.button(style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}")
     async def deny_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
@@ -189,9 +179,7 @@ class ConfirmView(View):
             accept_message="Cancelling the trade...",
             cancel_message="This request has been cancelled.",
         )
-        await interaction.followup.send(
-            "Are you sure you want to cancel this trade?", view=view, ephemeral=True
-        )
+        await interaction.followup.send("Are you sure you want to cancel this trade?", view=view, ephemeral=True)
         await view.wait()
         if not view.value:
             return
@@ -202,11 +190,7 @@ class ConfirmView(View):
 
 class TradeMenu:
     def __init__(
-        self,
-        cog: TradeCog,
-        interaction: discord.Interaction["BallsDexBot"],
-        trader1: TradingUser,
-        trader2: TradingUser,
+        self, cog: TradeCog, interaction: discord.Interaction["BallsDexBot"], trader1: TradingUser, trader2: TradingUser
     ):
         self.cog = cog
         self.bot = interaction.client
@@ -244,8 +228,7 @@ class TradeMenu:
             f" list of {settings.plural_collectible_name}."
         )
         self.embed.set_footer(
-            text="This message is updated every 15 seconds, "
-            "but you can keep on editing your proposal."
+            text="This message is updated every 15 seconds, but you can keep on editing your proposal."
         )
 
     async def update_message_loop(self):
@@ -283,8 +266,7 @@ class TradeMenu:
         self._generate_embed()
         fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
         self.message = await self.channel.send(
-            content=f"Hey {self.trader2.user.mention}, {self.trader1.user.name} "
-            "is proposing a trade with you!",
+            content=f"Hey {self.trader2.user.mention}, {self.trader1.user.name} is proposing a trade with you!",
             embed=self.embed,
             view=self.current_view,
             allowed_mentions=discord.AllowedMentions(users=self.trader2.player.can_be_mentioned),
@@ -322,9 +304,7 @@ class TradeMenu:
             fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
 
             self.embed.colour = discord.Colour.yellow()
-            self.embed.description = (
-                "Both users locked their propositions! Now confirm to conclude this trade."
-            )
+            self.embed.description = "Both users locked their propositions! Now confirm to conclude this trade."
             self.cooldown_start_time = datetime.now(timezone.utc)
             self.current_view = ConfirmView(self)
             await self.message.edit(content=None, embed=self.embed, view=self.current_view)
@@ -340,10 +320,10 @@ class TradeMenu:
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
 
-        trade = await Trade.create(player1=self.trader1.player, player2=self.trader2.player)
+        trade = await Trade.objects.acreate(player1=self.trader1.player, player2=self.trader2.player)
 
         for countryball in self.trader1.proposal:
-            await countryball.refresh_from_db()
+            await countryball.arefresh_from_db(from_queryset=BallInstance.objects.prefetch_related("player"))
             if countryball.player.discord_id != self.trader1.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
@@ -351,11 +331,10 @@ class TradeMenu:
             countryball.trade_player = self.trader1.player
             countryball.favorite = False
             valid_transferable_countryballs.append(countryball)
-            await TradeObject.create(
-                trade=trade, ballinstance=countryball, player=self.trader1.player
-            )
+            await TradeObject.objects.acreate(trade=trade, ballinstance=countryball, player=self.trader1.player)
 
         for countryball in self.trader2.proposal:
+            await countryball.arefresh_from_db(from_queryset=BallInstance.objects.prefetch_related("player"))
             if countryball.player.discord_id != self.trader2.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
@@ -363,13 +342,11 @@ class TradeMenu:
             countryball.trade_player = self.trader2.player
             countryball.favorite = False
             valid_transferable_countryballs.append(countryball)
-            await TradeObject.create(
-                trade=trade, ballinstance=countryball, player=self.trader2.player
-            )
+            await TradeObject.objects.acreate(trade=trade, ballinstance=countryball, player=self.trader2.player)
 
         for countryball in valid_transferable_countryballs:
             await countryball.unlock()
-            await countryball.save()
+            await countryball.asave()
 
     async def confirm(self, trader: TradingUser) -> bool:
         """
@@ -408,6 +385,9 @@ class TradeMenu:
                 result = False
 
         await self.message.edit(content=None, embed=self.embed, view=self.current_view)
+        if result is False:
+            for ball in self.trader1.proposal + self.trader2.proposal:
+                await ball.unlock()
         return result
 
 
@@ -421,12 +401,7 @@ class CountryballsSource(menus.ListPageSource):
 
 
 class CountryballsSelector(Pages):
-    def __init__(
-        self,
-        ctx: Context["BallsDexBot"],
-        balls: List[BallInstance],
-        cog: TradeCog,
-    ):
+    def __init__(self, ctx: Context["BallsDexBot"], balls: List[BallInstance], cog: TradeCog):
         self.bot = ctx.bot
         self.ctx = ctx
         source = CountryballsSource(balls)
@@ -445,7 +420,7 @@ class CountryballsSelector(Pages):
                 continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
-            special = ball.special_emoji(self.bot, True)
+            special = ball.specialcard.emoji if ball.specialcard else ""
             options.append(
                 discord.SelectOption(
                     label=f"{favorite}{special}#{ball.pk:0X} {ball.countryball.country}",
@@ -460,25 +435,17 @@ class CountryballsSelector(Pages):
         self.select_ball_menu.max_values = len(options)
 
     @discord.ui.select(min_values=1, max_values=25)
-    async def select_ball_menu(
-        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
-    ):
+    async def select_ball_menu(self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select):
         for value in item.values:
-            ball_instance = await BallInstance.get(id=int(value)).prefetch_related(
-                "ball", "player"
-            )
+            ball_instance = await BallInstance.objects.prefetch_related("ball", "player").aget(id=int(value))
             self.balls_selected.add(ball_instance)
         await interaction.response.defer()
 
     @discord.ui.button(label="Select Page", style=discord.ButtonStyle.secondary)
-    async def select_all_button(
-        self, interaction: discord.Interaction["BallsDexBot"], button: Button
-    ):
+    async def select_all_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
         for ball in self.select_ball_menu.options:
-            ball_instance = await BallInstance.get(id=int(ball.value)).prefetch_related(
-                "ball", "player"
-            )
+            ball_instance = await BallInstance.objects.prefetch_related("ball", "player").aget(id=int(ball.value))
             if ball_instance not in self.balls_selected:
                 self.balls_selected.add(ball_instance)
         await interaction.followup.send(
@@ -490,15 +457,12 @@ class CountryballsSelector(Pages):
         )
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
-    async def confirm_button(
-        self, interaction: discord.Interaction["BallsDexBot"], button: Button
-    ):
+    async def confirm_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
             return await interaction.followup.send(
-                "The trade has been cancelled or the user is not part of the trade.",
-                ephemeral=True,
+                "The trade has been cancelled or the user is not part of the trade.", ephemeral=True
             )
         if trader.locked:
             return await interaction.followup.send(
@@ -508,22 +472,17 @@ class CountryballsSelector(Pages):
             )
         if any(ball in trader.proposal for ball in self.balls_selected):
             return await interaction.followup.send(
-                "You have already added some of the "
-                f"{settings.plural_collectible_name} you selected.",
-                ephemeral=True,
+                f"You have already added some of the {settings.plural_collectible_name} you selected.", ephemeral=True
             )
 
         if len(self.balls_selected) == 0:
             return await interaction.followup.send(
-                f"You have not selected any {settings.plural_collectible_name} "
-                "to add to your proposal.",
-                ephemeral=True,
+                f"You have not selected any {settings.plural_collectible_name} to add to your proposal.", ephemeral=True
             )
         for ball in self.balls_selected:
             if ball.is_tradeable is False:
                 return await interaction.followup.send(
-                    f"{settings.collectible_name.title()} #{ball.pk:0X} is not tradeable.",
-                    ephemeral=True,
+                    f"{settings.collectible_name.title()} #{ball.pk:0X} is not tradeable.", ephemeral=True
                 )
             if await ball.is_locked():
                 return await interaction.followup.send(
@@ -545,13 +504,9 @@ class CountryballsSelector(Pages):
             trader.proposal.append(ball)
             await ball.lock_for_trade()
         grammar = (
-            f"{settings.collectible_name}"
-            if len(self.balls_selected) == 1
-            else f"{settings.plural_collectible_name}"
+            f"{settings.collectible_name}" if len(self.balls_selected) == 1 else f"{settings.plural_collectible_name}"
         )
-        await interaction.followup.send(
-            f"{len(self.balls_selected)} {grammar} added to your proposal.", ephemeral=True
-        )
+        await interaction.followup.send(f"{len(self.balls_selected)} {grammar} added to your proposal.", ephemeral=True)
         self.balls_selected.clear()
 
     @discord.ui.button(label="Clear", style=discord.ButtonStyle.danger)
@@ -583,12 +538,7 @@ class TradeViewSource(menus.ListPageSource):
 
 
 class TradeViewMenu(Pages):
-    def __init__(
-        self,
-        ctx: Context["BallsDexBot"],
-        proposal: List[TradingUser],
-        cog: TradeCog,
-    ):
+    def __init__(self, ctx: Context["BallsDexBot"], proposal: List[TradingUser], cog: TradeCog):
         self.bot = ctx.bot
         source = TradeViewSource(proposal)
         super().__init__(ctx, source)
@@ -600,9 +550,7 @@ class TradeViewMenu(Pages):
         for player in players:
             user_obj = player.user
             plural_check = (
-                f"{settings.collectible_name}"
-                if len(player.proposal) == 1
-                else f"{settings.plural_collectible_name}"
+                f"{settings.collectible_name}" if len(player.proposal) == 1 else f"{settings.plural_collectible_name}"
             )
             options.append(
                 discord.SelectOption(
@@ -614,25 +562,19 @@ class TradeViewMenu(Pages):
         self.select_player_menu.options = options
 
     @discord.ui.select()
-    async def select_player_menu(
-        self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select
-    ):
+    async def select_player_menu(self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select):
         await interaction.response.defer(thinking=True)
-        player = await Player.get(discord_id=int(item.values[0]))
+        player = await Player.objects.aget(discord_id=int(item.values[0]))
         trade, trader = self.cog.get_trade(interaction)
         if trade is None or trader is None:
             return await interaction.followup.send(
-                "The trade has been cancelled or the user is not part of the trade.",
-                ephemeral=True,
+                "The trade has been cancelled or the user is not part of the trade.", ephemeral=True
             )
-        trade_player = (
-            trade.trader1 if trade.trader1.user.id == player.discord_id else trade.trader2
-        )
+        trade_player = trade.trader1 if trade.trader1.user.id == player.discord_id else trade.trader2
         ball_instances = trade_player.proposal
         if len(ball_instances) == 0:
             return await interaction.followup.send(
-                f"{trade_player.user} has not added any {settings.plural_collectible_name}.",
-                ephemeral=True,
+                f"{trade_player.user} has not added any {settings.plural_collectible_name}.", ephemeral=True
             )
 
         paginator = CountryballsViewer(await Context.from_interaction(interaction), ball_instances)

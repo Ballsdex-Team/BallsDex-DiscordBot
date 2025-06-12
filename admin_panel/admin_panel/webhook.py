@@ -18,9 +18,7 @@ async def notify_admins(  # noqa: E704
 ) -> discord.WebhookMessage: ...
 
 
-async def notify_admins(
-    message: str = MISSING, *, wait: bool = True, **kwargs
-) -> discord.WebhookMessage | None:
+async def notify_admins(message: str = MISSING, *, wait: bool = True, **kwargs) -> discord.WebhookMessage | None:
     """
     Send a message to the configured Discord webhook. Additional arguments are described here:
     https://discordpy.readthedocs.io/en/latest/api.html#discord.Webhook.send
@@ -33,5 +31,8 @@ async def notify_admins(
     async with aiohttp.ClientSession() as session:
         webhook = discord.Webhook.from_url(settings.webhook_url, session=session)
         return await webhook.send(
-            message, username="Ballsdex admin panel", wait=wait, **kwargs  # type: ignore
+            message,
+            username="Ballsdex admin panel",
+            wait=wait,
+            **kwargs,  # type: ignore
         )

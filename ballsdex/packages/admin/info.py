@@ -3,16 +3,12 @@ import datetime
 import discord
 from discord.ext import commands
 from discord.utils import format_dt
+from django.utils.timezone import get_current_timezone
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import BallInstance, GuildConfig, Player
-from ballsdex.core.utils.enums import (
-    DONATION_POLICY_MAP,
-    FRIEND_POLICY_MAP,
-    MENTION_POLICY_MAP,
-    PRIVATE_POLICY_MAP,
-)
+from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.settings import settings
+from bd_models.models import BallInstance, GuildConfig, Player
 
 
 @commands.hybrid_group()
@@ -25,11 +21,7 @@ async def info(ctx: commands.Context[BallsDexBot]):
 
 
 @info.command()
-async def guild(
-    ctx: commands.Context[BallsDexBot],
-    guild_id: str,
-    days: int = 7,
-):
+async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7):
     """
     Show information about the server provided
 
@@ -56,15 +48,15 @@ async def guild(
             return
 
     url = None
-    if config := await GuildConfig.get_or_none(guild_id=guild.id):
+    if config := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
         spawn_enabled = config.enabled and config.guild_id
         if settings.admin_url:
             url = f"{settings.admin_url}/bd_models/guildconfig/{config.pk}/change/"
     else:
         spawn_enabled = False
 
-    total_server_balls = await BallInstance.filter(
-        catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
+    total_server_balls = BallInstance.objects.filter(
+        catch_date__gte=datetime.datetime.now(tz=get_current_timezone()) - datetime.timedelta(days=days),
         server_id=guild.id,
     ).prefetch_related("player")
     if guild.owner_id:
@@ -76,21 +68,17 @@ async def guild(
             color=discord.Color.blurple(),
         )
     else:
-        embed = discord.Embed(
-            title=f"{guild.name} ({guild.id})",
-            url=url,
-            color=discord.Color.blurple(),
-        )
+        embed = discord.Embed(title=f"{guild.name} ({guild.id})", url=url, color=discord.Color.blurple())
     embed.add_field(name="Members:", value=guild.member_count)
     embed.add_field(name="Spawn enabled:", value=spawn_enabled)
     embed.add_field(name="Created at:", value=format_dt(guild.created_at, style="F"))
     embed.add_field(
         name=f"{settings.plural_collectible_name.title()} caught ({days} days):",
-        value=len(total_server_balls),
+        value=await total_server_balls.acount(),
     )
     embed.add_field(
         name=f"Amount of users who caught\n{settings.plural_collectible_name} ({days} days):",
-        value=len(set([x.player.discord_id for x in total_server_balls])),
+        value=len(set([x.player.discord_id async for x in total_server_balls])),
     )
 
     if guild.icon:
@@ -99,11 +87,7 @@ async def guild(
 
 
 @info.command()
-async def user(
-    ctx: commands.Context[BallsDexBot],
-    user: discord.User,
-    days: int = 7,
-):
+async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int = 7):
     """
     Show information about the user provided
 
@@ -115,19 +99,14 @@ async def user(
         The amount of days to look back for the amount of countryballs caught.
     """
     await ctx.defer(ephemeral=True)
-    player = await Player.get_or_none(discord_id=user.id)
+    player = await Player.objects.aget_or_none(discord_id=user.id)
     if not player:
         await ctx.send("The user you gave does not exist.", ephemeral=True)
         return
-    url = (
-        f"{settings.admin_url}/bd_models/player/{player.pk}/change/"
-        if settings.admin_url
-        else None
-    )
-    total_user_balls = await BallInstance.filter(
-        catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
-        player=player,
-    )
+    url = f"{settings.admin_url}/bd_models/player/{player.pk}/change/" if settings.admin_url else None
+    total_user_balls = await BallInstance.objects.filter(
+        catch_date__gte=datetime.datetime.now(tz=get_current_timezone()) - datetime.timedelta(days=days), player=player
+    ).aall()
     embed = discord.Embed(
         title=f"{user} ({user.id})",
         url=url,
@@ -140,8 +119,7 @@ async def user(
         color=discord.Color.blurple(),
     )
     embed.add_field(
-        name=f"{settings.plural_collectible_name.title()} caught ({days} days):",
-        value=len(total_user_balls),
+        name=f"{settings.plural_collectible_name.title()} caught ({days} days):", value=len(total_user_balls)
     )
     embed.add_field(
         name=f"Unique {settings.plural_collectible_name} caught ({days} days):",
@@ -153,7 +131,7 @@ async def user(
     )
     embed.add_field(
         name=f"Total {settings.plural_collectible_name} caught:",
-        value=await BallInstance.filter(player__discord_id=user.id).count(),
+        value=await BallInstance.objects.filter(player__discord_id=user.id).acount(),
     )
     embed.add_field(
         name=f"Total unique {settings.plural_collectible_name} caught:",

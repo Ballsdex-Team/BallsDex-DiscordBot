@@ -3,52 +3,18 @@
 files: .*\.py$
 
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.7.6
     hooks:
-      - id: trailing-whitespace
-        exclude: settings\.py
-      - id: end-of-file-fixer
-      - id: check-added-large-files
-        files: ""
-      - id: mixed-line-ending
-        args:
-          - --fix=lf
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 24.10.0
+      - id: uv-lock
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.10
     hooks:
-      - id: black
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args:
-          - --profile
-          - black
-          - --filter-files
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.390
+    rev: v1.1.399
     hooks:
       - id: pyright
         language_version: python3.13
-        additional_dependencies:
-          - discord.py==2.5.0
-          - cachetools
-          - rich
-          - Pillow
-          - prometheus_client
-          - tortoise-orm
-          - redis
-          - django
-          - dj_database_url
-          - django-stubs
-          - django-debug-toolbar
-          - django-nonrelated-inlines
-          - social-auth-app-django
-          - django-admin-autocomplete-filter
-          - django_admin_action_forms
-          - django_admin_inline_paginator
-  - repo: https://github.com/csachs/pyproject-flake8
-    rev: v7.0.0
-    hooks:
-      - id: pyproject-flake8

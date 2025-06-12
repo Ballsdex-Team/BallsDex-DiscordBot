@@ -8,19 +8,18 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord.ext import commands
 from discord.utils import format_dt
-from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
 from ballsdex.settings import settings
+from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 
 from .flags import BallsCountFlags, GiveBallFlags, SpawnFlags
 
 if TYPE_CHECKING:
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
-    from ballsdex.packages.countryballs.countryball import CountryBall
+    from ballsdex.packages.countryballs.countryball import BallSpawnView
 
 log = logging.getLogger("ballsdex.packages.admin.balls")
 FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
@@ -41,7 +40,7 @@ async def save_file(attachment: discord.Attachment) -> Path:
 
 async def _spawn_bomb(
     ctx: commands.Context[BallsDexBot],
-    countryball_cls: type["CountryBall"],
+    countryball_cls: type["BallSpawnView"],
     countryball: Ball | None,
     channel: discord.TextChannel,
     n: int,
@@ -58,7 +57,7 @@ async def _spawn_bomb(
             await edit_func(
                 content=f"Spawn bomb in progress in {channel.mention}, "
                 f"{settings.collectible_name.title()}: {countryball or 'Random'}\n"
-                f"{spawned}/{n} spawned ({round((spawned / n) * 100)}%)",
+                f"{spawned}/{n} spawned ({round((spawned / n) * 100)}%)"
             )
             await asyncio.sleep(5)
         await edit_func(content="Spawn bomb seems to have timed out.")
@@ -69,9 +68,9 @@ async def _spawn_bomb(
     try:
         for i in range(n):
             if not countryball:
-                ball = await countryball_cls.get_random()
+                ball = await countryball_cls.get_random(ctx.bot)
             else:
-                ball = countryball_cls(countryball)
+                ball = countryball_cls(ctx.bot, countryball)
             ball.special = special
             ball.atk_bonus = atk_bonus
             ball.hp_bonus = hp_bonus
@@ -81,14 +80,13 @@ async def _spawn_bomb(
                 await edit_func(
                     content=f"A {settings.collectible_name} failed to spawn, probably "
                     "indicating a lack of permissions to send messages "
-                    f"or upload files in {channel.mention}.",
+                    f"or upload files in {channel.mention}."
                 )
                 return
             spawned += 1
         task.cancel()
         await edit_func(
-            content=f"Successfully spawned {spawned} {settings.plural_collectible_name} "
-            f"in {channel.mention}!"
+            content=f"Successfully spawned {spawned} {settings.plural_collectible_name} in {channel.mention}!"
         )
     finally:
         task.cancel()
@@ -110,11 +108,7 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
     """
     cog = cast("CountryBallsSpawner | None", ctx.bot.get_cog("CountryBallsSpawner"))
     if not cog:
-        prefix = (
-            settings.prefix
-            if ctx.bot.intents.message_content or not ctx.bot.user
-            else f"{ctx.bot.user.mention} "
-        )
+        prefix = settings.prefix if ctx.bot.intents.message_content or not ctx.bot.user else f"{ctx.bot.user.mention} "
         # do not replace `countryballs` with `settings.collectible_name`, it is intended
         await ctx.send(
             "The `countryballs` package is not loaded, this command is unavailable.\n"
@@ -142,9 +136,9 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
 
     await ctx.defer(ephemeral=True)
     if not flags.countryball:
-        ball = await cog.countryball_cls.get_random()
+        ball = await cog.countryball_cls.get_random(ctx.bot)
     else:
-        ball = cog.countryball_cls(flags.countryball)
+        ball = cog.countryball_cls(ctx.bot, flags.countryball)
     ball.special = flags.special
     ball.atk_bonus = flags.atk_bonus
     ball.hp_bonus = flags.hp_bonus
@@ -161,8 +155,8 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
             special_attrs.append(f"hp={flags.hp_bonus}")
         await log_action(
             f"{ctx.author} spawned {settings.collectible_name} {ball.name} "
-            f"in {flags.channel}"
-            f"{f" ({", ".join(special_attrs)})" if special_attrs else ""}.",
+            f"in {flags.channel or ctx.channel}"
+            f"{f' ({", ".join(special_attrs)})' if special_attrs else ''}.",
             ctx.bot,
         )
 
@@ -180,8 +174,8 @@ async def give(ctx: commands.Context[BallsDexBot], user: discord.User, *, flags:
     """
     await ctx.defer(ephemeral=True)
 
-    player, created = await Player.get_or_create(discord_id=user.id)
-    instance = await BallInstance.create(
+    player, created = await Player.objects.aget_or_create(discord_id=user.id)
+    instance = await BallInstance.objects.acreate(
         ball=flags.countryball,
         player=player,
         attack_bonus=(
@@ -224,27 +218,19 @@ async def balls_info(ctx: commands.Context[BallsDexBot], countryball_id: str):
     try:
         pk = int(countryball_id, 16)
     except ValueError:
-        await ctx.send(
-            f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
-        )
+        await ctx.send(f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True)
         return
     try:
-        ball = await BallInstance.get(id=pk).prefetch_related("player", "trade_player", "special")
-    except DoesNotExist:
-        await ctx.send(
-            f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
-        )
+        ball = await BallInstance.objects.prefetch_related("player", "trade_player", "special").aget(id=pk)
+    except BallInstance.DoesNotExist:
+        await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
         return
     spawned_time = format_dt(ball.spawned_time, style="R") if ball.spawned_time else "N/A"
     catch_time = (
-        (ball.catch_date - ball.spawned_time).total_seconds()
-        if ball.catch_date and ball.spawned_time
-        else "N/A"
+        (ball.catch_date - ball.spawned_time).total_seconds() if ball.catch_date and ball.spawned_time else "N/A"
     )
     admin_url = (
-        f"[View online](<{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/>)"
-        if settings.admin_url
-        else ""
+        f"[View online](<{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/>)" if settings.admin_url else ""
     )
     await ctx.send(
         f"**{settings.collectible_name.title()} ID:** {ball.pk}\n"
@@ -279,31 +265,21 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str):
     try:
         ballIdConverted = int(countryball_id, 16)
     except ValueError:
-        await ctx.send(
-            f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
-        )
+        await ctx.send(f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True)
         return
     try:
-        ball = await BallInstance.get(id=ballIdConverted)
-    except DoesNotExist:
-        await ctx.send(
-            f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
-        )
+        ball = await BallInstance.objects.aget(id=ballIdConverted)
+    except BallInstance.DoesNotExist:
+        await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
         return
-    await ball.delete()
-    await ctx.send(
-        f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True
-    )
+    await ball.adelete()
+    await ctx.send(f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True)
     await log_action(f"{ctx.author} deleted {ball}({ball.pk}).", ctx.bot)
 
 
 @balls.command(name="transfer")
 @commands.has_any_role(*settings.root_role_ids)
-async def balls_transfer(
-    ctx: commands.Context[BallsDexBot],
-    countryball_id: str,
-    user: discord.User,
-):
+async def balls_transfer(ctx: commands.Context[BallsDexBot], countryball_id: str, user: discord.User):
     """
     Transfer a countryball to another user.
 
@@ -317,41 +293,27 @@ async def balls_transfer(
     try:
         ballIdConverted = int(countryball_id, 16)
     except ValueError:
-        await ctx.send(
-            f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True
-        )
+        await ctx.send(f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True)
         return
     try:
-        ball = await BallInstance.get(id=ballIdConverted).prefetch_related("player")
+        ball = await BallInstance.objects.prefetch_related("player").aget(id=ballIdConverted)
         original_player = ball.player
-    except DoesNotExist:
-        await ctx.send(
-            f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
-        )
+    except BallInstance.DoesNotExist:
+        await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
         return
-    player, _ = await Player.get_or_create(discord_id=user.id)
+    player, _ = await Player.objects.aget_or_create(discord_id=user.id)
     ball.player = player
-    await ball.save()
+    await ball.asave()
 
-    trade = await Trade.create(player1=original_player, player2=player)
-    await TradeObject.create(trade=trade, ballinstance=ball, player=original_player)
-    await ctx.send(
-        f"Transfered {ball}({ball.pk}) from {original_player} to {user}.",
-        ephemeral=True,
-    )
-    await log_action(
-        f"{ctx.author} transferred {ball}({ball.pk}) from {original_player} to {user}.",
-        ctx.bot,
-    )
+    trade = await Trade.objects.acreate(player1=original_player, player2=player)
+    await TradeObject.objects.acreate(trade=trade, ballinstance=ball, player=original_player)
+    await ctx.send(f"Transfered {ball}({ball.pk}) from {original_player} to {user}.", ephemeral=True)
+    await log_action(f"{ctx.author} transferred {ball}({ball.pk}) from {original_player} to {user}.", ctx.bot)
 
 
 @balls.command(name="reset")
 @commands.has_any_role(*settings.root_role_ids)
-async def balls_reset(
-    ctx: commands.Context[BallsDexBot],
-    user: discord.User,
-    percentage: int | None = None,
-):
+async def balls_reset(ctx: commands.Context[BallsDexBot], user: discord.User, percentage: int | None = None):
     """
     Reset a player's countryballs.
 
@@ -362,7 +324,7 @@ async def balls_reset(
     percentage: int | None
         The percentage of countryballs to delete, if not all. Used for sanctions.
     """
-    player = await Player.get_or_none(discord_id=user.id)
+    player = await Player.objects.aget_or_none(discord_id=user.id)
     if not player:
         await ctx.send("The user you gave does not exist.", ephemeral=True)
         return
@@ -374,40 +336,28 @@ async def balls_reset(
     if not percentage:
         text = f"Are you sure you want to delete {user}'s {settings.plural_collectible_name}?"
     else:
-        text = (
-            f"Are you sure you want to delete {percentage}% of "
-            f"{user}'s {settings.plural_collectible_name}?"
-        )
+        text = f"Are you sure you want to delete {percentage}% of {user}'s {settings.plural_collectible_name}?"
     view = ConfirmChoiceView(
         ctx,
         accept_message=f"Confirmed, deleting the {settings.plural_collectible_name}...",
         cancel_message="Request cancelled.",
     )
-    msg = await ctx.send(
-        text,
-        view=view,
-        ephemeral=True,
-    )
+    msg = await ctx.send(text, view=view, ephemeral=True)
     view.message = msg
     await view.wait()
     if not view.value:
         return
     if percentage:
-        balls = await BallInstance.filter(player=player)
+        balls = await BallInstance.objects.filter(player=player).aall()
         to_delete = random.sample(balls, int(len(balls) * (percentage / 100)))
         for ball in to_delete:
-            await ball.delete()
+            await ball.adelete()
         count = len(to_delete)
     else:
-        count = await BallInstance.filter(player=player).delete()
-    await ctx.send(
-        f"{count} {settings.plural_collectible_name} from {user} have been deleted.",
-        ephemeral=True,
-    )
+        count = len(await BallInstance.objects.filter(player=player).adelete())
+    await ctx.send(f"{count} {settings.plural_collectible_name} from {user} have been deleted.", ephemeral=True)
     await log_action(
-        f"{ctx.author} deleted {percentage or 100}% of "
-        f"{player}'s {settings.plural_collectible_name}.",
-        ctx.bot,
+        f"{ctx.author} deleted {percentage or 100}% of {player}'s {settings.plural_collectible_name}.", ctx.bot
     )
 
 
@@ -425,17 +375,12 @@ async def balls_count(ctx: commands.Context[BallsDexBot], *, flags: BallsCountFl
     if flags.user:
         filters["player__discord_id"] = flags.user.id
     await ctx.defer(ephemeral=True)
-    balls = await BallInstance.filter(**filters).count()
+    balls = await BallInstance.objects.filter(**filters).acount()
     verb = "is" if balls == 1 else "are"
     country = f"{flags.countryball.country} " if flags.countryball else ""
     plural = "s" if balls > 1 or balls == 0 else ""
     special_str = f"{flags.special.name} " if flags.special else ""
     if flags.user:
-        await ctx.send(
-            f"{flags.user} has {balls} {special_str}"
-            f"{country}{settings.collectible_name}{plural}."
-        )
+        await ctx.send(f"{flags.user} has {balls} {special_str}{country}{settings.collectible_name}{plural}.")
     else:
-        await ctx.send(
-            f"There {verb} {balls} {special_str}" f"{country}{settings.collectible_name}{plural}."
-        )
+        await ctx.send(f"There {verb} {balls} {special_str}{country}{settings.collectible_name}{plural}.")

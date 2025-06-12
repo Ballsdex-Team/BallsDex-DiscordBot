@@ -3,8 +3,11 @@ from typing import TYPE_CHECKING, Optional
 import discord
 from discord.ui import Button, View, button
 
-from ballsdex.core.models import GuildConfig
 from ballsdex.settings import settings
+from bd_models.models import GuildConfig
+
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -16,10 +19,7 @@ class AcceptTOSView(View):
     """
 
     def __init__(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        channel: discord.TextChannel,
-        new_player: discord.Member,
+        self, interaction: discord.Interaction["BallsDexBot"], channel: discord.TextChannel, new_player: discord.Member
     ):
         super().__init__()
         self.original_interaction = interaction
@@ -27,44 +27,22 @@ class AcceptTOSView(View):
         self.new_player = new_player
         self.message: Optional[discord.Message] = None
 
-        self.add_item(
-            Button(
-                style=discord.ButtonStyle.link,
-                label="Terms of Service",
-                url=settings.terms_of_service,
-            )
-        )
-        self.add_item(
-            Button(
-                style=discord.ButtonStyle.link,
-                label="Privacy policy",
-                url=settings.privacy_policy,
-            )
-        )
+        self.add_item(Button(style=discord.ButtonStyle.link, label="Terms of Service", url=settings.terms_of_service))
+        self.add_item(Button(style=discord.ButtonStyle.link, label="Privacy policy", url=settings.privacy_policy))
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"]) -> bool:
         if interaction.user.id != self.new_player.id:
-            await interaction.response.send_message(
-                "You are not allowed to interact with this menu.", ephemeral=True
-            )
+            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
             return False
         return True
 
-    @button(
-        label="Accept",
-        style=discord.ButtonStyle.success,
-        emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}",
-    )
-    async def accept_button(
-        self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button
-    ):
-        config, created = await GuildConfig.get_or_create(guild_id=interaction.guild_id)
+    @button(label="Accept", style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
+    async def accept_button(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
+        config, created = await GuildConfig.objects.aget_or_create(guild_id=interaction.guild_id)
         config.spawn_channel = self.channel.id  # type: ignore
         config.enabled = True
-        await config.save()
-        interaction.client.dispatch(
-            "ballsdex_settings_change", interaction.guild, channel=self.channel, enabled=True
-        )
+        await config.asave()
+        interaction.client.dispatch("ballsdex_settings_change", interaction.guild, channel=self.channel, enabled=True)
         self.stop()
         if self.message:
             button.disabled = True
