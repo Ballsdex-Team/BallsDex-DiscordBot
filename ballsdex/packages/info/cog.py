@@ -11,8 +11,8 @@ from discord.app_commands.translator import TranslationContext, TranslationConte
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
+from ballsdex.core.utils.django import row_count_estimate
 from ballsdex.core.utils.formatting import pagify
-from ballsdex.core.utils.tortoise import row_count_estimate
 from ballsdex.settings import settings
 from bd_models.models import Ball
 from bd_models.models import balls as countryballs
