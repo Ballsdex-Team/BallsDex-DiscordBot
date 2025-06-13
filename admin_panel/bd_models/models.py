@@ -105,7 +105,9 @@ class Player(models.Model):
         choices=FriendPolicy.choices, help_text="Open or close your friend requests", default=FriendPolicy.ALLOW
     )
     trade_cooldown_policy = models.SmallIntegerField(
-        choices=TradeCooldownPolicy.choices, help_text="To bypass or not the trade cooldown"
+        choices=TradeCooldownPolicy.choices,
+        help_text="To bypass or not the trade cooldown",
+        default=TradeCooldownPolicy.COOLDOWN,
     )
     extra_data = models.JSONField(blank=True, default=dict)
 
