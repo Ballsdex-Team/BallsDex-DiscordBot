@@ -2,11 +2,11 @@ import discord
 from discord.ext import commands
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.settings import settings
+from ballsdex.core.utils import checks
 
 
 @commands.hybrid_group()
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("admincmd.logs")
 async def logs(ctx: commands.Context[BallsDexBot]):
     """
     Bot logs management

@@ -12,7 +12,6 @@ from bd_models.models import BallInstance, GuildConfig, Player
 
 
 @commands.hybrid_group()
-@commands.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
 async def info(ctx: commands.Context[BallsDexBot]):
     """
     Information commands

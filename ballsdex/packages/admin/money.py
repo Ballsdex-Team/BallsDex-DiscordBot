@@ -2,13 +2,14 @@ import discord
 from discord.ext import commands
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.utils import checks
 from ballsdex.core.utils.logging import log_action
 from ballsdex.settings import settings
 from bd_models.models import Player
 
 
 @commands.hybrid_group()
-@commands.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+@checks.has_permissions("bd_models.view_player")
 async def money(ctx: commands.Context[BallsDexBot]):
     """
     Currency management tools
@@ -17,7 +18,6 @@ async def money(ctx: commands.Context[BallsDexBot]):
 
 
 @money.command()
-@commands.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
 async def balance(ctx: commands.Context[BallsDexBot], user: discord.User):
     """
     Show the balance of the user provided
@@ -36,7 +36,7 @@ async def balance(ctx: commands.Context[BallsDexBot], user: discord.User):
 
 
 @money.command()
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("bd_models.change_player")
 async def add(ctx: commands.Context[BallsDexBot], user: discord.User, amount: int):
     """
     Add coins to the user provided
@@ -63,7 +63,7 @@ async def add(ctx: commands.Context[BallsDexBot], user: discord.User, amount: in
 
 
 @money.command()
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("bd_models.change_player")
 async def remove(ctx: commands.Context[BallsDexBot], user: discord.User, amount: int):
     """
     Remove coins from the user provided
@@ -92,7 +92,7 @@ async def remove(ctx: commands.Context[BallsDexBot], user: discord.User, amount:
 
 
 @money.command()
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("bd_models.change_player")
 async def set(ctx: commands.Context[BallsDexBot], user: discord.User, amount: int):
     """
     Set the balance of the user provided

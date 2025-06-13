@@ -5,6 +5,7 @@ from discord.ext import commands
 from django.db.models import Q
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.utils import checks
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
@@ -15,6 +16,7 @@ from .flags import TradeHistoryFlags, UserTradeHistoryFlags
 
 
 @commands.hybrid_group()
+@checks.has_permissions("bd_models.view_trade", "bd_models.view_tradeobject")
 async def history(ctx: commands.Context):
     """
     Trade history management
@@ -23,7 +25,6 @@ async def history(ctx: commands.Context):
 
 
 @history.command(name="user")
-@commands.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
 async def history_user(ctx: commands.Context["BallsDexBot"], user: discord.User, *, flags: UserTradeHistoryFlags):
     """
     Show the trade history of a user.
@@ -81,7 +82,6 @@ async def history_user(ctx: commands.Context["BallsDexBot"], user: discord.User,
 
 
 @history.command(name="countryball")
-@commands.has_any_role(*settings.root_role_ids)
 async def history_ball(ctx: commands.Context["BallsDexBot"], countryball_id: str, *, flags: TradeHistoryFlags):
     """
     Show the trade history of a countryball.
@@ -129,7 +129,6 @@ async def history_ball(ctx: commands.Context["BallsDexBot"], countryball_id: str
 
 
 @history.command(name="trade")
-@commands.has_any_role(*settings.root_role_ids)
 async def trade_info(ctx: commands.Context["BallsDexBot"], trade_id: str):
     """
     Show the contents of a certain trade.

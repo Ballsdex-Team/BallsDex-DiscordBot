@@ -10,6 +10,7 @@ from discord.ext import commands
 from discord.utils import format_dt
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
 from ballsdex.settings import settings
@@ -101,7 +102,7 @@ async def balls(ctx: commands.Context[BallsDexBot]):
 
 
 @balls.command()
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("bd_models.add_ballinstance")
 async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
     """
     Force spawn a random or specified countryball.
@@ -162,7 +163,7 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
 
 
 @balls.command()
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("bd_models.add_ballinstance")
 async def give(ctx: commands.Context[BallsDexBot], user: discord.User, *, flags: GiveBallFlags):
     """
     Give the specified countryball to a player.
@@ -205,7 +206,7 @@ async def give(ctx: commands.Context[BallsDexBot], user: discord.User, *, flags:
 
 
 @balls.command(name="info")
-@commands.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+@checks.has_permissions("bd_models.view_ballinstance")
 async def balls_info(ctx: commands.Context[BallsDexBot], countryball_id: str):
     """
     Show information about a countryball.
@@ -252,7 +253,7 @@ async def balls_info(ctx: commands.Context[BallsDexBot], countryball_id: str):
 
 
 @balls.command(name="delete")
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("bd_models.delete_ballinstance")
 async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str):
     """
     Delete a countryball.
@@ -278,7 +279,7 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str):
 
 
 @balls.command(name="transfer")
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("bd_models.change_ballinstance")
 async def balls_transfer(ctx: commands.Context[BallsDexBot], countryball_id: str, user: discord.User):
     """
     Transfer a countryball to another user.
@@ -312,7 +313,7 @@ async def balls_transfer(ctx: commands.Context[BallsDexBot], countryball_id: str
 
 
 @balls.command(name="reset")
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("bd_models.delete_ballinstance")
 async def balls_reset(ctx: commands.Context[BallsDexBot], user: discord.User, percentage: int | None = None):
     """
     Reset a player's countryballs.
@@ -362,7 +363,7 @@ async def balls_reset(ctx: commands.Context[BallsDexBot], user: discord.User, pe
 
 
 @balls.command(name="count")
-@commands.has_any_role(*settings.root_role_ids)
+@checks.has_permissions("bd_models.view_ballinstance")
 async def balls_count(ctx: commands.Context[BallsDexBot], *, flags: BallsCountFlags):
     """
     Count the number of countryballs that a player has or how many exist in total.

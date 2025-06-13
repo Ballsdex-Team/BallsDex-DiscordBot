@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
@@ -5,6 +6,8 @@ import discord
 from discord.ext import commands
 from discord.ui import Button
 
+from ballsdex.core.utils import checks
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.settings import settings
 from bd_models.models import Ball, GuildConfig
@@ -21,6 +24,8 @@ from .money import money as money_group
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
+
+log = logging.getLogger("ballsdex.packages.admin")
 
 
 class Admin(commands.Cog):
@@ -39,9 +44,8 @@ class Admin(commands.Cog):
         self.admin.add_command(logs_group)
         self.admin.add_command(money_group)
 
-    @commands.hybrid_group(
-        default_permissions=discord.Permissions(administrator=True), guild_ids=settings.admin_guild_ids
-    )
+    @commands.hybrid_group(default_permissions=discord.Permissions(administrator=True))
+    @checks.is_staff()
     async def admin(self, ctx: commands.Context):
         """
         Bot admin commands.
@@ -49,7 +53,38 @@ class Admin(commands.Cog):
         await ctx.send_help(ctx.command)
 
     @admin.command()
-    @commands.has_any_role(*settings.root_role_ids)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def syncslash(self, ctx: commands.Context["BallsDexBot"]):
+        """
+        Synchronize all the admin commands in the current server, or remove them if already existing.
+        """
+        assert ctx.guild
+        commands = await self.bot.tree.fetch_commands(guild=ctx.guild)
+        if commands:
+            view = ConfirmChoiceView(ctx, accept_message="Command removed")
+            await ctx.send("Guild slash commands are already synced here. Would you like to remove them?", view=view)
+            await view.wait()
+            if not view.value:
+                return
+            self.bot.tree.remove_command(self.admin.app_command.name, guild=ctx.guild)
+            log.info(f"Admin commands removed from guild {ctx.guild.id} by {ctx.author}")
+        else:
+            view = ConfirmChoiceView(ctx, accept_message="Command added")
+            await ctx.send(
+                "Would you like to add admin slash commands in this server? "
+                "They can only be used with the appropriate Django permissions",
+                view=view,
+            )
+            await view.wait()
+            if not view.value:
+                return
+            self.bot.tree.add_command(self.admin.app_command, guild=ctx.guild)
+            log.info(f"Admin commands added to guild {ctx.guild.id} by {ctx.author}")
+        await self.bot.tree.sync(guild=ctx.guild)
+
+    @admin.command()
+    @checks.is_superuser()
     async def status(self, ctx: commands.Context["BallsDexBot"], *, flags: StatusFlags):
         """
         Change the status of the bot. Provide at least status or text.
@@ -71,7 +106,7 @@ class Admin(commands.Cog):
         await ctx.send("Status updated.", ephemeral=True)
 
     @admin.command()
-    @commands.has_any_role(*settings.root_role_ids)
+    @checks.has_permissions("bd_models.view_ball")
     async def rarity(self, ctx: commands.Context["BallsDexBot"], *, flags: RarityFlags):
         """
         Generate a list of countryballs ranked by rarity.
@@ -102,7 +137,7 @@ class Admin(commands.Cog):
         await pages.start(ephemeral=True)
 
     @admin.command()
-    @commands.has_any_role(*settings.root_role_ids)
+    @checks.is_superuser()
     async def cooldown(self, ctx: commands.Context["BallsDexBot"], guild_id: str | None = None):
         """
         Show the details of the spawn cooldown system for the given server
@@ -128,7 +163,6 @@ class Admin(commands.Cog):
         await spawn_manager.admin_explain(ctx, guild)
 
     @admin.command()
-    @commands.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
     async def guilds(self, ctx: commands.Context["BallsDexBot"], user: discord.User):
         """
         Shows the guilds shared with the specified user. Provide either user or user_id.
