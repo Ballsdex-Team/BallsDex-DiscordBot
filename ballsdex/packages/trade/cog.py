@@ -268,7 +268,7 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        query = BallInstance.filter(player__discord_id=interaction.user.id)
+        query = BallInstance.filter(player__discord_id=interaction.user.id, deleted=False)
         if countryball:
             query = query.filter(ball=countryball)
         if special:
