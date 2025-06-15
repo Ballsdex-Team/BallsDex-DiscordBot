@@ -330,15 +330,6 @@ class BallsDexBot(commands.AutoShardedBot):
         else:
             log.warning("Skipping command synchronization.")
 
-        if not self.skip_tree_sync and "ballsdex.packages.admin" in settings.packages:
-            for guild_id in settings.admin_guild_ids:
-                guild = self.get_guild(guild_id)
-                if not guild:
-                    continue
-                synced_commands = await self.tree.sync(guild=guild)
-                grammar = "" if len(synced_commands) == 1 else "s"
-                log.info(f"Synced {len(synced_commands)} admin command{grammar} for guild {guild.id}.")
-
         if settings.prometheus_enabled:
             try:
                 await self.start_prometheus_server()
