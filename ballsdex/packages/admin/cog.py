@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button
 
@@ -43,6 +44,18 @@ class Admin(commands.Cog):
         self.admin.add_command(history_group)
         self.admin.add_command(logs_group)
         self.admin.add_command(money_group)
+
+    async def cog_app_command_error(
+        self, interaction: discord.Interaction["BallsDexBot"], error: app_commands.AppCommandError
+    ):
+        if isinstance(error, app_commands.CommandSignatureMismatch):
+            assert self.bot.user
+            await interaction.response.send_message(
+                "Admin commands are desynchronized and needs to be re-synced. "
+                f"Run `{self.bot.user.mention} admin syncslash` to fix this.",
+                ephemeral=True,
+            )
+            interaction.extras["handled"] = True
 
     @commands.hybrid_group(default_permissions=discord.Permissions(administrator=True))
     @checks.is_staff()

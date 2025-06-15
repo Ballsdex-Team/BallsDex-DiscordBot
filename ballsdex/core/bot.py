@@ -413,6 +413,9 @@ class BallsDexBot(commands.AutoShardedBot):
     async def on_application_command_error(
         self, interaction: discord.Interaction[Self], error: app_commands.AppCommandError
     ):
+        if interaction.extras.get("handled") is True:
+            return
+
         async def send(content: str):
             if interaction.response.is_done():
                 await interaction.followup.send(content, ephemeral=True)
