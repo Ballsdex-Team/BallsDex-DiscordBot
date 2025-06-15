@@ -65,7 +65,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-django-types = { git = "https://github.com/sbdchd/django-types.git", rev = "04d8bee5e503e23dc1064a498485110002a4dc23" }
+django-types = { git = "https://github.com/sbdchd/django-types.git", rev = "f17818a8b664a713bbc3f609686cc6f9c9317be2" }
 
 [tool.ruff]
 line-length = 120

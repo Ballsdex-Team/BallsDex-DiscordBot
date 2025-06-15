@@ -204,7 +204,7 @@ requires-dist = [
     { name = "django-allow-cidr", specifier = ">=0.7.1,<0.8.0" },
     { name = "django-debug-toolbar", marker = "extra == 'dev'", specifier = "==4.4.6" },
     { name = "django-nonrelated-inlines", specifier = "==0.2" },
-    { name = "django-types", marker = "extra == 'dev'", git = "https://github.com/sbdchd/django-types.git?rev=04d8bee5e503e23dc1064a498485110002a4dc23" },
+    { name = "django-types", marker = "extra == 'dev'", git = "https://github.com/sbdchd/django-types.git?rev=f17818a8b664a713bbc3f609686cc6f9c9317be2" },
     { name = "pillow", specifier = "==11.2.1" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = "==4.2.0" },
     { name = "prometheus-client", specifier = "==0.21.1" },
@@ -513,7 +513,7 @@ wheels = [
 [[package]]
 name = "django-types"
 version = "0.20.1"
-source = { git = "https://github.com/sbdchd/django-types.git?rev=04d8bee5e503e23dc1064a498485110002a4dc23#04d8bee5e503e23dc1064a498485110002a4dc23" }
+source = { git = "https://github.com/sbdchd/django-types.git?rev=f17818a8b664a713bbc3f609686cc6f9c9317be2#f17818a8b664a713bbc3f609686cc6f9c9317be2" }
 dependencies = [
     { name = "types-psycopg2" },
 ]

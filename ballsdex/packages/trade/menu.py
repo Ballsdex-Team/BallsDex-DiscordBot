@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List, Set, cast
 
 import discord
+from discord.ext.commands import Context
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
 
@@ -75,7 +76,9 @@ class TradeView(View):
             return
 
         view = ConfirmChoiceView(
-            interaction, accept_message="Clearing your proposal...", cancel_message="This request has been cancelled."
+            await Context.from_interaction(interaction),
+            accept_message="Clearing your proposal...",
+            cancel_message="This request has been cancelled.",
         )
         await interaction.followup.send("Are you sure you want to clear your proposal?", view=view, ephemeral=True)
         await view.wait()
@@ -105,7 +108,9 @@ class TradeView(View):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         view = ConfirmChoiceView(
-            interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
+            await Context.from_interaction(interaction),
+            accept_message="Cancelling the trade...",
+            cancel_message="This request has been cancelled.",
         )
         await interaction.followup.send("Are you sure you want to cancel this trade?", view=view, ephemeral=True)
         await view.wait()
@@ -170,7 +175,9 @@ class ConfirmView(View):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         view = ConfirmChoiceView(
-            interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
+            await Context.from_interaction(interaction),
+            accept_message="Cancelling the trade...",
+            cancel_message="This request has been cancelled.",
         )
         await interaction.followup.send("Are you sure you want to cancel this trade?", view=view, ephemeral=True)
         await view.wait()
@@ -394,11 +401,11 @@ class CountryballsSource(menus.ListPageSource):
 
 
 class CountryballsSelector(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[BallInstance], cog: TradeCog):
-        self.bot = interaction.client
-        self.interaction = interaction
+    def __init__(self, ctx: Context["BallsDexBot"], balls: List[BallInstance], cog: TradeCog):
+        self.bot = ctx.bot
+        self.ctx = ctx
         source = CountryballsSource(balls)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.select_ball_menu)
         self.add_item(self.confirm_button)
         self.add_item(self.select_all_button)
@@ -483,7 +490,7 @@ class CountryballsSelector(Pages):
                     "for trade and won't be added to the proposal.",
                     ephemeral=True,
                 )
-            view = ConfirmChoiceView(interaction)
+            view = ConfirmChoiceView(await Context.from_interaction(interaction))
             if ball.favorite:
                 await interaction.followup.send(
                     f"One or more of the {settings.plural_collectible_name} is favorited, "
@@ -531,10 +538,10 @@ class TradeViewSource(menus.ListPageSource):
 
 
 class TradeViewMenu(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], proposal: List[TradingUser], cog: TradeCog):
-        self.bot = interaction.client
+    def __init__(self, ctx: Context["BallsDexBot"], proposal: List[TradingUser], cog: TradeCog):
+        self.bot = ctx.bot
         source = TradeViewSource(proposal)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.select_player_menu)
         self.cog = cog
 
@@ -570,5 +577,5 @@ class TradeViewMenu(Pages):
                 f"{trade_player.user} has not added any {settings.plural_collectible_name}.", ephemeral=True
             )
 
-        paginator = CountryballsViewer(interaction, ball_instances)
+        paginator = CountryballsViewer(await Context.from_interaction(interaction), ball_instances)
         await paginator.start()

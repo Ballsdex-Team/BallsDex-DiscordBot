@@ -198,7 +198,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if reverse:
             countryballs.reverse()
 
-        paginator = CountryballsViewer(interaction, countryballs)
+        paginator = CountryballsViewer(await commands.Context.from_interaction(interaction), countryballs)
         if user_obj == interaction.user:
             await paginator.start()
         else:
@@ -327,7 +327,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         source.embed.colour = discord.Colour.blurple()
         source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
 
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Pages(await commands.Context.from_interaction(interaction), source, compact=True)
         await pages.start()
 
     @app_commands.command()
@@ -507,7 +507,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         favorite = countryball.favorite
         if favorite:
             view = ConfirmChoiceView(
-                interaction,
+                await commands.Context.from_interaction(interaction),
                 accept_message=f"{settings.collectible_name.title()} donated.",
                 cancel_message="This request has been cancelled.",
             )
@@ -686,7 +686,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             async for item in query
         ]
 
-        source = DuplicateViewMenu(interaction, entries, type.value)
+        source = DuplicateViewMenu(await commands.Context.from_interaction(interaction), entries, type.value)
         await source.start(content=f"View your duplicate {type.value}.")
 
     @app_commands.command()
@@ -801,8 +801,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         )
         source.embed.colour = discord.Colour.blurple()
 
-        pages = Pages(source=source, interaction=interaction, compact=True)
-        await pages.start()
+        paginator = Pages(await commands.Context.from_interaction(interaction), source)
+        await paginator.start(ephemeral=True)
 
     @app_commands.command()
     async def collection(

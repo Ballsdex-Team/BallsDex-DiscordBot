@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import discord
 
@@ -10,27 +10,29 @@ from ballsdex.settings import settings
 from bd_models.models import BallInstance
 
 if TYPE_CHECKING:
+    from discord.ext.commands import Context
+
     from ballsdex.core.bot import BallsDexBot
 
 
 class CountryballsSource(menus.ListPageSource):
-    def __init__(self, entries: List[BallInstance]):
+    def __init__(self, entries: list[BallInstance]):
         super().__init__(entries, per_page=25)
 
-    async def format_page(self, menu: CountryballsSelector, balls: List[BallInstance]):
+    async def format_page(self, menu: CountryballsSelector, balls: list[BallInstance]):
         menu.set_options(balls)
         return True  # signal to edit the page
 
 
 class CountryballsSelector(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[BallInstance]):
-        self.bot = interaction.client
+    def __init__(self, ctx: "Context[BallsDexBot]", balls: list[BallInstance]):
+        self.bot = ctx.bot
         source = CountryballsSource(balls)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.select_ball_menu)
 
-    def set_options(self, balls: List[BallInstance]):
-        options: List[discord.SelectOption] = []
+    def set_options(self, balls: list[BallInstance]):
+        options: list[discord.SelectOption] = []
         for ball in balls:
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
@@ -69,7 +71,7 @@ class CountryballsViewer(CountryballsSelector):
 
 
 class DuplicateSource(menus.ListPageSource):
-    def __init__(self, entries: List[str]):
+    def __init__(self, entries: list[str]):
         super().__init__(entries, per_page=25)
 
     async def format_page(self, menu, items):
@@ -78,15 +80,15 @@ class DuplicateSource(menus.ListPageSource):
 
 
 class DuplicateViewMenu(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], list, dupe_type: str):
-        self.bot = interaction.client
+    def __init__(self, ctx: Context["BallsDexBot"], list, dupe_type: str):
+        self.bot = ctx.bot
         self.dupe_type = dupe_type
         source = DuplicateSource(list)
-        super().__init__(source, interaction=interaction)
+        super().__init__(ctx, source)
         self.add_item(self.dupe_ball_menu)
 
     def set_options(self, items):
-        options: List[discord.SelectOption] = []
+        options: list[discord.SelectOption] = []
         for item in items:
             options.append(
                 discord.SelectOption(label=item["name"], description=f"Count: {item['count']}", emoji=item["emoji"])
