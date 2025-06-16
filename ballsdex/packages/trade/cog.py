@@ -10,7 +10,7 @@ from discord.utils import MISSING
 from django.db.models import Q
 
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.menus import Menu
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
@@ -386,20 +386,16 @@ class Trade(commands.GroupCog):
         if special:
             queryset = queryset.filter(Q(tradeobjects__ballinstance__special=special)).distinct()
 
-        history = (
-            await queryset.order_by(sort_value)
-            .prefetch_related(
-                "player1", "player2", "tradeobject_set__ballinstance__ball", "tradeobject_set__ballinstance__special"
-            )
-            .aall()
+        history = queryset.order_by(sort_value).prefetch_related(
+            "player1", "player2", "tradeobject_set__ballinstance__ball", "tradeobject_set__ballinstance__special"
         )
 
-        if not history:
+        if not await history.aexists():
             await interaction.followup.send("No history found.", ephemeral=True)
             return
 
-        source = TradeViewFormat(history, interaction.user.name, self.bot)
-        pages = Pages(source=source, interaction=interaction)
+        source = await TradeViewFormat.new_tradeview(history, interaction.user.name)
+        pages = Menu(source=source, interaction=interaction)
         await pages.start()
 
     @app_commands.command()

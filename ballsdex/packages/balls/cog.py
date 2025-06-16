@@ -10,7 +10,7 @@ from discord.ui import Button, View, button
 from django.db.models import Count
 
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.paginator import FieldPageSource, Pages
+from ballsdex.core.utils.menus import FieldPageSource, Menu
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
@@ -19,7 +19,7 @@ from ballsdex.core.utils.transformers import (
     TradeCommandType,
 )
 from ballsdex.core.utils.utils import inventory_privacy, is_staff
-from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer, DuplicateViewMenu
+from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer, DuplicateSource
 from ballsdex.settings import settings
 from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls
@@ -169,11 +169,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if special:
             query = query.filter(special=special)
         if sort:
-            countryballs = [x async for x in sort_balls(sort, query)]
+            query = sort_balls(sort, query)
         else:
-            countryballs = [x async for x in query.order_by("-favorite")]
+            query = query.order_by("-favorite")
 
-        if len(countryballs) < 1:
+        if await query.aexists():
             ball_txt = countryball.country if countryball else ""
             special_txt = special if special else ""
 
@@ -196,9 +196,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
             return
         if reverse:
-            countryballs.reverse()
+            query = query.reverse()
 
-        paginator = CountryballsViewer(interaction, countryballs)
+        paginator = Menu(await CountryballsViewer.new(query), interaction=interaction)
         if user_obj == interaction.user:
             await paginator.start()
         else:
@@ -318,7 +318,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 (f"__**:tada: No missing {settings.plural_collectible_name}, congratulations! :tada:**__", "\u200b")
             )  # force empty field value
 
-        source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
+        source = FieldPageSource(entries, per_page=5, inline=False)
         special_str = f" ({special.name})" if special else ""
         source.embed.description = (
             f"{settings.bot_name}{special_str} progression: "
@@ -327,7 +327,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         source.embed.colour = discord.Colour.blurple()
         source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
 
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Menu(source=source, interaction=interaction, compact=True)
         await pages.start()
 
     @app_commands.command()
@@ -433,7 +433,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if not countryball.favorite:
             try:
-                player = await Player.objects.prefetch_related("balls").aget(discord_id=interaction.user.id)
+                player = await Player.objects.aget(discord_id=interaction.user.id)
             except Player.DoesNotExist:
                 await interaction.response.send_message(
                     f"You don't have any {settings.plural_collectible_name} yet.", ephemeral=True
@@ -666,7 +666,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             annotations = {"name": "ball__country", "emoji": "ball__emoji_id"}
             apply_limit = True
 
-        query = queryset.values(*annotations.values()).annotate(count=Count("id")).order_by("-count")
+        query = queryset.values("id", *annotations.values()).annotate(count=Count("id")).order_by("-count")
 
         if apply_limit and limit is not None:
             query = query[:limit]
@@ -678,15 +678,16 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         entries = [
-            {
-                "name": item[annotations["name"]],
-                "emoji": (self.bot.get_emoji(item[annotations["emoji"]]) or item[annotations["emoji"]]),
-                "count": item["count"],
-            }
+            discord.SelectOption(
+                label=item[annotations["name"]],
+                emoji=self.bot.get_emoji(item[annotations["emoji"]]) or item[annotations["emoji"]],
+                description=f"Count: {item['count']}",
+                value=item["id"],
+            )
             async for item in query
         ]
 
-        source = DuplicateViewMenu(interaction, entries, type.value)
+        source = Menu(DuplicateSource(type.value, entries), interaction=interaction)
         await source.start(content=f"View your duplicate {type.value}.")
 
     @app_commands.command()
@@ -793,7 +794,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         fill_fields(f"{user.display_name} has", user2_only)
         fill_fields("Neither have", neither)
 
-        source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
+        source = FieldPageSource(entries, per_page=5, inline=False)
         special_str = f" ({special.name})" if special else ""
         source.embed.title = (
             f"Comparison of {interaction.user.display_name} and {user.display_name}'s "
@@ -801,7 +802,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         )
         source.embed.colour = discord.Colour.blurple()
 
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Menu(source=source, interaction=interaction, compact=True)
         await pages.start()
 
     @app_commands.command()

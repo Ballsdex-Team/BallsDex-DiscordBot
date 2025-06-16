@@ -1,32 +1,29 @@
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 import discord
 
 from ballsdex.core.utils import menus
-from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.trade.trade_user import TradingUser
 from bd_models.models import Trade as TradeModel
 
 if TYPE_CHECKING:
+    from django.db.models import QuerySet
+
     from ballsdex.core.bot import BallsDexBot
 
 
-class TradeViewFormat(menus.ListPageSource):
-    def __init__(
-        self,
-        entries: Iterable[TradeModel],
-        header: str,
-        bot: "BallsDexBot",
-        is_admin: bool = False,
-        url: str | None = None,
+class TradeViewFormat(menus.ModelPageSource[TradeModel]):
+    @classmethod
+    async def new_tradeview(
+        cls, queryset: "QuerySet[TradeModel]", header: str, *, is_admin: bool = False, url: str | None = None
     ):
-        self.header = header
-        self.url = url
-        self.bot = bot
-        self.is_admin = is_admin
-        super().__init__(entries, per_page=1)
+        cls.header = header
+        cls.is_admin = is_admin
+        cls.url = url
+        return await super().new(queryset, per_page=1)
 
-    async def format_page(self, menu: Pages, trade: TradeModel) -> discord.Embed:
+    async def format_page(self, menu, page) -> discord.Embed:
+        trade = page[0]
         embed = discord.Embed(
             title=f"Trade history for {self.header}",
             description=f"Trade ID: {trade.pk:0X}",
@@ -36,9 +33,9 @@ class TradeViewFormat(menus.ListPageSource):
         embed.set_footer(text=f"Trade {menu.current_page + 1}/{menu.source.get_max_pages()} | Trade date: ")
         fill_trade_embed_fields(
             embed,
-            self.bot,
-            await TradingUser.from_trade_model(trade, trade.player1, self.bot, self.is_admin),
-            await TradingUser.from_trade_model(trade, trade.player2, self.bot, self.is_admin),
+            menu.bot,
+            await TradingUser.from_trade_model(trade, trade.player1, menu.bot, self.is_admin),
+            await TradingUser.from_trade_model(trade, trade.player2, menu.bot, self.is_admin),
             is_admin=self.is_admin,
         )
         return embed

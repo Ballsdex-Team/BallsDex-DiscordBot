@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button
 
-from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
+from ballsdex.core.utils.menus import FieldPageSource, Menu, TextPageSource
 from ballsdex.settings import settings
 from bd_models.models import Ball, GuildConfig
 
@@ -126,7 +126,7 @@ class Admin(commands.GroupCog):
                 text += f"{i}. {ball.country}\n"
 
         source = TextPageSource(text, prefix="```md\n", suffix="```")
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Menu(source=source, interaction=interaction, compact=True)
         pages.remove_item(pages.stop_pages)
         await pages.start(ephemeral=True)
 
@@ -232,7 +232,7 @@ class Admin(commands.GroupCog):
                 "presence in servers, it is only aware of server ownerships."
             )
 
-        pages = Pages(source=source, interaction=interaction, compact=True)
+        pages = Menu(source=source, interaction=interaction, compact=True)
         pages.add_item(
             Button(
                 style=discord.ButtonStyle.link,

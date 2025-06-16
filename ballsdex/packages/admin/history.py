@@ -5,7 +5,7 @@ from discord import app_commands
 from django.db.models import Q
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.menus import Menu
 from ballsdex.core.utils.transformers import BallEnabledTransform
 from ballsdex.packages.trade.display import TradeViewFormat, fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
@@ -94,8 +94,8 @@ class History(app_commands.Group):
             await interaction.followup.send(f"History of {user.display_name} and {user2.display_name}:")
 
         url = f"{settings.admin_url}/bd_models/trade/{query}" if settings.admin_url else None
-        source = TradeViewFormat(queryset, user.display_name, interaction.client, True, url)
-        pages = Pages(source=source, interaction=interaction)
+        source = await TradeViewFormat.new_tradeview(queryset, user.display_name, is_admin=True, url=url)
+        pages = Menu(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
     @app_commands.command(name="countryball")
@@ -163,8 +163,10 @@ class History(app_commands.Group):
             return
 
         url = f"{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/" if settings.admin_url else None
-        source = TradeViewFormat(queryset, f"{settings.collectible_name} {ball}", interaction.client, True, url)
-        pages = Pages(source=source, interaction=interaction)
+        source = await TradeViewFormat.new_tradeview(
+            queryset, f"{settings.collectible_name} {ball}", is_admin=True, url=url
+        )
+        pages = Menu(source=source, interaction=interaction)
         await pages.start(ephemeral=True)
 
     @app_commands.command(name="trade")
