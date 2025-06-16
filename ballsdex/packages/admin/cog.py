@@ -1,12 +1,14 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING, cast
+import datetime
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button
+from tortoise.expressions import Q
 
-from ballsdex.core.models import Ball, GuildConfig
+from ballsdex.core.models import Ball, GuildConfig, Player, Trade
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.settings import settings
 
@@ -258,3 +260,62 @@ class Admin(commands.GroupCog):
             )
         )
         await pages.start(ephemeral=True)
+
+    @app_commands.command()
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def return_traded_balls(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User,
+        days: int | None = None,
+    ):
+        """
+        Returns the balls traded out by the specified user back to that person.
+
+        Parameters
+        ----------
+        user: discord.User
+            The specified user.
+        days: int | None
+            Only return transactions within the specified number of days, if not specified then all transactions will be returned.
+        """
+        await interaction.response.defer()
+        
+        try:
+            player = await Player.get(discord_id=user.id)
+        except DoesNotExist:
+            await interaction.followup.send("The user has not yet registered.")
+            return
+
+        queryset = Trade.filter(Q(player1=player) | Q(player2=player))
+        if days is not None and days > 0:
+            end_date = datetime.datetime.now()
+            start_date = end_date - datetime.timedelta(days=days)
+            queryset = queryset.filter(date__range=(start_date, end_date))
+        
+        trades = await queryset.prefetch_related("player1", "player2", "tradeobjects", "tradeobjects__ballinstance")
+        
+        if not trades:
+            await interaction.followup.send("No transaction records were found.")
+            return
+
+        returned_balls = 0
+        for trade in trades:
+            trade_objects = await trade.tradeobjects.filter(player=player).prefetch_related("ballinstance")
+            for trade_object in trade_objects:
+                ball = trade_object.ballinstance
+                if ball.player_id != player.id:
+                    ball.player = player
+                    ball.trade_player = None
+                    ball.favorite = False
+                    await ball.save()
+                    returned_balls += 1
+
+        if returned_balls > 0:
+            await interaction.followup.send(
+                f"Successfully returned {returned_balls} countryballs to {user}."
+            )
+        else:
+            await interaction.followup.send(
+                f"No balls have been found that need to be returned."
+            )
