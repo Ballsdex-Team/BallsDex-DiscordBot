@@ -67,23 +67,18 @@ def draw_card(
         Image.open(media_path + ball.cached_economy.icon).convert("RGBA")
         if ball.cached_economy
         else None
-    )
-
-    draw = ImageDraw.Draw(image)
-    shadow_color = "black"
-    shadow_offset = 5
     name_text = ball.short_name or ball.country
-    icon_padding = 40
-    icon_right = 1200  # icon x-position
-    max_text_width = icon_right - 50 - icon_padding  # leave space from the icon
+    left_margin = 50
+    right_limit = 1200 - 40  # icon_x - padding
+    max_text_width = right_limit - left_margin
+    center_x = (left_margin + right_limit) // 2
 
     base_font_size = 170
     min_font_size = 60
 
-# Temporary draw object for measurement
     temp_draw = ImageDraw.Draw(image)
 
-# Find the best fitting font
+# Find best fitting font
     for font_size in range(base_font_size, min_font_size - 1, -2):
         dynamic_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), font_size)
         bbox = temp_draw.textbbox((0, 0), name_text, font=dynamic_font)
@@ -94,11 +89,12 @@ def draw_card(
         else:
             dynamic_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), min_font_size)
         bbox = temp_draw.textbbox((0, 0), name_text, font=dynamic_font)
+        text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
 
-# Always align top at 20
-    x = 50
-    y = 20 - bbox[1]  # Adjust top alignment if font shifts baseline
+# Center the text horizontally in the allowed area
+    x = center_x - text_width // 2
+    y = 20 - bbox[1]  # Align text visually at fixed top center
 
 # Draw shadow
     draw.text(
