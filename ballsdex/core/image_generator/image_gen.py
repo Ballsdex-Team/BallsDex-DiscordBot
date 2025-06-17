@@ -72,58 +72,25 @@ def draw_card(
     draw = ImageDraw.Draw(image)
     shadow_color = "black"
     shadow_offset = 3
-    name_text = ball.short_name or ball.country
-    font_path = str(SOURCES_PATH / "LilitaOne-Regular.ttf")
-    font_size = 100  # render size before scaling
-    font = ImageFont.truetype(font_path, font_size)
+    
+    draw.text(
+        (50, 20 + shadow_offset),
+        ball.short_name or ball.country,
+        font=title_font,
+        fill=shadow_color,
+        stroke_width=8,
+        stroke_fill=(0, 0, 0, 255),
+    )
 
-# Area where text is allowed to render (adjust as needed)
-    box_left = 50
-    box_right = 1200 - 40  # leave space for icon
-    box_top = 20
-    box_height = 160  # adjust based on your layout
-
-    box_width = box_right - box_left
-    box_center_x = box_left + box_width // 2
-    box_center_y = box_top + box_height // 2
-
-# Render to temp image
-    temp_draw = ImageDraw.Draw(image)
-    bbox = temp_draw.textbbox((0, 0), name_text, font=font)
-    text_width = bbox[2] - bbox[0]
-    text_height = bbox[3] - bbox[1]
-
-# Calculate scale factors
-    scale_x = box_width / text_width
-    scale_y = box_height / text_height
-
-# Stretch factor (non-proportional)
-    new_width = int(text_width * scale_x)
-    new_height = int(text_height * scale_y)
-
-# Create shadow image
-    shadow_img = Image.new("RGBA", (text_width, text_height), (0, 0, 0, 0))
-    shadow_draw = ImageDraw.Draw(shadow_img)
-    shadow_draw.text((-bbox[0], -bbox[1]), name_text, font=font,
-                     fill="black", stroke_width=8, stroke_fill=(0, 0, 0, 255))
-    shadow_img = shadow_img.resize((new_width, new_height), resample=Image.BICUBIC)
-
-# Create main text image
-    text_img = Image.new("RGBA", (text_width, text_height), (0, 0, 0, 0))
-    text_draw = ImageDraw.Draw(text_img)
-    text_draw.text((-bbox[0], -bbox[1]), name_text, font=font,
-               fill=(255, 255, 255, 255), stroke_width=8, stroke_fill=(0, 0, 0, 255))
-    text_img = text_img.resize((new_width, new_height), resample=Image.BICUBIC)
-
-# Compute centered positions
-    x = box_center_x - new_width // 2
-    y = box_center_y - new_height // 2
-    shadow_offset = 5
-
-# Paste shadow first
-    image.paste(shadow_img, (x + shadow_offset, y + shadow_offset), shadow_img)
-# Paste main text
-    image.paste(text_img, (x, y), text_img)
+    # Draw main text
+    draw.text(
+        (50, 20),
+        ball.short_name or ball.country,
+        font=title_font,
+        fill=(255, 255, 255, 255),
+        stroke_width=8,
+        stroke_fill=(0, 0, 0, 255),
+    )
 
 
 
