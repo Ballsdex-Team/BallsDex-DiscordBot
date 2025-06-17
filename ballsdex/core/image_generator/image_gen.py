@@ -75,23 +75,30 @@ def draw_card(
     name_text = ball.short_name or ball.country
     icon_padding = 40
     icon_right = 1200  # icon x-position
-    max_text_width = icon_right - 50 - icon_padding  # left margin = 50
+    max_text_width = icon_right - 50 - icon_padding  # leave space from the icon
 
     base_font_size = 170
     min_font_size = 60
 
-# Prepare a dummy draw object for measuring text
+# Temporary draw object for measurement
     temp_draw = ImageDraw.Draw(image)
 
-# Dynamically find the largest font that fits
+# Find the best fitting font
     for font_size in range(base_font_size, min_font_size - 1, -2):
         dynamic_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), font_size)
         bbox = temp_draw.textbbox((0, 0), name_text, font=dynamic_font)
         text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
         if text_width <= max_text_width:
             break
         else:
             dynamic_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), min_font_size)
+        bbox = temp_draw.textbbox((0, 0), name_text, font=dynamic_font)
+        text_height = bbox[3] - bbox[1]
+
+# Always align top at 20
+    x = 50
+    y = 20 - bbox[1]  # Adjust top alignment if font shifts baseline
 
 # Draw shadow
     draw.text(
