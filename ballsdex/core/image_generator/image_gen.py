@@ -76,22 +76,28 @@ def draw_card(
     max_text_height = 160
     center_x = (left_margin + right_limit) // 2
     top_y = 20
+    shadow_offset = 5
 
-    base_font_size = 100  # Start with decent base size
+    base_font_size = 100
     temp_draw = ImageDraw.Draw(image)
 
 # Load base font
     font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), base_font_size)
 
-# Measure the text at base size
+# Measure unscaled text
     bbox = temp_draw.textbbox((0, 0), name_text, font=font)
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
 
-# Compute scale factors
+# Compute stretch factors
     scale_x = min(1.0, max_text_width / text_width)
     scale_y = min(1.0, max_text_height / text_height)
 
+# New image size
+    new_width = int(text_width * scale_x)
+    new_height = int(text_height * scale_y)
+
+# ========== SHADOW ==========
     shadow_img = Image.new("RGBA", (text_width, text_height), (0, 0, 0, 0))
     shadow_draw = ImageDraw.Draw(shadow_img)
     shadow_draw.text((-bbox[0], -bbox[1]), name_text, font=font,
@@ -102,23 +108,17 @@ def draw_card(
     y_shadow = top_y + (max_text_height - new_height) // 2 + shadow_offset
     image.paste(shadow_img, (x_shadow, y_shadow), shadow_img)
 
-# Render text to temp image
+# ========== TEXT ==========
     text_img = Image.new("RGBA", (text_width, text_height), (0, 0, 0, 0))
     text_draw = ImageDraw.Draw(text_img)
-    text_draw.text((-bbox[0], -bbox[1]), name_text, font=font, fill=(255, 255, 255, 255),
-                   stroke_width=8, stroke_fill=(0, 0, 0, 255))
+    text_draw.text((-bbox[0], -bbox[1]), name_text, font=font,
+                   fill=(255, 255, 255, 255), stroke_width=8, stroke_fill=(0, 0, 0, 255))
 
-# Stretch the text non-proportionally
-    new_width = int(text_width * scale_x)
-    new_height = int(text_height * scale_y)
     text_img = text_img.resize((new_width, new_height), resample=Image.BICUBIC)
+    x_text = center_x - new_width // 2
+    y_text = top_y + (max_text_height - new_height) // 2
+    image.paste(text_img, (x_text, y_text), text_img)
 
-# Compute final position to center the stretched text
-    x = center_x - new_width // 2
-    y = top_y + (max_text_height - new_height) // 2
-
-# Paste onto final image
-    image.paste(text_img, (x, y), text_img)
 
 
 
