@@ -73,18 +73,21 @@ def draw_card(
     shadow_color = "black"
     shadow_offset = 5
     name_text = ball.short_name or ball.country
-    max_width = WIDTH - 100  # leave some padding
+    icon_padding = 40
+    icon_right = 1200  # left x of the icon
+    max_text_width = icon_right - 50 - icon_padding  # left margin 50 + some padding
+
     base_font_size = 170
     min_font_size = 60
 
-    # Dynamically shrink font size
-    for font_size in range(base_font_size, min_font_size, -2):
+    # Dynamically find the largest font that fits
+    for font_size in range(base_font_size, min_font_size - 1, -2):
         dynamic_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), font_size)
         text_width, _ = dynamic_font.getsize(name_text)
-        if text_width <= max_width:
+        if text_width <= max_text_width:
             break
-    else:
-        dynamic_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), min_font_size)
+        else:
+            dynamic_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), min_font_size)
 
     # Draw shadow
     draw.text(
@@ -105,6 +108,7 @@ def draw_card(
         stroke_width=8,
         stroke_fill=(0, 0, 0, 255),
     )
+
 
 
     cap_name = textwrap.wrap(f"{ball.capacity_name}", width=26)
