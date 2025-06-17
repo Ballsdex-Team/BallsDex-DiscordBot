@@ -74,22 +74,25 @@ def draw_card(
     shadow_offset = 5
     name_text = ball.short_name or ball.country
     left_margin = 50
-    right_limit = 1200 - 40  # icon_x - padding
+    right_limit = 1200 - 40  # icon left - padding
     max_text_width = right_limit - left_margin
+    max_text_height = 160  # limit this as per your layout
+
     center_x = (left_margin + right_limit) // 2
+    top_y = 20  # area top
 
     base_font_size = 170
     min_font_size = 60
 
     temp_draw = ImageDraw.Draw(image)
 
-# Find best fitting font
+# Find the largest font size that fits both width and height
     for font_size in range(base_font_size, min_font_size - 1, -2):
         dynamic_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), font_size)
         bbox = temp_draw.textbbox((0, 0), name_text, font=dynamic_font)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
-        if text_width <= max_text_width:
+        if text_width <= max_text_width and text_height <= max_text_height:
             break
         else:
             dynamic_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), min_font_size)
@@ -97,10 +100,9 @@ def draw_card(
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
 
-# Center the text horizontally in the allowed area
+# Final text position — center it
     x = center_x - text_width // 2
-    y = 20 - bbox[1]  # Align text visually at fixed top center
-
+    y = top_y + (max_text_height - text_height) // 2 - bbox[1]  # vertical center in area
 # Draw shadow
     draw.text(
         (x, y + shadow_offset),
