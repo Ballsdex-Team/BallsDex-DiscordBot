@@ -102,7 +102,7 @@ def draw_card(
 
 # Draw shadow
     draw.text(
-        (50, 20 + shadow_offset),
+        (x, y + shadow_offset),
         name_text,
         font=dynamic_font,
         fill=shadow_color,
@@ -112,7 +112,7 @@ def draw_card(
 
 # Draw main text
     draw.text(
-        (50, 20),
+        (x, y),
         name_text,
         font=dynamic_font,
         fill=(255, 255, 255, 255),
