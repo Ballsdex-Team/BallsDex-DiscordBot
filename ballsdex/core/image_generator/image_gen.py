@@ -70,6 +70,8 @@ def draw_card(
         )
 
     draw = ImageDraw.Draw(image)
+    shadow_color = "black"
+    shadow_offset = 3
     name_text = ball.short_name or ball.country
     left_margin = 50
     right_limit = 1200 - 40
