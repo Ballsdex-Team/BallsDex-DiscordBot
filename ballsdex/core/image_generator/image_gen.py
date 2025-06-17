@@ -67,6 +67,11 @@ def draw_card(
         Image.open(media_path + ball.cached_economy.icon).convert("RGBA")
         if ball.cached_economy
         else None
+        )
+
+    draw = ImageDraw.Draw(image)
+    shadow_color = "black"
+    shadow_offset = 5
     name_text = ball.short_name or ball.country
     left_margin = 50
     right_limit = 1200 - 40  # icon_x - padding
