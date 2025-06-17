@@ -69,6 +69,7 @@ def draw_card(
         else None
         )
 
+    draw = ImageDraw.Draw(image)
     name_text = ball.short_name or ball.country
     left_margin = 50
     right_limit = 1200 - 40
