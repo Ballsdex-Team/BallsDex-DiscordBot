@@ -73,54 +73,57 @@ def draw_card(
     shadow_color = "black"
     shadow_offset = 3
     name_text = ball.short_name or ball.country
-    left_margin = 50
-    right_limit = 1200 - 40
-    max_text_width = right_limit - left_margin
-    max_text_height = 160
-    center_x = (left_margin + right_limit) // 2
-    top_y = 20
-    shadow_offset = 5
+    font_path = str(SOURCES_PATH / "LilitaOne-Regular.ttf")
+    font_size = 100  # render size before scaling
+    font = ImageFont.truetype(font_path, font_size)
 
-    base_font_size = 100
+# Area where text is allowed to render (adjust as needed)
+    box_left = 50
+    box_right = 1200 - 40  # leave space for icon
+    box_top = 20
+    box_height = 160  # adjust based on your layout
+
+    box_width = box_right - box_left
+    box_center_x = box_left + box_width // 2
+    box_center_y = box_top + box_height // 2
+
+# Render to temp image
     temp_draw = ImageDraw.Draw(image)
-
-# Load base font
-    font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), base_font_size)
-
-# Measure unscaled text
     bbox = temp_draw.textbbox((0, 0), name_text, font=font)
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
 
-# Compute stretch factors
-    scale_x = min(1.0, max_text_width / text_width)
-    scale_y = min(1.0, max_text_height / text_height)
+# Calculate scale factors
+    scale_x = box_width / text_width
+    scale_y = box_height / text_height
 
-# New image size
+# Stretch factor (non-proportional)
     new_width = int(text_width * scale_x)
     new_height = int(text_height * scale_y)
 
-# ========== SHADOW ==========
+# Create shadow image
     shadow_img = Image.new("RGBA", (text_width, text_height), (0, 0, 0, 0))
     shadow_draw = ImageDraw.Draw(shadow_img)
     shadow_draw.text((-bbox[0], -bbox[1]), name_text, font=font,
                      fill="black", stroke_width=8, stroke_fill=(0, 0, 0, 255))
-
     shadow_img = shadow_img.resize((new_width, new_height), resample=Image.BICUBIC)
-    x_shadow = center_x - new_width // 2 + shadow_offset
-    y_shadow = top_y + (max_text_height - new_height) // 2 + shadow_offset
-    image.paste(shadow_img, (x_shadow, y_shadow), shadow_img)
 
-# ========== TEXT ==========
+# Create main text image
     text_img = Image.new("RGBA", (text_width, text_height), (0, 0, 0, 0))
     text_draw = ImageDraw.Draw(text_img)
     text_draw.text((-bbox[0], -bbox[1]), name_text, font=font,
-                   fill=(255, 255, 255, 255), stroke_width=8, stroke_fill=(0, 0, 0, 255))
-
+               fill=(255, 255, 255, 255), stroke_width=8, stroke_fill=(0, 0, 0, 255))
     text_img = text_img.resize((new_width, new_height), resample=Image.BICUBIC)
-    x_text = center_x - new_width // 2
-    y_text = top_y + (max_text_height - new_height) // 2
-    image.paste(text_img, (x_text, y_text), text_img)
+
+# Compute centered positions
+    x = box_center_x - new_width // 2
+    y = box_center_y - new_height // 2
+    shadow_offset = 5
+
+# Paste shadow first
+    image.paste(shadow_img, (x + shadow_offset, y + shadow_offset), shadow_img)
+# Paste main text
+    image.paste(text_img, (x, y), text_img)
 
 
 
