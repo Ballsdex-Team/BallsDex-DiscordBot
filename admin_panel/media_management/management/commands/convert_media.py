@@ -92,7 +92,7 @@ class Command(BaseCommand):
                     new_path = to_convert[model_image_path]
 
                     # Django won't take a non-relative path here
-                    model_image_field.name = str(new_path.relative_to(media_path))
+                    model_image_field.name = str(new_path.relative_to(media_path.absolute()))
                     model_instance.save()
 
             self.stdout.write(self.style.SUCCESS("Database updated!"))
