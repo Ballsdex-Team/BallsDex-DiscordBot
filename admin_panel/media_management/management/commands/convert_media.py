@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 DEFAULT_MEDIA_PATH: str = "./media/"
-TARGET_FORMAT = ".webp"
+DEFAULT_TARGET_FORMAT = "webp"
 
 
 class Command(BaseCommand):
@@ -18,6 +18,13 @@ class Command(BaseCommand):
             help=f"The path to the media folder."
             f"If not provided, {DEFAULT_MEDIA_PATH} is used.",
         )
+        parser.add_argument(
+            "--target-format",
+            "-t",
+            help="The target file format (no dot)."
+            f"If not provided, {DEFAULT_TARGET_FORMAT} is used.",
+        )
+
         parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm conversion")
 
     @transaction.atomic
@@ -54,12 +61,14 @@ class Command(BaseCommand):
 
         to_convert: dict[Path, Path] = {}
 
+        target_format: str = "." + (options.get("target_format") or DEFAULT_TARGET_FORMAT)
+
         for model_instance, model_image, media_attr in medias:
             file = Path(model_image).absolute()
-            if file.suffix == TARGET_FORMAT:
+            if file.suffix == target_format:
                 continue
 
-            target = file.with_suffix(TARGET_FORMAT)
+            target = file.with_suffix(target_format)
 
             if target.exists():
                 self.stderr.write(f"{target.name} already exists! Can't convert {file.name}")
