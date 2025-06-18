@@ -3,7 +3,7 @@ from pathlib import Path
 import media_management.management.commands._media_manager as media_manager
 from django.core.management.base import BaseCommand, CommandError
 
-DEFAULT_MEDIA_PATH: str = "/code/admin_panel/media/"
+DEFAULT_MEDIA_PATH: str = "./media/"
 
 
 class Command(BaseCommand):
@@ -21,7 +21,7 @@ class Command(BaseCommand):
         self.remove_unused_media(*args, **options)
 
     def remove_unused_media(self, *args, **options):
-        media_path = Path(options.get("media-path") or DEFAULT_MEDIA_PATH)
+        media_path = Path(options.get("media_path") or DEFAULT_MEDIA_PATH)
         if not media_path.exists():
             raise CommandError("Provided media-path does not exist.")
 

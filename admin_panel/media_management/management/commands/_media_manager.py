@@ -18,7 +18,7 @@ def all_media() -> list[tuple[models.Model, Path, str]]:
     medias: list[tuple[models.Model, Path, str]] = []
 
     for model_type, media_attrs in media_types.items():
-        for model_instance in model_type.objects.all():  # type: ignore
+        for model_instance in model_type.objects.all():
             for media_attr in media_attrs:
                 path = Path(getattr(model_instance, media_attr).path)
                 medias.append((model_instance, path, media_attr))
@@ -26,7 +26,7 @@ def all_media() -> list[tuple[models.Model, Path, str]]:
     return medias
 
 
-def boolean_input(question, default=None) -> bool:
+def boolean_input(question: str, default: bool | None = None) -> bool:
     query = f"{question} [{'y/n' if default is None else ('Y/n' if default else 'y/N')}]: "
     result = None
     while not result:

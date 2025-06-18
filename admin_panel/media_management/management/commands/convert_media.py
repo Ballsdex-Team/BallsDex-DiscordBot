@@ -3,8 +3,9 @@ from pathlib import Path
 
 import media_management.management.commands._media_manager as media_manager
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
-DEFAULT_MEDIA_PATH: str = "/code/admin_panel/media/"
+DEFAULT_MEDIA_PATH: str = "./media/"
 TARGET_FORMAT = ".webp"
 
 
@@ -19,8 +20,12 @@ class Command(BaseCommand):
         )
         parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm conversion")
 
+    @transaction.atomic
     def handle(self, *args, **options):
-        self.convert_media(*args, **options)
+        try:
+            self.convert_media(*args, **options)
+        except KeyboardInterrupt:
+            self.stdout.write(self.style.ERROR("Conversion cancelled."))
 
     def _get_ffmpeg_command(self, to_convert: dict[Path, Path]) -> list[str]:
         command: list[str] = ["ffmpeg"]
@@ -41,7 +46,7 @@ class Command(BaseCommand):
         return command
 
     def convert_media(self, *args, **options):
-        media_path = Path(options.get("media-path") or DEFAULT_MEDIA_PATH)
+        media_path = Path(options.get("media_path") or DEFAULT_MEDIA_PATH)
         if not media_path.exists():
             raise CommandError("Provided media-path does not exist.")
 
@@ -60,10 +65,15 @@ class Command(BaseCommand):
                 self.stderr.write(f"{target.name} already exists! Can't convert {file.name}")
                 continue
 
-            if options["yes"] or media_manager.boolean_input(
-                f"Convert {file.name} to {file.stem}.webp?", default=True
-            ):
-                to_convert[file] = target
+            to_convert[file] = target
+            self.stdout.write(f"Will convert {file.name} to {target.name}")
+
+        self.stdout.write("")
+        if not options["yes"] and not media_manager.boolean_input(
+            f"Convert {len(to_convert)} files? This will not erase existing files.", default=True
+        ):
+            self.stdout.write(self.style.ERROR("Conversion cancelled."))
+            return
 
         if to_convert:
             command = self._get_ffmpeg_command(to_convert)
@@ -71,11 +81,9 @@ class Command(BaseCommand):
             result = subprocess.run(command, capture_output=True, text=True)
 
             if result.returncode != 0:
-                self.stderr.write(f"FFmpeg exited with non-0 exit code {result.returncode}!")
-                self.stderr.write(result.stderr)
-                raise CommandError()
+                raise CommandError(f"FFmpeg exited with non-0 exit code {result.returncode}!")
 
-            self.stdout.write("Files converted!")
+            self.stdout.write(self.style.SUCCESS("Files converted!"))
 
             for model_instance, model_image, media_attr in medias:
                 model_image_path = model_image.absolute()
@@ -87,5 +95,5 @@ class Command(BaseCommand):
                     model_image_field.name = str(new_path.relative_to(media_path))
                     model_instance.save()
 
-            self.stdout.write("Database updated!")
+            self.stdout.write(self.style.SUCCESS("Database updated!"))
             self.stdout.write("You may want to run remove_unused_files to remove the old copies.")
