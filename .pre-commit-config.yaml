@@ -41,7 +41,7 @@ repos:
           - redis
           - django
           - dj_database_url
-          - django-stubs
+          - django-types
           - django-debug-toolbar
           - django-nonrelated-inlines
           - social-auth-app-django
