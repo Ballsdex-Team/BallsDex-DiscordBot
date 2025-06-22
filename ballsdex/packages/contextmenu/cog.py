@@ -151,3 +151,17 @@ async def context_brawler_collection(
 
     pages = Pages(source=source, interaction=interaction, compact=True)
     await pages.start()
+
+@app_commands.allowed_installs(guilds=True, users=True)
+@app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
+class ContextMenuCommands(commands.Cog):
+    """
+    Dex commands but in Context Menu!
+    """
+
+    def __init__(self, bot: "BallsDexBot"):
+        self.bot = bot
+
+async def setup(bot: "BallsDexBot"):
+    await bot.add_cog(ContextMenuCommands(bot))
+    bot.tree.add_command(context_brawler_collection)
