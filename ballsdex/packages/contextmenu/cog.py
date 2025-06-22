@@ -40,8 +40,8 @@ class ContextMenuCommands(commands.Cog):
 @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
 async def context_brawler_collection(
     self,
-    interaction: discord.Interaction["BallsDexBot"],
-    user: discord.User,
+    interaction: discord.Interaction,
+    user: discord.User
 ):
     brawler_emoji_1 = self.bot.get_emoji(1371591594867949588)
     brawler_emoji_2 = self.bot.get_emoji(1371591872782401637)
