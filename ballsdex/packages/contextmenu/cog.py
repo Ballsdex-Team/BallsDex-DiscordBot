@@ -42,7 +42,6 @@ async def context_brawler_collection(
     self,
     interaction: discord.Interaction["BallsDexBot"],
     user: discord.User,
-    message: discord.Message,
 ):
     brawler_emoji_1 = self.bot.get_emoji(1371591594867949588)
     brawler_emoji_2 = self.bot.get_emoji(1371591872782401637)
