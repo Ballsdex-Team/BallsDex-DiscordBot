@@ -110,7 +110,7 @@ def draw_card(
         font=title_font,
         fill=(255, 255, 255, 255),
         stroke_width=8,
-       stroke_fill=(0, 0, 0, 255),
+        stroke_fill=(0, 0, 0, 255),
     )
 
     # Capacity Name
