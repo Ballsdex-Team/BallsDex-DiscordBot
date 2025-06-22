@@ -68,7 +68,7 @@ def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_width: int, draw: Ima
 def draw_card(
     ball_instance: "BallInstance",
     media_path: str = "./admin_panel/media/",
-) -> tuple[Image.Image, dict[str, Any]]:
+    ) -> tuple[Image.Image, dict[str, Any]]:
     ball = ball_instance.countryball
     ball_health = (86, 255, 100, 255)
     ball_credits = ball.credits
