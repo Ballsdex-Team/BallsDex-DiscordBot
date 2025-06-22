@@ -37,3 +37,4 @@ media
 config.yml
 docker-compose.override.yml
 admin_panel/admin_panel/settings/production.py
+bgtoken.txt
