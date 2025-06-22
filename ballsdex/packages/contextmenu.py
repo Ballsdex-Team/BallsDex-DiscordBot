@@ -29,18 +29,17 @@ if TYPE_CHECKING:
 @app_commands.context_menu(name="View Brawler Collection")
 @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
 async def context_brawler_collection(
-    self,
     interaction: discord.Interaction,
     user: discord.User
 ):
-    brawler_emoji_1 = self.bot.get_emoji(1371591594867949588)
-    brawler_emoji_2 = self.bot.get_emoji(1371591872782401637)
-    brawler_emoji_3 = self.bot.get_emoji(1371592384143556648)
-    brawler_emoji_4 = self.bot.get_emoji(1371592712331198545)
-    brawler_unlock_emoji = self.bot.get_emoji(1363692398596853841)
-    brawler_lock_emoji = self.bot.get_emoji(1363692380208890066)
-    no_brawler_emoji = self.bot.get_emoji(1349143586603667587)
-    completionist_emoji = self.bot.get_emoji(1372373379939827744)
+    brawler_emoji_1 = interaction.client.get_emoji(1371591594867949588)
+    brawler_emoji_2 = interaction.client.get_emoji(1371591872782401637)
+    brawler_emoji_3 = interaction.client.get_emoji(1371592384143556648)
+    brawler_emoji_4 = interaction.client.get_emoji(1371592712331198545)
+    brawler_unlock_emoji = interaction.client.get_emoji(1363692398596853841)
+    brawler_lock_emoji = interaction.client.get_emoji(1363692380208890066)
+    no_brawler_emoji = interaction.client.get_emoji(1349143586603667587)
+    completionist_emoji = interaction.client.get_emoji(1372373379939827744)
 
     user_obj = user
     await interaction.response.defer(thinking=True)
@@ -63,7 +62,7 @@ async def context_brawler_collection(
         )
         return
 
-    if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
+    if await inventory_privacy(interaction.client, interaction, player, user_obj) is False:
         return
 
     bot_countryballs = {
@@ -98,7 +97,7 @@ async def context_brawler_collection(
         buffer = ""
 
         for emoji_id in emoji_ids:
-            emoji = self.bot.get_emoji(emoji_id)
+            emoji = interaction.client.get_emoji(emoji_id)
             if not emoji:
                 continue
 
