@@ -37,7 +37,7 @@ title_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), 170
 capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), 110)
 capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), 75)
 stats_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), 130)
-redits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
+credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 
 credits_color_cache = {}
 
@@ -194,7 +194,7 @@ def draw_card(
         # Modifying the line below is breaking the licence as you are removing credits
         # If you don't want to receive a DMCA, just don't
         f"Ballsdex by El Laggron, BrawlDex by AngerRandom, Brawl Stars by Supercell\n" f"{ball_credits}",
-       font=credits_font,
+        font=credits_font,
         fill=credits_color,
         stroke_width=3,
         stroke_fill=(0, 0, 0, 255),
