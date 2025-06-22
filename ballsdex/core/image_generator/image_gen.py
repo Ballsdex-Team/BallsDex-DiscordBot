@@ -43,7 +43,7 @@ credits_color_cache = {}
 def get_credit_color(image: Image.Image, region: tuple) -> tuple:
     image = image.crop(region)
     brightness = sum(image.convert("L").getdata()) / image.width / image.height
-    return (0, 0, 0, 255) if brightness > 100 else (255, 255, 255, 255)
+    return (255, 255, 255, 255) if brightness > 100 else (255, 255, 255, 255)
 
 def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_width: int, draw: ImageDraw.ImageDraw) -> list[str]:
     paragraphs = text.split('%%')
@@ -180,7 +180,7 @@ def draw_card(
         stroke_fill=(0, 0, 0, 255),
         anchor="ra",
     )
-   if card_name in credits_color_cache:
+    if card_name in credits_color_cache:
         credits_color = credits_color_cache[card_name]
     else:
         credits_color = get_credit_color(
