@@ -36,7 +36,7 @@ title_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), 170
 capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), 110)
 capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), 75)
 stats_font = ImageFont.truetype(str(SOURCES_PATH / "LilitaOne-Regular.ttf"), 130)
-redits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
+credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 
 credits_color_cache = {}
 
