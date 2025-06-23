@@ -14,11 +14,21 @@ Before using this panel, you must configure a way to login. You can either enabl
 
 ## Using local accounts
 
-The easiest way to login is to create accounts with a login and a password.
+The easiest way to login is to create accounts with a login and a password. Run the commands
+below and follow the prompts.
 
-If you are using docker, first make sure the `admin-panel` service is running with `docker compose up -d admin-panel`, then run `docker compose exec admin-panel python3 manage.py createsuperuser` and follow the prompts.
+=== "With Docker"
 
-If you are not using docker, run `cd admin_panel && poetry run python3 manage.py createsuperuser` and follow the prompts.
+    ```bash
+    docker compose up -d admin-panel
+    docker compose exec admin-panel python3 manage.py createsuperuser
+    ```
+
+=== "Without Docker"
+
+    ```bash
+    cd admin_panel && poetry run python3 manage.py createsuperuser
+    ```
 
 Then you can login using the chosen credentials at http://localhost:8000. Additional accounts can be created from the admin panel.
 

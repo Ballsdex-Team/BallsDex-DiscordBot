@@ -19,47 +19,103 @@ Then you must make a dump of the database.
 
 ### Creating a database dump
 
-- With Docker: `docker compose up -d postgres-db && docker compose exec pg_dump -U ballsdex ballsdex > data-dump.sql`
-- Without Docker: `pg_dump -U ballsdex ballsdex > data-dump.sql` (replace username and database name where appropriate)
+=== "With Docker"
+
+    ```bash
+    docker compose up -d postgres-db && \
+        docker compose exec pg_dump -U ballsdex ballsdex -f data-dump.sql && \
+        docker compose cp postgres-db:data-dump.sql .
+    ```
+
+=== "Without Docker"
+
+    ```bash
+    pg_dump -U ballsdex ballsdex -f data-dump.sql
+    ```
 
 This will generate a file `data-dump.sql` which you need to preserve, containing all the data.
 
 ### Importing a database dump
 
-- With Docker: `docker compose up -d postgres-db && cat data-dump.sql | docker compose exec -T postgres-db psql -U ballsdex ballsdex`
-- Without Docker: `psql -U ballsdex ballsdex -f data-dump.sql`
+=== "With Docker"
+
+    ```bash
+    docker compose up -d postgres-db && \
+        cat data-dump.sql | \
+        docker compose exec -T postgres-db psql -U ballsdex ballsdex
+    ```
+
+=== "Without Docker"
+
+    ```bash
+    psql -U ballsdex ballsdex -f data-dump.sql
+    ```
 
 This will print a lot of lines such as `INSERT` or `ALTER TABLE`. Check the logs to ensure no errors were produced.
 
-> [!WARNING]
-> **This only works if the database is completely empty!**
-> 
-> If you messed up and wish to reset the database to redo the import, follow [this](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Backing-up-and-restoring-data#wiping-the-database).
+!!! warning
+
+    **This only works if the database is completely empty!**
+
+    If you messed up and wish to reset the database to redo the import,
+    follow [this](#wiping-the-database).
 
 ## Restoring a backup
 
 If you accidentally deleted something important, or your database became corrupted, you can restore a backup. They are located in the `pgbackups` folder.
 
-First, you must [wipe the database](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Backing-up-and-restoring-data#wiping-the-database). Then, locate the backup file you want to use (we will assume it's named `ballsdex-latest.sql.gz` and follow the instructions according to your OS.
+First, you must [wipe the database](#wiping-the-database). Then, locate the backup file you want to use (we will assume it's named `ballsdex-latest.sql.gz` and follow the instructions according to your OS.
 
 ### macOS/Linux
 
-- With Docker: `docker compose up -d postgres-db && zcat ballsdex-latest.sql.gz | docker compose exec -T postgres-db psql -U ballsdex ballsdex`
-- Without Docker: `zcat ballsdex-latest.sql.gz | psql -U ballsdex ballsdex`
+=== "With Docker"
+
+    ```bash
+    docker compose up -d postgres-db && \
+        zcat ballsdex-latest.sql.gz | \
+        docker compose exec -T postgres-db psql -U ballsdex ballsdex
+    ```
+
+=== "Without Docker"
+
+    ```bash
+    zcat ballsdex-latest.sql.gz | psql -U ballsdex ballsdex
+    ```
 
 ### Windows
 
 Open the `ballsdex-latest.sql.gz` using [7zip](https://www.7-zip.org/) and extract the resulting `.sql` file. Move it to your bot's folder, then:
 
-- With Docker: `docker compose up -d postgres-db && cat data-dump.sql | docker compose exec -T postgres-db psql -U ballsdex ballsdex`
-- Without Docker: `psql -U ballsdex ballsdex -f data-dump.sql`
+=== "With Docker"
+
+    ```bash
+    docker compose up -d postgres-db && \
+        cat data-dump.sql | \
+        docker compose exec -T postgres-db psql -U ballsdex ballsdex
+    ```
+
+=== "Without Docker"
+
+    ```bash
+    psql -U ballsdex ballsdex -f data-dump.sql
+    ```
 
 ## Wiping the database
 
 If you need to reset the PostgreSQL database (importing data, restoring a backup), do this:
 
-- With Docker: `docker compose down --volumes`
-- Without Docker: `psql -U ballsdex ballsdex -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"`
+=== "With Docker"
 
-> [!CAUTION]
-> This is irreversible, be extra sure that your backups are there!
+    ```bash
+    docker compose down --volumes
+    ```
+
+=== "Without Docker"
+
+    ```bash
+    psql -U ballsdex ballsdex -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+    ```
+
+!!! danger
+
+    This is irreversible, be extra sure that your backups are there!

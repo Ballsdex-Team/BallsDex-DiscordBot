@@ -39,6 +39,9 @@ theme:
     - navigation.indexes
     - toc.follow
     - search.suggest
+    - content.tabs.link
+    - content.code.select
+    - content.code.copy
 
   icon:
     repo: fontawesome/brands/github
@@ -123,6 +126,8 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
       default_lang: python
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
