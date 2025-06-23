@@ -72,7 +72,7 @@ cd BallsDex-DiscordBot
 
 ## 5. Configure the bot
 
-Follow [this section](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Installing-Ballsdex#5-configure-the-bot) from the main tutorial to fill the base settings.
+Follow [this section](../installing-ballsdex/#5-configure-the-bot) from the main tutorial to fill the base settings.
 
 ## 6. Run the bot
 

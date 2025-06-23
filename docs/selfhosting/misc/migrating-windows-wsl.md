@@ -4,16 +4,16 @@ This guide will show how to migrate your bot to WSL and ditch Docker for Windows
 
 ## 1. Backup and uninstall
 
-Follow [this guide](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Backing-up-and-restoring-data) to backup your data. In theory, you only need the `data-dump.sql` file, but better be safe.
+Follow [this guide](../backup-and-transfers/) to backup your data. In theory, you only need the `data-dump.sql` file, but better be safe.
 
 Once this step is complete and you have verified the contents of your database dump, **uninstall Docker Desktop** from Windows. You must still keep the bot's folder.
 
-> [!TIP]
-> WSL can use more disk space. If you have less than 30GB available, it is a good idea to clean your computer now.
+!!! tip
+    WSL can use more disk space. If you have less than 30GB available, it is a good idea to clean your computer now.
 
 ## 2. Configure WSL
 
-Follow [the first part of the new tutorial](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/%5BWIP%5D-Installing-Ballsdex) to install WSL and Docker. Don't forget the last step to test and confirm that your new Docker works.
+Follow [the first part of the new tutorial](../../installation/installing-ballsdex/) to install WSL and Docker. Don't forget the last step to test and confirm that your new Docker works.
 
 ## 3. Locate the bot's folder
 
@@ -25,8 +25,8 @@ Every time you need to type shell commands for the bot, you need to do the step 
 
 ## 4. Import your database dump
 
-> [!WARNING]
-> **Do NOT start the bot yet!** It will mess everything up by re-creating an empty database
+!!! warning
+    **Do NOT start the bot yet!** It will mess everything up by re-creating an empty database
 
 1. Type `docker compose up -d postgres-db` to only start the database and nothing else.
 2. Run `cat data-dump.sql | docker compose exec -T psql -U ballsdex ballsdex`
@@ -36,7 +36,7 @@ Every time you need to type shell commands for the bot, you need to do the step 
 
 Run `docker compose build` to build the image.
 
-Then follow [this section](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/%5BWIP%5D-Installing-Ballsdex#6-run-the-bot) to start your bot. You shouldn't need any configuration, the bot will pick up your old files and resume just like before.
+Then follow [this section](../../installation/installing-ballsdex#6-run-the-bot/) to start your bot. You shouldn't need any configuration, the bot will pick up your old files and resume just like before.
 
 ## 6. Using Docker on Linux
 

@@ -84,7 +84,7 @@ Click the "Add" button next to "Balls", or click the "Add ball" button on the to
 
 - `Country`: The name of your collectible
 - `Health` and `Attack`: Base stats, they will be applied a +/-20% bonus when caught (customizable in `config.yml`)
-- `Rarity`: Defines how rare the ball will be when spawning. Setting a rarity of 0 will make the ball unspawnable (but it will still appear in completion and user commands!). Check [this page](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Rarity-mechanism) to understand how rarity works.
+- `Rarity`: Defines how rare the ball will be when spawning. Setting a rarity of 0 will make the ball unspawnable (but it will still appear in completion and user commands!). Check [this page](../../misc/rarity-mechanism/) to understand how rarity works.
 - `Emoji ID`: The ID of your ball's emoji. You can upload application emojis from the [Discord developer portal](https://discord.com/developers/applications), click your bot and go to the "Emojis" tab. Emojis from servers shared by the bot are also supported.
 - `Economy`: The icon at the top right of your card. You can leave this blank.
 - `Regime`: Sets the background of your card, this is required.
@@ -148,7 +148,7 @@ Specials can have a start and end date to indicate that it will be limited in ti
 
 - `Name`: The name of this special
 - `Catch phrase`: A sentence that will appear when a caught ball gets this special, for example "It's a shiny countryball"
-- `Rarity`: Defines the odds of getting that special. **This must be between 0 and 1 included.** Check [this page](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Rarity-mechanism) to understand how rarity works.
+- `Rarity`: Defines the odds of getting that special. **This must be between 0 and 1 included.** Check [this page](../../misc/rarity-mechanism/#special-rarity) to understand how rarity works.
 - `Emoji`: The emoji to place next to the ball instance to identify it. This must be a single unicode emoji, Discord emojis cannot be used for technical reasons.
 - `Background`: The new background to apply, this must be **precisely** 1428x2000 pixels. If the dimensions are off, the card generation will break.
 - `Start date` and `End date`: Optional date range to keep this event active. Both values are optional. Not setting a start date will make an event active immediately upon reload.
