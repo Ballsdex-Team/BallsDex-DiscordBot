@@ -156,9 +156,15 @@ class Info(commands.Cog):
             title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple()
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+        ADMIN_COGS = [
+            "Admin",
+            "CardMaker",
+            "AssetUploader",
+            "PowerLevel",
+        ]
 
         for cog in self.bot.cogs.values():
-            if cog.qualified_name == "Admin":
+            if cog.qualified_name in ADMIN_COGS:
                 continue
             content = ""
             for app_command in cog.walk_app_commands():
