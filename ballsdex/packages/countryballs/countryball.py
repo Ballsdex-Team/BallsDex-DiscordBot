@@ -64,8 +64,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         if self.view.usertimeout:
             try:
-               await interaction.user.timeout(timedelta(seconds=self.view.timeout))
-               await interaction.response.send_message(f"{interaction.user.mention} GET OUT-\n-# they were timed out for {timedelta(seconds=self.view.timeout)}!")
+               await interaction.user.timeout(timedelta(seconds=self.view.usertimeout))
+               await interaction.response.send_message(f"{interaction.user.mention} GET OUT-\n-# they were timed out for {timedelta(seconds=self.view.usertimeout)}!")
                self.button.disabled = True
                return
             except Exception:
