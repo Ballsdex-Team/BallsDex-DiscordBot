@@ -71,6 +71,11 @@ class DiscordSnowflakeValidator(validators.Validator):
         if not 17 <= len(str(value)) <= 19:
             raise exceptions.ValidationError("Discord IDs are between 17 and 19 characters long")
 
+class BotLanguage(StrEnum):
+    ENGLISH = "en"
+    SPANISH = "es"
+    GERMAN = "de"
+    FRENCH = "fr"
 
 class GuildConfig(models.Model):
     guild_id = fields.BigIntField(
@@ -87,7 +92,11 @@ class GuildConfig(models.Model):
         description="Whether the responses of guesses get sent as ephemeral or not",
         default=False,
     )
-
+    bot_language = fields.IntEnumField(
+        BotLanguage,
+        description="The selected language for the bot in the server",
+        default=BotLanguage.ENGLISH,
+    )
 
 class Regime(models.Model):
     name = fields.CharField(max_length=64)
