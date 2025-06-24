@@ -549,7 +549,8 @@ class BallSpawnView(View):
         """
         text = ""
         if ball.specialcard and ball.specialcard.catch_phrase:
-            text += f"*{ball.specialcard.catch_phrase}*\n"
+            formatted_special_catch = ball.specialcard.catch_phrase.replace("Regime", self.RegimeName.capitalize())
+            text += f"*{formatted_special_catch}*\n"
         if new_ball:
             text += (
                 f"You have unlocked a **new {self.RegimeName}**! "
