@@ -475,6 +475,12 @@ class BallInstance(models.Model):
         elif self.countryball.regime_id in FANMADE_SKIN_REGIMES:
             skin_type = "Fanmade"
             skin_type_emoji = self.bot.get_emoji(1365147307829497967)
+        if skin_theme != "":
+            formatted_second_row += f"{skin_theme}{skin_theme_emoji} "
+            if skin_type != "":
+                formatted_second_row += f"({skin_type}{skin_type_emoji})"
+            else:
+                pass
         if self.specialcard:
             special_name = self.specialcard.name
             special_emoji = self.special.emoji
