@@ -456,10 +456,25 @@ class BallInstance(models.Model):
         special_name = ""
         formatted_special_text = ""
         rarity_emoji = ""
-        if self.countryball.regime.name not in RARITY_EMOJIS.keys():
-            pass
-        else:
+        skin_theme = ""
+        skin_theme_emoji = ""
+        skin_type = ""
+        skin_type_emoji = ""
+        formatted_second_row = ""
+        if self.countryball.regime.name RARITY_EMOJIS.keys():
             rarity_emoji = self.bot.get_emoji(RARITY_EMOJIS.get(self.countryball.regime.name))
+        if self.countryball.economy_id in SKIN_THEMES.keys():
+            skin_theme = self.countryball.economy.name
+            skin_theme_emoji = self.bot.get_emoji(SKIN_THEMES.get(self.countryball.economy_id))
+        if self.countryball.regime_id in PRO_SKIN_REGIMES:
+            skin_type = "Pro"
+            skin_type_emoji = self.bot.get_emoji(1385477217269583892)
+        elif self.countryball.regime_id in CHINA_SKIN_REGIMES:
+            skin_type = "China"
+            skin_type_emoji = self.bot.get_emoji(1372264199174230106)
+        elif self.countryball.regime_id in FANMADE_SKIN_REGIMES:
+            skin_type = "Fanmade"
+            skin_type_emoji = self.bot.get_emoji(1365147307829497967)
         if self.specialcard:
             special_name = self.specialcard.name
             special_emoji = self.special.emoji
