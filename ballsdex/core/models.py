@@ -39,6 +39,25 @@ plevel_emojis=[
     1366788095227199569,
     1366788107747328122
 ]
+FANMADE_SKIN_REGIMES = [
+    157,
+    156,
+    211
+]
+CHINA_SKIN_REGIMES = [
+    220,
+    248,
+    252,
+    37
+]
+PRO_SKIN_REGIMES = [
+    38,
+    39,
+    40
+]
+RARITY_EMOJIS = {
+    
+}
 
 async def lower_catch_names(
     model: Type[Ball],
