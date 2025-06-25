@@ -56,7 +56,19 @@ PRO_SKIN_REGIMES = [
     40
 ]
 RARITY_EMOJIS = {
-    
+    "Rare": 1330493249235714189,
+    "Super Rare": 1330493410884456528,
+    "Epic": 1330493427011555460,
+    "Mythic": 1330493448469483580,
+    "Legendary": 1330493465221529713,
+    "Ultra Legendary": 1368271368382320761,
+    "Rare Skin": 1329613491216322613,
+    "Super Rare Skin": 1329613550746075178,
+    "Epic Skin": 1329613562376622122,
+    "Mythic Skin": 1329613573843980378,
+    "Legendary Skin": 1329613584644182048,
+    "Ultimate Skin": 1374258318297665556,
+    "Hypercharge Skin": 1329613598720393337
 }
 
 async def lower_catch_names(
