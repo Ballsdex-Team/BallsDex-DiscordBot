@@ -455,6 +455,11 @@ class BallInstance(models.Model):
         special_emoji = ""
         special_name = ""
         formatted_special_text = ""
+        rarity_emoji = ""
+        if self.countryball.regime.name not in RARITY_EMOJIS.keys():
+            pass
+        else:
+            rarity_emoji = self.bot.get_emoji(RARITY_EMOJIS.get(self.countryball.regime.name))
         if self.specialcard:
             special_name = self.specialcard.name
             special_emoji = self.special.emoji
