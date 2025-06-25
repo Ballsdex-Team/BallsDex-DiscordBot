@@ -548,6 +548,20 @@ class BallSpawnView(View):
             (as returned by `catch_ball`)
         """
         text = ""
+        plevel_emojis=[
+            1366783166941102081,
+            1366783917314674698,
+            1366784186941177977,
+            1366784841487745034,
+            1366784908575510558,
+            1366785648370909327,
+            1366785660605698058,
+            1366786928338407424,
+            1366786943790088345,
+            1366788095227199569,
+            1366788107747328122
+        ]
+        plevel_emoji = self.bot.get_emoji(plevel_emojis[int(((ball.attack_bonus + 10) / 10))-1])
         if ball.specialcard and ball.specialcard.catch_phrase:
             formatted_special_catch = ball.specialcard.catch_phrase.replace("Regime", self.RegimeName.capitalize())
             text += f"*{formatted_special_catch}*\n"
@@ -571,6 +585,7 @@ class BallSpawnView(View):
                 user=mention,
                 wiki_link=f"https://brawldex.fandom.com/wiki/{self.name.replace("", "_")}",
                 collectible_emoji=self.bot.get_emoji(self.ball.emoji_id)
+                gun_emoji=self.bot.get_emoji(1367203443349000374)
                 ball=self.name,
                 regime=self.RegimeName,
                 Regime=self.RegimeName.capitalize(),
@@ -590,5 +605,5 @@ class BallSpawnView(View):
 
         return (
             caught_message
-            + f"`(#{ball.pk:0X}, Power Level {int((ball.attack_bonus + 10) / 10)})`\n\n{text}"
+            + f"`(#{ball.pk:0X}) {plevel_emoji}`\n\n{text}"
         )
