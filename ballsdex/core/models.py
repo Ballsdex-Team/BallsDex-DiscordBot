@@ -413,6 +413,7 @@ class BallInstance(models.Model):
     async def prepare_for_message(
         self, interaction: discord.Interaction["BallsDexBot"]
     ) -> Tuple[str, discord.File, discord.ui.View]:
+        await self.fetch_related("ball__regime", "ball__economy", "special", "trade_player")
         # message content
         trade_content = ""
         await self.fetch_related("trade_player", "special")
