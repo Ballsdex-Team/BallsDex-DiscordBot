@@ -584,7 +584,7 @@ class BallSpawnView(View):
         caught_message = (
             random.choice(settings.caught_messages).format(
                 user=mention,
-                wiki_link=f"https://brawldex.fandom.com/wiki/{self.name.replace("", "_")}",
+                wiki_link=f"https://brawldex.fandom.com/wiki/{self.name.replace(" ", "_")}",
                 collectible_emoji=self.bot.get_emoji(ball.ball.emoji_id),
                 gun_emoji=self.bot.get_emoji(1367203443349000374),
                 ball=self.name,
