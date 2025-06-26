@@ -123,12 +123,6 @@ class DiscordSnowflakeValidator(validators.Validator):
         if not 17 <= len(str(value)) <= 19:
             raise exceptions.ValidationError("Discord IDs are between 17 and 19 characters long")
 
-class BotLanguage(StrEnum):
-    ENGLISH = "en"
-    SPANISH = "es"
-    GERMAN = "de"
-    FRENCH = "fr"
-
 class GuildConfig(models.Model):
     guild_id = fields.BigIntField(
         description="Discord guild ID", unique=True, validators=[DiscordSnowflakeValidator()]
