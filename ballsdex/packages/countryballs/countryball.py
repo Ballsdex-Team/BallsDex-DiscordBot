@@ -548,6 +548,7 @@ class BallSpawnView(View):
             (as returned by `catch_ball`)
         """
         text = ""
+        new_cb_emoji = self.bot.get_emoji(1387510759671595058)
         plevel_emojis=[
             1366783166941102081,
             1366783917314674698,
@@ -567,8 +568,8 @@ class BallSpawnView(View):
             text += f"*{formatted_special_catch}*\n"
         if new_ball:
             text += (
-                f"You have unlocked a **new {self.RegimeName}**! "
-                 "It is now added to your completion!\n"
+                f"{new_cb_emoji} You unlocked a **new {self.RegimeName}**! "
+                 f"It's now in your {self.RegimeName} collection! {new_cb_emoji}\n"
             )
         if dailycatch in {1, 4, 8}:
                 mj = self.bot.get_emoji(1363188571099496699)
