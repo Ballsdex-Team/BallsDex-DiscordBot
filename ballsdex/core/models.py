@@ -413,7 +413,8 @@ class BallInstance(models.Model):
     async def prepare_for_message(
         self, interaction: discord.Interaction["BallsDexBot"]
     ) -> Tuple[str, discord.File, discord.ui.View]:
-        await self.fetch_related("ball__regime", "ball__economy", "special", "trade_player")
+        await self.fetch_related("ball", "special", "trade_player")
+        await self.ball.fetch_related("regime", "economy")
         # message content
         trade_content = ""
         await self.fetch_related("trade_player", "special")
@@ -451,7 +452,7 @@ class BallInstance(models.Model):
         skin_type = ""
         skin_type_emoji = ""
         formatted_second_row = ""
-        if self.countryball.regime.name in RARITY_EMOJIS.keys():
+        if self.ball.regime.name in RARITY_EMOJIS.keys():
             rarity_emoji = self.bot.get_emoji(RARITY_EMOJIS.get(self.countryball.regime.name))
         if self.countryball.economy_id in SKIN_THEMES.keys():
             skin_theme = self.countryball.economy.name
