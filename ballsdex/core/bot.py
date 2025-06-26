@@ -144,6 +144,7 @@ class BallsDexBot(commands.AutoShardedBot):
         # emojis_and_stickers: DB holds emoji IDs for the balls which are fetched from 3 servers
         intents = discord.Intents(
             guilds=True,
+            reactions=True,
             guild_messages=True,
             emojis_and_stickers=True,
             message_content=not disable_message_content,
