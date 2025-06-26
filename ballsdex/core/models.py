@@ -503,7 +503,7 @@ class BallInstance(models.Model):
         content = (
             f"[{self.countryball.country}](<https://brawldex.fandom.com/wiki/{formatted_brawler_name}>) {emoji}{plevel_emoji}{rarity_emoji} {formatted_special_text}\n"
             f"{formatted_second_row}\n"
-            f"Caught on {format_dt(self.catch_date)} (#{self.pk:0X}).\n"
+            f"Caught on {format_dt(self.catch_date)} (`#{self.pk:0X}`).\n"
             f"{trade_content}"
         )
 
