@@ -606,5 +606,5 @@ class BallSpawnView(View):
 
         return (
             caught_message
-            + f"`(#{ball.pk:0X}) {plevel_emoji}`\n\n{text}"
+            + f"{plevel_emoji} (`#{ball.pk:0X}`)\n\n{text}"
         )
