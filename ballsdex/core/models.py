@@ -461,7 +461,7 @@ class BallInstance(models.Model):
         skin_type = ""
         skin_type_emoji = ""
         formatted_second_row = ""
-        if self.countryball.regime.name RARITY_EMOJIS.keys():
+        if self.countryball.regime.name in RARITY_EMOJIS.keys():
             rarity_emoji = self.bot.get_emoji(RARITY_EMOJIS.get(self.countryball.regime.name))
         if self.countryball.economy_id in SKIN_THEMES.keys():
             skin_theme = self.countryball.economy.name
