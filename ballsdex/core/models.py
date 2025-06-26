@@ -138,11 +138,6 @@ class GuildConfig(models.Model):
         description="Whether the responses of guesses get sent as ephemeral or not",
         default=False,
     )
-    bot_language = fields.IntEnumField(
-        BotLanguage,
-        description="The selected language for the bot in the server",
-        default=BotLanguage.ENGLISH,
-    )
 
 class Regime(models.Model):
     name = fields.CharField(max_length=64)
