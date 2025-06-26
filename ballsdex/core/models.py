@@ -501,9 +501,9 @@ class BallInstance(models.Model):
         if " " in self.countryball.country:
             formatted_brawler_name = self.countryball.country.replace(" ", "_")
         content = (
-            f"[{self.countryball.country}](<https://brawldex.fandom.com/wiki/{formatted_brawler_name}>) {emoji} {formatted_special_text}\n"
-            f"ID: `#{self.pk:0X}` Power Level: {plevel_emoji}\n"
-            f"Caught on {format_dt(self.catch_date)} ({format_dt(self.catch_date, style='R')}).\n"
+            f"[{self.countryball.country}](<https://brawldex.fandom.com/wiki/{formatted_brawler_name}>) {emoji}{plevel_emoji}{rarity_emoji} {formatted_special_text}\n"
+            f"{formatted_second_row}\n"
+            f"Caught on {format_dt(self.catch_date)} (#{self.pk:0X}).\n"
             f"{trade_content}"
         )
 
