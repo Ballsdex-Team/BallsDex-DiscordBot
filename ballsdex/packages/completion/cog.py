@@ -123,7 +123,7 @@ class Collection(commands.Cog):
                     owned_countryballs = set(
                         x[0]
                         for x in await BallInstance.filter(**filters)
-                        .exclude(ball__regime_id__in=list(range(19, 34)) + [35, 37, 38, 39, 40])
+                        .exclude(ball__regime_id__in=list(range(19, 33)) + [35, 37, 38, 39, 40])
                         .distinct()
                         .values_list("ball_id")
                     )
