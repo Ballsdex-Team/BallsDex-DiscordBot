@@ -177,8 +177,8 @@ class Balls(app_commands.Group):
                 special_attrs.append(f"hp={hp_bonus}")
             await log_action(
                 f"{interaction.user} spawned {settings.collectible_name}"
-                f" {countryball or 'random'} {n} times in {channel or interaction.channel}"
-                f"{f" ({", ".join(special_attrs)})" if special_attrs else ""}.",
+                f" {countryball or 'random'} {n} times in {channel or interaction.channel}"+
+                (f" ({", ".join(special_attrs)})." if special_attrs else "."),
                 interaction.client,
             )
 
@@ -207,8 +207,8 @@ class Balls(app_commands.Group):
                 special_attrs.append(f"hp={hp_bonus}")
             await log_action(
                 f"{interaction.user} spawned {settings.collectible_name} {ball.name} "
-                f"in {channel or interaction.channel}"
-                f"{f" ({", ".join(special_attrs)})" if special_attrs else ""}.",
+                f"in {channel or interaction.channel}"+
+                (f" ({", ".join(special_attrs)})." if special_attrs else "."),
                 interaction.client,
             )
 
