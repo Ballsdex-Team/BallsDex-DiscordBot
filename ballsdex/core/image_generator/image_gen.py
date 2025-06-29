@@ -117,7 +117,7 @@ def draw_card(
     cap_name = textwrap.wrap(f"{ball.capacity_name}", width=26)
     for i, line in enumerate(cap_name):
         draw.text(
-            (100, 1050 + 100 * i + shadow_offset),
+            (100, 1100 + 100 * i + shadow_offset),
             line,
             font=capacity_name_font,
             fill=shadow_color,
@@ -126,7 +126,7 @@ def draw_card(
         )
         
         draw.text(
-            (100, 1050 + 100 * i),
+            (100, 1100 + 100 * i),
             line,
             font=capacity_name_font,
             fill=(255, 255, 255, 255),
@@ -139,7 +139,7 @@ def draw_card(
     wrapped_description = wrap_text(ball.capacity_description, capacity_description_font, max_text_width, draw)
     for i, line in enumerate(wrapped_description):
         draw.text(
-            (60, 1100 + 100 * len(cap_name) + 80 * i + shadow_offset),
+            (60, 1150 + 100 * len(cap_name) + 80 * i + shadow_offset),
             line,
             font=capacity_description_font,
             fill=shadow_color,
@@ -148,7 +148,7 @@ def draw_card(
         )
 
         draw.text(
-            (60, 1100 + 100 * len(cap_name) + 80 * i),
+            (60, 1150 + 100 * len(cap_name) + 80 * i),
             line,
             font=capacity_description_font,
             fill=(255, 255, 255, 255),
