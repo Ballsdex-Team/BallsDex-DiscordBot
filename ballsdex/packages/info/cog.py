@@ -35,6 +35,7 @@ sections = [
 class SectionPaginator(discord.ui.View):
     def __init__(self, bot: "BallsDexBot", sections: list[dict], author: discord.User):
         super().__init__(timeout=300)
+        self.bot = bot
         self.sections = sections
         self.author = author
         self.message = None
@@ -72,7 +73,7 @@ class SectionPaginator(discord.ui.View):
             description=section["description"],
             color=discord.Color.blurple()
         )
-        embed.set_thumbnail(url=BallsDexBot.user.display_avatar.url)
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.set_footer(text=f"Section {index + 1} of {len(self.sections)}")
         if section == "COMMANDS":
             ADMIN_COGS = [
