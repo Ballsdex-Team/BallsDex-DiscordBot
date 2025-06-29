@@ -44,10 +44,10 @@ class SectionPaginator(discord.ui.View):
 
     def update_buttons(self):
         self.clear_items()  # Remove old buttons
-        for idx in range(len(self.sections)):
-            label = section.get("button_label", str(idx + 1))
+        for idx, section in enumerate(self.sections):
+            label = section.get("button_label", str(idx + 1))  # Fallback to "1", "2", etc.
             style = discord.ButtonStyle.success if idx == self.current_index else discord.ButtonStyle.secondary
-            button = discord.ui.Button(label=str(idx + 1), style=style)
+            button = discord.ui.Button(label=label, style=style)
             button.callback = self.make_callback(idx)
             self.add_item(button)
 
