@@ -76,7 +76,7 @@ class SectionPaginator(discord.ui.View):
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.set_footer(text=f"Section {index + 1} of {len(self.sections)}")
-        if section == "COMMANDS":
+        if section["title"] == "COMMANDS":
             ADMIN_COGS = [
                 "Admin",
                 "CardMaker",
