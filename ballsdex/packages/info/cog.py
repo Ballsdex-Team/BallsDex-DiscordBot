@@ -27,6 +27,65 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.info")
 
+sections = [
+    {"title": "Section 1", "description": "This is the first section."},
+    {"title": "Section 2", "description": "This is the second section."},
+    {"title": "Section 3", "description": "This is the third section."}
+]
+
+class SectionPaginator(discord.ui.View):
+    def __init__(self, sections: list[dict], author: discord.User):
+        super().__init__(timeout=300)
+        self.sections = sections
+        self.author = author
+        self.message = None
+        self.current_index = 0  # Track active section
+        self.update_buttons()
+
+    def update_buttons(self):
+        self.clear_items()  # Remove old buttons
+        for idx in range(len(self.sections)):
+            style = discord.ButtonStyle.success if idx == self.current_index else discord.ButtonStyle.secondary
+            button = discord.ui.Button(label=str(idx + 1), style=style)
+            button.callback = self.make_callback(idx)
+            self.add_item(button)
+
+    def make_callback(self, index: int):
+        async def callback(interaction: discord.Interaction):
+            # 🔒 Restrict to original user
+            if interaction.user.id != self.author.id:
+                await interaction.response.send_message(
+                    "You can't use these buttons — this paginator belongs to someone else.",
+                    ephemeral=True
+                )
+                return
+
+            self.current_index = index
+            self.update_buttons()  # Update styles
+            embed = self.make_embed(index)
+            await interaction.response.edit_message(embed=embed, view=self)
+        return callback
+
+    def make_embed(self, index: int) -> discord.Embed:
+        section = self.sections[index]
+        embed = discord.Embed(
+            title=section["title"],
+            description=section["description"],
+            color=discord.Color.blurple()
+        )
+        embed.set_footer(text=f"Section {index + 1} of {len(self.sections)}")
+        return embed
+
+    async def on_timeout(self):
+        for child in self.children:
+            if isinstance(child, discord.ui.Button):
+                child.disabled = True
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except discord.NotFound:
+                pass
+
 
 def mention_app_command(app_command: app_commands.Command | app_commands.Group) -> str:
     if "mention" in app_command.extras:
@@ -149,40 +208,8 @@ class Info(commands.Cog):
     @app_commands.command()
     async def help(self, interaction: discord.Interaction["BallsDexBot"]):
         """
-        Show the list of commands from the bot.
+        Need help with using the bot?
         """
-        assert self.bot.user
-        embed = discord.Embed(
-            title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple()
-        )
-        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
-        ADMIN_COGS = [
-            "Admin",
-            "CardMaker",
-            "AssetUploader",
-            "PowerLevel",
-        ]
-
-        for cog in self.bot.cogs.values():
-            if cog.qualified_name in ADMIN_COGS:
-                continue
-            content = ""
-            for app_command in cog.walk_app_commands():
-                translated = await self.bot.tree.translator.translate(  # type: ignore
-                    locale_str(app_command.description),
-                    interaction.locale,
-                    TranslationContext(TranslationContextLocation.other, None),
-                )
-                content += f"{mention_app_command(app_command)}: {translated}\n"
-            if not content:
-                continue
-            pages = pagify(content, page_length=1024)
-            for i, page in enumerate(pages):
-                embed.add_field(
-                    name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False
-                )
-
-        await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
