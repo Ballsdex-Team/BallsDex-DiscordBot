@@ -106,3 +106,4 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS("Database updated!"))
             self.stdout.write("You may want to run remove_unused_files to remove the old copies.")
+            self.stdout.write("Also, run reloadcache to have the bot use the new filenames.")

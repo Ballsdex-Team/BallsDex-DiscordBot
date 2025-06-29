@@ -46,10 +46,10 @@ class Command(BaseCommand):
             return
 
         if options["yes"] or media_manager.boolean_input(
-            "Do you want to remove any of these files?"
+            "Do you want to remove all of these files?"
         ):
             for file in unused_files:
-                if options["yes"] or media_manager.boolean_input(
-                    f"Remove {file.name}?", default=True
-                ):
-                    file.unlink()
+                f"Removed {file.name}?"
+                file.unlink()
+        else:
+            self.stdout.write("Not removing files")
