@@ -266,6 +266,20 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user: discord.User
             The user you would like to see
         """
+        indicator_string = ""
+        SKIN_REGIMES = [
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            37,
+            40,
+            39,
+            38,
+            35
+        ]
         user_obj = user if user else interaction.user
         await interaction.response.defer(thinking=True)
         try:
@@ -301,11 +315,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
-
+        if countryball.ball.regime_id in SKIN_REGIMES:
+            indicator_string = "skin"
+        else:
+            indicator_string = "brawler"
         content, file, view = await countryball.prepare_for_message(interaction)
         if user is not None and user.id != interaction.user.id:
             content = (
-                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}.\n"
+                f"{user.display_name}'s last defeated {indicator_string}:\n"
                 + content
             )
         await interaction.followup.send(content=content, file=file, view=view)
