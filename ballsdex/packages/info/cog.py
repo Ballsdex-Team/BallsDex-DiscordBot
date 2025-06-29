@@ -100,7 +100,7 @@ class SectionPaginator(discord.ui.View):
                     embed.add_field(
                         name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False
                     )
-         return embed
+        return embed
 
     async def on_timeout(self):
         for child in self.children:
