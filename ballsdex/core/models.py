@@ -93,7 +93,8 @@ SKIN_THEMES = {
     34: 1364156695948951552,
     37: 1364156695948951552,
     38: 1364156695948951552,
-    22: 1387762302270570526
+    22: 1387762302270570526,
+    24: 1387762302270570526
 }
 
 async def lower_catch_names(
@@ -445,7 +446,7 @@ class BallInstance(models.Model):
                 if original_player
                 else f"user with ID {self.trade_player.discord_id}"
             )
-            trade_content = f"Obtained by trade with {original_player_name}.\n"
+            trade_content = f"Obtained by trade with {original_player_name}\n"
 
         special_emoji = ""
         special_name = ""
@@ -495,12 +496,19 @@ class BallInstance(models.Model):
         formatted_brawler_name = self.countryball.country
         if " " in self.countryball.country:
             formatted_brawler_name = self.countryball.country.replace(" ", "_")
-        content = (
-            f"[{self.countryball.country}](<https://brawldex.fandom.com/wiki/{formatted_brawler_name}>) {emoji}{plevel_emoji}{rarity_emoji} {formatted_special_text}\n"
-            f"{formatted_second_row}\n"
-            f"Caught on {format_dt(self.catch_date)} (`#{self.pk:0X}`).\n"
-            f"{trade_content}"
-        )
+        if formatted_second_row != "":
+            content = (
+                f"[{self.countryball.country}](<https://brawldex.fandom.com/wiki/{formatted_brawler_name}>) {emoji}{plevel_emoji}{rarity_emoji} {formatted_special_text}\n"
+                f"{formatted_second_row}\n"
+                f"Caught on {format_dt(self.catch_date)} (`#{self.pk:0X}`)\n"
+                f"{trade_content}"
+            )
+        else:
+            content = (
+                f"[{self.countryball.country}](<https://brawldex.fandom.com/wiki/{formatted_brawler_name}>) {emoji}{plevel_emoji}{rarity_emoji} {formatted_special_text}\n"
+                f"Caught on {format_dt(self.catch_date)} (`#{self.pk:0X}`)\n"
+                f"{trade_content}"
+            )
 
         # draw image
         with ThreadPoolExecutor() as pool:
