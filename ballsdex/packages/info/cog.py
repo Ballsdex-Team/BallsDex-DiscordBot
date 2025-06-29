@@ -33,8 +33,9 @@ sections = [
 ]
 
 class SectionPaginator(discord.ui.View):
-    def __init__(self, sections: list[dict], author: discord.User):
+    def __init__(self, bot: "BallsDexBot", sections: list[dict], author: discord.User):
         super().__init__(timeout=300)
+        self.bot = bot
         self.sections = sections
         self.author = author
         self.message = None
@@ -198,7 +199,7 @@ class Info(commands.Cog):
                 "description": ""
             }
         ]
-        view = SectionPaginator(sections, author=interaction.user)
+        view = SectionPaginator(self.bot, sections, author=interaction.user)
         embed = view.make_embed(view.current_index)
         await interaction.response.send_message(embed=embed, view=view)
         view.message = await interaction.original_response()
