@@ -192,11 +192,13 @@ class Info(commands.Cog):
                     f"This bot's source code was made by [El Laggron](<https://www.patreon.com/retke>), it's maintained & updated by various [contributors](https://brawldex.fandom.com/wiki/Contributions).\n\n"
                     f"[Discord Server]({settings.discord_invite}) • [Invite Me!]({invite_link}) • [Wiki](https://brawldex.fandom.com) • [Terms of Service]({settings.terms_of_service}) • [Privacy Policy]({settings.privacy_policy})\n\n"
                    "This server & bot is not affiliated with, endorsed, sponsored, or specifically approved by Supercell and Supercell is not responsible for it. For more information see Supercell's Fan Content Policy: <https://www.supercell.com/fan-content-policy>"
-              )
+              ),
+                "button_label": "INFORMATIONS"
             },
             {
                 "title": "BrawlDex Commands",
-                "description": ""
+                "description": "",
+                "button_label": "COMMANDS"
             }
         ]
         view = SectionPaginator(self.bot, sections, author=interaction.user)
