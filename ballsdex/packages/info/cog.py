@@ -33,7 +33,7 @@ sections = [
 ]
 
 class SectionPaginator(discord.ui.View):
-    def __init__(self, sections: list[dict], author: discord.User):
+    def __init__(self, bot: "BallsDexBot", sections: list[dict], author: discord.User):
         super().__init__(timeout=300)
         self.sections = sections
         self.author = author
