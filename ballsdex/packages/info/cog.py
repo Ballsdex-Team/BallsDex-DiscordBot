@@ -72,7 +72,7 @@ class SectionPaginator(discord.ui.View):
             description=section["description"],
             color=discord.Color.blurple()
         )
-        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+        embed.set_thumbnail(url=BallsDexBot.user.display_avatar.url)
         embed.set_footer(text=f"Section {index + 1} of {len(self.sections)}")
         if section == "COMMANDS":
             ADMIN_COGS = [
