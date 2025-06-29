@@ -178,6 +178,26 @@ class Info(commands.Cog):
                 permissions=self.bot.application.install_params.permissions,
                 scopes=self.bot.application.install_params.scopes,
             )
+            sections = [
+            {
+                "title": "INFORMATIONS",
+                "description": (
+                    f"{settings.bot_name} Discord bot\n"
+                    f"{' '.join(str(x) for x in balls)}\n"
+                    f"{settings.about_description}\n\n"
+                    f"**{balls_count:,}** {settings.plural_collectible_name} & skins to collect\n"
+                    f"**{balls_instances_count:,}** brawlers & skins defeated\n"
+                    f"**{players_count:,}** players & **{len(self.bot.guilds):,}** servers playing\n\n"
+                    f"This bot's source code was made by [El Laggron](<https://www.patreon.com/retke>), it's maintained & updated by various [contributors](https://brawldex.fandom.com/wiki/Contributions).\n\n"
+                    f"[Discord Server]({settings.discord_invite}) • [Invite Me!]({invite_link}) • [Wiki](https://brawldex.fandom.com) • [Terms of Service]({settings.terms_of_service}) • [Privacy Policy]({settings.privacy_policy})\n\n"
+                   "This server & bot is not affiliated with, endorsed, sponsored, or specifically approved by Supercell and Supercell is not responsible for it. For more information see Supercell's Fan Content Policy: <https://www.supercell.com/fan-content-policy>"
+              )
+            },
+            {
+                "title": "COMMANDS",
+                "description": ""
+            }
+        ]
         view = SectionPaginator(sections, author=interaction.user)
         embed = view.make_embed(view.current_index)
         await interaction.response.send_message(embed=embed, view=view)
