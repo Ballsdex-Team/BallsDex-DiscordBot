@@ -77,25 +77,27 @@ class SectionPaginator(discord.ui.View):
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.set_footer(text=f"Section {index + 1} of {len(self.sections)}")
         if section["title"] == "COMMANDS":
-            ADMIN_COGS = [
-                "Admin",
-                "CardMaker",
-                "AssetUploader",
-                "PowerLevel",
-            ]
+            from collections import defaultdict
 
-            for cog in self.bot.cogs.values():
-                if cog.qualified_name in ADMIN_COGS:
+            ADMIN_COGS = {"Admin", "CardMaker", "AssetUploader", "PowerLevel"}
+
+            cog_commands = defaultdict(list)
+            for command in self.bot.tree.walk_commands():
+                cog = getattr(command, "_cog", None)
+                if cog is None or cog.qualified_name in ADMIN_COGS:
                     continue
+                cog_commands[cog.qualified_name].append(command)
+
+            for cog_name, commands in cog_commands.items():
                 content = ""
-                for app_command in cog.walk_app_commands():
-                    content += f"{mention_app_command(app_command)}: {app_command.description}\n"
+                for command in commands:
+                    content += f"{mention_app_command(command)}: {command.description or 'No description'}\n"
                 if not content:
                     continue
                 pages = pagify(content, page_length=1024)
                 for i, page in enumerate(pages):
                     embed.add_field(
-                        name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False
+                        name=cog_name if i == 0 else "\u200b", value=page, inline=False
                     )
         return embed
 
