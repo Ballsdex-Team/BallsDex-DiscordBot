@@ -28,9 +28,9 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.info")
 
 sections = [
-    {"title": "Section 1", "description": "This is the first section."},
-    {"title": "Section 2", "description": "This is the second section."},
-    {"title": "Section 3", "description": "This is the third section."}
+    {"title": "INTRO", "description": "This is the first section."},
+    {"title": "TUTORIAL", "description": "This is the second section."},
+    {"title": "COMMANDS", "description": "This is the third section."}
 ]
 
 class SectionPaginator(discord.ui.View):
@@ -116,95 +116,7 @@ class Info(commands.Cog):
                 emotes.append(emoji)
 
         return emotes
-
-    @app_commands.command()
-    async def about(self, interaction: discord.Interaction["BallsDexBot"]):
-        """
-        Get information about this bot.
-        """
-        embed = discord.Embed(
-            title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple()
-        )
-
-        try:
-            balls = await self._get_10_balls_emojis()
-        except Exception:
-            log.error("Failed to fetch 10 balls emotes", exc_info=True)
-            balls = []
-
-        balls_count = len([x for x in countryballs.values() if x.enabled])
-        players_count = await row_count_estimate("player")
-        balls_instances_count = await row_count_estimate("ballinstance")
-
-        if self.bot.startup_time is not None:
-            uptime_duration = datetime.now() - self.bot.startup_time
-            formatted_uptime = str(uptime_duration).split(".")[0]
-        else:
-            formatted_uptime = "N/A"
-
-        assert self.bot.user
-        assert self.bot.application
-        try:
-            assert self.bot.application.install_params
-        except AssertionError:
-            invite_link = discord.utils.oauth_url(
-                self.bot.application.id,
-                permissions=discord.Permissions(
-                    manage_webhooks=True,
-                    read_messages=True,
-                    send_messages=True,
-                    manage_messages=True,
-                    embed_links=True,
-                    attach_files=True,
-                    use_external_emojis=True,
-                    add_reactions=True,
-                ),
-                scopes=("bot", "applications.commands"),
-            )
-        else:
-            invite_link = discord.utils.oauth_url(
-                self.bot.application.id,
-                permissions=self.bot.application.install_params.permissions,
-                scopes=self.bot.application.install_params.scopes,
-            )
-
-        bot_info = await self.bot.application_info()
-        if bot_info.team:
-            owner = bot_info.team.name
-        else:
-            owner = bot_info.owner
-        owner_credits = "by the team" if bot_info.team else "by"
-        dex_credits = (
-            f"This instance is owned {owner_credits} {owner}.\nAn instance of [Ballsdex]"
-            f"({settings.github_link}) by El Laggron and maintained by the Ballsdex Team "
-            f"and community of [contributors]({settings.github_link}/graphs/contributors)."
-        )
-        embed.description = (
-            f"{' '.join(str(x) for x in balls)}\n"
-            f"{settings.about_description}\n"
-            f"*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\n"
-            f"The bot has been online for **{formatted_uptime}**.\n\n"
-            f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
-            f"**{players_count:,}** players that caught "
-            f"**{balls_instances_count:,}** {settings.plural_collectible_name}\n"
-            f"**{len(self.bot.guilds):,}** servers playing\n\n"
-            f"{dex_credits}\n\n"
-            "Consider supporting El Laggron on "
-            "[Patreon](https://patreon.com/retke) :heart:\n\n"
-            f"[Discord server]({settings.discord_invite}) • [Invite me]({invite_link}) • "
-            f"[Source code and issues]({settings.github_link})\n"
-            f"[Terms of Service]({settings.terms_of_service}) • "
-            f"[Privacy policy]({settings.privacy_policy})"
-        )
-
-        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
-        v = sys.version_info
-        embed.set_footer(
-            text=f"Python {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}"
-        )
-
-        await interaction.response.send_message(embed=embed, view=LicenseInfo())
-
+        
     @app_commands.command()
     async def help(self, interaction: discord.Interaction["BallsDexBot"]):
         """
