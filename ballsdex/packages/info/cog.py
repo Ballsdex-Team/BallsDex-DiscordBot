@@ -87,12 +87,7 @@ class SectionPaginator(discord.ui.View):
                     continue
                 content = ""
                 for app_command in cog.walk_app_commands():
-                    translated = await self.bot.tree.translator.translate(  # type: ignore
-                        locale_str(app_command.description),
-                        interaction.locale,
-                        TranslationContext(TranslationContextLocation.other, None),
-                    )
-                    content += f"{mention_app_command(app_command)}: {translated}\n"
+                    content += f"{mention_app_command(app_command)}: {app_command.description}\n"
                 if not content:
                     continue
                 pages = pagify(content, page_length=1024)
