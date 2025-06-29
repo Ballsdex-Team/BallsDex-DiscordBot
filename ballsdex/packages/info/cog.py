@@ -30,7 +30,7 @@ log = logging.getLogger("ballsdex.packages.info")
 sections = [
     {"title": "INTRO", "description": f"{settings.bot_name} Discord bot\n{' '.join(str(x) for x in balls)}\n{settings.about_description}\n\n**{balls_count:,}** {settings.plural_collectible_name} & skins to collect\n**{balls_instances_count:,}** brawlers & skins defeated\n**{players_count:,}** players & **{len(self.bot.guilds):,}** servers playing\n\nThis bot's source code was made by [El Laggron](<https://www.patreon.com/retke>), it's maintained & updated by various [contributors](https://brawldex.fandom.com/wiki/Contributions).\n\n[Discord Server]({settings.discord_invite}) • [Invite Me!]({invite_link}) • [Wiki](https://brawldex.fandom.com) • [Terms of Service]({settings.terms_of_service}) • [Privacy Policy]({settings.privacy_policy})\n\nThis server & bot is not affiliated with, endorsed, sponsored, or specifically approved by Supercell and Supercell is not responsible for it. For more information see Supercell's Fan Content Policy: <https://www.supercell.com/fan-content-policy>"},
     {"title": "TUTORIAL", "description": "This is the second section."},
-    {"title": "COMMANDS", "description": "This is the third section."}
+    {"title": "COMMANDS", "description": ""}
 ]
 
 class SectionPaginator(discord.ui.View):
@@ -75,6 +75,32 @@ class SectionPaginator(discord.ui.View):
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.set_footer(text=f"Section {index + 1} of {len(self.sections)}")
+        if section == "COMMANDS":
+            ADMIN_COGS = [
+                "Admin",
+                "CardMaker",
+                "AssetUploader",
+                "PowerLevel",
+            ]
+
+            for cog in self.bot.cogs.values():
+                if cog.qualified_name in ADMIN_COGS:
+                    continue
+                content = ""
+                for app_command in cog.walk_app_commands():
+                    translated = await self.bot.tree.translator.translate(  # type: ignore
+                        locale_str(app_command.description),
+                        interaction.locale,
+                        TranslationContext(TranslationContextLocation.other, None),
+                    )
+                    content += f"{mention_app_command(app_command)}: {translated}\n"
+                if not content:
+                    continue
+               pages = pagify(content, page_length=1024)
+                for i, page in enumerate(pages):
+                    embed.add_field(
+                        name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False
+                    )
         return embed
 
     async def on_timeout(self):
