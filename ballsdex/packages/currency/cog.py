@@ -37,55 +37,7 @@ class Credits(commands.GroupCog, group_name="credits"):
         self.bot = bot
         self.CostByRarity = {"rare": 160, "super_rare": 430, "epic": 925, "mythic": 1900, "legendary": 3800}
         self.ExcludeOptions = ["ultra_legendary",]
-        
-    @app_commands.command(name="show")
-    @app_commands.checks.cooldown(3, 30, key=lambda i: i.user.id)
-    async def credits_show(
-        self,
-        interaction: discord.Interaction,
-        user: discord.User | None = None,
-    ):
-        """
-        Show Credits.
-        """
-        user_obj = user or interaction.user
-        await interaction.response.defer(thinking=True)
-        playerm, _ = await PlayerModel.get_or_create(discord_id=user_obj.id)
-
-        if playerm.credits == 0:
-            if user_obj == interaction.user:
-                await interaction.followup.send(
-                    f"You do not have any credits, catch Brawlers to get credits!"
-                )
-            else:
-                await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any credits yet."
-                )
-            return
-
-        if user is not None:
-            if await inventory_privacy(self.bot, interaction, playerm, user_obj) is False:
-                return
-        interaction_player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-
-        blocked = await playerm.is_blocked(interaction_player)
-        if blocked and not is_staff(interaction):
-            await interaction.followup.send(
-                "You cannot view the currency of a user that has you blocked.", ephemeral=True
-            )
-            return
-
-
-        if user_obj == interaction.user:
-            await interaction.followup.send(
-                f"You have {playerm.credits} credits."
-            )
-        else:
-            await interaction.followup.send(
-                f"{user_obj.name} has {playerm.credits} credits."
-            )
-
-
+    
     @app_commands.command(name="info")
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.channel.id)
     async def credits_info(
@@ -166,55 +118,7 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
         self.NextUpgradeCost = {2: 20, 3: 30, 4: 50, 5: 80, 6: 130, 7: 210, 8: 340, 9: 550, 10: 890, 11: 1440}
-        
-    @app_commands.command(name="show")
-    @app_commands.checks.cooldown(3, 30, key=lambda i: i.user.id)
-    async def pp_show(
-        self,
-        interaction: discord.Interaction,
-        user: discord.User | None = None,
-    ):
-        """
-        Show Power Points.
-        """
-        user_obj = user or interaction.user
-        await interaction.response.defer(thinking=True)
-        playerm, _ = await PlayerModel.get_or_create(discord_id=user_obj.id)
-
-        if playerm.powerpoints == 0:
-            if user_obj == interaction.user:
-                await interaction.followup.send(
-                    f"You do not have any power points, catch Brawlers to get power points!"
-                )
-            else:
-                await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any power points yet."
-                )
-            return
-
-        if user is not None:
-            if await inventory_privacy(self.bot, interaction, playerm, user_obj) is False:
-                return
-        interaction_player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)
-
-        blocked = await playerm.is_blocked(interaction_player)
-        if blocked and not is_staff(interaction):
-            await interaction.followup.send(
-                "You cannot view the currency of a user that has you blocked.", ephemeral=True
-            )
-            return
-
-
-        if user_obj == interaction.user:
-            await interaction.followup.send(
-                f"You have {playerm.powerpoints} power points."
-            )
-        else:
-            await interaction.followup.send(
-                f"{user_obj.name} has {playerm.powerpoints} power points."
-            )
-
-
+    
     @app_commands.command(name="shop")
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.channel.id)
     async def pp_chart(
