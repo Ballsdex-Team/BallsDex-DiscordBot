@@ -28,8 +28,8 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.info")
 
 sections = [
-    {"title": "INFORMATIONS", "description": ""},
-    {"title": "COMMANDS", "description": ""}
+    {"title": "BrawlDex Discord Bot", "description": "", "button_label": "INFORMATIONS"},
+    {"title": "BrawlDex Commands", "description": "", "button_label": "COMMANDS"}
 ]
 
 class SectionPaginator(discord.ui.View):
@@ -45,6 +45,7 @@ class SectionPaginator(discord.ui.View):
     def update_buttons(self):
         self.clear_items()  # Remove old buttons
         for idx in range(len(self.sections)):
+            label = section.get("button_label", str(idx + 1))
             style = discord.ButtonStyle.success if idx == self.current_index else discord.ButtonStyle.secondary
             button = discord.ui.Button(label=str(idx + 1), style=style)
             button.callback = self.make_callback(idx)
@@ -181,9 +182,8 @@ class Info(commands.Cog):
             )
             sections = [
             {
-                "title": "INFORMATIONS",
+                "title": "BrawlDex Discord Bot",
                 "description": (
-                    f"{settings.bot_name} Discord bot\n"
                     f"{' '.join(str(x) for x in balls)}\n"
                     f"{settings.about_description}\n\n"
                     f"**{balls_count:,}** {settings.plural_collectible_name} & skins to collect\n"
@@ -195,7 +195,7 @@ class Info(commands.Cog):
               )
             },
             {
-                "title": "COMMANDS",
+                "title": "BrawlDex Commands",
                 "description": ""
             }
         ]
