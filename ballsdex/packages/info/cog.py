@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.info")
 
 sections = [
-    {"title": "INTRO", "description": f"{settings.bot_name} Discord bot\n{' '.join(str(x) for x in balls)}\n{settings.about_description}\n*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\nThe bot has been online for **{formatted_uptime}**.\n\n"},
+    {"title": "INTRO", "description": f"{settings.bot_name} Discord bot\n{' '.join(str(x) for x in balls)}\n{settings.about_description}\n\n**{balls_count:,}** {settings.plural_collectible_name} & skins to collect\n**{balls_instances_count:,}** brawlers & skins defeated\n**{players_count:,}** players & **{len(self.bot.guilds):,}** servers playing\n\nThis bot's source code was made by [El Laggron](<https://www.patreon.com/retke>), it's maintained & updated by various [contributors](https://brawldex.fandom.com/wiki/Contributions).\n\n[Discord Server]({settings.discord_invite}) • [Invite Me!]({invite_link}) • [Wiki](https://brawldex.fandom.com) • [Terms of Service]({settings.terms_of_service}) • [Privacy Policy]({settings.privacy_policy})\n\nThis server & bot is not affiliated with, endorsed, sponsored, or specifically approved by Supercell and Supercell is not responsible for it. For more information see Supercell's Fan Content Policy: <https://www.supercell.com/fan-content-policy>"},
     {"title": "TUTORIAL", "description": "This is the second section."},
     {"title": "COMMANDS", "description": "This is the third section."}
 ]
@@ -133,12 +133,6 @@ class Info(commands.Cog):
         players_count = await row_count_estimate("player")
         balls_instances_count = await row_count_estimate("ballinstance")
 
-        if self.bot.startup_time is not None:
-            uptime_duration = datetime.now() - self.bot.startup_time
-            formatted_uptime = str(uptime_duration).split(".")[0]
-        else:
-            formatted_uptime = "N/A"
-
         assert self.bot.user
         assert self.bot.application
         try:
@@ -164,37 +158,6 @@ class Info(commands.Cog):
                 permissions=self.bot.application.install_params.permissions,
                 scopes=self.bot.application.install_params.scopes,
             )
-        bot_info = await self.bot.application_info()
-        if bot_info.team:
-            owner = bot_info.team.name
-        else:
-            owner = bot_info.owner
-        owner_credits = "by the team" if bot_info.team else "by"
-        dex_credits = (
-            f"This instance is owned {owner_credits} {owner}.\nAn instance of [Ballsdex]"
-            f"({settings.github_link}) by El Laggron and maintained by the Ballsdex Team "
-            f"and community of [contributors]({settings.github_link}/graphs/contributors)."
-        )
-            f"The bot has been online for **{formatted_uptime}**.\n\n"
-            f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
-            f"**{players_count:,}** players that caught "
-            f"**{balls_instances_count:,}** {settings.plural_collectible_name}\n"
-            f"**{len(self.bot.guilds):,}** servers playing\n\n"
-            f"{dex_credits}\n\n"
-            "Consider supporting El Laggron on "
-            "[Patreon](https://patreon.com/retke) :heart:\n\n"
-            f"[Discord server]({settings.discord_invite}) • [Invite me]({invite_link}) • "
-            f"[Source code and issues]({settings.github_link})\n"
-            f"[Terms of Service]({settings.terms_of_service}) • "
-            f"[Privacy policy]({settings.privacy_policy})"
-        )
-        v = sys.version_info
-        embed.set_footer(
-            text=f"Python {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}"
-        )
-
-        await interaction.response.send_message(embed=embed, view=LicenseInfo())
-
         view = SectionPaginator(sections, author=interaction.user)
         embed = view.make_embed(view.current_index)
         await interaction.response.send_message(embed=embed, view=view)
