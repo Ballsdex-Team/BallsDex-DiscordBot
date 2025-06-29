@@ -171,7 +171,7 @@ def draw_card(
         str(ball_instance.health),
         font=stats_font,
         fill=shadow_color,
-        stroke_width=5,
+        stroke_width=7,
         stroke_fill=(0, 0, 0, 255),
     )
     draw.text(
