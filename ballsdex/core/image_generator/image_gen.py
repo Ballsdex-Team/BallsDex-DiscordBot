@@ -121,7 +121,7 @@ def draw_card(
             line,
             font=capacity_name_font,
             fill=shadow_color,
-            stroke_width=8,
+            stroke_width=6,
             stroke_fill=(0, 0, 0, 255),
         )
         
@@ -130,7 +130,7 @@ def draw_card(
             line,
             font=capacity_name_font,
             fill=(255, 255, 255, 255),
-            stroke_width=8,
+            stroke_width=6,
             stroke_fill=(0, 0, 0, 255),
         )
 
@@ -179,7 +179,7 @@ def draw_card(
         str(ball_instance.health),
         font=stats_font,
         fill=ball_health,
-        stroke_width=5,
+        stroke_width=7,
         stroke_fill=(0, 0, 0, 255),
     )
     draw.text(
@@ -187,7 +187,7 @@ def draw_card(
         str(ball_instance.attack),
         font=stats_font,
         fill=shadow_color,
-        stroke_width=5,
+        stroke_width=7,
         stroke_fill=(0, 0, 0, 255),
         anchor="ra",
     )
@@ -196,7 +196,7 @@ def draw_card(
         str(ball_instance.attack),
         font=stats_font,
         fill=(255, 66, 92, 255),
-        stroke_width=5,
+        stroke_width=7,
         stroke_fill=(0, 0, 0, 255),
         anchor="ra",
     )
