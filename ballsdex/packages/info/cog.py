@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.info")
 
 sections = [
-    {"title": "INTRO", "description": f"{settings.bot_name} Discord bot\n"},
+    {"title": "INTRO", "description": f"{settings.bot_name} Discord bot\n{' '.join(str(x) for x in balls)}\n{settings.about_description}\n*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\nThe bot has been online for **{formatted_uptime}**.\n\n"},
     {"title": "TUTORIAL", "description": "This is the second section."},
     {"title": "COMMANDS", "description": "This is the third section."}
 ]
@@ -175,10 +175,6 @@ class Info(commands.Cog):
             f"({settings.github_link}) by El Laggron and maintained by the Ballsdex Team "
             f"and community of [contributors]({settings.github_link}/graphs/contributors)."
         )
-        embed.description = (
-            f"{' '.join(str(x) for x in balls)}\n"
-            f"{settings.about_description}\n"
-            f"*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\n"
             f"The bot has been online for **{formatted_uptime}**.\n\n"
             f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
             f"**{players_count:,}** players that caught "
