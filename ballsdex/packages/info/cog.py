@@ -22,8 +22,7 @@ from ballsdex.settings import settings
 
 from .license import LicenseInfo
 
-if TYPE_CHECKING:
-    from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.packages.info")
 
