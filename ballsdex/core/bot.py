@@ -378,7 +378,7 @@ class BallsDexBot(commands.AutoShardedBot):
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
                     f"# {blacklisted_emoji} YOU HAVE BEEN BLACKLISTED"
-                    "\n\nThis account has violated our Terms of Service. You have been permanently blacklisted. For more information about this, please visit our Discord server: {}".format(
+                    "\n\nThis account has violated our [Terms of Service](https://brawldex.fandom.com/wiki/Terms_of_Service). You have been permanently blacklisted. For more information about this, please visit our Discord server: {}".format(
                         settings.discord_invite
                     ),
                     ephemeral=True,
@@ -388,7 +388,7 @@ class BallsDexBot(commands.AutoShardedBot):
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
                     f"# {blacklisted_emoji} THIS SERVER HAS BEEN BLACKLISTED"
-                    "\n\nThis server has violated our Terms of Service. It has been permanently blacklisted. For more information about this, please visit our Discord server: {}".format(
+                    "\n\nThis server has violated our [Terms of Service](https://brawldex.fandom.com/wiki/Terms_of_Service). It has been permanently blacklisted. For more information about this, please visit our Discord server: {}".format(
                         settings.discord_invite
                     ),
                     ephemeral=True,
