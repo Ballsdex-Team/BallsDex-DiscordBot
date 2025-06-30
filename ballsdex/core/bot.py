@@ -373,9 +373,9 @@ class BallsDexBot(commands.AutoShardedBot):
         )
 
     async def blacklist_check(self, interaction: discord.Interaction[Self]) -> bool:
-        blacklisted_emoji_1 = interaction.client.fetch_application_emoji(1389146363073138709)
-        blacklisted_emoji_2 = interaction.client.fetch_application_emoji(1389146192503509074)
-        blacklisted_emoji_3 = interaction.client.fetch_application_emoji(1389146296194957322)
+        blacklisted_emoji_1 = await interaction.client.fetch_application_emoji(1389146363073138709)
+        blacklisted_emoji_2 = await interaction.client.fetch_application_emoji(1389146192503509074)
+        blacklisted_emoji_3 = await interaction.client.fetch_application_emoji(1389146296194957322)
         if interaction.user.id in self.blacklist:
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
