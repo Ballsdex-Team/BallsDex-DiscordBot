@@ -373,13 +373,11 @@ class BallsDexBot(commands.AutoShardedBot):
         )
 
     async def blacklist_check(self, interaction: discord.Interaction[Self]) -> bool:
-        blacklisted_emoji_1 = await interaction.client.fetch_application_emoji(1389146363073138709)
-        blacklisted_emoji_2 = await interaction.client.fetch_application_emoji(1389146192503509074)
-        blacklisted_emoji_3 = await interaction.client.fetch_application_emoji(1389146296194957322)
+        blacklisted_emoji_1 = await interaction.client.fetch_application_emoji(1389153015482814525)
         if interaction.user.id in self.blacklist:
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
-                    f"**{blacklisted_emoji_1}{blacklisted_emoji_2}{blacklisted_emoji_3} YOU HAVE BEEN BLACKLISTED**"
+                    f"# {blacklisted_emoji} YOU HAVE BEEN BLACKLISTED"
                     "\n\nThis account has violated our Terms of Service. You have been permanently blacklisted. For more information about this, please visit our Discord server: {}".format(
                         settings.discord_invite
                     ),
@@ -389,7 +387,7 @@ class BallsDexBot(commands.AutoShardedBot):
         if interaction.guild_id and interaction.guild_id in self.blacklist_guild:
             if interaction.type != discord.InteractionType.autocomplete:
                 await interaction.response.send_message(
-                    f"**{blacklisted_emoji_1}{blacklisted_emoji_2}{blacklisted_emoji_3} THIS SERVER HAS BEEN BLACKLISTED**"
+                    f"# {blacklisted_emoji} THIS SERVER HAS BEEN BLACKLISTED"
                     "\n\nThis server has violated our Terms of Service. It has been permanently blacklisted. For more information about this, please visit our Discord server: {}".format(
                         settings.discord_invite
                     ),
