@@ -39,21 +39,23 @@ plevel_emojis=[
     1366788095227199569,
     1366788107747328122
 ]
-FANMADE_SKIN_REGIMES = [
+FANMADE_SKINS = [
     157,
     156,
     211
 ]
-CHINA_SKIN_REGIMES = [
+CHINA_SKINS = [
     220,
     248,
-    252,
-    37
+    252
 ]
 PRO_SKIN_REGIMES = [
     38,
     39,
     40
+]
+CHINA_SKIN_REGIMES = [
+    37
 ]
 RARITY_EMOJIS = {
     "Rare": 1330493249235714189,
@@ -468,10 +470,10 @@ class BallInstance(models.Model):
         if self.countryball.regime_id in PRO_SKIN_REGIMES:
             skin_type = "[Pro](https://brawldex.fandom.com/wiki/Pro)"
             skin_type_emoji = interaction.client.get_emoji(1385477217269583892)
-        elif self.countryball.regime_id in CHINA_SKIN_REGIMES:
+        elif self.countryball.regime_id in CHINA_SKIN_REGIMES or self.ball_id in CHINA_SKINS:
             skin_type = "[China](https://brawldex.fandom.com/wiki/China)"
             skin_type_emoji = interaction.client.get_emoji(1372264199174230106)
-        elif self.countryball.regime_id in FANMADE_SKIN_REGIMES:
+        elif self.ball_id in FANMADE_SKINS:
             skin_type = "[Fanmade](https://brawldex.fandom.com/wiki/Fanmade)"
             skin_type_emoji = interaction.client.get_emoji(1365147307829497967)
         if skin_theme != "":
