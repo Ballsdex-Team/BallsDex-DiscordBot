@@ -572,13 +572,13 @@ class BallSpawnView(View):
                  f"It's now in your {self.RegimeName} collection! {new_cb_emoji}\n"
             )
         if dailycatch in {1, 4, 8}:
-                mj = self.bot.get_emoji(1363188571099496699)
+                mj = self.bot.get_emoji(1379137569564000417) if fullsd else self.bot.get_emoji(1363188571099496699)
                 pf = "th"
                 if dailycatch == 1:
                     pf = "st"
                 ut = f"! {mj}"
                 if fullsd:
-                    ut = f", But your inventory was full, the Starr Drop was Discarded, Open your Starr Drops! {mj}"
+                    ut = f", but Starr Drop limit of 50 was reached, use `/starrdrop` to make space for new Starr Drops. {mj}"
                 text += f"{mj} Since this is your {dailycatch}{pf} daily catch, You gained a Starr Drop{ut}"
 
         caught_message = (
