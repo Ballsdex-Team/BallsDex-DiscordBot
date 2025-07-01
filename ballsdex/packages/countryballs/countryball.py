@@ -578,7 +578,7 @@ class BallSpawnView(View):
                     pf = "st"
                 ut = f"! {mj}"
                 if fullsd:
-                    ut = ", But your inventory was full, the Starr Drop was Discarded, Open your Starr Drops! {mj}"
+                    ut = f", But your inventory was full, the Starr Drop was Discarded, Open your Starr Drops! {mj}"
                 text += f"{mj} Since this is your {dailycatch}{pf} daily catch, You gained a Starr Drop{ut}"
 
         caught_message = (
