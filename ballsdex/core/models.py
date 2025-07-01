@@ -47,7 +47,8 @@ FANMADE_SKINS = [
 CHINA_SKINS = [
     220,
     248,
-    252
+    252,
+    267
 ]
 PRO_SKIN_REGIMES = [
     38,
