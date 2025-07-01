@@ -10,17 +10,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelOptions(
-            name="ball",
-            options={"managed": True, "verbose_name": "ball", "verbose_name_plural": "balls"},
+        migrations.AddField(
+            model_name="ballinstance",
+            name="deleted",
+            field=models.BooleanField(
+                default=False, help_text="Whether this instance was deleted or not."
+            ),
         ),
-        migrations.AlterModelOptions(
-            name="ballinstance",
-            options={"managed": True, "verbose_name": "ball instance"},
-        ),
-        migrations.AlterField(
-            model_name="ball",
-            name="country",
-            field=models.CharField(max_length=48, unique=True, verbose_name="Name"),
+        migrations.AddIndex(
+            model_name="ballinstance",
+            index=models.Index(fields=["deleted"], name="ballinstanc_deleted_fc87fc_idx"),
         ),
     ]

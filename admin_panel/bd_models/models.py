@@ -328,6 +328,7 @@ class BallInstance(models.Model):
         db_table = "ballinstance"
         unique_together = (("player", "id"),)
         verbose_name = f"{settings.collectible_name} instance"
+        indexes = [models.Index(fields=("deleted",))]
 
 
 class BlacklistedID(models.Model):
