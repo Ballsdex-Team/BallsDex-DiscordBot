@@ -551,16 +551,14 @@ class Player(commands.GroupCog):
         except DoesNotExist:
             await interaction.followup.send("You haven't got any info to show!", ephemeral=True)
             return
-        ball = await BallInstance.filter(player=player, deleted=False).prefetch_related(
-            "special", "trade_player"
-        )
+        ball = await BallInstance.filter(player=player).prefetch_related("special", "trade_player")
 
         user = interaction.user
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
         total_countryballs = len(bot_countryballs)
         owned_countryballs = set(
             x[0]
-            for x in await player.balls.filter(ball__enabled=True, deleted=False)
+            for x in await player.balls.filter(ball__enabled=True)
             .distinct()
             .values_list("ball_id")
         )
@@ -689,7 +687,7 @@ async def get_items_csv(player: PlayerModel) -> BytesIO:
     """
     Get a CSV file with all items of the player.
     """
-    balls = await BallInstance.filter(player=player, deleted=False).prefetch_related(
+    balls = await BallInstance.filter(player=player).prefetch_related(
         "ball", "trade_player", "special"
     )
     txt = (

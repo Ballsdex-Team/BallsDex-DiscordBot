@@ -68,7 +68,6 @@ class Info(app_commands.Group):
         total_server_balls = await BallInstance.filter(
             catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
             server_id=guild.id,
-            deleted=False,
         ).prefetch_related("player")
         if guild.owner_id:
             owner = await interaction.client.fetch_user(guild.owner_id)
@@ -130,7 +129,6 @@ class Info(app_commands.Group):
         total_user_balls = await BallInstance.filter(
             catch_date__gte=datetime.datetime.now() - datetime.timedelta(days=days),
             player=player,
-            deleted=False,
         )
         embed = discord.Embed(
             title=f"{user} ({user.id})",
@@ -158,7 +156,7 @@ class Info(app_commands.Group):
         )
         embed.add_field(
             name=f"Total {settings.plural_collectible_name} caught:",
-            value=await BallInstance.filter(player__discord_id=user.id, deleted=False).count(),
+            value=await BallInstance.filter(player__discord_id=user.id).count(),
         )
         embed.add_field(
             name=f"Total unique {settings.plural_collectible_name} caught:",

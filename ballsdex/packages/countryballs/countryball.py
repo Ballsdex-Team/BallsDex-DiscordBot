@@ -347,9 +347,7 @@ class BallSpawnView(View):
         self.caught = True
         self.catch_button.disabled = True
         player = player or (await Player.get_or_create(discord_id=user.id))[0]
-        is_new = not await BallInstance.filter(
-            player=player, ball=self.model, deleted=False
-        ).exists()
+        is_new = not await BallInstance.filter(player=player, ball=self.model).exists()
 
         if self.ballinstance:
             # if specified, do not create a countryball but switch owner
