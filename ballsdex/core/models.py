@@ -469,13 +469,13 @@ class BallInstance(models.Model):
             skin_theme = f"[{self.ball.economy.name}](https://brawldex.fandom.com/wiki/{self.ball.economy.name.replace(" ", "_")})"
             skin_theme_emoji = interaction.client.get_emoji(SKIN_THEMES.get(self.countryball.economy_id))
         if self.countryball.regime_id in PRO_SKIN_REGIMES:
-            skin_type = "[Pro](https://brawldex.fandom.com/wiki/Pro)"
+            skin_type = "[Pro](<https://brawldex.fandom.com/wiki/Pro>)"
             skin_type_emoji = interaction.client.get_emoji(1385477217269583892)
         elif self.countryball.regime_id in CHINA_SKIN_REGIMES or self.ball_id in CHINA_SKINS:
-            skin_type = "[China](https://brawldex.fandom.com/wiki/China)"
+            skin_type = "[China](<https://brawldex.fandom.com/wiki/China>)"
             skin_type_emoji = interaction.client.get_emoji(1372264199174230106)
         elif self.ball_id in FANMADE_SKINS:
-            skin_type = "[Fanmade](https://brawldex.fandom.com/wiki/Fanmade)"
+            skin_type = "[Fanmade](<https://brawldex.fandom.com/wiki/Fanmade>)"
             skin_type_emoji = interaction.client.get_emoji(1365147307829497967)
         if skin_theme != "":
             formatted_second_row += f"{skin_theme}{skin_theme_emoji} "
@@ -484,7 +484,7 @@ class BallInstance(models.Model):
             else:
                 pass
         if self.specialcard:
-            special_name = f"[{self.specialcard.name}](https://brawldex.fandom.com/wiki/{self.specialcard.name.replace(" ", "_")})"
+            special_name = f"[{self.specialcard.name}](<https://brawldex.fandom.com/wiki/{self.specialcard.name.replace(" ", "_")}>)"
             special_emoji = self.special.emoji
             formatted_special_text = f"({special_name} {special_emoji})"
         emoji = interaction.client.get_emoji(self.countryball.emoji_id)
