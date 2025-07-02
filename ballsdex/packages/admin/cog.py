@@ -21,6 +21,20 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
 
+async def emoji_autocomplete(
+    self, interaction: discord.Interaction, current: str
+) -> list[app_commands.Choice[str]]:
+        # Filter bot's emojis by partial name match
+    emojis = [
+        e for e in self.bot.emojis 
+        if current.lower() in e.name.lower()
+    ]
+        # Return up to 25 autocomplete choices
+    return [
+        app_commands.Choice(name=f"{e.name}", value=str(e.id))
+        for e in emojis[:25]
+    ]
+
 
 @app_commands.guilds(*settings.admin_guild_ids)
 @app_commands.default_permissions(administrator=True)
@@ -267,19 +281,22 @@ class UserInstallableAdmin(commands.Cog):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
 
-    @app_commands.command(name="emoji", description="Send an external emoji through the bot.")
-    @app_commands.describe(emoji_id="The ID of the emoji")
+    @app_commands.command(name="emoji", description="Send a bot emoji through the bot.")
+    @app_commands.autocomplete(emoji=emoji_autocomplete)
+    @app_commands.describe(emoji="The emoji")
     @app_commands.allowed_installs(users=True)
     @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
     async def send_emoji(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        emoji_id: int
+        emoji: str
     ):
         if interaction.user.id not in self.bot.owner_ids:
             await interaction.response.send_message("You are not allowed to use this command.", ephemeral=True)
         else:
-            emoji = self.bot.get_emoji(emoji_id)
+            emoji = await self.bot.fetch_application_emoji(int(emoji))
+            if not emoji:
+                await interaction.response.send_message("Emoji not found.", ephemeral=True)
             try:
                 await interaction.channel.send(emoji)
                 await interaction.response.send_message("Emoji sent!", ephemeral=True)
