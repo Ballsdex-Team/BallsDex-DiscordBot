@@ -1,10 +1,12 @@
+# Migrating to WSL (Windows)
+
 As Docker for Windows has a LOT of errors that are hardly fixable, it is now discouraged to host Ballsdex on Windows. The recommended way is to host on Linux, which is possible on Windows with WSL.
 
 This guide will show how to migrate your bot to WSL and ditch Docker for Windows.
 
 ## 1. Backup and uninstall
 
-Follow [this guide](../backup-and-transfers/) to backup your data. In theory, you only need the `data-dump.sql` file, but better be safe.
+Follow [this guide](backup-and-transfers.md) to backup your data. In theory, you only need the `data-dump.sql` file, but better be safe.
 
 Once this step is complete and you have verified the contents of your database dump, **uninstall Docker Desktop** from Windows. You must still keep the bot's folder.
 
@@ -13,7 +15,7 @@ Once this step is complete and you have verified the contents of your database d
 
 ## 2. Configure WSL
 
-Follow [the first part of the new tutorial](../../installation/installing-ballsdex/) to install WSL and Docker. Don't forget the last step to test and confirm that your new Docker works.
+Follow [the first part of the new tutorial](../installation/installing-ballsdex.md) to install WSL and Docker. Don't forget the last step to test and confirm that your new Docker works.
 
 ## 3. Locate the bot's folder
 
@@ -36,7 +38,7 @@ Every time you need to type shell commands for the bot, you need to do the step 
 
 Run `docker compose build` to build the image.
 
-Then follow [this section](../../installation/installing-ballsdex#6-run-the-bot/) to start your bot. You shouldn't need any configuration, the bot will pick up your old files and resume just like before.
+Then follow [this section](../installation/installing-ballsdex.md#6-run-the-bot) to start your bot. You shouldn't need any configuration, the bot will pick up your old files and resume just like before.
 
 ## 6. Using Docker on Linux
 
