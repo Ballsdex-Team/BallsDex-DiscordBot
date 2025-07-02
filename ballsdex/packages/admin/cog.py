@@ -258,3 +258,33 @@ class Admin(commands.GroupCog):
             )
         )
         await pages.start(ephemeral=True)
+
+class UserInstallableAdmin(commands.Cog):
+    """
+    User installable only admin commands.
+    """
+
+    def __init__(self, bot: "BallsDexBot"):
+        self.bot = bot
+
+    @app_commands.command(name="emoji", description="Send an external emoji through the bot.")
+    @app_commands.describe(emoji_id="The ID of the emoji")
+    @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
+    async def send_emoji(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        emoji_id: int
+    ):
+        if interaction.user.id not in self.bot.owner_ids:
+            await interaction.response.send_message("You are not allowed to use this command.", ephemeral=True)
+        else:
+            emoji = self.bot.get_emoji(emoji_id)
+            try:
+                await interaction.channel.send(emoji)
+                await interaction.response.send_message("Emoji sent!", ephemeral=True)
+            except discord.Forbidden:
+                await interaction.response.send_message("Bot can't send the emoji, permission denied.", ephemeral=True)
+            except discord.HTTPException as httpexception:
+                await interaction.response.send_message("Something went wrong whilr sending the emoji.", ephemeral=True)
+                log.error("An error occurred while sending an emoji", exc_info=httpexception)
