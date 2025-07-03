@@ -49,7 +49,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
         interaction: discord.Interaction,
         amount: int = 1,
     ):
-       """
+        """
         Open one of your Starr Drops.
         
         Parameters
