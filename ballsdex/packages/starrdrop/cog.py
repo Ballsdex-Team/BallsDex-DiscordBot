@@ -43,7 +43,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
         self.bot = bot
         
     @app_commands.command()
-    @app_commands.checks.cooldown(2, 30, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(2, 10, key=lambda i: i.user.id)
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def claim(
         self,
