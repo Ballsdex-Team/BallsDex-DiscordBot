@@ -163,7 +163,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
                     totalrewards.append(f"{self.bot.get_emoji(ball_instance.ball.emoji_id)}{ball_instance.country}")
             elif result in {"powerpoints", "credits"}:
                 options = [(5, 10), (10, 25), (50, 100), (250, 250), (1000, 1000)]
-                weights = [10, 10, 25, 10, 4, 1]
+                weights = [10, 10, 25, 10, 3]
                 rangespec = random.choices(options, weights=weights, k=1)[0]
                 amount = round(random.randint(rangespec[0], rangespec[1]) / 5) * 5
                 if result == "credits":
