@@ -165,7 +165,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
                 options = [(5, 10), (10, 25), (50, 100), (250, 250), (1000, 1000)]
                 weights = [10, 10, 25, 10, 4, 1]
                 rangespec = random.choices(options, weights=weights, k=1)[0]
-                amount = random.randint(rangespec[0], rangespec[1])/5.round()*5
+                amount = round(random.randint(rangespec[0], rangespec[1]) / 5) * 5
                 if result == "credits":
                     amount*=1.25
                 amount*= ounce.get("multiplier")
