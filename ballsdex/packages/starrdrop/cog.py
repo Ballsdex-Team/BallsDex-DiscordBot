@@ -74,7 +74,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
             ("super_rare", 28, 1.1),
             ("epic", 15, 1.25),
             ("mythic", 5, 1.5),
-            ("legendary", 2, 2),
+            ("legendary", 2, 1.0),
         ]
 
         rarities = [{"name": n, "weight": w, "multiplier": m} for n, w, m in raw_rarities]
@@ -166,10 +166,6 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
                 weights = [10, 10, 25, 10, 3]
                 rangespec = random.choices(options, weights=weights, k=1)[0]
                 amount = round(random.randint(rangespec[0], rangespec[1]) / 5) * 5
-                if result == "credits":
-                    amount*=1.25
-                amount*= ounce.get("multiplier")
-                
                 mjid = 1364877727601004634 if result == "credits" else 1364807487106191471
                 if result == "credits" and amount >= 40:
                     mjid = 1364877745032794192
