@@ -113,7 +113,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
             log.debug(f"{interaction.user.id} Is Opening a {ounce.get('name')} Starr Drop!")
         
             if result in {"brawler", "skin"}:
-                rarityexclude = {"rare":{8, 16, 36, 25, 26, 27, 37, 39, 40}, "super_rare":{16, 36, 26, 27, 37, 40}, "epic":{36, 27, 37, 40}, "mythic":{5, 6, 27, 40}, "legendary":{5, 6, 7}}
+                rarityexclude = {"rare":{8, 16, 36, 25, 26, 27, 37, 39, 40}, "super_rare":{16, 36, 26, 27, 37, 40}, "epic":{36, 27, 37, 40}, "mythic":{5, 6, 22, 23, 38, 27, 40}, "legendary":{5, 6, 7, 22, 23, 38, 24}}
                 if result == "brawler":
                     available_balls = [ball for ball in balls.values() if ball.enabled and ball.rarity > 0 and ball.regime_id in {5, 6, 7, 8, 16, 36}]
                     available_balls = [ball for ball in available_balls if ball.regime_id not in rarityexclude[ounce.get('name')]]
