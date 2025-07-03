@@ -71,9 +71,9 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
         
         raw_rarities = [
             ("rare", 50, 1.0),
-            ("super_rare", 28, 1.1),
-            ("epic", 15, 1.25),
-            ("mythic", 5, 1.5),
+            ("super_rare", 28, 1.4),
+            ("epic", 15, 1.0),
+            ("mythic", 5, 1.0),
             ("legendary", 2, 1.0),
         ]
 
