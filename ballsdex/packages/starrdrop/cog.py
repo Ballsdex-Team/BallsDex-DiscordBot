@@ -160,7 +160,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
                         view=view
                     )
                 else:
-                    totalrewards.append(f"{self.bot.get_emoji(ball_instance.ball.emoji_id)}{ball_instance.country}")
+                    totalrewards.append(f"{self.bot.get_emoji(ball_instance.ball.emoji_id)}{ball_instance.ball.country}")
             elif result in {"powerpoints", "credits"}:
                 options = [(5, 10), (10, 25), (50, 100), (250, 250), (1000, 1000)]
                 weights = [10, 10, 25, 10, 3]
