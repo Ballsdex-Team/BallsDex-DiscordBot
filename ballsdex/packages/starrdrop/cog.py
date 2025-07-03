@@ -44,7 +44,6 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
         
     @app_commands.command()
     @app_commands.checks.cooldown(2, 10, key=lambda i: i.user.id)
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def claim(
         self,
         interaction: discord.Interaction,
@@ -56,7 +55,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
         Parameters
         ----------
         amount: int
-            How much Starrdrops you want to open.
+            How much Starrdrops you want to open (Max 10).
         """
         
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
