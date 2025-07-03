@@ -50,7 +50,7 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
         amount: int = 1,
     ):
         """
-        Open one of your Starr Drops.
+        Open one or more of your Starr Drops.
         
         Parameters
         ----------
@@ -116,10 +116,10 @@ class StarrDrop(commands.GroupCog, group_name="starrdrop"):
                 rarityexclude = {"rare":{8, 16, 36, 25, 26, 27, 37, 39, 40}, "super_rare":{16, 36, 26, 27, 37, 40}, "epic":{36, 27, 37, 40}, "mythic":{5, 6, 27, 40}, "legendary":{5, 6, 7}}
                 if result == "brawler":
                     available_balls = [ball for ball in balls.values() if ball.enabled and ball.rarity > 0 and ball.regime_id in {5, 6, 7, 8, 16, 36}]
-                    available_balls = [ball for ball in available_balls if ball.regime_id in rarityexclude[ounce.get('name')]]
+                    available_balls = [ball for ball in available_balls if ball.regime_id not in rarityexclude[ounce.get('name')]]
                 else:
                     available_balls = [ball for ball in balls.values() if ball.enabled and ball.regime_id in {22, 23, 24, 25, 26, 27, 37, 38, 39, 40}]
-                    available_balls = [ball for ball in available_balls if ball.regime_id in rarityexclude[ounce.get('name')]]
+                    available_balls = [ball for ball in available_balls if ball.regime_id not in rarityexclude[ounce.get('name')]]
                 if not available_balls:
                     await interaction.followup.send(
                         "There are no brawlers available to claim at the moment.", ephemeral=True
