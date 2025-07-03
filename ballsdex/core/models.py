@@ -102,7 +102,15 @@ SKIN_THEMES = {
     22: 1387762302270570526,
     24: 1387762302270570526
 }
-
+FAME_SPECIALS = [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+]
 async def lower_catch_names(
     model: Type[Ball],
     instance: Ball,
@@ -456,6 +464,7 @@ class BallInstance(models.Model):
 
         special_emoji = ""
         special_name = ""
+        special_wiki_link = ""
         formatted_special_text = ""
         rarity_emoji = ""
         skin_theme = ""
@@ -484,7 +493,11 @@ class BallInstance(models.Model):
             else:
                 pass
         if self.specialcard:
-            special_name = f"[{self.specialcard.name}](<https://brawldex.fandom.com/wiki/{self.specialcard.name.replace(" ", "_")}>)"
+            if self.special_id in FAME_SPECIALS:
+                special_wiki_link = "https://brawldex.fandom.com/wiki/Fame"
+            else:
+                special_wiki_link = "https://brawldex.fandom.com/wiki/Specials"
+            special_name = f"[{self.specialcard.name}](<{special_wiki_link}>)"
             special_emoji = self.special.emoji
             formatted_special_text = f"({special_name} {special_emoji})"
         emoji = interaction.client.get_emoji(self.countryball.emoji_id)
