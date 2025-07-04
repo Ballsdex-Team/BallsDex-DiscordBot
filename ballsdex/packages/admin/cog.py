@@ -122,16 +122,16 @@ class Admin(commands.GroupCog):
             i = 1
             for chunk in indexes.values():
                 for ball in chunk:
-                    text += f"{i}. {ball.country}\n"
+                    text += f"{i}. {ball.country} {ball.rarity}\n"
                 i += len(chunk)
         else:
             for i, ball in enumerate(sorted_balls, start=1):
-                text += f"{i}. {ball.country}\n"
+                text += f"{i}. {ball.country} {ball.rarity}\n"
 
         source = TextPageSource(text, prefix="```md\n", suffix="```")
         pages = Pages(source=source, interaction=interaction, compact=True)
         pages.remove_item(pages.stop_pages)
-        await pages.start(ephemeral=True)
+        await pages.start(ephemeral=False)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
