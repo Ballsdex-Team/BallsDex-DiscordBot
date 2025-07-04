@@ -91,9 +91,9 @@ class Pick(commands.Cog):
         """
         UserID = str(interaction.user.id)
 
-        ball1 = await CountryBall.get_random(min_rarity=0.05, max_rarity=5.0)
-        ball2 = await CountryBall.get_random(min_rarity=0.05, max_rarity=5.0)
-        ball3 = await CountryBall.get_random(min_rarity=0.05, max_rarity=5.0)
+        ball1 = await CountryBall.get_random(min_rarity=0.6, max_rarity=5.0)
+        ball2 = await CountryBall.get_random(min_rarity=0.6, max_rarity=5.0)
+        ball3 = await CountryBall.get_random(min_rarity=0.6, max_rarity=5.0)
         countryballs = [ball1, ball2, ball3]
         bot = cast(BallsDexBot, interaction.client)
 
