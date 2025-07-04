@@ -29,7 +29,7 @@ log = logging.getLogger("ballsdex.packages.pick")
 FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
 
 class PickView(discord.ui.View):
-    def __init__(self, balls, user: Union[discord.User, discord.Member], bot: "BallsDexBot", timeout=15):
+    def __init__(self, balls, user: Union[discord.User, discord.Member], bot: "BallsDexBot", timeout=60):
         super().__init__(timeout=timeout)
         self.value = None
         self.user = user
