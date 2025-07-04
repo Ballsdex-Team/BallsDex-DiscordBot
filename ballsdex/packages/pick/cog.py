@@ -84,7 +84,7 @@ class Pick(commands.Cog):
         self.bot = bot 
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 86400, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 604800, key=lambda i: i.user.id)
     async def pick(self, interaction: discord.Interaction):
         """
         Choose from 3 different ______s - by CrashTestAlex
