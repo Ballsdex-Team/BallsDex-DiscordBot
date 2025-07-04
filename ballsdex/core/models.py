@@ -42,7 +42,8 @@ plevel_emojis=[
 FANMADE_SKINS = [
     157,
     156,
-    211
+    211,
+    295
 ]
 CHINA_SKINS = [
     220,
