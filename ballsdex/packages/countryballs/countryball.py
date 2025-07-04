@@ -358,13 +358,20 @@ class BallSpawnView(View):
                     Names=self.name+"s".capitalize(),
                     NAMES=self.name+"s".upper(),
                 )
-
-                self.message = await channel.send(
-                    spawn_message,
-                    view=self,
-                    file=discord.File(file_location, filename=file_name),
-                )
-                return True
+                if "Brawl Pass" in self.special.name:
+                    self.message = await channel.send(
+                        f"{spawn_message}\n-# This is a {self.special.name} {self.RegimeName}. You are not allowed to catch if you don't have {self.special.name}!",
+                        view=self,
+                        file=discord.File(file_location, filename=file_name),
+                    )
+                    return True
+                else:
+                    self.message = await channel.send(
+                        spawn_message,
+                        view=self,
+                        file=discord.File(file_location, filename=file_name),
+                    )
+                    return True
             else:
                 log.error("Missing permission to spawn ball in channel %s.", channel)
         except discord.Forbidden:
