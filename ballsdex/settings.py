@@ -113,7 +113,6 @@ class Settings:
     prometheus_port: int = 15260
 
     spawn_chance_range: tuple[int, int] = (40, 55) 
-    
     spawn_manager: str = "ballsdex.packages.countryballs.spawn.SpawnManager"
 
     # django admin panel
@@ -184,6 +183,8 @@ def read_settings(path: "Path"):
         "ballsdex.packages.trade",
     ]
 
+    spawn_range = content.get("spawn-chance-range", [40, 55])
+    
     settings.spawn_manager = content.get(
         "spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager"
     )
