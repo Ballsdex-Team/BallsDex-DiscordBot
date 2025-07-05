@@ -79,7 +79,7 @@ class AcceptTOSView(View):
             " users talk unless the bot is disabled."
         )
         await log_action(
-            f"{interaction.guild.name} activated BrawlDex's spawn system in {self.channel.name}.",
+            f"{interaction.guild.name} activated BrawlDex's spawn system.",
             interaction.client
         )
 
