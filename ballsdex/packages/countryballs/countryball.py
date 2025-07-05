@@ -312,6 +312,7 @@ class BallSpawnView(View):
         """
         style = discord.ButtonStyle.danger if self.buttondanger else discord.ButtonStyle.primary
         label = self.buttontext or "BRAWL!"
+        emoji = ""
         if self.special.name == "Brawl Pass":
             emoji = self.bot.get_emoji(1378473792367497236)
         elif self.special.name == "Brawl Pass Plus":
