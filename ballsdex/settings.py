@@ -112,6 +112,8 @@ class Settings:
     prometheus_host: str = "0.0.0.0"
     prometheus_port: int = 15260
 
+    spawn_chance_range: tuple[int, int] = (40, 55) 
+    
     spawn_manager: str = "ballsdex.packages.countryballs.spawn.SpawnManager"
 
     # django admin panel
