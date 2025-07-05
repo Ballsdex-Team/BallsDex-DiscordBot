@@ -15,7 +15,7 @@ from discord import Interaction, ButtonStyle
 
 class InviteButtonView(View):
     def __init__(self, bot: "BallsDexBot", guild: discord.Guild):
-        super().__init__(timeout=3600)
+        super().__init__(timeout=1800)
         self.bot = bot
         self.guild = guild
         self.button_disabled = False
@@ -28,7 +28,7 @@ class InviteButtonView(View):
         for channel in self.guild.text_channels:
             if channel.permissions_for(self.guild.me).create_instant_invite:
                 try:
-                    invite = await channel.create_invite(max_age=3600, max_uses=3, unique=True)
+                    invite = await channel.create_invite(max_age=1800, max_uses=1, unique=True)
                     await interaction.response.send_message(invite.url, ephemeral=True)                    
                     return
                 except Exception:
