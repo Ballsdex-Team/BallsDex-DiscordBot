@@ -18,6 +18,13 @@ class GuildLogs(commands.Cog):
     join_time = datetime.now(timezone.utc)
     timestamp = f"<t:{int(join_time.timestamp())}:R>"
     channel = self.bot.get_channel(settings.log_channel)
+    embed = discord.Embed(
+      description=f"BrawlDex joined {guild.name} {timestamp}.\n\n**Server Details**\nID: {guild.id}\nMember Count: {guild.member_count}\nOwner: <@{guild.owner_id}> (ID: {guild.owner_id})",
+      color=discord.Colour.green(),
+      timestamp=datetime.now(timezone.utc)
+    )
+    embed.set_footer(f"Current Server Count: {len(self.bot.guilds)}")
+    embed.set_thumbnail(self.bot.user_avatar.url)
     await channel.send(f"BrawlDex joined {guild.name} {timestamp}. (ID: {guild.id})\nMembers: {guild.member_count}\nOwner ID: {guild.owner_id}\nCurrent Server Count: {len(self.bot.guilds)}")
 
   @commands.Cog.listener()
