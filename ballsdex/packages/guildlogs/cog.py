@@ -23,9 +23,6 @@ class InviteButtonView(View):
 
     @button(label="Generate Invite", style=discord.ButtonStyle.primary, custom_id="generate_invite_button", disabled=False)
     async def generate_invite(self, interaction: Interaction, button: Button):
-        if interaction.guild != self.guild:
-            await interaction.response.send_message("This invite isn't for your server.", ephemeral=True)
-            return
 
         # Find a channel where the bot can create an invite
         for channel in self.guild.text_channels:
