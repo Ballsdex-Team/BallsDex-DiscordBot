@@ -212,10 +212,15 @@ class BallSpawnView(View):
              "Brawl Pass": 1334774634826043433,
              "Brawl Pass Plus": 1335320375948607610,
          }
+         special_emoji_map = {
+             "Brawl Pass": 1378473792367497236,
+             "Brawl Pass Plus": 1378473814182072370
+         }
          restricted_server_id = 1295410565145165884
          if interaction.guild and interaction.guild.id == restricted_server_id:
              if self.special:
                  required_role_id = special_role_map.get(self.special.name)
+                 self.buttonemoji = interaction.client.get_emoji(special_emoji_map.get(self.special.name))
                  if required_role_id:
                      if isinstance(interaction.user, discord.Member):
                          user_role_ids = {role.id for role in interaction.user.roles}
@@ -312,13 +317,7 @@ class BallSpawnView(View):
         """
         style = discord.ButtonStyle.danger if self.buttondanger else discord.ButtonStyle.primary
         label = self.buttontext or "BRAWL!"
-        emoji = ""
-        if self.special.name and self.special.name == "Brawl Pass":
-            emoji = self.bot.get_emoji(1378473792367497236)
-        elif self.special.name and self.special.name == "Brawl Pass Plus":
-            emoji = self.bot.get_emoji(1378473814182072370)
-        else:
-            emoji = self.buttonemoji
+        emoji = self.buttonemoji
 
         self.catch_button = Button(style=style, label=label, emoji=emoji)
             
@@ -364,20 +363,12 @@ class BallSpawnView(View):
                     Names=self.name+"s".capitalize(),
                     NAMES=self.name+"s".upper(),
                 )
-                if "Brawl Pass" in self.special.name:
-                    self.message = await channel.send(
-                        f"{spawn_message}\n-# This is a {self.special.name} {self.RegimeName}. You are not allowed to catch if you don't have {self.special.name}!",
-                        view=self,
-                        file=discord.File(file_location, filename=file_name),
-                    )
-                    return True
-                else:
-                    self.message = await channel.send(
-                        spawn_message,
-                        view=self,
-                        file=discord.File(file_location, filename=file_name),
-                    )
-                    return True
+                self.message = await channel.send(
+                    spawn_message,
+                    view=self,
+                    file=discord.File(file_location, filename=file_name),
+                )
+                return True
             else:
                 log.error("Missing permission to spawn ball in channel %s.", channel)
         except discord.Forbidden:
