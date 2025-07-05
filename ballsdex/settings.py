@@ -444,6 +444,11 @@ packages:
   - ballsdex.packages.trade
 """
 
+    if add_spawn_chance_range::
+        content += """
+# range of spawn chance.
+spawn-chance-range: [40, 55] 
+"""        
     if add_spawn_manager:
         content += """
 # define a custom spawn manager implementation
