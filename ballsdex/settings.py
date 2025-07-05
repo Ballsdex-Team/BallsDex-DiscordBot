@@ -326,7 +326,10 @@ packages:
 prometheus:
   enabled: false
   host: "0.0.0.0"
-  port: 15260
+  port: 15260 
+  
+# range of spawn chance. 
+spawn-chance-range: [40, 55] 
 
 spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
 
