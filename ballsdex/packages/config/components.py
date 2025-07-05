@@ -4,6 +4,7 @@ import discord
 from discord.ui import Button, View, button
 
 from ballsdex.core.models import GuildConfig
+from ballsdex.core.utils.logging import log_action
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -76,6 +77,10 @@ class AcceptTOSView(View):
             f"The new spawn channel was successfully set to {self.channel.mention}.\n"
             f"{settings.collectible_name.title()}s will start spawning as"
             " users talk unless the bot is disabled."
+        )
+        await log_action(
+            f"{interaction.guild.name} activated BrawlDex's spawn system in {self.channel.name}.",
+            interaction.client
         )
 
     async def on_timeout(self) -> None:
