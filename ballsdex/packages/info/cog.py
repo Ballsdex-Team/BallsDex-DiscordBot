@@ -176,7 +176,53 @@ class Info(commands.Cog):
             },
             {
                 "title": "BrawlDex Commands",
-                "description": "",
+                "description": (
+                        "## Main Commands\n"
+                        "`/freebie:` Claim your daily freebie.\n"
+                        "`/starrdrop:` Open one of your Starr Drops.\n"
+                        "`/fame:` Fame a brawler/skin.\n"
+                        "`/collection:` View your collectible collection in BrawlDex.\n"
+                        "`/help:` Get information about this bot and show the list of commands from the bot.\n"
+                        "`/profile:` Show your collection progressions and currency amounts.\n\n"
+
+                        "## Setup Commands\n"
+                        "`/config channel:` Set or change the channel where brawlers will spawn.\n"
+                        "`/config disable:` Disable or enable brawlers spawning.\n\n"
+
+                        "## Brawl Commands\n"
+                        "`/brawl list:` List your brawlers.\n"
+                        "`/brawl info:` Display info from a specific brawler.\n"
+                        "`/brawl last:` Display info of your or another user's last caught brawler.\n"
+                        "`/brawl favorite:` Set favorite brawlers.\n"
+                        "`/brawl give:` Give a brawler to a user.\n"
+                        "`/brawl count:` Count how many brawlers you have.\n"
+                        "`/brawl duplicate:` Shows your most duplicated brawlers or specials.\n"
+                        "`/brawl compare:` Compare your brawlers with another user.\n"
+                        "`/brawl stats:` Show the stats of a specific brawler collection.\n\n"
+
+                        "## Currency Commands\n"
+                        "`/credits info:` Show Credits Shop Prices.\n"
+                        "`/credits claim:` Claim a Brawler using Credits!\n"
+                        "`/powerpoints shop:` Show Power Points.\n"
+                        "`/powerpoints upgrade:` Upgrade a Brawler to the next Power Level.\n\n"
+
+                        "## Player Commands\n"
+                        "`/player friend:` Add, remove or view your friends.\n"
+                        "`/player block:` Block a person from seeing your profile and inventory.\n"
+                        "`/player policy privacy:` Set your privacy policy.\n"
+                        "`/player policy donation:` Change how you want to receive donations from /brawl give.\n"
+                        "`/player policy friends:` Set your friend policy.\n\n"
+
+                        "## Trade Commands\n"
+                        "`/trade bulk add:` Bulk add brawlers to the ongoing trade, with parameters to aid with searching.\n"
+                        "`/trade begin:` Begin a trade with the chosen user.\n"
+                        "`/trade add:` Add a brawler to the ongoing trade.\n"
+                        "`/trade remove:` Remove a brawler from what you proposed in the ongoing trade.\n"
+                        "`/trade cancel:` Cancel the ongoing trade.\n"
+                        "`/trade history:` Show the history of your trades.\n"
+                        "`/trade view:` View the brawlers added to an ongoing trade."
+
+                ),
                 "button_label": "COMMANDS"
             }
         ]
