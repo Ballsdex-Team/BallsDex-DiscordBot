@@ -59,7 +59,9 @@ class Settings:
     admin_role_ids: list[int]
         List of roles that have partial access to the /admin command (only blacklist and guilds)
     packages: list[str]
-        List of packages the bot will load upon startup
+        List of packages the bot will load upon startup 
+    spawn_chance_range: tuple[int, int] = (40, 55) 
+        default spawn range
     spawn_manager: str
         Python path to a class implementing `BaseSpawnManager`, handling cooldowns and anti-cheat
     webhook_url: str | None
