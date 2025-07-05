@@ -15,7 +15,7 @@ from ballsdex.settings import settings
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
-log = logging.getLogger("ballsdex.packages.countryballs") 
+log = logging.getLogger("ballsdex.packages.countryballs")
 
 CachedMessage = namedtuple("CachedMessage", ["content", "author_id"])
 
@@ -99,7 +99,9 @@ class SpawnCooldown:
 
     time: datetime
     # initialize partially started, to reduce the dead time after starting the bot
-    scaled_message_count: float = field(default_factory=lambda: settings.spawn_chance_range[0] // 2) 
+    scaled_message_count: float = field(
+        default_factory=lambda: settings.spawn_chance_range[0] // 2
+    )
     threshold: int = field(default_factory=lambda: random.randint(*settings.spawn_chance_range))
     lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
     message_cache: deque[CachedMessage] = field(default_factory=lambda: deque(maxlen=100))
