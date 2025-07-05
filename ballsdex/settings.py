@@ -183,8 +183,8 @@ def read_settings(path: "Path"):
         "ballsdex.packages.trade",
     ]
 
-    spawn_range = content.get("spawn-chance-range", [40, 55])
-    
+    spawn_range = content.get("spawn-chance-range", [40, 55]) 
+    settings.spawn_chance_range = tuple(spawn_range) 
     settings.spawn_manager = content.get(
         "spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager"
     )
