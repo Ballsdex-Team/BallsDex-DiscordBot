@@ -23,13 +23,26 @@ class GuildLogs(commands.Cog):
       color=discord.Colour.green(),
       timestamp=datetime.now(timezone.utc)
     )
-    embed.set_footer(f"Current Server Count: {len(self.bot.guilds)}")
-    embed.set_thumbnail(self.bot.user_avatar.url)
-    await channel.send(f"BrawlDex joined {guild.name} {timestamp}. (ID: {guild.id})\nMembers: {guild.member_count}\nOwner ID: {guild.owner_id}\nCurrent Server Count: {len(self.bot.guilds)}")
-
+    embed.set_footer(text=f"Current Server Count: {len(self.bot.guilds)}")
+    embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+    try:
+        await channel.send(embed=embed)
+    except Exception:
+        log.error("An error occurred while sending the guild join log.", exc_info=True)
+                  
   @commands.Cog.listener()
   async def on_guild_remove(self, guild):
     leave_time = datetime.now(timezone.utc)
     timestamp = f"<t:{int(leave_time.timestamp())}:R>"
     channel = self.bot.get_channel(settings.log_channel)
-    await channel.send(f"BrawlDex left {guild.name} {timestamp}. (ID: {guild.id})\nMembers: {guild.member_count}\nOwner ID: {guild.owner_id}\nCurrent Server Count: {len(self.bot.guilds)}")
+    embed = discord.Embed(
+      description=f"BrawlDex left {guild.name} {timestamp}.\n\n**Server Details**\nID: {guild.id}\nMember Count: {guild.member_count}\nOwner: <@{guild.owner_id}> (ID: {guild.owner_id})",
+      color=discord.Colour.red(),
+      timestamp=datetime.now(timezone.utc)
+    )
+    embed.set_footer(text=f"Current Server Count: {len(self.bot.guilds)}")
+    embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+    try:
+        await channel.send(embed=embed)
+    except Exception:
+        log.error("An error occurred while sending the guild leave log.", exc_info=True)
