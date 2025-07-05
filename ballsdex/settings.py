@@ -377,7 +377,8 @@ def update_settings(path: "Path"):
     add_max_attack = "max-attack-bonus" not in content
     add_max_health = "max-health-bonus" not in content
     add_plural_collectible = "plural-collectible-name" not in content
-    add_packages = "packages:" not in content
+    add_packages = "packages:" not in content 
+    add_spawn_chance_range = "spawn-chance-range" not in content 
     add_spawn_manager = "spawn-manager" not in content
     add_django = "Admin panel related settings" not in content
     add_sentry = "sentry:" not in content
@@ -515,7 +516,8 @@ catch:
             add_max_attack,
             add_max_health,
             add_plural_collectible,
-            add_packages,
+            add_packages, 
+            add_spawn_chance_range,
             add_spawn_manager,
             add_django,
             add_sentry,
