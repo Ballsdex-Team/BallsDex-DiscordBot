@@ -444,7 +444,7 @@ packages:
   - ballsdex.packages.trade
 """
 
-    if add_spawn_chance_range::
+    if add_spawn_chance_range:
         content += """
 # range of spawn chance.
 spawn-chance-range: [40, 55] 
