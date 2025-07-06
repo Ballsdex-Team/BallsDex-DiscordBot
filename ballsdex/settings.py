@@ -328,7 +328,9 @@ prometheus:
   host: "0.0.0.0"
   port: 15260 
   
-# range of spawn chance. 
+# spawn chance range
+# with the default spawn manager, this is *approximately* the min/max number of minutes
+# until spawning a countryball, before processing activity
 spawn-chance-range: [40, 55] 
 
 spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
