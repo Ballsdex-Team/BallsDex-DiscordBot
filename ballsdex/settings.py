@@ -448,7 +448,9 @@ packages:
 
     if add_spawn_chance_range:
         content += """
-# spawn chance range. 
+# spawn chance range
+# with the default spawn manager, this is *approximately* the min/max number of minutes
+# until spawning a countryball, before processing activity 
 spawn-chance-range: [40, 55] 
 """
     if add_spawn_manager:
