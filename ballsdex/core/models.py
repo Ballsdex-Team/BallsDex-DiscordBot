@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Iterable, Tuple, Type
 
 import discord
 from discord.utils import format_dt
-from tortoise import exceptions, fields, models, signals, timezone, validators
+from tortoise import exceptions, fields, manager, models, signals, timezone, validators
 from tortoise.contrib.postgres.indexes import PostgreSQLIndex
 from tortoise.expressions import Q
 
@@ -17,6 +17,7 @@ from ballsdex.settings import settings
 
 if TYPE_CHECKING:
     from tortoise.backends.base.client import BaseDBAsyncClient
+    from tortoise.queryset import QuerySet
 
     from ballsdex.core.bot import BallsDexBot
 
@@ -201,6 +202,11 @@ Ball.register_listener(signals.Signals.pre_save, lower_catch_names)
 Ball.register_listener(signals.Signals.pre_save, lower_translations)
 
 
+class BallInstanceManager(manager.Manager):
+    def get_queryset(self) -> "QuerySet":
+        return super().get_queryset().filter(deleted=False)
+
+
 class BallInstance(models.Model):
     ball_id: int
     special_id: int
@@ -231,6 +237,11 @@ class BallInstance(models.Model):
         default=None,
     )
     extra_data = fields.JSONField(default={})
+    deleted = fields.BooleanField(
+        default=False, description="Whether this instance was deleted or not."
+    )
+
+    all_objects = manager.Manager()
 
     class Meta:
         unique_together = ("player", "id")
@@ -239,6 +250,7 @@ class BallInstance(models.Model):
             PostgreSQLIndex(fields=("player_id",)),
             PostgreSQLIndex(fields=("special_id",)),
         ]
+        manager = BallInstanceManager()
 
     @property
     def is_tradeable(self) -> bool:

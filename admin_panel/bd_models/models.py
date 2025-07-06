@@ -294,6 +294,10 @@ class BallInstance(models.Model):
         blank=True, null=True, help_text="If the instance was locked for a trade and when"
     )
     spawned_time = models.DateTimeField(blank=True, null=True)
+    deleted = models.BooleanField(
+        default=False,
+        help_text="Whether this instance was deleted or not.",
+    )
 
     def __getattribute__(self, name: str) -> Any:
         if name == "ball":
@@ -332,6 +336,7 @@ class BallInstance(models.Model):
         db_table = "ballinstance"
         unique_together = (("player", "id"),)
         verbose_name = f"{settings.collectible_name} instance"
+        indexes = [models.Index(fields=("deleted",))]
 
 
 class BlacklistedID(models.Model):
