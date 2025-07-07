@@ -327,7 +327,7 @@ prometheus:
   enabled: false
   host: "0.0.0.0"
   port: 15260 
-  
+
 # spawn chance range
 # with the default spawn manager, this is *approximately* the min/max number of minutes
 # until spawning a countryball, before processing activity
@@ -450,8 +450,8 @@ packages:
         content += """
 # spawn chance range
 # with the default spawn manager, this is *approximately* the min/max number of minutes
-# until spawning a countryball, before processing activity 
-spawn-chance-range: [40, 55] 
+# until spawning a countryball, before processing activity
+spawn-chance-range: [40, 55]
 """
     if add_spawn_manager:
         content += """
