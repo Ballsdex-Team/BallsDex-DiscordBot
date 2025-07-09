@@ -12,28 +12,25 @@ SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
 WIDTH = 1428
 HEIGHT = 2000
 
-CORNERS = ((34, 261), (1393, 992))
-artwork_size = [b - a for a, b in zip(*CORNERS)]
-
 TEMPLATE = {
     "background": {
         "is_attribute": True,
         "is_image": True,
-        "source": ["specialcard", "cached_regime.background"],
+        "source": ["specialcard", "countryball.cached_regime.background"],
         "top_left": (0, 0),
         "size": (WIDTH, HEIGHT),
     },
     "card_art": {
         "is_attribute": True,
         "is_image": True,
-        "source": "collection_card",
+        "source": "countryball.collection_card",
         "top_left": (34, 261),
         "size": (1359, 731),
     },
     "title": {
         "is_attribute": True,
         "is_image": False,
-        "source": ["short_name", "country"],
+        "source": ["countryball.short_name", "countryball.country"],
         "top_left": (50, 20),
         "text_font": "ArsenicaTrial-Extrabold.ttf",
         "text_font_size": 170,
@@ -43,7 +40,7 @@ TEMPLATE = {
     "capacity_name": {
         "is_attribute": True,
         "is_image": False,
-        "source": "capacity_name",
+        "source": "countryball.capacity_name",
         "top_left": (100, 1050),
         "text_line_height": 100,
         "text_font": "Bobby Jones Soft.otf",
@@ -56,7 +53,7 @@ TEMPLATE = {
     "capacity_description": {
         "is_attribute": True,
         "is_image": False,
-        "source": "capacity_description",
+        "source": "countryball.capacity_description",
         "top_left": (60, "capacity_name"),
         "text_line_height": 100,
         "text_font": "OpenSans-Semibold.ttf",
@@ -107,12 +104,24 @@ TEMPLATE = {
     "credits": {
         "is_attribute": True,
         "is_image": False,
-        "source": "credits",
+        "source": "countryball.credits",
         "top_left": (30, "lagg_credits"),
         "text_font": "arial.ttf",
         "text_fill": (255, 255, 255, 255),
         "text_font_size": 40,
         "text_template": "Artwork author: $data",
+        "text_stroke_width": 0,
+    },
+    "special_credits": {
+        "is_attribute": True,
+        "is_image": False,
+        "source": "specialcard.credits",
+        "top_left": (1398, 1870),
+        "text_font": "arial.ttf",
+        "text_fill": (255, 255, 255, 255),
+        "text_font_size": 40,
+        "text_template": "Special author: $data",
+        "text_anchor": "ra",
         "text_stroke_width": 0,
     },
 }
@@ -128,12 +137,6 @@ TEMPLATE = {
 # This will either create a file named "image.png" or directly display it using your system's
 # image viewer. There are options available to specify the ball or the special background,
 # use the "--help" flag to view all options.
-
-title_font = ImageFont.truetype(str(SOURCES_PATH / "ArsenicaTrial-Extrabold.ttf"), 170)
-capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
-capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
-stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
-credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 
 
 class TemplateLayer(NamedTuple):
@@ -173,7 +176,7 @@ def get_attribute_recursive(object: Any, attribute: str) -> Any:
 def draw_layer(
     image: Image.Image,
     layer: TemplateLayer,
-    ball,
+    ball_instance: BallInstance,
     media_path: str,
     prior_layer_info: dict[str, LayerInfo],
     name: str,
@@ -195,13 +198,13 @@ def draw_layer(
     if layer.is_attribute:
         if isinstance(layer.source, list):
             for attribute in layer.source:
-                data = get_attribute_recursive(ball, attribute)
+                data = get_attribute_recursive(ball_instance, attribute)
                 if data is None:
                     continue
                 else:
                     break
         else:
-            data = get_attribute_recursive(ball, layer.source)
+            data = get_attribute_recursive(ball_instance, layer.source)
     else:
         if isinstance(layer.source, list):
             data = layer.source[0]
@@ -267,7 +270,6 @@ def draw_card(
     # template: dict[str, dict[str, Any]],
     media_path: str = "./admin_panel/media/",
 ) -> tuple[Image.Image, dict[str, Any]]:
-    ball = ball_instance.countryball
     image = Image.new("RGB", (WIDTH, HEIGHT))
     prior_layer_info = {}
 
@@ -275,6 +277,6 @@ def draw_card(
 
     layers = ((name, TemplateLayer(**x)) for (name, x) in template.items())
     for name, layer in layers:
-        draw_layer(image, layer, ball, media_path, prior_layer_info, name)
+        draw_layer(image, layer, ball_instance, media_path, prior_layer_info, name)
 
     return image, {"format": "WEBP"}
