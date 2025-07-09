@@ -15,7 +15,7 @@ WIDTH = 1428
 HEIGHT = 2000
 
 TEMPLATE = {
-    "canvas_size": [1428, 2000],
+    "canvas_size": (1428, 2000),
     "layers": {
         "background": {
             "is_attribute": True,
@@ -142,6 +142,11 @@ TEMPLATE = {
 # This will either create a file named "image.png" or directly display it using your system's
 # image viewer. There are options available to specify the ball or the special background,
 # use the "--help" flag to view all options.
+
+
+class CardTemplate(NamedTuple):
+    canvas_size: tuple[int, int]
+    layers: dict[str, dict[str, Any]]
 
 
 class TemplateLayer(NamedTuple):
@@ -274,13 +279,13 @@ def draw_card(
     ball_instance: "BallInstance",
     # template: dict[str, dict[str, Any]],
     media_path: str = "./admin_panel/media/",
-) -> tuple[Image.Image, dict[str, Any]]:
-    template = TEMPLATE
+) -> tuple[Image.Image, dict[Any, Any]]:
+    template = CardTemplate(**TEMPLATE)  # type: ignore
 
-    image = Image.new("RGB", (template["canvas_size"][0], template["canvas_size"][1]))
-    prior_layer_info = {}
+    image = Image.new("RGB", (template.canvas_size[0], template.canvas_size[1]))
+    prior_layer_info: dict[str, LayerInfo] = {}
 
-    layers = ((name, TemplateLayer(**x)) for (name, x) in template["layers"].items())
+    layers = ((name, TemplateLayer(**layer)) for (name, layer) in template.layers.items())
     for name, layer in layers:
         draw_layer(image, layer, ball_instance, media_path, prior_layer_info, name)
 
