@@ -135,7 +135,7 @@ def draw_card(
         )
 
     # Capacity Description with custom line breaks (%%)
-    max_text_width = 1320
+    max_text_width = 1325
     wrapped_description = wrap_text(ball.capacity_description, capacity_description_font, max_text_width, draw)
     for i, line in enumerate(wrapped_description):
         draw.text(
