@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import textwrap
 from pathlib import Path
@@ -16,7 +18,7 @@ TEMPLATE = {
     "background": {
         "is_attribute": True,
         "is_image": True,
-        "source": ["specialcard", "countryball.cached_regime.background"],
+        "source": ["special_card", "countryball.cached_regime.background"],
         "top_left": (0, 0),
         "size": (WIDTH, HEIGHT),
     },
