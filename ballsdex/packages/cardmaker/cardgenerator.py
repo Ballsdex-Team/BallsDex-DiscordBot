@@ -106,14 +106,14 @@ class CardGenerator:
                            stroke_width=5, stroke_fill=(0, 0, 0, 255))
 
         # Stats
-        self.draw.text((320, 1670 + shadow_offset), str(self.ball_instance.health), font=stats_font,
+        self.draw.text((320, 1670 + shadow_offset), str(ball.health), font=stats_font,
                        fill=shadow_color, stroke_width=7, stroke_fill=(0, 0, 0, 255))
-        self.draw.text((320, 1670), str(self.ball_instance.health), font=stats_font,
+        self.draw.text((320, 1670), str(ball.health), font=stats_font,
                        fill=ball_health_color, stroke_width=7, stroke_fill=(0, 0, 0, 255))
 
-        self.draw.text((1120, 1670 + shadow_offset), str(self.ball_instance.attack), font=stats_font,
+        self.draw.text((1120, 1670 + shadow_offset), str(ball.attack), font=stats_font,
                        fill=shadow_color, stroke_width=7, stroke_fill=(0, 0, 0, 255), anchor="ra")
-        self.draw.text((1120, 1670), str(self.ball_instance.attack), font=stats_font,
+        self.draw.text((1120, 1670), str(ball.attack), font=stats_font,
                        fill=(255, 66, 92, 255), stroke_width=7, stroke_fill=(0, 0, 0, 255), anchor="ra")
 
         # Credits
