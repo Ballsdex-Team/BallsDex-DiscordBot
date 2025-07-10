@@ -69,7 +69,7 @@ class Staff(commands.GroupCog, group_name="staff"):
         brawler: BallTransform,
         special: SpecialTransform | None = None
     ):
-        generator = CardGenerator(brawler)
+        generator = CardGenerator(brawler, special)
         generator.special = special
         image, _ = generator.generate_image()
         try:
