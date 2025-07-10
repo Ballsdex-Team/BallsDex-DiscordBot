@@ -4,7 +4,10 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from ballsdex.packages.cardmaker.cardmaker import merge_images
+from ballsdex.packages.cardmaker.cardgenerator import CardGenerator
 from ballsdex.settings import settings
+from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
+from ballsdex.core.models import Ball, Special
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -49,3 +52,23 @@ class CardMaker(commands.Cog):
         except Exception as e:
             log.error(f"Error in makecard: {e}")
             await interaction.followup.send("Something went wrong while processing the images.", ephemeral=True)
+    
+    @app_commands.command(name="buildcard", description="Build a card of an existing brawler/skin.")
+    @app_commands.describe(brawler="The brawler/skin to generate card of")
+    @app_commands.describe(special="The special to apply)
+    @app_commands.guilds(*settings.admin_guild_ids)
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def buildcard(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        brawler: BallTransform,
+        special: SpecialTransform | None = None
+    ):
+        generator = CardGenerator(brawler)
+        generator.special = special
+        image, _ = generator.generate_image()
+        try:
+            await interaction.response.send_message(file=discord.File(image, "card.png"))
+        except Exception as e:
+            log.error("Something went wrong.", exc_info=e)
+        
