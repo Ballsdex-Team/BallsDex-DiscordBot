@@ -62,7 +62,7 @@ class CardGenerator:
         # Load background image
         if self.special:
             card_name = getattr(self.special, "name", card_name)
-            self.image = Image.open(self.media_path + self.special).convert("RGBA")
+            self.image = Image.open(self.media_path + self.special.background).convert("RGBA")
         else:
             self.image = Image.open(self.media_path + ball.cached_regime.background).convert("RGBA")
 
