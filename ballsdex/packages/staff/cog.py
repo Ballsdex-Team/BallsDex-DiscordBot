@@ -61,7 +61,7 @@ class Staff(commands.GroupCog, group_name="staff"):
     
     @app_commands.command(name="buildcard", description="Build a card of an existing brawler/skin.")
     @app_commands.describe(brawler="The brawler/skin to generate card of")
-    @app_commands.describe(special="The special to apply)
+    @app_commands.describe(special="The special to apply")
     @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
     async def buildcard(
         self,
