@@ -79,7 +79,7 @@ class Staff(commands.GroupCog, group_name="staff"):
         buffer.seek(0)
 
     # Send it as a Discord file
-    discord_file = discord.File(fp=buffer, filename="card.png")
+        discord_file = discord.File(fp=buffer, filename="card.png")
         try:
             await interaction.response.send_message(file=discord_file, ephemeral=True)
         except Exception as e:
