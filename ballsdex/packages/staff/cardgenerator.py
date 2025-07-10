@@ -26,7 +26,7 @@ credits_color_cache = {}
 class CardGenerator:
     def __init__(self, ball: Ball, special: Special, media_path: str = "admin_panel/media/"):
         self.ball = ball
-        self.special = special | None = None
+        self.special = special
         self.media_path = media_path
         self.image = None
         self.draw = None
