@@ -29,7 +29,7 @@ class Staff(commands.GroupCog, group_name="staff"):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
 
-    @app_commands.command(name="makecardart", description="Create a card art by merging a background and an image.")
+    @app_commands.command(name="cardart", description="Create a card art by merging a background and an image.")
     @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
     async def makecard(
         self,
@@ -60,11 +60,11 @@ class Staff(commands.GroupCog, group_name="staff"):
             log.error(f"Error in makecardart: {e}")
             await interaction.followup.send("Something went wrong while processing the images.", ephemeral=True)
     
-    @app_commands.command(name="buildcard", description="Build a card of an existing brawler/skin.")
-    @app_commands.describe(brawler="The brawler/skin to generate card of")
+    @app_commands.command(name="viewcard", description="View a card of an existing brawler/skin.")
+    @app_commands.describe(brawler="The brawler/skin to view card of")
     @app_commands.describe(special="The special to apply")
     @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
-    async def buildcard(
+    async def viewcard(
         self,
         interaction: discord.Interaction["BallsDexBot"],
         brawler: BallTransform,
