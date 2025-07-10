@@ -136,7 +136,7 @@ class Staff(commands.GroupCog, group_name="staff"):
         ])
     async def uploadtext(
         self,
-        interaction: discord.Interaction[BallsDexBot],
+        interaction: discord.Interaction["BallsDexBot"],
         brawler: BallTransform,
         text: str,
         type: app_commands.Choice[str]
