@@ -1,3 +1,4 @@
+import io
 from typing import TYPE_CHECKING
 import logging
 from pathlib import Path
@@ -72,10 +73,18 @@ class Staff(commands.GroupCog, group_name="staff"):
         generator = CardGenerator(brawler, special)
         generator.special = special
         image, _ = generator.generate_image()
+
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        buffer.seek(0)
+
+    # Send it as a Discord file
+    discord_file = discord.File(fp=buffer, filename="card.png")
         try:
-            await interaction.response.send_message(file=discord.File(image, "card.png"))
+            await interaction.response.send_message(file=discord_file, ephemeral=True)
         except Exception as e:
             log.error("Something went wrong.", exc_info=e)
+            await interaction.response.send_message("Something went wrong.", ephemeral=True)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
