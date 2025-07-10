@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from ballsdex.settings import settings
 from ballsdex.core.models import Ball, Special # Adjust import as needed
 
-SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
+SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./fonts")
 WIDTH = 1500
 HEIGHT = 2000
 
