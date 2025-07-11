@@ -25,6 +25,7 @@ from ballsdex.core.utils.utils import inventory_privacy, is_staff
 from ballsdex.core.models import balls as countryballs
 from ballsdex.settings import settings
 
+from tortoise.exceptions import DoesNotExist
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -169,6 +170,8 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
             35
         ]
         playerm = await PlayerModel.get(discord_id=interaction.user.id)
+        if brawler.exists() == False or brawler.player != playerm:
+            return
         
         plvl = int((brawler.health_bonus+brawler.attack_bonus+20)/20+1)
         cost = self.NextUpgradeCost[plvl]
