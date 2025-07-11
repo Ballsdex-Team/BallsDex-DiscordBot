@@ -170,7 +170,7 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
             35
         ]
         playerm = await PlayerModel.get(discord_id=interaction.user.id)
-        if brawler.exists() == False or brawler.player != playerm:
+        if await brawler.exists() == False or brawler.player != playerm:
             return
         
         plvl = int((brawler.health_bonus+brawler.attack_bonus+20)/20+1)
