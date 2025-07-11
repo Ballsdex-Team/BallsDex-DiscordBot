@@ -103,7 +103,7 @@ class Credits(commands.GroupCog, group_name="credits"):
                 player=playerm,
                 attack_bonus=0,
                 health_bonus=0,
-                server_id=interaction.guild.id
+                server_id=interaction.guild.id if not interaction.guild == None else None
             )
             data, file, view = await inst.prepare_for_message(interaction)
             try:
@@ -140,7 +140,7 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
 
 
     @app_commands.command(name="upgrade")
-    @app_commands.checks.cooldown(2, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
     async def pp_upgrade(
         self,
         interaction: discord.Interaction,
@@ -155,6 +155,19 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
         brawler: BallInstance
             The Brawler you want to Upgrade.
         """
+        SKIN_REGIMES = [
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            37,
+            40,
+            39,
+            38,
+            35
+        ]
         playerm = await PlayerModel.get(discord_id=interaction.user.id)
         
         plvl = int((brawler.health_bonus+brawler.attack_bonus+20)/20+1)
@@ -169,7 +182,7 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
             await brawler.save()
             data, file, view = await brawler.prepare_for_message(interaction)
             try:
-                await interaction.followup.send(interaction.user.mention+", your Brawler has been upgraded.\n\n"+data, file=file, view=view)
+                await interaction.followup.send(f"{interaction.user.mention}, your {"Skin" if brawler.ball.regime_id in SKIN_REGIMES else "Brawler"} has been upgraded.\n\n{data}", file=file, view=view)
             finally:
                 file.close()
                 log.debug(f"{interaction.user.id} upgraded a {brawler.id}")
