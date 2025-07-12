@@ -78,7 +78,7 @@ RARITY_EMOJIS = {
     "Ultimate Skin": 1374258318297665556,
     "Hypercharge Skin": 1329613598720393337,
     "Super Pro Skin": 1329613550746075178,
-    "Mythic Pro Skin": 1330493448469483580,
+    "Mythic Pro Skin": 1329613573843980378,
     "Hyper Pro Skin": 1329613598720393337
 }
 SKIN_THEMES = {
