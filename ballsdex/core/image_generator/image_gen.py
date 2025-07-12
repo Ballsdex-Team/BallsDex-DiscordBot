@@ -21,21 +21,21 @@ TEMPLATE = {
             "is_attribute": True,
             "is_image": True,
             "source": ["special_card", "countryball.cached_regime.background"],
-            "top_left": (0, 0),
+            "anchor": (0, 0),
             "size": (WIDTH, HEIGHT),
         },
         "card_art": {
             "is_attribute": True,
             "is_image": True,
             "source": "countryball.collection_card",
-            "top_left": (34, 261),
+            "anchor": (34, 261),
             "size": (1359, 731),
         },
         "title": {
             "is_attribute": True,
             "is_image": False,
             "source": ["countryball.short_name", "countryball.country"],
-            "top_left": (50, 20),
+            "anchor": (50, 20),
             "text_font": "ArsenicaTrial-Extrabold.ttf",
             "text_font_size": 170,
             "text_stroke_width": 2,
@@ -45,7 +45,7 @@ TEMPLATE = {
             "is_attribute": True,
             "is_image": False,
             "source": "countryball.capacity_name",
-            "top_left": (100, 1050),
+            "anchor": (100, 1050),
             "text_line_height": 100,
             "text_font": "Bobby Jones Soft.otf",
             "text_wrap": 26,
@@ -58,7 +58,7 @@ TEMPLATE = {
             "is_attribute": True,
             "is_image": False,
             "source": "countryball.capacity_description",
-            "top_left": (60, "capacity_name"),
+            "anchor": (60, "capacity_name"),
             "text_line_height": 100,
             "text_font": "OpenSans-Semibold.ttf",
             "text_wrap": 32,
@@ -71,7 +71,7 @@ TEMPLATE = {
             "is_attribute": True,
             "is_image": False,
             "source": "health",
-            "top_left": (320, 1670),
+            "anchor": (320, 1670),
             "text_line_height": 100,
             "text_font": "Bobby Jones Soft.otf",
             "text_wrap": 32,
@@ -84,7 +84,7 @@ TEMPLATE = {
             "is_attribute": True,
             "is_image": False,
             "source": "attack",
-            "top_left": (1120, 1670),
+            "anchor": (1120, 1670),
             "text_line_height": 100,
             "text_font": "Bobby Jones Soft.otf",
             "text_wrap": 32,
@@ -98,7 +98,7 @@ TEMPLATE = {
             "is_attribute": False,
             "is_image": False,
             "source": "Created by El Lagronn",
-            "top_left": (30, 1870),
+            "anchor": (30, 1870),
             "text_font": "arial.ttf",
             "text_line_height": 43,
             "text_fill": (255, 255, 255, 255),
@@ -109,7 +109,7 @@ TEMPLATE = {
             "is_attribute": True,
             "is_image": False,
             "source": "countryball.credits",
-            "top_left": (30, "lagg_credits"),
+            "anchor": (30, "lagg_credits"),
             "text_font": "arial.ttf",
             "text_fill": (255, 255, 255, 255),
             "text_font_size": 40,
@@ -120,7 +120,7 @@ TEMPLATE = {
             "is_attribute": True,
             "is_image": False,
             "source": "specialcard.credits",
-            "top_left": (1398, 1870),
+            "anchor": (1398, 1870),
             "text_font": "arial.ttf",
             "text_fill": (255, 255, 255, 255),
             "text_font_size": 40,
@@ -155,7 +155,7 @@ class TemplateLayer(NamedTuple):
     # Otherwise its a string
     is_image: bool
     source: list[str] | str
-    top_left: tuple[int | str, int | str]
+    anchor: tuple[int | str, int | str]
     size: tuple[int, int] = (0, 0)
 
     # Template string with $data to-be-replaced by the data
@@ -191,17 +191,18 @@ def draw_layer(
     prior_layer_info: dict[str, LayerInfo],
     name: str,
 ):
-    if isinstance(layer.top_left[0], int):
-        startx = layer.top_left[0]
+    if isinstance(layer.anchor[0], int):
+        startx = layer.anchor[0]
     else:
-        startx = prior_layer_info[layer.top_left[0]].finished_coords[0]
+        startx = prior_layer_info[layer.anchor[0]].finished_coords[0]
 
-    if isinstance(layer.top_left[1], int):
-        starty = layer.top_left[1]
+    if isinstance(layer.anchor[1], int):
+        starty = layer.anchor[1]
     else:
-        starty = prior_layer_info[layer.top_left[1]].finished_coords[1]
+        starty = prior_layer_info[layer.anchor[1]].finished_coords[1]
 
     start_coords = (startx, starty)
+    end_coords = (startx + layer.size[0], starty + layer.size[1])
     draw = ImageDraw.Draw(image)
 
     data: str | None
@@ -238,12 +239,7 @@ def draw_layer(
         layer_image = ImageOps.fit(layer_image, layer.size)
         image.paste(layer_image, start_coords, mask=layer_image)
 
-        prior_layer_info[name] = LayerInfo(
-            finished_coords=(
-                start_coords[0] + layer.size[0],
-                start_coords[1] + layer.size[1],
-            )
-        )
+        prior_layer_info[name] = LayerInfo(finished_coords=end_coords)
     else:
         final_str: str = (
             layer.text_template.replace("$data", data) if layer.text_template else data
