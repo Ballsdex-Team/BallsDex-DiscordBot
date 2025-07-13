@@ -16,14 +16,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.poll")
 
-class PollObject:
-  def __init__(self):
-    self.type = "custom"
-    self.question = ""
-    self.duration = 1
-    self.allow_multiple = False
-    self.answers = []
-
 class Poll(commands.GroupCog):
   """
   Poll builder command.
@@ -34,7 +26,21 @@ class Poll(commands.GroupCog):
 
   @app_commands.command(name="create", description="Create a Discord poll!")
   @app_commands.describe(question="Question of the poll")
+  @app_commands.choices(type=[
+        app_commands.Choice(name="Collectible", value="collectible"),
+        app_commands.Choice(name="Custom", value="custom")
+        ])
   @app_commands.describe(type="Type of the poll")
   @app_commands.describe(duration="Duration of the poll (hours)")
   @app_commands.describe(allow_multiple="Whether to allow multiple select or not")
   @app_commands.describe(answers="Answers of the poll (Max 10)")
+  @app_commands.checks.cooldown(1, 3, key=lambda i: i.user.id)
+  async def create(
+    self,
+    interaction: discord.Interaction["BallsDexBot"],
+    question: str,
+    type: app_commands.Choice[str],
+    duration: int,
+    allow_multiple: bool,
+    answers: str
+  ):
