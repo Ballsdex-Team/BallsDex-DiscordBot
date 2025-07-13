@@ -24,8 +24,17 @@ class PollObject:
     self.allow_multiple = False
     self.answers = []
 
-class PollBuilderView(View):
-    def __init__(self, poll: PollObject, author: discord.User):
-        super().__init__(timeout=600)
-        self.poll = poll
-        self.author = author
+class Poll(commands.GroupCog):
+  """
+  Poll builder command.
+  """
+
+  def __init__(self, bot: "BallsDexBot"):
+    self.bot = bot
+
+  @app_commands.command(name="create", description="Create a Discord poll!")
+  @app_commands.describe(question="Question of the poll")
+  @app_commands.describe(type="Type of the poll")
+  @app_commands.describe(duration="Duration of the poll (hours)")
+  @app_commands.describe(allow_multiple="Whether to allow multiple select or not")
+  @app_commands.describe(answers="Answers of the poll (Max 10)")
