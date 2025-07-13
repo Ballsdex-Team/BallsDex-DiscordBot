@@ -157,6 +157,13 @@ class Balls(app_commands.Group):
             )
             return
 
+        special_attrs = []
+        if special is not None:
+            special_attrs.append(f"special={special.name}")
+        if atk_bonus is not None:
+            special_attrs.append(f"atk={atk_bonus}")
+        if hp_bonus is not None:
+            special_attrs.append(f"hp={hp_bonus}")
         if n > 1:
             await self._spawn_bomb(
                 interaction,
@@ -170,7 +177,8 @@ class Balls(app_commands.Group):
             )
             await log_action(
                 f"{interaction.user} spawned {settings.collectible_name}"
-                f" {countryball or 'random'} {n} times in {channel or interaction.channel}.",
+                f" {countryball or 'random'} {n} times in {channel or interaction.channel}"
+                + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
                 interaction.client,
             )
 
@@ -190,17 +198,10 @@ class Balls(app_commands.Group):
             await interaction.followup.send(
                 f"{settings.collectible_name.title()} spawned.", ephemeral=True
             )
-            special_attrs = []
-            if special is not None:
-                special_attrs.append(f"special={special.name}")
-            if atk_bonus is not None:
-                special_attrs.append(f"atk={atk_bonus}")
-            if hp_bonus is not None:
-                special_attrs.append(f"hp={hp_bonus}")
             await log_action(
                 f"{interaction.user} spawned {settings.collectible_name} {ball.name} "
                 f"in {channel or interaction.channel}"
-                f"{f" ({", ".join(special_attrs)})" if special_attrs else ""}.",
+                + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
                 interaction.client,
             )
 

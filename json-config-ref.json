@@ -19,7 +19,7 @@
         "discord-token": {
             "description": "The Discord bot token",
             "type": "string",
-            "minLength": 72,
+            "minLength": 70,
             "maxLength": 72
         },
         "text-prefix": {
