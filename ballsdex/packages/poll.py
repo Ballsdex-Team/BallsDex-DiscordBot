@@ -76,6 +76,13 @@ class Poll(commands.GroupCog):
         try:
             await interaction.channel.send(poll=poll)
         except discord.Forbidden:
-            await interaction
+            await interaction.response.send_message("Bot has missing permission to send polls.", ephemeral=True)
+        except discord.HTTPException as e:
+            await interaction.response.send_message("Something went wrong while sending the poll.", ephemeral=True)
+            log.error("Something went wrong.", exc_info=e)
+        else:
+            timestamp = datetime.now() + timedelta(hours=duration)
+            await interaction.response.send_message(f"Poll sent successfully! Poll will expire <t:{int(timestamp.timestamp())}:R> (<t:{int(timestamp.timestamp())}:f>).", ephemeral=True)
+        
             
       
