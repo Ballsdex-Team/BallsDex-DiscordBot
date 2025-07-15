@@ -72,7 +72,7 @@ class Poll(commands.GroupCog):
             except DoesNotExist:
                 await interaction.response.send_message(f'Collectible "{collectible}" does not exist.', ephemeral=True)
                 return
-            poll.add_answer(text=str(collectible_object.country, emoji=interaction.client.get_emoji(collectible_object.emoji_id)
+            poll.add_answer(text=str(collectible_object.country), emoji=interaction.client.get_emoji(collectible_object.emoji_id))
         try:
             await interaction.channel.send(poll=poll)
         except discord.Forbidden:
@@ -83,6 +83,3 @@ class Poll(commands.GroupCog):
         else:
             timestamp = datetime.now() + timedelta(hours=duration)
             await interaction.response.send_message(f"Poll sent successfully! Poll will expire <t:{int(timestamp.timestamp())}:R> (<t:{int(timestamp.timestamp())}:f>).", ephemeral=True)
-        
-            
-      
