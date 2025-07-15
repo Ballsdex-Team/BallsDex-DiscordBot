@@ -11,6 +11,8 @@ from ballsdex.core.models import Ball
 from ballsdex.core.utils.transformers import BallEnabledTransform
 from ballsdex.settings import settings
 
+from tortoise.exceptions import DoesNotExist
+
 if TYPE_CHECKING:
   from ballsdex.core.bot import BallsDexBot
 
@@ -54,8 +56,26 @@ class Poll(commands.GroupCog):
         formatted_array = list(list_validator(answers))
     except ValueError:
         await interaction.response.send_message("The answers format you provided is invalid. Please try again.", ephemeral=True)
+        return
     if len(formatted_array) > 10:
         await interaction.response.send_message("You can't have more than 10 answers.", ephemeral=True)
+        return
+    poll = discord.Poll(
+      question=question,
+      duration=timedelta(hours=duration),
+      allow_multiselect=allow_multiple
+    )
     if poll_type == "collectible":
-      
+        for collectible in formatted_array:
+            try: 
+                collectible_object = await Ball.get(country=str(collectible))
+            except DoesNotExist:
+                await interaction.response.send_message(f'Collectible "{collectible}" does not exist.', ephemeral=True)
+                return
+            poll.add_answer(text=str(collectible_object.country, emoji=interaction.client.get_emoji(collectible_object.emoji_id)
+        try:
+            await interaction.channel.send(poll=poll)
+        except discord.Forbidden:
+            await interaction
+            
       
