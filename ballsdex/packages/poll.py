@@ -55,6 +55,7 @@ class Poll(commands.GroupCog):
     allow_multiple: bool,
     answers: str
   ):
+    await interaction.response.defer(thinking=True)
     try:
         formatted_array = list(list_validator(answers))
     except ValueError:
