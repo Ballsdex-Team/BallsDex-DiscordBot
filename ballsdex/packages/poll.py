@@ -83,3 +83,6 @@ class Poll(commands.GroupCog):
         else:
             timestamp = msg.poll.expires_at
             await interaction.response.send_message(f"Poll sent successfully! Poll will expire <t:{int(timestamp.timestamp())}:R> (<t:{int(timestamp.timestamp())}:f>).", ephemeral=True)
+
+async def setup(bot: "BallsDexBot"):
+    await bot.add_cog(Poll(bot))
