@@ -34,7 +34,7 @@ class Poll(commands.GroupCog):
 
   @app_commands.command(name="create", description="Create a Discord poll!")
   @app_commands.describe(question="Question of the poll")
-  @app_commands.choices(type=[
+  @app_commands.choices(poll_type=[
         app_commands.Choice(name="Collectible", value="collectible"),
         app_commands.Choice(name="Custom", value="custom")
         ])
