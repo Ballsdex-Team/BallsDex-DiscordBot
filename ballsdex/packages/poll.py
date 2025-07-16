@@ -55,14 +55,13 @@ class Poll(commands.GroupCog):
     allow_multiple: bool,
     answers: str
   ):
-    await interaction.response.defer(thinking=True)
     try:
         formatted_array = list(list_validator(answers))
     except ValueError:
-        await interaction.followup.send("The answers format you provided is invalid. Please try again.", ephemeral=True)
+        await interaction.response.send_message("The answers format you provided is invalid. Please try again.", ephemeral=True)
         return
     if len(formatted_array) > 10:
-        await interaction.followup.send("You can't have more than 10 answers.", ephemeral=True)
+        await interaction.response.send_message("You can't have more than 10 answers.", ephemeral=True)
         return
     poll = discord.Poll(
       question=question,
@@ -74,19 +73,19 @@ class Poll(commands.GroupCog):
             try: 
                 collectible_object = await Ball.get(country=str(collectible))
             except DoesNotExist:
-                await interaction.followup.send(f'Collectible "{collectible}" does not exist.', ephemeral=True)
+                await interaction.response.send_message(f'Collectible "{collectible}" does not exist.', ephemeral=True)
                 return
             poll.add_answer(text=str(collectible_object.country), emoji=interaction.client.get_emoji(collectible_object.emoji_id))
         try:
             msg = await interaction.channel.send(poll=poll)
-        except discord.Forbidden:
-            await interaction.followup.send("Bot has missing permission to send polls.", ephemeral=True)
-        except discord.HTTPException as e:
-            await interaction.followup.send("Something went wrong while sending the poll.", ephemeral=True)
-            log.error("Something went wrong.", exc_info=e)
-        else:
             timestamp = msg.poll.expires_at
             await interaction.response.send_message(f"Poll sent successfully! Poll will expire <t:{int(timestamp.timestamp())}:R> (<t:{int(timestamp.timestamp())}:f>).", ephemeral=True)
+        except discord.Forbidden:
+            await interaction.response.send_message("Bot has missing permission to send polls.", ephemeral=True)
+        except discord.HTTPException as e:
+            await interaction.response.send_message("Something went wrong while sending the poll.", ephemeral=True)
+            log.error("Something went wrong.", exc_info=e)
+          
     elif poll_type.value == "custom":
       await interaction.followup.send("wip", ephemeral=True)
 
