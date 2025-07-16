@@ -43,6 +43,8 @@ class Poll(commands.GroupCog):
   @app_commands.describe(allow_multiple="Whether to allow multiple select or not")
   @app_commands.describe(answers="Answers of the poll (Max 10). Each answer seperated with a colon (|).")
   @app_commands.checks.cooldown(1, 3, key=lambda i: i.user.id)
+  @app_commands.checks.has_any_role(*settings.root_role_ids)
+  @app_commands.guilds(*settings.admin_role_ids)
   async def create(
     self,
     interaction: discord.Interaction["BallsDexBot"],
@@ -83,6 +85,8 @@ class Poll(commands.GroupCog):
         else:
             timestamp = msg.poll.expires_at
             await interaction.response.send_message(f"Poll sent successfully! Poll will expire <t:{int(timestamp.timestamp())}:R> (<t:{int(timestamp.timestamp())}:f>).", ephemeral=True)
+    elif poll_type == "custom":
+      await interaction.response.send_message("wip", ephemeral=True)
 
 async def setup(bot: "BallsDexBot"):
     await bot.add_cog(Poll(bot))
