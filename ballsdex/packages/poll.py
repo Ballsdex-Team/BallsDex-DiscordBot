@@ -24,6 +24,8 @@ def list_validator(multi_string):
         raise ValueError("One or more items are empty or contain only whitespace.")
     return items
 
+@app_commands.guilds(*settings.admin_role_ids)
+@app_commands.default_permissions(administrator=True)
 class Poll(commands.GroupCog):
   """
   Poll builder command.
@@ -44,7 +46,6 @@ class Poll(commands.GroupCog):
   @app_commands.describe(answers="Answers of the poll (Max 10). Each answer seperated with a colon (|).")
   @app_commands.checks.cooldown(1, 3, key=lambda i: i.user.id)
   @app_commands.checks.has_any_role(*settings.root_role_ids)
-  @app_commands.guilds(*settings.admin_role_ids)
   async def create(
     self,
     interaction: discord.Interaction["BallsDexBot"],
