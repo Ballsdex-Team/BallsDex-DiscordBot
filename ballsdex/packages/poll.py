@@ -69,7 +69,7 @@ class Poll(commands.GroupCog):
       duration=timedelta(hours=duration),
       multiple=allow_multiple
     )
-    if poll_type == "collectible":
+    if poll_type.value == "collectible":
         for collectible in formatted_array:
             try: 
                 collectible_object = await Ball.get(country=str(collectible))
@@ -87,7 +87,7 @@ class Poll(commands.GroupCog):
         else:
             timestamp = msg.poll.expires_at
             await interaction.response.send_message(f"Poll sent successfully! Poll will expire <t:{int(timestamp.timestamp())}:R> (<t:{int(timestamp.timestamp())}:f>).", ephemeral=True)
-    elif poll_type == "custom":
+    elif poll_type.value == "custom":
       await interaction.response.send_message("wip", ephemeral=True)
 
 async def setup(bot: "BallsDexBot"):
