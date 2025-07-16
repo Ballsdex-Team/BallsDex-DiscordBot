@@ -87,7 +87,7 @@ class Poll(commands.GroupCog):
             log.error("Something went wrong.", exc_info=e)
           
     elif poll_type.value == "custom":
-      await interaction.followup.send("wip", ephemeral=True)
+      await interaction.response.send_message("wip", ephemeral=True)
 
 async def setup(bot: "BallsDexBot"):
     await bot.add_cog(Poll(bot))
