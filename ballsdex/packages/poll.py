@@ -24,7 +24,7 @@ def list_validator(multi_string):
         raise ValueError("One or more items are empty or contain only whitespace.")
     return items
 
-@app_commands.guilds(*settings.admin_role_ids)
+@app_commands.guilds(*settings.admin_guild_ids)
 @app_commands.default_permissions(administrator=True)
 class Poll(commands.GroupCog):
   """
