@@ -30,7 +30,7 @@ TORTOISE_ORM = {
     "connections": {"default": os.environ.get("BALLSDEXBOT_DB_URL")},
     "apps": {
         "models": {
-            "models": ["ballsdex.core.models"],
+            "models": ["ballsdex.core.models", "ballsdex.packages.pack.cog"],
             "default_connection": "default",
         },
     },

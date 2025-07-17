@@ -56,8 +56,8 @@ class Translator(app_commands.Translator):
         self, string: locale_str, locale: Locale, context: TranslationContextTypes
     ) -> str | None:
         return (
-            string.message.replace("countryballs", settings.plural_collectible_name)
-            .replace("countryball", settings.collectible_name)
+            string.message.replace("countryballs", settings.plural_collectible_name.lower())
+            .replace("countryball", settings.collectible_name.lower())
             .replace("/balls", f"/{settings.players_group_cog_name}")
             .replace("BallsDex", settings.bot_name)
         )

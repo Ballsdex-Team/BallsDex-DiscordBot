@@ -38,6 +38,7 @@ capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf
 capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
 stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
 credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
+rarity_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 60)
 
 credits_color_cache = {}
 
@@ -100,23 +101,23 @@ def draw_card(
             stroke_fill=(0, 0, 0, 255),
         )
 
-    draw.text(
-        (320, 1670),
-        str(ball_instance.health),
-        font=stats_font,
-        fill=ball_health,
-        stroke_width=1,
-        stroke_fill=(0, 0, 0, 255),
-    )
-    draw.text(
-        (1120, 1670),
-        str(ball_instance.attack),
-        font=stats_font,
-        fill=(252, 194, 76, 255),
-        stroke_width=1,
-        stroke_fill=(0, 0, 0, 255),
-        anchor="ra",
-    )
+    #draw.text(
+    #    (320, 1670),
+    #    str(ball_instance.health),
+    #    font=stats_font,
+    #    fill=ball_health,
+    #    stroke_width=1,
+    #    stroke_fill=(0, 0, 0, 255),
+    #)
+    #draw.text(
+    #    (1120, 1670),
+    #    str(ball_instance.attack),
+    #    font=stats_font,
+    #    fill=(252, 194, 76, 255),
+    #    stroke_width=1,
+    #    stroke_fill=(0, 0, 0, 255),
+    #    anchor="ra",
+    #)
     if settings.show_rarity:
         draw.text(
             (1200, 50),
@@ -132,15 +133,58 @@ def draw_card(
             image, (0, int(image.height * 0.8), image.width, image.height)
         )
         credits_color_cache[card_name] = credits_color
+
     draw.text(
-        (30, 1870),
+        (30, 1830),
         # Modifying the line below is breaking the licence as you are removing credits
         # If you don't want to receive a DMCA, just don't
-        f"Created by El Laggron{special_credits}\n" f"Artwork author: {ball_credits}",
+        "Created by\n El Laggron\n" f"Artwork author:\n {ball_credits}",
         font=credits_font,
         fill=credits_color,
         stroke_width=0,
         stroke_fill=(255, 255, 255, 255),
+    )
+
+    # Coordinates for Rarity (x)
+    rarity_x, rarity_y = 530, 1910
+
+    # Coordinates for HP (y) - editable
+    hp_x, hp_y = 890, 1910  # 150 pixels to the right of Rarity
+
+    # Coordinates for Attack (z) - editable
+    attack_x, attack_y = 1250, 1910  # 150 pixels to the right of HP
+
+    # Draw Rarity (x)
+    draw.text(
+        (rarity_x, rarity_y),
+        str(ball.rarity),
+        font=stats_font,
+        fill=credits_color,
+        stroke_width=0,
+        stroke_fill=(255, 255, 255, 255),
+        anchor="mm",
+    )
+
+    # Draw HP (y)
+    draw.text(
+        (hp_x, hp_y),
+        str(ball_instance.health),
+        font=stats_font,
+        fill=ball_health,
+        stroke_width=1,
+        stroke_fill=(0, 0, 0, 255),
+        anchor="mm",
+    )
+
+    # Draw Attack (z)
+    draw.text(
+        (attack_x, attack_y),
+        str(ball_instance.attack),
+        font=stats_font,
+        fill=(252, 194, 76, 255),
+        stroke_width=1,
+        stroke_fill=(0, 0, 0, 255),
+        anchor="mm",
     )
 
     artwork = Image.open(media_path + ball.collection_card).convert("RGBA")
