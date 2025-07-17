@@ -68,10 +68,13 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
         Name to qualify the object being listed
     model: T
         The Tortoise model associated to the class derivation
+    base: int
+        The base in which database IDs are converted. Defaults to decimal (10).
     """
 
     name: str
     model: T
+    base: int = 10
 
     def key(self, model: T) -> str:
         """
@@ -130,7 +133,7 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
             )
             return None
         try:
-            instance = await self.get_from_pk(int(value))
+            instance = await self.get_from_pk(int(value, self.base))
             await self.validate(interaction, instance)
         except (DoesNotExist, KeyError, ValueError):
             await interaction.response.send_message(
@@ -149,6 +152,7 @@ class ModelTransformer(app_commands.Transformer, Generic[T]):
 class BallInstanceTransformer(ModelTransformer[BallInstance]):
     name = settings.collectible_name
     model = BallInstance  # type: ignore
+    base = 16
 
     async def get_from_pk(self, value: int) -> BallInstance:
         return await self.model.get(pk=value).prefetch_related("player")
@@ -197,7 +201,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         balls_queryset = balls_queryset.limit(25)
 
         choices: list[app_commands.Choice] = [
-            app_commands.Choice(name=x.description(bot=interaction.client), value=str(x.pk))
+            app_commands.Choice(name=x.description(bot=interaction.client), value=f"{x.pk:X}")
             for x in await balls_queryset
         ]
         return choices
