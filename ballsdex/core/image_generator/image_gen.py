@@ -14,7 +14,7 @@ SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
 WIDTH = 1428
 HEIGHT = 2000
 
-TEMPLATE = {
+DEFAULT_CARD_TEMPLATE = {
     "canvas_size": (1428, 2000),
     "layers": {
         "background": {
@@ -276,7 +276,15 @@ def draw_card(
     # template: dict[str, dict[str, Any]],
     media_path: str = "./admin_panel/media/",
 ) -> tuple[Image.Image, dict[Any, Any]]:
-    template = CardTemplate(**TEMPLATE)  # type: ignore
+    template = None
+    # if ball_instance.special:
+    #     template = ball_instance.special.card_template
+    # else:
+    #     template = ball_instance.countryball.cached_regime.card_template
+    if not template:
+        template = DEFAULT_CARD_TEMPLATE
+
+    template = CardTemplate(**template)  # type: ignore
 
     image = Image.new("RGB", (template.canvas_size[0], template.canvas_size[1]))
     prior_layer_info: dict[str, LayerInfo] = {}
