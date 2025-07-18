@@ -166,12 +166,12 @@ class ConfirmView(View):
                     ephemeral=True,
                 )
                 return
+        await interaction.response.defer(ephemeral=True, thinking=True)
         if trader.accepted:
             await interaction.response.send_message(
                 "You have already accepted this trade.", ephemeral=True
             )
             return
-        await interaction.response.defer(ephemeral=True, thinking=True)
         result = await self.trade.confirm(trader)
         if self.trade.trader1.accepted and self.trade.trader2.accepted:
             if result:
