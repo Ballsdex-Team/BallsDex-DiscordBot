@@ -274,6 +274,3 @@ class StarrDrop(commands.Cog):
         player.credits += totalcredits
         player.powerpoints += totalpps
         await player.save(update_fields=("credits", "powerpoints"))
-
-async def setup(bot: "BallsDexBot"):
-    await bot.add_cog(StarrDrop(bot))
