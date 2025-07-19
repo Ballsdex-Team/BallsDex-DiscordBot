@@ -1,4 +1,3 @@
-
 import logging
 from typing import TYPE_CHECKING, cast
 import random
@@ -82,8 +81,40 @@ class StarrDrop(commands.Cog):
         total = sum(r["weight"] for r in rarities)
         normalized_weights = [r["weight"] / total for r in rarities]
 
+        # Define reward pools by rarity with weights matching your percentages
+        reward_tables = {
+            "rare": (
+                ["powerpoints", "credits", "skin", "bling"],
+                [40, 20, 20, 20],
+            ),
+            "super_rare": (
+                ["powerpoints", "credits", "skin", "bling"],
+                [40, 20, 20, 20],
+            ),
+            "epic": (
+                ["credits", "skin", "bling", "powerpoints"],
+                [20, 20, 20, 40],
+            ),
+            "mythic": (
+                ["credits_small", "credits_large", "skin", "bling"],
+                [20, 40, 20, 20],
+            ),
+            "legendary": (
+                ["legendary_brawler", "legendary_skin", "ultra_legendary_brawler", "ultimate_skin", "hypercharged_skin"],
+                [35, 35, 10, 15, 5],
+            ),
+        }
 
-        player.sdcount-=openamount ; await player.save(update_fields=("sdcount",))
+        # Amount values for each reward type
+        amounts = {
+            "rare": {"powerpoints": 25, "credits": 100, "bling": 100},
+            "super_rare": {"powerpoints": 50, "credits": 200, "bling": 250},
+            "epic": {"powerpoints": 100, "credits": 500, "bling": 500},
+            "mythic": {"credits_small": 250, "credits_large": 1000, "bling": 1000},
+        }
+
+        player.sdcount -= openamount
+        await player.save(update_fields=("sdcount",))
         
         totalcredits  = 0
         totalpps      = 0
@@ -97,87 +128,104 @@ class StarrDrop(commands.Cog):
             if openamount > 1:
                 ounces.append(ounce)
         
-            options = ["brawler", "skin", "credits", "powerpoints"]
-        
-            weights = [5, 2, 4, 4]
-
-            if ounce.get('name') in {"mythic", "legendary"}:
-                options.remove("powerpoints")
-                weights.remove(4)
-            if ounce.get('name') in {"legendary"}:
-                options.remove("credits")
-                weights.remove(4)
-
+            options, weights = reward_tables[ounce.get("name")]
             result = random.choices(options, weights=weights, k=1)[0]
         
             log.debug(f"{interaction.user.id} Is Opening a {ounce.get('name')} Starr Drop!")
         
-            if result in {"brawler", "skin"}:
-                rarityexclude = {"rare":{8, 16, 36, 25, 26, 27, 37, 39, 40}, "super_rare":{16, 36, 26, 27, 37, 40}, "epic":{36, 27, 37, 40}, "mythic":{5, 6, 22, 23, 38, 27, 40}, "legendary":{5, 6, 7, 22, 23, 38, 24}}
-                if result == "brawler":
+            if result in {"brawler", "legendary_brawler", "ultra_legendary_brawler"}:
+                rarityexclude = {
+                    "rare": {8, 16, 36, 25, 26, 27, 37, 39, 40},
+                    "super_rare": {16, 36, 26, 27, 37, 40},
+                    "epic": {36, 27, 37, 40},
+                    "mythic": {5, 6, 22, 23, 38, 27, 40},
+                    "legendary": {5, 6, 7, 22, 23, 38, 24},
+                }
+
+                # For legendary brawlers, regime_ids may be specific, add your filtering as needed
+                if result in {"brawler", "legendary_brawler", "ultra_legendary_brawler"}:
                     available_balls = [ball for ball in balls.values() if ball.enabled and ball.rarity > 0 and ball.regime_id in {5, 6, 7, 8, 16, 36}]
                     available_balls = [ball for ball in available_balls if ball.regime_id not in rarityexclude[ounce.get('name')]]
-                else:
-                    available_balls = [ball for ball in balls.values() if ball.enabled and ball.regime_id in {22, 23, 24, 25, 26, 27, 37, 38, 39, 40}]
-                    available_balls = [ball for ball in available_balls if ball.regime_id not in rarityexclude[ounce.get('name')]]
-                if not available_balls:
-                    await interaction.followup.send(
-                        "There are no brawlers available to claim at the moment.", ephemeral=True
-                    )
-                    return
+                    if not available_balls:
+                        await interaction.followup.send(
+                            "There are no brawlers available to claim at the moment.", ephemeral=True
+                        )
+                        return
 
-                is_special = random.randint(1, 4096) == 1
-                if is_special:
-                    spec = await Special.get(name="Chromatic")
-                rarity = [x.rarity for x in available_balls]
-                factor = ounce.get("multiplier")
-                adjusted_rarity = [r ** (1 / (factor)) for r in rarity]
-                claimed_ball = random.choices(population=available_balls, weights=adjusted_rarity, k=1)[0]
+                    is_special = random.randint(1, 4096) == 1
+                    if is_special:
+                        spec = await Special.get(name="Chromatic")
+                    rarity_vals = [x.rarity for x in available_balls]
+                    factor = ounce.get("multiplier")
+                    adjusted_rarity = [r ** (1 / factor) for r in rarity_vals]
+                    claimed_ball = random.choices(population=available_balls, weights=adjusted_rarity, k=1)[0]
 
-                ball_instance = await BallInstance.create(
-                    ball=claimed_ball,
-                    player=player,
-                    attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
-                    health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
-                    special=spec if is_special else None,
-                    server_id=interaction.user.guild.id,
-                )
-
-                if openamount == 1:
-                    view = ContinueView(author=interaction.user)
-                    await interaction.response.send_message(
-                        f"{ounce.get('name').replace('_', ' ').title()} Starr Drop",
-                        view=view,
-                        ephemeral=False
+                    ball_instance = await BallInstance.create(
+                        ball=claimed_ball,
+                        player=player,
+                        attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
+                        health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
+                        special=spec if is_special else None,
+                        server_id=interaction.user.guild.id,
                     )
 
-                    await view.continued.wait()
-            
-                    data, file, view = await ball_instance.prepare_for_message(interaction)
-                    await interaction.edit_original_response(
-                        content=f"You opened your {ounce.get('name').replace('_', ' ').title()} Starr Drop and got... **{'Shiny ' if is_special else ''}{claimed_ball.country}**!\n\n{data}",
-                        attachments=[file],
-                        view=view
-                    )
-                else:
-                    totalrewards.append(f"{self.bot.get_emoji(ball_instance.ball.emoji_id)}{ball_instance.ball.country}")
-            elif result in {"powerpoints", "credits"}:
-                options = [(5, 10), (10, 25), (50, 100), (250, 250), (1000, 1000)]
-                weights = [10, 10, 25, 10, 3]
-                rangespec = random.choices(options, weights=weights, k=1)[0]
-                amount = round(random.randint(rangespec[0], rangespec[1]) / 5) * 5
-                mjid = 1364877727601004634 if result == "credits" else 1364807487106191471
-                if result == "credits" and amount >= 40:
-                    mjid = 1364877745032794192
-                elif result == "powerpoints" and amount >= 75:
-                    mjid = 1364817571819425833
-                mj = self.bot.get_emoji(mjid)
+                    if openamount == 1:
+                        view = ContinueView(author=interaction.user)
+                        await interaction.response.send_message(
+                            f"{ounce.get('name').replace('_', ' ').title()} Starr Drop",
+                            view=view,
+                            ephemeral=False
+                        )
+
+                        await view.continued.wait()
                 
-                if result == "credits":
-                    totalcredits += amount
-                else:
+                        data, file, view = await ball_instance.prepare_for_message(interaction)
+                        await interaction.edit_original_response(
+                            content=f"You opened your {ounce.get('name').replace('_', ' ').title()} Starr Drop and got... **{'Shiny ' if is_special else ''}{claimed_ball.country}**!\n\n{data}",
+                            attachments=[file],
+                            view=view
+                        )
+                    else:
+                        totalrewards.append(f"{self.bot.get_emoji(ball_instance.ball.emoji_id)}{ball_instance.ball.country}")
+
+            elif result in {"powerpoints", "credits", "credits_small", "credits_large", "bling"}:
+                if result == "powerpoints":
+                    amount = amounts[ounce.get("name")]["powerpoints"]
                     totalpps += amount
-            
+                    mjid = 1364807487106191471
+                    if amount >= 75:
+                        mjid = 1364817571819425833
+                    mj = self.bot.get_emoji(mjid)
+                    reward_text = f"{mj}{amount} powerpoints"
+
+                elif result == "credits":
+                    amount = amounts[ounce.get("name")]["credits"]
+                    totalcredits += amount
+                    mjid = 1364877727601004634
+                    if amount >= 40:
+                        mjid = 1364877745032794192
+                    mj = self.bot.get_emoji(mjid)
+                    reward_text = f"{mj}{amount} credits"
+
+                elif result == "credits_small":
+                    amount = amounts["mythic"]["credits_small"]
+                    totalcredits += amount
+                    mjid = 1364877727601004634
+                    mj = self.bot.get_emoji(mjid)
+                    reward_text = f"{mj}{amount} credits"
+
+                elif result == "credits_large":
+                    amount = amounts["mythic"]["credits_large"]
+                    totalcredits += amount
+                    mjid = 1364877745032794192
+                    mj = self.bot.get_emoji(mjid)
+                    reward_text = f"{mj}{amount} credits"
+
+                elif result == "bling":
+                    amount = amounts[ounce.get("name")]["bling"] if ounce.get("name") != "mythic" else amounts["mythic"]["bling"]
+                    # Assuming bling is a special currency emoji, replace 💎 with your actual emoji if any
+                    reward_text = f"💎 {amount} bling"
+
                 if openamount == 1:
                     view = ContinueView(author=interaction.user)
                     await interaction.response.send_message(
@@ -187,44 +235,45 @@ class StarrDrop(commands.Cog):
                     )
 
                     await view.continued.wait()
-        
+            
                     await interaction.edit_original_response(
-                        content=f"You opened your {ounce.get('name').replace('_', ' ').title()} Starr Drop and got... \n\n{mj}{amount} {result}!",
+                        content=f"You opened your {ounce.get('name').replace('_', ' ').title()} Starr Drop and got... \n\n{reward_text}!",
                         view=None
                     )
                 else:
-                    totalrewards.append(f"{mj}{amount} {result}{mj}")
+                    totalrewards.append(reward_text)
 
-        if totalcredits > 0:
-            player.credits += totalcredits
-        if totalpps > 0:
-            player.powerpoints += totalpps
-        if totalcredits > 0 or totalpps > 0:
-            await player.save(update_fields=("credits", "powerpoints"))
-        
-        if openamount > 1:          
-            rarity_names = [r["name"].replace("_", " ").title() for r in ounces]
+            elif result in {"skin", "legendary_skin", "ultimate_skin", "hypercharged_skin"}:
+                # Implement your skin selection logic by rarity here (filter by rarity and regime_id)
+                # Placeholder reward text for now:
+                reward_text = f"A {result.replace('_', ' ').title()}"
 
-            rarity_counts = Counter(rarity_names)
-            
-            formatted = [f"{count}× {name}" for name, count in rarity_counts.items()]
+                if openamount == 1:
+                    view = ContinueView(author=interaction.user)
+                    await interaction.response.send_message(
+                        f"{ounce.get('name').replace('_', ' ').title()} Starr Drop",
+                        view=view,
+                        ephemeral=False
+                    )
+                    await view.continued.wait()
+                    await interaction.edit_original_response(
+                        content=f"You opened your {ounce.get('name').replace('_', ' ').title()} Starr Drop and got... \n\n{reward_text}!",
+                        view=None
+                    )
+                else:
+                    totalrewards.append(reward_text)
 
-            if len(formatted) == 1:
-                rarity_line = f"{formatted[0]} Starr Drop"
-            else:
-                rarity_line = f"{', '.join(formatted[:-1])}, and {formatted[-1]} Starr Drops"
-            
-            view = ContinueView(author=interaction.user)
-            
+        if openamount > 1:
+            totalrewards_text = "\n".join(totalrewards)
             await interaction.response.send_message(
-                content=f"You're opening: {rarity_line}",
-                view=view
+                f"You opened your {openamount} Starr Drops and got:\n\n{totalrewards_text}",
+                ephemeral=False,
             )
+        
+        # Save credits, powerpoints, and any other currency to player here if applicable
+        player.credits += totalcredits
+        player.powerpoints += totalpps
+        await player.save(update_fields=("credits", "powerpoints"))
 
-            await view.continued.wait()
-            
-            reward_list = "\n".join(f"- {item}" for item in totalrewards)
-            await interaction.edit_original_response(
-                content=f"You opened your {openamount} {rarity_line} and got... \n\n{reward_list}",
-                view=None
-            )
+async def setup(bot: "BallsDexBot"):
+    await bot.add_cog(StarrDrop(bot))
