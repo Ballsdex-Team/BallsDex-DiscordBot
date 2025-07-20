@@ -192,7 +192,7 @@ class BallSpawnView(View):
         self.BlockedList = {}
         self.BlockedTimeout = 10
         self.DontCount = False
-        self.voicefile = None
+        self.voicefile = discord.Attachment | None = None
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
@@ -369,9 +369,9 @@ class BallSpawnView(View):
                     NAMES=self.name+"s".upper(),
                 )
                 if self.voicefile:
-                    extension = self.voicefile.split(".")[-1]
+                    extension = self.voicefile.filename.split(".")[-1]
                     if extension not in ALLOWED_VOICE_EXTENSIONS:
-                        raise ValueError(f"{
+                        raise ValueError(f"File {self.voicefile.filename}'s extension is not supported.")
                     self.message = await channel.send(
                         f"Guess this {self.RegimeName}'s voice to catch them!",
                         view=self,
