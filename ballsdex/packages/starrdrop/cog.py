@@ -94,7 +94,7 @@ class StarrDrop(commands.Cog):
             reward_pool = STARRDROP_REWARDS[rarity_name]
             reward_weights = [r["weight"] for r in reward_pool]
             reward = random.choices(reward_pool, weights=reward_weights)[0]
-            await ball.fetch_related("regime")
+            await ball.prefetch_related("regime")
             if reward["type"] in {"brawler", "skin"}:
                 matching_balls = [
                     ball for ball in balls.values()
