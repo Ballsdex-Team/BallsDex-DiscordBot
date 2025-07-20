@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING, Any
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from ballsdex.settings import settings
+from ballsdex.core.models import Special
 
 if TYPE_CHECKING:
-    from ballsdex.core.models import BallInstance, Special, Economy, Regime
+    from ballsdex.core.models import BallInstance, Economy, Regime
 
 
 SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "../../core/image_generator/src")
@@ -76,7 +77,7 @@ class CardConfig:
         collection_card: str,
         background: str,
         economy_icon: str = None,
-        special_card: Special = None,
+        special_card: Special,
         ball_credits: str = "",
     ):
         self.ball_name = ball_name
