@@ -183,40 +183,40 @@ class Staff(commands.GroupCog, group_name="staff"):
             await interaction.followup.send("Failed to update the brawler.", ephemeral=True)
             log.exception("Failed to update the brawler", exc_info=True)
 
-    @app_commands.command(name="customcard", description="Generate a custom card with your own assets!")
-    @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
-    @app_commands.describe(name="The name of the card character")
-    @app_commands.describe(title="The ability title of the card character")
-    @app_commands.describe(text="The ability text of the card character")
-    @app_commands.describe(health="The health of the card character")
-    @app_commands.describe(attack="The attack of the card character")
-    @app_commands.describe(background="The background of the card (1428x2000)")
-    @app_commands.describe(economy="The economy icon of the card (Max 512x512)")
-    @app_commands.describe(artwork="The artwork of the card character (1360x730)")
-    @app_commands.describe(special="Special to apply to the card")
-    async def customcard(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        name: str,
-        title: str,
-        text: str,
-        health: int,
-        attack: int,
-        background: discord.Attachment,
-        economy: discord.Attachment,
-        artwork: discord.Attachment,
-        special: SpecialTransform | None = None,
-    ):
-        config = CardConfig(
-            ball_name=name,
-            capacity_name=title,
-            capacity_description=text,
-            health=health,
-            attack=attack,
-            collection_card=artwork,
-            background=background,
-            economy_icon=economy,
-            special_card=special if special else None,
-            ball_credits=f"Card generation made by the {settings.bot_name} bot",
-        )
+  #  @app_commands.command(name="customcard", description="Generate a custom card with your own assets!")
+  #  @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
+  #  @app_commands.describe(name="The name of the card character")
+  #  @app_commands.describe(title="The ability title of the card character")
+  #  @app_commands.describe(text="The ability text of the card character")
+  #  @app_commands.describe(health="The health of the card character")
+  #  @app_commands.describe(attack="The attack of the card character")
+  #  @app_commands.describe(background="The background of the card (1428x2000)")
+  #  @app_commands.describe(economy="The economy icon of the card (Max 512x512)")
+  #  @app_commands.describe(artwork="The artwork of the card character (1360x730)")
+  #  @app_commands.describe(special="Special to apply to the card")
+  #  async def customcard(
+  #      self,
+  #      interaction: discord.Interaction["BallsDexBot"],
+  #      name: str,
+  #      title: str,
+  #      text: str,
+  #      health: int,
+  #      attack: int,
+  #      background: discord.Attachment,
+  #      economy: discord.Attachment,
+  #      artwork: discord.Attachment,
+  #      special: SpecialTransform | None = None,
+  #  ):
+  #      config = CardConfig(
+  #          ball_name=name,
+  #          capacity_name=title,
+  #          capacity_description=text,
+  #          health=health,
+  #          attack=attack,
+  #          collection_card=artwork,
+  #          background=background,
+  #          economy_icon=economy,
+  #          special_card=special if special else None,
+  #          ball_credits=f"Card generation made by the {settings.bot_name} bot",
+  #      )
         
