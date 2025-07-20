@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import io
 import math
 import random
 import string
@@ -372,10 +373,13 @@ class BallSpawnView(View):
                     extension = self.voicefile.filename.split(".")[-1]
                     if extension not in ALLOWED_VOICE_EXTENSIONS:
                         raise ValueError(f"File {self.voicefile.filename}'s extension is not supported.")
+                    buffer = io.BytesIO()
+                    self.voicefile.save(buffer, format=f"{extension.upper()}")
+                    buffer.seek(0)
                     self.message = await channel.send(
                         f"Guess this {self.RegimeName}'s voice to catch them!",
                         view=self,
-                        file=discord.File(self.voicefile, filename=f"VOICE_MSG.{extension}"),
+                        file=discord.File(buffer, filename=f"VOICE_MSG.{extension}"),
                     )
                     return True
                 else:
