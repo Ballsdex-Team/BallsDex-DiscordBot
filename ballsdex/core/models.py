@@ -25,6 +25,7 @@ balls: dict[int, Ball] = {}
 regimes: dict[int, Regime] = {}
 economies: dict[int, Economy] = {}
 specials: dict[int, Special] = {}
+card_templates: dict[int, CardTemplate] = {}
 
 
 async def lower_catch_names(
@@ -76,12 +77,32 @@ class GuildConfig(models.Model):
     )
 
 
+class CardTemplate(models.Model):
+    name = fields.CharField(max_length=64)
+    template = fields.JSONField(description="Card template JSON")
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Regime(models.Model):
     name = fields.CharField(max_length=64)
     background = fields.CharField(max_length=200, description="1428x2000 PNG image")
 
+    card_template: fields.ForeignKeyRelation[CardTemplate] | None = fields.ForeignKeyField(
+        "models.CardTemplate",
+        description="Card template to use",
+        on_delete=fields.SET_NULL,
+        null=True,
+    )
+    card_template_id: int
+
     def __str__(self):
         return self.name
+
+    @property
+    def cached_card_template(self) -> CardTemplate | None:
+        return card_templates.get(self.card_template_id, self.card_template)
 
 
 class Economy(models.Model):
@@ -117,8 +138,20 @@ class Special(models.Model):
         max_length=64, description="Author of the special event artwork", null=True
     )
 
+    card_template: fields.ForeignKeyRelation[CardTemplate] | None = fields.ForeignKeyField(
+        "models.CardTemplate",
+        description="Card template to use",
+        on_delete=fields.SET_NULL,
+        null=True,
+    )
+    card_template_id: int
+
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def cached_card_template(self) -> CardTemplate | None:
+        return card_templates.get(self.card_template_id, self.card_template)
 
 
 class Ball(models.Model):
@@ -270,6 +303,13 @@ class BallInstance(models.Model):
     @property
     def specialcard(self) -> Special | None:
         return specials.get(self.special_id, self.special)
+
+    @property
+    def card_template(self) -> CardTemplate | None:
+        if self.specialcard:
+            return self.specialcard.cached_card_template
+        else:
+            return self.countryball.cached_regime.cached_card_template
 
     def __str__(self) -> str:
         return self.to_string()

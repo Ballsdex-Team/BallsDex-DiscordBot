@@ -30,10 +30,12 @@ from ballsdex.core.models import (
     Ball,
     BlacklistedGuild,
     BlacklistedID,
+    CardTemplate,
     Economy,
     Regime,
     Special,
     balls,
+    card_templates,
     economies,
     regimes,
     specials,
@@ -153,8 +155,8 @@ class BallsDexBot(commands.AutoShardedBot):
 
         if settings.prometheus_enabled:
             trace = aiohttp.TraceConfig()
-            trace.on_request_start.append(on_request_start)
-            trace.on_request_end.append(on_request_end)
+            trace.on_request_start.append(on_request_start)  # pyright: ignore[reportArgumentType]
+            trace.on_request_end.append(on_request_end)  # pyright: ignore[reportArgumentType]
             options["http_trace"] = trace
 
         super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
@@ -239,6 +241,11 @@ class BallsDexBot(commands.AutoShardedBot):
         for special in await Special.all():
             specials[special.pk] = special
         table.add_row("Special events", str(len(specials)))
+
+        card_templates.clear()
+        for card_template in await CardTemplate.all():
+            card_templates[card_template.pk] = card_template
+        table.add_row("Card Templates", str(len(card_templates)))
 
         self.blacklist = set()
         for blacklisted_id in await BlacklistedID.all().only("discord_id"):

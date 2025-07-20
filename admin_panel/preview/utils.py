@@ -5,10 +5,12 @@ from tortoise import Tortoise
 from ballsdex.__main__ import init_tortoise
 from ballsdex.core.models import (
     Ball,
+    CardTemplate,
     Economy,
     Regime,
     Special,
     balls,
+    card_templates,
     economies,
     regimes,
     specials,
@@ -40,3 +42,7 @@ async def refresh_cache():
     specials.clear()
     for special in await Special.all():
         specials[special.pk] = special
+
+    card_templates.clear()
+    for card_template in await CardTemplate.all():
+        card_templates[card_template.pk] = card_template

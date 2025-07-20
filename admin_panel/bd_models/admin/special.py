@@ -33,7 +33,7 @@ class SpecialAdmin(admin.ModelAdmin):
         (
             "Advanced",
             {
-                "fields": ["tradeable", "hidden"],
+                "fields": ["tradeable", "hidden", "card_template"],
                 "classes": ["collapse"],
             },
         ),

@@ -7,129 +7,10 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
+from ballsdex.core.image_generator.default_card_template import DEFAULT_CARD_TEMPLATE
+
 if TYPE_CHECKING:
     from ballsdex.core.models import BallInstance
-
-SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
-WIDTH = 1428
-HEIGHT = 2000
-
-DEFAULT_CARD_TEMPLATE = {
-    "canvas_size": (1428, 2000),
-    "layers": {
-        "background": {
-            "is_attribute": True,
-            "is_image": True,
-            "source": ["special_card", "countryball.cached_regime.background"],
-            "anchor": (0, 0),
-            "size": (WIDTH, HEIGHT),
-        },
-        "card_art": {
-            "is_attribute": True,
-            "is_image": True,
-            "source": "countryball.collection_card",
-            "anchor": (34, 261),
-            "size": (1359, 731),
-        },
-        "title": {
-            "is_attribute": True,
-            "is_image": False,
-            "source": ["countryball.short_name", "countryball.country"],
-            "anchor": (50, 20),
-            "text_font": "ArsenicaTrial-Extrabold.ttf",
-            "text_font_size": 170,
-            "text_stroke_width": 2,
-            "text_stroke_fill": (0, 0, 0, 255),
-        },
-        "capacity_name": {
-            "is_attribute": True,
-            "is_image": False,
-            "source": "countryball.capacity_name",
-            "anchor": (100, 1050),
-            "text_line_height": 100,
-            "text_font": "Bobby Jones Soft.otf",
-            "text_wrap": 26,
-            "text_fill": (230, 230, 230, 255),
-            "text_font_size": 110,
-            "text_stroke_width": 2,
-            "text_stroke_fill": (0, 0, 0, 255),
-        },
-        "capacity_description": {
-            "is_attribute": True,
-            "is_image": False,
-            "source": "countryball.capacity_description",
-            "anchor": (60, "capacity_name"),
-            "text_line_height": 100,
-            "text_font": "OpenSans-Semibold.ttf",
-            "text_wrap": 32,
-            "text_fill": (255, 255, 255, 255),
-            "text_font_size": 75,
-            "text_stroke_width": 1,
-            "text_stroke_fill": (0, 0, 0, 255),
-        },
-        "health": {
-            "is_attribute": True,
-            "is_image": False,
-            "source": "health",
-            "anchor": (320, 1670),
-            "text_line_height": 100,
-            "text_font": "Bobby Jones Soft.otf",
-            "text_wrap": 32,
-            "text_fill": (237, 115, 101, 255),
-            "text_font_size": 130,
-            "text_stroke_width": 1,
-            "text_stroke_fill": (0, 0, 0, 255),
-        },
-        "attack": {
-            "is_attribute": True,
-            "is_image": False,
-            "source": "attack",
-            "anchor": (1120, 1670),
-            "text_line_height": 100,
-            "text_font": "Bobby Jones Soft.otf",
-            "text_wrap": 32,
-            "text_fill": (252, 194, 76, 255),
-            "text_anchor": "ra",
-            "text_font_size": 130,
-            "text_stroke_width": 1,
-            "text_stroke_fill": (0, 0, 0, 255),
-        },
-        "lagg_credits": {
-            "is_attribute": False,
-            "is_image": False,
-            "source": "Created by El Lagronn",
-            "anchor": (30, 1870),
-            "text_font": "arial.ttf",
-            "text_line_height": 43,
-            "text_fill": (255, 255, 255, 255),
-            "text_font_size": 40,
-            "text_stroke_width": 0,
-        },
-        "credits": {
-            "is_attribute": True,
-            "is_image": False,
-            "source": "countryball.credits",
-            "anchor": (30, "lagg_credits"),
-            "text_font": "arial.ttf",
-            "text_fill": (255, 255, 255, 255),
-            "text_font_size": 40,
-            "text_template": "Artwork author: $data",
-            "text_stroke_width": 0,
-        },
-        "special_credits": {
-            "is_attribute": True,
-            "is_image": False,
-            "source": "specialcard.credits",
-            "anchor": (1398, 1870),
-            "text_font": "arial.ttf",
-            "text_fill": (255, 255, 255, 255),
-            "text_font_size": 40,
-            "text_template": "Special author: $data",
-            "text_anchor": "ra",
-            "text_stroke_width": 0,
-        },
-    },
-}
 
 # ===== TIP =====
 #
@@ -142,6 +23,33 @@ DEFAULT_CARD_TEMPLATE = {
 # This will either create a file named "image.png" or directly display it using your system's
 # image viewer. There are options available to specify the ball or the special background,
 # use the "--help" flag to view all options.
+
+SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
+
+
+def draw_card(
+    ball_instance: "BallInstance",
+    # template: dict[str, dict[str, Any]],
+    media_path: str = "./admin_panel/media/",
+) -> tuple[Image.Image, dict[Any, Any]]:
+    template = None
+    # if ball_instance.special:
+    #     template = ball_instance.special.card_template
+    # else:
+    #     template = ball_instance.countryball.cached_regime.card_template
+    if not template:
+        template = DEFAULT_CARD_TEMPLATE
+
+    template = CardTemplate(**template)
+
+    image = Image.new("RGB", (template.canvas_size[0], template.canvas_size[1]))
+    prior_layer_info: dict[str, LayerInfo] = {}
+
+    layers = ((name, TemplateLayer(**layer)) for (name, layer) in template.layers.items())
+    for name, layer in layers:
+        draw_layer(image, layer, ball_instance, media_path, prior_layer_info, name)
+
+    return image, {"format": "WEBP"}
 
 
 class CardTemplate(NamedTuple):
@@ -205,7 +113,7 @@ def draw_layer(
     end_coords = (startx + layer.size[0], starty + layer.size[1])
     draw = ImageDraw.Draw(image)
 
-    data: str | None
+    data: str | None = None
     if layer.is_attribute:
         if isinstance(layer.source, list):
             for attribute in layer.source:
@@ -222,9 +130,7 @@ def draw_layer(
         else:
             data = layer.source
 
-    if "data" not in vars():
-        return
-    elif not data:  # type: ignore
+    if not data:
         return
     else:
         data = str(data)
@@ -269,28 +175,3 @@ def draw_layer(
                 start_coords[1] + layer.text_line_height * len(final_strs) + 1,
             )
         )
-
-
-def draw_card(
-    ball_instance: "BallInstance",
-    # template: dict[str, dict[str, Any]],
-    media_path: str = "./admin_panel/media/",
-) -> tuple[Image.Image, dict[Any, Any]]:
-    template = None
-    # if ball_instance.special:
-    #     template = ball_instance.special.card_template
-    # else:
-    #     template = ball_instance.countryball.cached_regime.card_template
-    if not template:
-        template = DEFAULT_CARD_TEMPLATE
-
-    template = CardTemplate(**template)  # type: ignore
-
-    image = Image.new("RGB", (template.canvas_size[0], template.canvas_size[1]))
-    prior_layer_info: dict[str, LayerInfo] = {}
-
-    layers = ((name, TemplateLayer(**layer)) for (name, layer) in template.layers.items())
-    for name, layer in layers:
-        draw_layer(image, layer, ball_instance, media_path, prior_layer_info, name)
-
-    return image, {"format": "WEBP"}
