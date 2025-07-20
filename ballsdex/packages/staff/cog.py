@@ -12,6 +12,7 @@ from tortoise.exceptions import BaseORMException, DoesNotExist
 from ballsdex.packages.admin.balls import save_file
 from ballsdex.packages.staff.cardmaker import merge_images
 from ballsdex.packages.staff.cardgenerator import CardGenerator
+from ballsdex.packages.staff.customcard import CardConfig, draw_card
 from ballsdex.settings import settings
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
 from ballsdex.core.models import Ball, Special
@@ -206,4 +207,16 @@ class Staff(commands.GroupCog, group_name="staff"):
         artwork: discord.Attachment,
         special: SpecialTransform | None = None,
     ):
+        config = CardConfig(
+            ball_name=name,
+            capacity_name=title,
+            capacity_description=text,
+            health=health,
+            attack=attack,
+            collection_card=artwork,
+            background=background,
+            economy_icon=economy,
+            special_card=special if special else None,
+            ball_credits=f"Card generation made by the {settings.bot_name} bot",
+        )
         
