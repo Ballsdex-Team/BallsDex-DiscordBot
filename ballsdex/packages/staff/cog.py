@@ -12,7 +12,7 @@ from tortoise.exceptions import BaseORMException, DoesNotExist
 from ballsdex.packages.admin.balls import save_file
 from ballsdex.packages.staff.cardmaker import merge_images
 from ballsdex.packages.staff.cardgenerator import CardGenerator
-from ballsdex.packages.staff.customcard import CardConfig, draw_card
+# from ballsdex.packages.staff.customcard import CardConfig, draw_card
 from ballsdex.settings import settings
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
 from ballsdex.core.models import Ball, Special
