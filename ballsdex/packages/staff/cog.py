@@ -181,3 +181,14 @@ class Staff(commands.GroupCog, group_name="staff"):
         except BaseORMException as e:
             await interaction.followup.send("Failed to update the brawler.", ephemeral=True)
             log.exception("Failed to update the brawler", exc_info=True)
+
+    @app_commands.command(name="customcard", description="Generate a custom card with your own assets!")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
+    @app_commands.describe(name="The name of the card character")
+    @app_commands.describe(title="The ability title of the card character")
+    @app_commands.describe(text="The ability text of the card character")
+    @app_commands.describe(health="The health of the card character")
+    @app_commands.describe(attack="The attack of the card character")
+    @app_commands.describe(background="The background of the card (1428x2000)")
+    @app_commands.describe(economy="The economy icon of the card (Max 512x512)")
+    @app_commands.describe(artwork="The artwork of the card character (1360x730)")
