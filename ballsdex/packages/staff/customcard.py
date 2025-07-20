@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from ballsdex.core.models import BallInstance, Special, Economy, Regime
 
 
-SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
+SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "../../core/image_generator/src")
 WIDTH = 1500
 HEIGHT = 2000
 
