@@ -98,8 +98,8 @@ class StarrDrop(commands.Cog):
             if reward["type"] in {"brawler", "skin"}:
                 matching_balls = [
                     ball for ball in balls.values()
-                    regime = await ball.regime.first() if isinstance(ball.regime, QuerySet) else ball.regime
-                    if ball.enabled and regime.name == reward["rarity"].replace("_", " ").title() and
+                    await ball.fetch_related("regime")
+                    if ball.enabled and ball.regime.name == reward["rarity"].replace("_", " ").title() and
                     (ball.regime_id in {5, 6, 7, 8, 16} if reward["type"] == "brawler" else ball.regime_id in {22, 23, 24, 25, 26, 27, 37, 38, 39, 40})
                 ]
                 if not matching_balls:
