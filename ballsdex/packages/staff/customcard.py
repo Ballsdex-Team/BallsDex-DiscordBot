@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
-    from ballsdex.core.models import BallInstance
+    from ballsdex.core.models import BallInstance, Special, Economy, Regime
 
 
 SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
@@ -65,16 +65,33 @@ def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_width: int, draw: Ima
             lines.append(current_line)
     return lines
 
-def draw_card(
-    ball_instance: "BallInstance",
-    media_path: str = "./admin_panel/media/",
-    ) -> tuple[Image.Image, dict[str, Any]]:
-    ball = ball_instance.countryball
-    ball_health = (86, 255, 100, 255)
-    ball_credits = ball.credits
-    special_credits = ""
-    card_name = ball.cached_regime.name
+class CardConfig:
+    def __init__(
+        self,
+        ball_name: str,
+        capacity_name: str,
+        capacity_description: str,
+        health: int,
+        attack: int,
+        collection_card: str,
+        background: str,
+        economy_icon: Economy = None,
+        special: Special = None,
+        ball_credits: str = "",
+    ):
+        self.ball_name = ball_name
+        self.capacity_name = capacity_name
+        self.capacity_description = capacity_description
+        self.health = health
+        self.attack = attack
+        self.collection_card = collection_card
+        self.background = background
+        self.economy_icon = economy_icon
+        self.special = special
+        self.ball_credits = ball_credits
 
+
+def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> tuple[Image.Image, dict[str, Any]]:
     if special_image := ball_instance.special_card:
         card_name = getattr(ball_instance.specialcard, "name", card_name)
         image = Image.open(media_path + special_image)
