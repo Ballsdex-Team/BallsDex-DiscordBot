@@ -76,7 +76,7 @@ class CardConfig:
         collection_card: str,
         background: str,
         economy_icon: Economy = None,
-        special: Special = None,
+        special_card: Special = None,
         ball_credits: str = "",
     ):
         self.ball_name = ball_name
@@ -87,23 +87,23 @@ class CardConfig:
         self.collection_card = collection_card
         self.background = background
         self.economy_icon = economy_icon
-        self.special = special
+        self.special_card = special_card
         self.ball_credits = ball_credits
 
 
 def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> tuple[Image.Image, dict[str, Any]]:
-    if special_image := ball_instance.special_card:
-        card_name = getattr(ball_instance.specialcard, "name", card_name)
+    if special_image := config.special_card:
+        card_name = getattr(config.specialcard, "name", card_name)
         image = Image.open(media_path + special_image)
-        if ball_instance.specialcard and ball_instance.specialcard.credits:
+        if config.specialcard and config.specialcard.credits:
             special_credits += f" • Special Author: {ball_instance.specialcard.credits}"
     else:
-        image = Image.open(media_path + ball.cached_regime.background)
+        image = Image.open(media_path + config.background)
 
     image = image.convert("RGBA")
     icon = (
-        Image.open(media_path + ball.cached_economy.icon).convert("RGBA")
-        if ball.cached_economy
+        Image.open(media_path + config.economy_icon).convert("RGBA")
+        if config.economy_icon
         else None
     )
 
@@ -113,7 +113,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
     
     draw.text(
         (50, 20 + shadow_offset),
-        ball.short_name or ball.country,
+        config.ball_name,
         font=title_font,
         fill=shadow_color,
         stroke_width=8,
@@ -123,7 +123,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
     # Title
     draw.text(
         (50, 20),
-        ball.short_name or ball.country,
+        config.ball_name,
         font=title_font,
         fill=(255, 255, 255, 255),
         stroke_width=8,
@@ -131,7 +131,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
     )
 
     # Capacity Name
-    cap_name = textwrap.wrap(f"{ball.capacity_name}", width=26)
+    cap_name = textwrap.wrap(f"{config.capacity_name}", width=26)
     for i, line in enumerate(cap_name):
         draw.text(
             (100, 1025 + 100 * i + shadow_offset),
@@ -153,7 +153,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
 
     # Capacity Description with custom line breaks (%%)
     max_text_width = 1325
-    wrapped_description = wrap_text(ball.capacity_description, capacity_description_font, max_text_width, draw)
+    wrapped_description = wrap_text(config.capacity_description, capacity_description_font, max_text_width, draw)
     for i, line in enumerate(wrapped_description):
         draw.text(
             (60, 1060 + 100 * len(cap_name) + 80 * i + shadow_offset),
@@ -185,7 +185,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
 
     draw.text(
         (320, 1670 + shadow_offset),
-        str(ball_instance.health),
+        str(config.health),
         font=stats_font,
         fill=shadow_color,
         stroke_width=7,
@@ -193,7 +193,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
     )
     draw.text(
         (320, 1670),
-        str(ball_instance.health),
+        str(config.health),
         font=stats_font,
         fill=ball_health,
         stroke_width=7,
@@ -201,7 +201,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
     )
     draw.text(
         (1120, 1670 + shadow_offset),
-        str(ball_instance.attack),
+        str(config.attack),
         font=stats_font,
         fill=shadow_color,
         stroke_width=7,
@@ -210,7 +210,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
     )
     draw.text(
         (1120, 1670),
-        str(ball_instance.attack),
+        str(config.attack),
         font=stats_font,
         fill=(255, 66, 92, 255),
         stroke_width=7,
@@ -228,7 +228,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
         (30, 1870),
         # Modifying the line below is breaking the licence as you are removing credits
         # If you don't want to receive a DMCA, just don't
-        f"Ballsdex by El Laggron, BrawlDex by AngerRandom, Brawl Stars by Supercell\n" f"{ball_credits}",
+        f"Ballsdex by El Laggron, BrawlDex by AngerRandom, Brawl Stars by Supercell\n" f"{config.ball_credits}",
         font=credits_font,
         fill=credits_color,
         stroke_width=3,
@@ -236,7 +236,7 @@ def draw_card(config: CardConfig, media_path: str = "./admin_panel/media/") -> t
     )
 
     # Artwork
-    artwork = Image.open(media_path + ball.collection_card).convert("RGBA")
+    artwork = Image.open(media_path + config.collection_card).convert("RGBA")
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])
 
     # Icon
