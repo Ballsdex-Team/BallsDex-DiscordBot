@@ -192,3 +192,18 @@ class Staff(commands.GroupCog, group_name="staff"):
     @app_commands.describe(background="The background of the card (1428x2000)")
     @app_commands.describe(economy="The economy icon of the card (Max 512x512)")
     @app_commands.describe(artwork="The artwork of the card character (1360x730)")
+    @app_commands.describe(special="Special to apply to the card")
+    async def customcard(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        name: str,
+        title: str,
+        text: str,
+        health: int,
+        attack: int,
+        background: discord.Attachment,
+        economy: discord.Attachment,
+        artwork: discord.Attachment,
+        special: SpecialTransform | None = None,
+    ):
+        
