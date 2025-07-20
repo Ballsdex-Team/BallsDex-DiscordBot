@@ -192,7 +192,7 @@ class BallSpawnView(View):
         self.BlockedList = {}
         self.BlockedTimeout = 10
         self.DontCount = False
-        self.voicefile = discord.Attachment | None = None
+        self.voicefile = None
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
