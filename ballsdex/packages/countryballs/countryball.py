@@ -192,6 +192,7 @@ class BallSpawnView(View):
         self.BlockedList = {}
         self.BlockedTimeout = 10
         self.DontCount = False
+        self.voicefile = None
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
@@ -342,6 +343,10 @@ class BallSpawnView(View):
             source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
             return "".join(random.choices(source, k=15))
 
+        ALLOWED_VOICE_EXTENSIONS = [
+            "ogg",
+            "mp3"
+        ]
         extension = self.model.wild_card.split(".")[-1]
         file_location = "./admin_panel/media/" + self.model.wild_card
         file_name = f"nt_{generate_random_name()}.{extension}"
@@ -363,12 +368,23 @@ class BallSpawnView(View):
                     Names=self.name+"s".capitalize(),
                     NAMES=self.name+"s".upper(),
                 )
-                self.message = await channel.send(
-                    spawn_message,
-                    view=self,
-                    file=discord.File(file_location, filename=file_name),
-                )
-                return True
+                if self.voicefile:
+                    extension = self.voicefile.split(".")[-1]
+                    if extension not in ALLOWED_VOICE_EXTENSIONS:
+                        raise ValueError(f"{
+                    self.message = await channel.send(
+                        f"Guess this {self.RegimeName}'s voice to catch them!",
+                        view=self,
+                        file=discord.File(self.voicefile, filename=f"VOICE_MSG.{extension}"),
+                    )
+                    return True
+                else:
+                    self.message = await channel.send(
+                        spawn_message,
+                        view=self,
+                        file=discord.File(file_location, filename=file_name),
+                    )
+                    return True
             else:
                 log.error("Missing permission to spawn ball in channel %s.", channel)
         except discord.Forbidden:
