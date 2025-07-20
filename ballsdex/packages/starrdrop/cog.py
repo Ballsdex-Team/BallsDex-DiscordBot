@@ -27,14 +27,14 @@ STARRDROP_REWARDS = {
         {"type": "skin", "rarity": "super_rare", "weight": 20},
     ],
     "epic": [
-        {"type": "powerpoints", "amount": 100, "weight": 40},
+        {"type": "powerpoints", "amount": 100, "weight": 50},
         {"type": "credits", "amount": 500, "weight": 30},
-        {"type": "skin", "rarity": "epic", "weight": 30},
+        {"type": "skin", "rarity": "epic", "weight": 20},
     ],
     "mythic": [
+        {"type": "credits", "amount": 1000, "weight": 35},
         {"type": "brawler", "rarity": "mythic", "weight": 40},
         {"type": "skin", "rarity": "mythic", "weight": 25},
-        {"type": "credits", "amount": 1000, "weight": 35},
     ],
     "legendary": [
         {"type": "brawler", "rarity": "legendary", "weight": 40},
@@ -67,7 +67,6 @@ class StarrDrop(commands.Cog):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def starrdrop(self, interaction: discord.Interaction, amount: int = 1):
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
