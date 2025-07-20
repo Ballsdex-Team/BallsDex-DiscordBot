@@ -75,7 +75,7 @@ class CardConfig:
         attack: int,
         collection_card: str,
         background: str,
-        economy_icon: Economy = None,
+        economy_icon: str = None,
         special_card: Special = None,
         ball_credits: str = "",
     ):
