@@ -33,32 +33,31 @@ def draw_card(
     media_path: str = "./admin_panel/media/",
 ) -> tuple[Image.Image, dict[Any, Any]]:
     template = None
-    # if ball_instance.special:
-    #     template = ball_instance.special.card_template
-    # else:
-    #     template = ball_instance.countryball.cached_regime.card_template
+    if ball_instance.card_template:
+        template = ball_instance.card_template.template
     if not template:
         template = DEFAULT_CARD_TEMPLATE
 
-    template = CardTemplate(**template)
+    template = CardTemplate(**template)  # type: ignore
 
     image = Image.new("RGB", (template.canvas_size[0], template.canvas_size[1]))
     prior_layer_info: dict[str, LayerInfo] = {}
 
-    layers = ((name, TemplateLayer(**layer)) for (name, layer) in template.layers.items())
-    for name, layer in layers:
-        draw_layer(image, layer, ball_instance, media_path, prior_layer_info, name)
+    layers = (TemplateLayer(**layer) for layer in template.layers)
+    for layer in layers:
+        draw_layer(image, layer, ball_instance, media_path, prior_layer_info)
 
     return image, {"format": "WEBP"}
 
 
 class CardTemplate(NamedTuple):
     canvas_size: tuple[int, int]
-    layers: dict[str, dict[str, Any]]
+    layers: list[dict[str, Any]]
 
 
 class TemplateLayer(NamedTuple):
     # If absolute, source is a path / string, else it is an attribute
+    name: str
     is_attribute: bool
     # Otherwise its a string
     is_image: bool
@@ -72,8 +71,8 @@ class TemplateLayer(NamedTuple):
     text_font_size: int = 11
     text_font: str = "arial.ttf"
     text_line_height: int = 80
-    text_fill: tuple[int, int, int, int] = (255, 255, 255, 255)
-    text_stroke_fill: tuple[int, int, int, int] = (0, 0, 0, 255)
+    text_fill: list[int] = [255, 255, 255, 255]
+    text_stroke_fill: list[int] = [0, 0, 0, 255]
     text_stroke_width: int = 2
     text_anchor: str = "la"
 
@@ -97,8 +96,8 @@ def draw_layer(
     ball_instance: BallInstance,
     media_path: str,
     prior_layer_info: dict[str, LayerInfo],
-    name: str,
 ):
+    name = layer.name
     if isinstance(layer.anchor[0], int):
         startx = layer.anchor[0]
     else:
@@ -163,7 +162,7 @@ def draw_layer(
                 (start_coords[0], start_coords[1] + i * layer.text_line_height),
                 line,
                 font=font,
-                fill=layer.text_fill,
+                fill=tuple(layer.text_fill),
                 stroke_width=2,
                 stroke_fill=(0, 0, 0, 255),
                 anchor=layer.text_anchor,
