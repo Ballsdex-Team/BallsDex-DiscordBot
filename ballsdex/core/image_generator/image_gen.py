@@ -132,7 +132,7 @@ def draw_layer(
                 font=font,
                 fill=text_fill,
                 stroke_width=layer.text_stroke_width,
-                stroke_fill=(0, 0, 0, 255),
+                stroke_fill=tuple(layer.text_stroke_fill),
                 anchor=layer.text_anchor,
             )
 
