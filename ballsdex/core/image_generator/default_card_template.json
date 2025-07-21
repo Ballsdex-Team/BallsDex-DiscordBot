@@ -112,7 +112,7 @@
                 0,
                 50
             ],
-            "text_line_height": 100,
+            "text_line_height": 80,
             "text_font": "OpenSans-Semibold.ttf",
             "text_wrap": 32,
             "text_fill": [
@@ -189,7 +189,7 @@
             "name": "lagg_credits",
             "is_attribute": false,
             "is_image": false,
-            "source": "Created by El Lagronn",
+            "source": "Created by El Laggron",
             "anchor": [
                 30,
                 1870
