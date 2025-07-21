@@ -218,7 +218,7 @@ class StarrDrop(commands.Cog):
                     attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
                     health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
                     special=spec,
-                    server_id=interaction.user.guild.id if interation.guild else None,
+                    server_id=interaction.user.guild.id if interaction.guild else None,
                 )
 
                 if openamount == 1:
