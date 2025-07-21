@@ -155,11 +155,16 @@ def get_region_best_color(image: Image.Image, region: tuple[int, int, int, int])
 
 
 def get_font(layer: TemplateLayer) -> FreeTypeFont:
-    if layer.text_font in font_cache:
-        font = font_cache[layer.text_font]
+    # if we dont use size then someone trying to use
+    # the same font in two different sizes
+    # would have problems
+    cache_name = layer.text_font + str(layer.text_font_size)
+
+    if cache_name in font_cache:
+        font = font_cache[cache_name]
     else:
         font = ImageFont.truetype(str(SOURCES_PATH / layer.text_font), layer.text_font_size)
-        font_cache[layer.text_font] = font
+        font_cache[cache_name] = font
 
     return font
 

@@ -200,6 +200,21 @@
             "text_stroke_width": 0
         },
         {
+            "name": "special_credits",
+            "is_attribute": true,
+            "is_image": false,
+            "source": "specialcard.credits",
+            "anchor": [
+                "lagg_credits",
+                1870
+            ],
+            "text_font": "arial.ttf",
+            "text_fill": "auto",
+            "text_font_size": 40,
+            "text_template": " • Special author: $data",
+            "text_stroke_width": 0
+        },
+        {
             "name": "credits",
             "is_attribute": true,
             "is_image": false,
@@ -212,22 +227,6 @@
             "text_fill": "auto",
             "text_font_size": 40,
             "text_template": "Artwork author: $data",
-            "text_stroke_width": 0
-        },
-        {
-            "name": "special_credits",
-            "is_attribute": true,
-            "is_image": false,
-            "source": "specialcard.credits",
-            "anchor": [
-                1398,
-                1870
-            ],
-            "text_font": "arial.ttf",
-            "text_fill": "auto",
-            "text_font_size": 40,
-            "text_template": "Special author: $data",
-            "text_anchor": "ra",
             "text_stroke_width": 0
         }
     ]
