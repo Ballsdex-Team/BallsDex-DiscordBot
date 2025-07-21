@@ -36,7 +36,6 @@ class AutoMod(commands.Cog):
         if str(reaction.emoji) in BANNED_REACTIONS:
             try:
                 await reaction.remove(user)
-                await user.timeout(timedelta(seconds=60), reason="Reacting with banned emojis")
             except Exception:
                 log.exception("An error occurred with Reaction AutoMod.", exc_info=True)
 
