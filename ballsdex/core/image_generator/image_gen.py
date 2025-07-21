@@ -218,7 +218,7 @@ def draw_layer(
         text_width = max(draw.textlength(text=string, font=font) for string in final_strs)
         end_coords = (
             int(start_coords[0] + text_width),
-            start_coords[1] + layer.text_line_height * (len(final_strs) + 1),
+            start_coords[1] + layer.text_line_height * (len(final_strs)),
         )
         text_fill = get_text_fill_color(layer, ball_instance, (*start_coords, *end_coords))
 
