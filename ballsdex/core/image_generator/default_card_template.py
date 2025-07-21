@@ -18,6 +18,14 @@ DEFAULT_CARD_TEMPLATE = {
             "size": [1359, 731],
         },
         {
+            "name": "economy_icon",
+            "is_attribute": True,
+            "is_image": True,
+            "source": "countryball.cached_economy.icon",
+            "anchor": [1200, 30],
+            "size": [192, 192],
+        },
+        {
             "name": "title",
             "is_attribute": True,
             "is_image": False,

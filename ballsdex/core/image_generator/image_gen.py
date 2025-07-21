@@ -108,74 +108,18 @@ def draw_layer(
     media_path: str,
     prior_layer_info: dict[str, LayerInfo],
 ):
-    name = layer.name
-    if isinstance(layer.anchor[0], int):
-        startx = layer.anchor[0]
-    else:
-        startx = prior_layer_info[layer.anchor[0]].finished_coords[0]
-
-    if isinstance(layer.anchor[1], int):
-        starty = layer.anchor[1]
-    else:
-        starty = prior_layer_info[layer.anchor[1]].finished_coords[1]
-
-    start_coords = (startx, starty)
-    draw = ImageDraw.Draw(image)
-
-    data: str | None = None
-    if layer.is_attribute:
-        if isinstance(layer.source, list):
-            for attribute in layer.source:
-                data = get_attribute_recursive(ball_instance, attribute)
-                if data is None:
-                    continue
-                else:
-                    break
-        else:
-            data = get_attribute_recursive(ball_instance, layer.source)
-    else:
-        if isinstance(layer.source, list):
-            data = layer.source[0]
-        else:
-            data = layer.source
-
-    if not data:
-        return
-    else:
-        data = str(data)
-
-    if layer.is_image:
-        end_coords = (startx + layer.size[0], starty + layer.size[1])
-        if layer.is_attribute:
-            path = Path(media_path + data)
-        else:
-            path = Path(data)
-
-        layer_image = Image.open(path).convert("RGBA")
-        layer_image = ImageOps.fit(layer_image, layer.size)
-        image.paste(layer_image, start_coords, mask=layer_image)
-
-        prior_layer_info[name] = LayerInfo(finished_coords=end_coords)
-    else:
-        final_str: str = (
-            layer.text_template.replace("$data", data) if layer.text_template else data
-        )
-
-        final_strs: list[str]
-        if layer.text_wrap:
-            final_strs = textwrap.wrap(final_str, width=layer.text_wrap, expand_tabs=True)
-        else:
-            final_strs = [final_str]
-
+    def get_font(layer: TemplateLayer) -> FreeTypeFont:
         if layer.text_font in font_cache:
             font = font_cache[layer.text_font]
         else:
             font = ImageFont.truetype(str(SOURCES_PATH / layer.text_font), layer.text_font_size)
             font_cache[layer.text_font] = font
 
-        text_width = max(draw.textlength(text=string, font=font) for string in final_strs)
-        end_coords = (startx + text_width, starty + layer.text_font_size * len(final_strs))
+        return font
 
+    def get_text_fill_color(
+        layer: TemplateLayer, ball_instance: BallInstance, region: tuple[int, int, int, int]
+    ) -> tuple[int, int, int, int]:
         text_fill: tuple[int, int, int, int] | None = None
         if layer.text_fill == "auto":
             ball_bg_cache = (
@@ -188,12 +132,95 @@ def draw_layer(
                     text_fill = text_color_cache[ball_bg_cache][layer.name]
 
             if not text_fill:
-                text_fill = get_region_best_color(image, (*start_coords, *end_coords))
+                text_fill = get_region_best_color(image, region)
         if not text_fill:
             if isinstance(layer.text_fill, str):
                 text_fill = (255, 255, 255, 255)
             else:
-                text_fill = tuple(layer.text_fill)  # # pyright: ignore[reportAssignmentType]
+                text_fill = tuple(layer.text_fill)  # pyright: ignore[reportAssignmentType]
+
+        return text_fill  # pyright: ignore[reportReturnType]
+
+    def get_text_strings(layer: TemplateLayer, data) -> list[str]:
+        final_str: str = (
+            layer.text_template.replace("$data", data) if layer.text_template else data
+        )
+
+        final_strs: list[str]
+        if layer.text_wrap:
+            final_strs = textwrap.wrap(final_str, width=layer.text_wrap, expand_tabs=True)
+        else:
+            final_strs = [final_str]
+
+        return final_strs
+
+    def get_anchor_coords(layer, prior_layer_info) -> tuple[int, int]:
+        if isinstance(layer.anchor[0], int):
+            startx = layer.anchor[0]
+        else:
+            # Essentially putting in a string means, start this layer
+            # where that other layer finished
+            startx = prior_layer_info[layer.anchor[0]].finished_coords[0]
+
+        if isinstance(layer.anchor[1], int):
+            starty = layer.anchor[1]
+        else:
+            starty = prior_layer_info[layer.anchor[1]].finished_coords[1]
+
+        return (startx, starty)
+
+    def get_layer_data(layer: TemplateLayer, ball_instance: BallInstance) -> str | None:
+        data: str | None = None
+
+        if not layer.is_attribute:
+            if isinstance(layer.source, list):
+                data = layer.source[0]
+            else:
+                data = layer.source
+
+            return str(data)
+
+        if isinstance(layer.source, list):
+            # for prioritised source lists, eg special > regime background
+            for attribute in layer.source:
+                data = get_attribute_recursive(ball_instance, attribute)
+                if data:
+                    break
+        else:
+            data = get_attribute_recursive(ball_instance, layer.source)
+
+        if data:
+            data = str(data)
+
+        return data
+
+    name = layer.name
+    start_coords = get_anchor_coords(layer, prior_layer_info)
+
+    data = get_layer_data(layer, ball_instance)
+    if not data:
+        return
+
+    if layer.is_image:
+        end_coords = (start_coords[0] + layer.size[0], start_coords[1] + layer.size[1])
+
+        path = Path(media_path + data)
+
+        layer_image = Image.open(path).convert("RGBA")
+        layer_image = ImageOps.fit(layer_image, layer.size)
+        image.paste(layer_image, start_coords, mask=layer_image)
+    else:
+        draw = ImageDraw.Draw(image)
+
+        font = get_font(layer)
+        final_strs = get_text_strings(layer, data)
+
+        text_width = max(draw.textlength(text=string, font=font) for string in final_strs)
+        end_coords = (
+            int(start_coords[0] + text_width),
+            start_coords[1] + layer.text_line_height * (len(final_strs) + 1),
+        )
+        text_fill = get_text_fill_color(layer, ball_instance, (*start_coords, *end_coords))
 
         for i, line in enumerate(final_strs):
             draw.text(
@@ -206,9 +233,4 @@ def draw_layer(
                 anchor=layer.text_anchor,
             )
 
-        prior_layer_info[name] = LayerInfo(
-            finished_coords=(
-                start_coords[0],
-                start_coords[1] + layer.text_line_height * len(final_strs) + 1,
-            )
-        )
+    prior_layer_info[name] = LayerInfo(finished_coords=end_coords)
