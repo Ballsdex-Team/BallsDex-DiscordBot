@@ -10,7 +10,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from ballsdex.core.image_generator.default_card_template import DEFAULT_CARD_TEMPLATE
 
 if TYPE_CHECKING:
-    from ballsdex.core.models import BallInstance
+    from PIL.ImageFont import FreeTypeFont
+
+    from ballsdex.core.models import BallInstance, Regime, Special
 
 # ===== TIP =====
 #
@@ -25,6 +27,9 @@ if TYPE_CHECKING:
 # use the "--help" flag to view all options.
 
 SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
+
+text_color_cache: dict[Regime | Special, dict["str", tuple[int, int, int, int]]] = {}
+font_cache: dict[str, FreeTypeFont] = {}
 
 
 def draw_card(
@@ -62,7 +67,7 @@ class TemplateLayer(NamedTuple):
     # Otherwise its a string
     is_image: bool
     source: list[str] | str
-    anchor: tuple[int | str, int | str]
+    anchor: list[int | str]
     size: tuple[int, int] = (0, 0)
 
     # Template string with $data to-be-replaced by the data
@@ -71,9 +76,9 @@ class TemplateLayer(NamedTuple):
     text_font_size: int = 11
     text_font: str = "arial.ttf"
     text_line_height: int = 80
-    text_fill: list[int] = [255, 255, 255, 255]
+    text_fill: list[int] | str = [255, 255, 255, 255]
     text_stroke_fill: list[int] = [0, 0, 0, 255]
-    text_stroke_width: int = 2
+    text_stroke_width: int = 0
     text_anchor: str = "la"
 
 
@@ -88,6 +93,12 @@ def get_attribute_recursive(object: Any, attribute: str) -> Any:
         if data is None:
             return None
     return data
+
+
+def get_region_best_color(image: Image.Image, region: tuple) -> tuple:
+    image = image.crop(region)
+    brightness = sum(image.convert("L").getdata()) / image.width / image.height  # type: ignore
+    return (0, 0, 0, 255) if brightness > 100 else (255, 255, 255, 255)
 
 
 def draw_layer(
@@ -109,7 +120,6 @@ def draw_layer(
         starty = prior_layer_info[layer.anchor[1]].finished_coords[1]
 
     start_coords = (startx, starty)
-    end_coords = (startx + layer.size[0], starty + layer.size[1])
     draw = ImageDraw.Draw(image)
 
     data: str | None = None
@@ -135,6 +145,7 @@ def draw_layer(
         data = str(data)
 
     if layer.is_image:
+        end_coords = (startx + layer.size[0], starty + layer.size[1])
         if layer.is_attribute:
             path = Path(media_path + data)
         else:
@@ -156,13 +167,40 @@ def draw_layer(
         else:
             final_strs = [final_str]
 
-        font = ImageFont.truetype(str(SOURCES_PATH / layer.text_font), layer.text_font_size)
+        if layer.text_font in font_cache:
+            font = font_cache[layer.text_font]
+        else:
+            font = ImageFont.truetype(str(SOURCES_PATH / layer.text_font), layer.text_font_size)
+            font_cache[layer.text_font] = font
+
+        text_width = max(draw.textlength(text=string, font=font) for string in final_strs)
+        end_coords = (startx + text_width, starty + layer.text_font_size * len(final_strs))
+
+        text_fill: tuple[int, int, int, int] | None = None
+        if layer.text_fill == "auto":
+            ball_bg_cache = (
+                ball_instance.special
+                if ball_instance.special
+                else ball_instance.countryball.regime
+            )
+            if ball_bg_cache in text_color_cache:
+                if layer.name in text_color_cache[ball_bg_cache]:
+                    text_fill = text_color_cache[ball_bg_cache][layer.name]
+
+            if not text_fill:
+                text_fill = get_region_best_color(image, (*start_coords, *end_coords))
+        if not text_fill:
+            if isinstance(layer.text_fill, str):
+                text_fill = (255, 255, 255, 255)
+            else:
+                text_fill = tuple(layer.text_fill)  # # pyright: ignore[reportAssignmentType]
+
         for i, line in enumerate(final_strs):
             draw.text(
                 (start_coords[0], start_coords[1] + i * layer.text_line_height),
                 line,
                 font=font,
-                fill=tuple(layer.text_fill),
+                fill=text_fill,
                 stroke_width=2,
                 stroke_fill=(0, 0, 0, 255),
                 anchor=layer.text_anchor,

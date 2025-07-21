@@ -1,0 +1,157 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "CardTemplate",
+    "type": "object",
+    "required": [
+        "canvas_size",
+        "layers"
+    ],
+    "properties": {
+        "canvas_size": {
+            "type": "array",
+            "items": {
+                "type": "integer"
+            },
+            "minItems": 2,
+            "maxItems": 2
+        },
+        "layers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "is_attribute",
+                    "is_image",
+                    "source",
+                    "anchor"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "is_attribute": {
+                        "type": "boolean"
+                    },
+                    "is_image": {
+                        "type": "boolean"
+                    },
+                    "source": {
+                        "oneOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        ]
+                    },
+                    "anchor": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                    },
+                    "size": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "default": [
+                            0,
+                            0
+                        ]
+                    },
+                    "text_template": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "text_wrap": {
+                        "type": "integer",
+                        "default": 0
+                    },
+                    "text_font_size": {
+                        "type": "integer",
+                        "default": 11
+                    },
+                    "text_font": {
+                        "type": "string",
+                        "default": "arial.ttf"
+                    },
+                    "text_line_height": {
+                        "type": "integer",
+                        "default": 80
+                    },
+                    "text_fill": {
+                        "anyOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 255
+                                },
+                                "minItems": 4,
+                                "maxItems": 4,
+                                "default": [
+                                    255,
+                                    255,
+                                    255,
+                                    255
+                                ]
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "auto"
+                                ]
+                            }
+                        ]
+                    },
+                    "text_stroke_fill": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 255
+                        },
+                        "minItems": 4,
+                        "maxItems": 4,
+                        "default": [
+                            0,
+                            0,
+                            0,
+                            255
+                        ]
+                    },
+                    "text_stroke_width": {
+                        "type": "integer",
+                        "default": 2
+                    },
+                    "text_anchor": {
+                        "type": "string",
+                        "default": "la"
+                    }
+                },
+                "additionalProperties": false
+            }
+        }
+    },
+    "additionalProperties": false
+}
