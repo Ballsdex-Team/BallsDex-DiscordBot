@@ -82,6 +82,7 @@
             ],
             "text_line_height": 100,
             "text_font": "Bobby Jones Soft.otf",
+            "text_template": "Ability: $data",
             "text_wrap": 26,
             "text_fill": [
                 230,
