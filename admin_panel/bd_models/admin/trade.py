@@ -70,7 +70,10 @@ class TradeAdmin(admin.ModelAdmin):
             "player1",
             "player2",
             Prefetch(
-                "tradeobject_set", queryset=TradeObject.objects.prefetch_related("ballinstance")
+                "tradeobject_set",
+                queryset=TradeObject.objects.prefetch_related(
+                    "ballinstance", "ballinstance__ball", "ballinstance__special"
+                ),
             ),
         )
 
