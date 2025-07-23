@@ -206,9 +206,6 @@ class StarrDrop(commands.Cog):
                     await interaction.followup.send("There are no brawlers available to claim at the moment.", ephemeral=True)
                     return
 
-                is_special = random.randint(1, 4096) == 1
-                spec = await Special.get(name="Chromatic") if is_special else None
-
                 rarity_weights = [ball.rarity ** (1 / ounce["multiplier"]) for ball in available_balls]
                 claimed_ball = random.choices(available_balls, weights=rarity_weights, k=1)[0]
 
@@ -232,7 +229,7 @@ class StarrDrop(commands.Cog):
 
                     data, file, view = await ball_instance.prepare_for_message(interaction)
                     await interaction.edit_original_response(
-                        content=f"You opened your {rarity.replace('_', ' ').title()} Starr Drop and got... **{'Shiny ' if is_special else ''}{claimed_ball.country}**!\n\n{data}",
+                        content=f"You got... **{'Shiny ' if is_special else ''}{claimed_ball.country}**!\n\n{data}",
                         attachments=[file],
                         view=view
                     )
