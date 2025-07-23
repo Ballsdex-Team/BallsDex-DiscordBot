@@ -7,7 +7,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, button
-from ballsdex.core.models import Special, Ball, BallInstance, balls, Player
+from ballsdex.core.models import Ball, BallInstance, balls, Player
 from ballsdex.settings import settings
 from datetime import datetime, timedelta, timezone
 from collections import Counter
@@ -46,7 +46,6 @@ class StarrDrop(commands.Cog):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
-    @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
     async def starrdrop(
         self,
         interaction: discord.Interaction,
@@ -98,35 +97,16 @@ class StarrDrop(commands.Cog):
                 ounces.append(ounce)
 
             rarity = ounce["name"]
-            reward_roll = random.random()
-
-            # Determine the reward based on the rarity and its specific chances
             reward = None
 
             if rarity == "rare":
-                reward = random.choices(
-                    ["25pp", "100c", "rare_skin"],
-                    weights=[50, 30, 20],
-                    k=1
-                )[0]
+                reward = random.choices(["25pp", "100c", "rare_skin"], weights=[50, 30, 20], k=1)[0]
             elif rarity == "super_rare":
-                reward = random.choices(
-                    ["50pp", "200c", "super_skin"],
-                    weights=[50, 30, 20],
-                    k=1
-                )[0]
+                reward = random.choices(["50pp", "200c", "super_skin"], weights=[50, 30, 20], k=1)[0]
             elif rarity == "epic":
-                reward = random.choices(
-                    ["100pp", "500c", "epic_skin"],
-                    weights=[50, 30, 20],
-                    k=1
-                )[0]
+                reward = random.choices(["100pp", "500c", "epic_skin"], weights=[50, 30, 20], k=1)[0]
             elif rarity == "mythic":
-                reward = random.choices(
-                    ["1000c", "mythic_brawler", "mythic_skin"],
-                    weights=[35, 40, 25],
-                    k=1
-                )[0]
+                reward = random.choices(["1000c", "mythic_brawler", "mythic_skin"], weights=[35, 40, 25], k=1)[0]
             elif rarity == "legendary":
                 reward = random.choices(
                     ["legendary_brawler", "legendary_skin", "ultra_legendary", "ultimate_skin", "hypercharged_skin"],
@@ -134,7 +114,6 @@ class StarrDrop(commands.Cog):
                     k=1
                 )[0]
 
-            # Handle reward
             if reward.endswith("pp") or reward.endswith("c"):
                 amount = int(reward.rstrip("pc"))
                 currency_type = "powerpoints" if reward.endswith("pp") else "credits"
@@ -159,15 +138,20 @@ class StarrDrop(commands.Cog):
                     )
                     await view.continued.wait()
 
+                    rarity_label = rarity.replace("_", " ").title()
+                    article = "an" if rarity_label[0].lower() in "aeiou" else "a"
+                    currency_label = currency_type.capitalize()
+
                     await interaction.edit_original_response(
-                        content=f"You opened your {rarity.replace('_', ' ').title()} Starr Drop and got... \n\n{mj}{amount} {currency_type}!",
+                        content=(
+                            f"You opened {article} {rarity_label} Starr Drop...\n"
+                            f"# You got {mj}{amount} {currency_label}!{mj}"
+                        ),
                         view=None
                     )
                 else:
                     totalrewards.append(f"{mj}{amount} {currency_type}")
-
             else:
-                # it's a brawler or skin
                 rarityexclude = {
                     "rare": {8, 16, 36, 25, 26, 27, 37, 39, 40},
                     "super_rare": {16, 36, 26, 27, 37, 40},
@@ -198,9 +182,10 @@ class StarrDrop(commands.Cog):
                 else:
                     ids = set()
 
+                # Allow disabled skins/brawlers now (removed ball.enabled check)
                 available_balls = [
                     ball for ball in balls.values()
-                    if ball.enabled and ball.regime_id in ids
+                    if ball.regime_id in ids
                 ]
                 if not available_balls:
                     await interaction.followup.send("There are no brawlers available to claim at the moment.", ephemeral=True)
@@ -214,8 +199,7 @@ class StarrDrop(commands.Cog):
                     player=player,
                     attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
                     health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
-                    special=spec,
-                    server_id=interaction.user.guild.id if interaction.guild else None,
+                    server_id=interaction.user.guild.id,
                 )
 
                 if openamount == 1:
@@ -229,7 +213,7 @@ class StarrDrop(commands.Cog):
 
                     data, file, view = await ball_instance.prepare_for_message(interaction)
                     await interaction.edit_original_response(
-                        content=f"You got... **{'Shiny ' if is_special else ''}{claimed_ball.country}**!\n\n{data}",
+                        content=f"You opened a {rarity.replace('_', ' ').title()} Starr Drop...\n# You got **{claimed_ball.country}**!",
                         attachments=[file],
                         view=view
                     )
