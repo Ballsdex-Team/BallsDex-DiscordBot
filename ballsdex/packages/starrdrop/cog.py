@@ -53,11 +53,6 @@ class StarrDrop(commands.Cog):
     ):
         """
         Open one or more of your Starr Drops.
-        
-        Parameters
-        ----------
-        amount: int
-            How much Starrdrops you want to open (Max 10).
         """
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
@@ -116,11 +111,11 @@ class StarrDrop(commands.Cog):
 
             if reward.endswith("pp") or reward.endswith("c"):
                 amount = int(reward.rstrip("pc"))
-                currency_type = "powerpoints" if reward.endswith("pp") else "credits"
-                emoji_id = 1364807487106191471 if currency_type == "powerpoints" else 1364877727601004634
+                currency_type = "points" if reward.endswith("pp") else "credits"
+                emoji_id = 1364807487106191471 if currency_type == "points" else 1364877727601004634
                 if currency_type == "credits" and amount >= 40:
                     emoji_id = 1364877745032794192
-                elif currency_type == "powerpoints" and amount >= 75:
+                elif currency_type == "points" and amount >= 75:
                     emoji_id = 1364817571819425833
                 mj = self.bot.get_emoji(emoji_id)
 
@@ -132,34 +127,19 @@ class StarrDrop(commands.Cog):
                 if openamount == 1:
                     view = ContinueView(author=interaction.user)
                     await interaction.response.send_message(
-                        f"{rarity.replace('_', ' ').title()} Starr Drop",
+                        f"{mj} Opening a {rarity.replace('_', ' ').title()} Starr Drop...",
                         view=view,
                         ephemeral=False
                     )
                     await view.continued.wait()
 
-                    rarity_label = rarity.replace("_", " ").title()
-                    article = "an" if rarity_label[0].lower() in "aeiou" else "a"
-                    currency_label = currency_type.capitalize()
-
                     await interaction.edit_original_response(
-                        content=(
-                            f"You opened {article} {rarity_label} Starr Drop...\n"
-                            f"# You got {mj}{amount} {currency_label}!{mj}"
-                        ),
+                        content=f"{mj} You got {amount} {currency_type.capitalize()}!",
                         view=None
                     )
                 else:
                     totalrewards.append(f"{mj}{amount} {currency_type}")
             else:
-                rarityexclude = {
-                    "rare": {8, 16, 36, 25, 26, 27, 37, 39, 40},
-                    "super_rare": {16, 36, 26, 27, 37, 40},
-                    "epic": {36, 27, 37, 40},
-                    "mythic": {5, 6, 22, 23, 38, 27, 40},
-                    "legendary": {5, 6, 7, 22, 23, 38, 24}
-                }
-
                 brawler_ids = {
                     "mythic_brawler": {8},
                     "legendary_brawler": {16},
@@ -175,23 +155,22 @@ class StarrDrop(commands.Cog):
                     "hypercharged_skin": {40, 27}
                 }
 
-                if reward in brawler_ids:
-                    ids = brawler_ids[reward]
-                elif reward in skin_ids:
-                    ids = skin_ids[reward]
-                else:
-                    ids = set()
+                ids = brawler_ids.get(reward) or skin_ids.get(reward) or set()
 
-                # Allow disabled skins/brawlers now (removed ball.enabled check)
                 available_balls = [
                     ball for ball in balls.values()
-                    if ball.regime_id in ids
+                    if ball.regime_id in ids and getattr(ball, "enabled", True)
                 ]
+
                 if not available_balls:
                     await interaction.followup.send("There are no brawlers available to claim at the moment.", ephemeral=True)
                     return
 
-                rarity_weights = [ball.rarity ** (1 / ounce["multiplier"]) for ball in available_balls]
+                base_rarity_weight = ounce["weight"]
+                rarity_weights = [
+                    (ball.rarity if ball.rarity > 0 else base_rarity_weight) ** (1 / ounce["multiplier"])
+                    for ball in available_balls
+                ]
                 claimed_ball = random.choices(available_balls, weights=rarity_weights, k=1)[0]
 
                 ball_instance = await BallInstance.create(
@@ -205,7 +184,7 @@ class StarrDrop(commands.Cog):
                 if openamount == 1:
                     view = ContinueView(author=interaction.user)
                     await interaction.response.send_message(
-                        f"{rarity.replace('_', ' ').title()} Starr Drop",
+                        f"{self.bot.get_emoji(claimed_ball.emoji_id)} Opening a {rarity.replace('_', ' ').title()} Starr Drop...",
                         view=view,
                         ephemeral=False
                     )
@@ -213,7 +192,7 @@ class StarrDrop(commands.Cog):
 
                     data, file, view = await ball_instance.prepare_for_message(interaction)
                     await interaction.edit_original_response(
-                        content=f"You opened a {rarity.replace('_', ' ').title()} Starr Drop...\n# You got **{claimed_ball.country}**!",
+                        content=f"{self.bot.get_emoji(claimed_ball.emoji_id)} You got **{claimed_ball.country}**!",
                         attachments=[file],
                         view=view
                     )
