@@ -46,6 +46,7 @@ class StarrDrop(commands.Cog):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
     async def starrdrop(
         self,
         interaction: discord.Interaction,
@@ -178,7 +179,7 @@ class StarrDrop(commands.Cog):
                     player=player,
                     attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
                     health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
-                    server_id=interaction.user.guild.id,
+                    server_id=interaction.user.guild.id if interaction.guild else None,
                 )
 
                 if openamount == 1:
