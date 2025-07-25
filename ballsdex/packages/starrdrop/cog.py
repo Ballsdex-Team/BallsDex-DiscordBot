@@ -148,7 +148,7 @@ class StarrDrop(commands.Cog):
                     await view.continued.wait()
 
                     await interaction.edit_original_response(
-                        content=f"{mj} You got {amount} {currency_type.replace("_", " ").title()}!",
+                        content=f"# {mj}{amount} {currency_type.replace("_", " ").title()}!{mj}",
                         view=None
                     )
                 else:
