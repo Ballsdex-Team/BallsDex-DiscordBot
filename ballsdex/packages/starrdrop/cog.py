@@ -46,7 +46,6 @@ class StarrDrop(commands.Cog):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
-    @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
     async def starrdrop(
         self,
         interaction: discord.Interaction,
