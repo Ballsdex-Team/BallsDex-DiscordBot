@@ -8,7 +8,15 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 
-from ..models import Ball, BallInstance, Economy, Regime, TradeObject, transform_media
+from ..models import (
+    Ball,
+    BallInstance,
+    CardTemplate,
+    Economy,
+    Regime,
+    TradeObject,
+    transform_media,
+)
 
 if TYPE_CHECKING:
     from django.db.models import Field, Model, QuerySet
@@ -79,6 +87,12 @@ class EconomyAdmin(admin.ModelAdmin):
     @admin.display()
     def icon_image(self, obj: Economy):
         return mark_safe(f'<img src="/media/{transform_media(str(obj.icon))}" height=30px />')
+
+
+@admin.register(CardTemplate)
+class CardTemplateAdmin(admin.ModelAdmin):
+    list_display = ("name", "pk")
+    search_fields = ("name",)
 
 
 @admin.register(Ball)

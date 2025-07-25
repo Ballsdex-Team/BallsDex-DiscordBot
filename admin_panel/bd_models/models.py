@@ -123,9 +123,31 @@ class Economy(models.Model):
         verbose_name_plural = "economies"
 
 
+class CardTemplate(models.Model):
+    name = models.CharField(max_length=64)
+    template = models.JSONField(help_text="Card template JSON")
+
+    def __str__(self) -> str:
+        return self.name
+
+    class Meta:
+        managed = True
+        db_table = "cardtemplate"
+        verbose_name_plural = "card templates"
+
+
 class Regime(models.Model):
     name = models.CharField(max_length=64)
     background = models.ImageField(max_length=200, help_text="1428x2000 PNG image")
+
+    card_template = models.ForeignKey(
+        CardTemplate,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        help_text="Card template to use",
+    )
+    card_template_id: int | None
 
     def __str__(self) -> str:
         return self.name
@@ -168,6 +190,15 @@ class Special(models.Model):
     credits = models.CharField(
         max_length=64, help_text="Author of the special event artwork", null=True
     )
+
+    card_template = models.ForeignKey(
+        CardTemplate,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        help_text="Card template to use",
+    )
+    card_template_id: int | None
 
     def __str__(self) -> str:
         return self.name
@@ -249,7 +280,6 @@ class Ball(models.Model):
         using: str | None = None,
         update_fields: Iterable[str] | None = None,
     ) -> None:
-
         def lower_catch_names(names: str | None) -> str | None:
             if names:
                 return ";".join([x.strip() for x in names.split(";")]).lower()

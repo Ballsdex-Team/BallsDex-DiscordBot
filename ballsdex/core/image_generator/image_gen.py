@@ -1,25 +1,17 @@
+from __future__ import annotations
+
+import json
 import os
 import textwrap
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from ballsdex.settings import settings
-
 if TYPE_CHECKING:
-    from ballsdex.core.models import BallInstance
+    from PIL.ImageFont import FreeTypeFont
 
-
-SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
-WIDTH = 1500
-HEIGHT = 2000
-
-RECTANGLE_WIDTH = WIDTH - 40
-RECTANGLE_HEIGHT = (HEIGHT // 5) * 2
-
-CORNERS = ((34, 261), (1393, 992))
-artwork_size = [b - a for a, b in zip(*CORNERS)]
+    from ballsdex.core.models import BallInstance, Regime, Special
 
 # ===== TIP =====
 #
@@ -33,123 +25,222 @@ artwork_size = [b - a for a, b in zip(*CORNERS)]
 # image viewer. There are options available to specify the ball or the special background,
 # use the "--help" flag to view all options.
 
-title_font = ImageFont.truetype(str(SOURCES_PATH / "ArsenicaTrial-Extrabold.ttf"), 170)
-capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
-capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
-stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
-credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
+SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
 
-credits_color_cache = {}
+text_color_cache: dict[Regime | Special, dict["str", tuple[int, int, int, int]]] = {}
+font_cache: dict[str, FreeTypeFont] = {}
+
+with Path(__file__).with_name("default_card_template.json").open("r") as f:
+    default_card_template = json.load(f)
 
 
-def get_credit_color(image: Image.Image, region: tuple) -> tuple:
+def draw_card(
+    ball_instance: "BallInstance",
+    # template: dict[str, dict[str, Any]],
+    media_path: str = "./admin_panel/media/",
+) -> tuple[Image.Image, dict[Any, Any]]:
+    template = None
+    if ball_instance.card_template:
+        template = ball_instance.card_template.template
+    if not template:
+        template = default_card_template
+
+    template = CardTemplate(**template)  # type: ignore
+
+    image = Image.new("RGB", (template.canvas_size[0], template.canvas_size[1]))
+    prior_layer_info: dict[str, LayerInfo] = {}
+
+    layers = (TemplateLayer(**layer) for layer in template.layers)
+    for layer in layers:
+        draw_layer(image, layer, ball_instance, media_path, prior_layer_info)
+
+    return image, {"format": "WEBP"}
+
+
+class CardTemplate(NamedTuple):
+    canvas_size: tuple[int, int]
+    layers: list[dict[str, Any]]
+
+
+class TemplateLayer(NamedTuple):
+    # If absolute, source is a path / string, else it is an attribute
+    name: str
+    is_attribute: bool
+    # Otherwise its a string
+    is_image: bool
+    source: list[str] | str
+    anchor: list[int | str]
+
+    size: tuple[int, int] = (0, 0)
+    offset: tuple[int, int] = (0, 0)
+
+    # Template string with $data to-be-replaced by the data
+    text_template: str | None = None
+    text_wrap: int = 0
+    text_font_size: int = 11
+    text_font: str = "arial.ttf"
+    text_line_height: int = 80
+    text_fill: list[int] | str = [255, 255, 255, 255]
+    text_stroke_fill: list[int] = [0, 0, 0, 255]
+    text_stroke_width: int = 0
+    text_anchor: str = "la"
+
+
+class LayerInfo(NamedTuple):
+    finished_coords: tuple[int, int]
+
+
+def draw_layer(
+    image: Image.Image,
+    layer: TemplateLayer,
+    ball_instance: BallInstance,
+    media_path: str,
+    prior_layer_info: dict[str, LayerInfo],
+):
+    name = layer.name
+    start_coords = get_anchor_coords(layer, prior_layer_info)
+
+    data = get_layer_data(layer, ball_instance)
+    if not data:
+        return
+
+    if layer.is_image:
+        end_coords = (start_coords[0] + layer.size[0], start_coords[1] + layer.size[1])
+
+        path = Path(media_path + data)
+
+        layer_image = Image.open(path).convert("RGBA")
+        layer_image = ImageOps.fit(layer_image, layer.size)
+        image.paste(layer_image, start_coords, mask=layer_image)
+    else:
+        draw = ImageDraw.Draw(image)
+
+        font = get_font(layer)
+        final_strs = get_text_strings(layer, data)
+
+        text_width = max(draw.textlength(text=string, font=font) for string in final_strs)
+        end_coords = (
+            int(start_coords[0] + text_width),
+            start_coords[1] + layer.text_line_height * len(final_strs),
+        )
+        text_fill = get_text_fill_color(layer, ball_instance, (*start_coords, *end_coords), image)
+
+        for i, line in enumerate(final_strs):
+            draw.text(
+                (start_coords[0], start_coords[1] + i * layer.text_line_height),
+                line,
+                font=font,
+                fill=text_fill,
+                stroke_width=layer.text_stroke_width,
+                stroke_fill=tuple(layer.text_stroke_fill),
+                anchor=layer.text_anchor,
+            )
+
+    prior_layer_info[name] = LayerInfo(finished_coords=end_coords)
+
+
+def get_attribute_recursive(object: Any, attribute: str) -> Any:
+    data = object
+    for subattr in attribute.split("."):
+        data = getattr(data, subattr, None)
+        if data is None:
+            return None
+    return data
+
+
+def get_region_best_color(image: Image.Image, region: tuple[int, int, int, int]) -> tuple:
     image = image.crop(region)
     brightness = sum(image.convert("L").getdata()) / image.width / image.height  # type: ignore
     return (0, 0, 0, 255) if brightness > 100 else (255, 255, 255, 255)
 
 
-def draw_card(
-    ball_instance: "BallInstance",
-    media_path: str = "./admin_panel/media/",
-) -> tuple[Image.Image, dict[str, Any]]:
-    ball = ball_instance.countryball
-    ball_health = (237, 115, 101, 255)
-    ball_credits = ball.credits
-    special_credits = ""
-    card_name = ball.cached_regime.name
-    if special_image := ball_instance.special_card:
-        card_name = getattr(ball_instance.specialcard, "name", card_name)
-        image = Image.open(media_path + special_image)
-        if ball_instance.specialcard and ball_instance.specialcard.credits:
-            special_credits += f" • Special Author: {ball_instance.specialcard.credits}"
+def get_font(layer: TemplateLayer) -> FreeTypeFont:
+    # if we dont use size then someone trying to use
+    # the same font in two different sizes
+    # would have problems
+    cache_name = layer.text_font + str(layer.text_font_size)
+
+    if cache_name in font_cache:
+        font = font_cache[cache_name]
     else:
-        image = Image.open(media_path + ball.cached_regime.background)
-    image = image.convert("RGBA")
-    icon = (
-        Image.open(media_path + ball.cached_economy.icon).convert("RGBA")
-        if ball.cached_economy
-        else None
-    )
+        font = ImageFont.truetype(str(SOURCES_PATH / layer.text_font), layer.text_font_size)
+        font_cache[cache_name] = font
 
-    draw = ImageDraw.Draw(image)
-    draw.text(
-        (50, 20),
-        ball.short_name or ball.country,
-        font=title_font,
-        stroke_width=2,
-        stroke_fill=(0, 0, 0, 255),
-    )
+    return font
 
-    cap_name = textwrap.wrap(f"Ability: {ball.capacity_name}", width=26)
 
-    for i, line in enumerate(cap_name):
-        draw.text(
-            (100, 1050 + 100 * i),
-            line,
-            font=capacity_name_font,
-            fill=(230, 230, 230, 255),
-            stroke_width=2,
-            stroke_fill=(0, 0, 0, 255),
+def get_text_fill_color(
+    layer: TemplateLayer, ball_instance: BallInstance, region: tuple[int, int, int, int], image
+) -> tuple[int, int, int, int]:
+    text_fill: tuple[int, int, int, int] | None = None
+    if layer.text_fill == "auto":
+        ball_bg_cache = (
+            ball_instance.special if ball_instance.special else ball_instance.countryball.regime
         )
-    for i, line in enumerate(textwrap.wrap(ball.capacity_description, width=32)):
-        draw.text(
-            (60, 1100 + 100 * len(cap_name) + 80 * i),
-            line,
-            font=capacity_description_font,
-            stroke_width=1,
-            stroke_fill=(0, 0, 0, 255),
-        )
+        if ball_bg_cache in text_color_cache:
+            if layer.name in text_color_cache[ball_bg_cache]:
+                text_fill = text_color_cache[ball_bg_cache][layer.name]
 
-    draw.text(
-        (320, 1670),
-        str(ball_instance.health),
-        font=stats_font,
-        fill=ball_health,
-        stroke_width=1,
-        stroke_fill=(0, 0, 0, 255),
-    )
-    draw.text(
-        (1120, 1670),
-        str(ball_instance.attack),
-        font=stats_font,
-        fill=(252, 194, 76, 255),
-        stroke_width=1,
-        stroke_fill=(0, 0, 0, 255),
-        anchor="ra",
-    )
-    if settings.show_rarity:
-        draw.text(
-            (1200, 50),
-            str(ball.rarity),
-            font=stats_font,
-            stroke_width=2,
-            stroke_fill=(0, 0, 0, 255),
-        )
-    if card_name in credits_color_cache:
-        credits_color = credits_color_cache[card_name]
+        if not text_fill:
+            text_fill = get_region_best_color(image, region)
+    if not text_fill:
+        if isinstance(layer.text_fill, str):
+            text_fill = (255, 255, 255, 255)
+        else:
+            text_fill = tuple(layer.text_fill)  # pyright: ignore[reportAssignmentType]
+
+    return text_fill  # pyright: ignore[reportReturnType]
+
+
+def get_text_strings(layer: TemplateLayer, data) -> list[str]:
+    final_str: str = layer.text_template.replace("$data", data) if layer.text_template else data
+
+    final_strs: list[str]
+    if layer.text_wrap:
+        final_strs = textwrap.wrap(final_str, width=layer.text_wrap, expand_tabs=True)
     else:
-        credits_color = get_credit_color(
-            image, (0, int(image.height * 0.8), image.width, image.height)
-        )
-        credits_color_cache[card_name] = credits_color
-    draw.text(
-        (30, 1870),
-        # Modifying the line below is breaking the licence as you are removing credits
-        # If you don't want to receive a DMCA, just don't
-        f"Created by El Laggron{special_credits}\n" f"Artwork author: {ball_credits}",
-        font=credits_font,
-        fill=credits_color,
-        stroke_width=0,
-        stroke_fill=(255, 255, 255, 255),
-    )
+        final_strs = [final_str]
 
-    artwork = Image.open(media_path + ball.collection_card).convert("RGBA")
-    image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
+    return final_strs
 
-    if icon:
-        icon = ImageOps.fit(icon, (192, 192))
-        image.paste(icon, (1200, 30), mask=icon)
-        icon.close()
-    artwork.close()
 
-    return image, {"format": "WEBP"}
+def get_anchor_coords(layer: TemplateLayer, prior_layer_info) -> tuple[int, int]:
+    if isinstance(layer.anchor[0], int):
+        startx = layer.anchor[0]
+    else:
+        # Essentially putting in a string means, start this layer
+        # where that other layer finished
+        startx = prior_layer_info[layer.anchor[0]].finished_coords[0]
+
+    if isinstance(layer.anchor[1], int):
+        starty = layer.anchor[1]
+    else:
+        starty = prior_layer_info[layer.anchor[1]].finished_coords[1]
+
+    return (startx + layer.offset[0], starty + layer.offset[1])
+
+
+def get_layer_data(layer: TemplateLayer, ball_instance: BallInstance) -> str | None:
+    data: str | None = None
+
+    if not layer.is_attribute:
+        if isinstance(layer.source, list):
+            data = layer.source[0]
+        else:
+            data = layer.source
+
+        return str(data)
+
+    if isinstance(layer.source, list):
+        # for prioritised source lists, eg special > regime background
+        for attribute in layer.source:
+            data = get_attribute_recursive(ball_instance, attribute)
+            if data:
+                break
+    else:
+        data = get_attribute_recursive(ball_instance, layer.source)
+
+    if data:
+        data = str(data)
+
+    return data

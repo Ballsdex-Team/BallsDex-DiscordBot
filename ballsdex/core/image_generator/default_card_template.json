@@ -1,0 +1,234 @@
+{
+    "canvas_size": [
+        1428,
+        2000
+    ],
+    "layers": [
+        {
+            "name": "background",
+            "is_attribute": true,
+            "is_image": true,
+            "source": [
+                "special_card",
+                "countryball.cached_regime.background"
+            ],
+            "anchor": [
+                0,
+                0
+            ],
+            "size": [
+                1428,
+                2000
+            ]
+        },
+        {
+            "name": "card_art",
+            "is_attribute": true,
+            "is_image": true,
+            "source": "countryball.collection_card",
+            "anchor": [
+                34,
+                261
+            ],
+            "size": [
+                1359,
+                731
+            ]
+        },
+        {
+            "name": "economy_icon",
+            "is_attribute": true,
+            "is_image": true,
+            "source": "countryball.cached_economy.icon",
+            "anchor": [
+                1200,
+                30
+            ],
+            "size": [
+                192,
+                192
+            ]
+        },
+        {
+            "name": "title",
+            "is_attribute": true,
+            "is_image": false,
+            "source": [
+                "countryball.short_name",
+                "countryball.country"
+            ],
+            "anchor": [
+                50,
+                20
+            ],
+            "text_font": "ArsenicaTrial-Extrabold.ttf",
+            "text_font_size": 170,
+            "text_stroke_width": 2,
+            "text_stroke_fill": [
+                0,
+                0,
+                0,
+                255
+            ]
+        },
+        {
+            "name": "capacity_name",
+            "is_attribute": true,
+            "is_image": false,
+            "source": "countryball.capacity_name",
+            "anchor": [
+                100,
+                1050
+            ],
+            "text_line_height": 100,
+            "text_font": "Bobby Jones Soft.otf",
+            "text_template": "Ability: $data",
+            "text_wrap": 26,
+            "text_fill": [
+                230,
+                230,
+                230,
+                255
+            ],
+            "text_font_size": 110,
+            "text_stroke_width": 2,
+            "text_stroke_fill": [
+                0,
+                0,
+                0,
+                255
+            ]
+        },
+        {
+            "name": "capacity_description",
+            "is_attribute": true,
+            "is_image": false,
+            "source": "countryball.capacity_description",
+            "anchor": [
+                60,
+                "capacity_name"
+            ],
+            "offset": [
+                0,
+                50
+            ],
+            "text_line_height": 80,
+            "text_font": "OpenSans-Semibold.ttf",
+            "text_wrap": 32,
+            "text_fill": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "text_font_size": 75,
+            "text_stroke_width": 1,
+            "text_stroke_fill": [
+                0,
+                0,
+                0,
+                255
+            ]
+        },
+        {
+            "name": "health",
+            "is_attribute": true,
+            "is_image": false,
+            "source": "health",
+            "anchor": [
+                320,
+                1670
+            ],
+            "text_line_height": 100,
+            "text_font": "Bobby Jones Soft.otf",
+            "text_wrap": 32,
+            "text_fill": [
+                237,
+                115,
+                101,
+                255
+            ],
+            "text_font_size": 130,
+            "text_stroke_width": 1,
+            "text_stroke_fill": [
+                0,
+                0,
+                0,
+                255
+            ]
+        },
+        {
+            "name": "attack",
+            "is_attribute": true,
+            "is_image": false,
+            "source": "attack",
+            "anchor": [
+                1120,
+                1670
+            ],
+            "text_line_height": 100,
+            "text_font": "Bobby Jones Soft.otf",
+            "text_wrap": 32,
+            "text_fill": [
+                252,
+                194,
+                76,
+                255
+            ],
+            "text_anchor": "ra",
+            "text_font_size": 130,
+            "text_stroke_width": 1,
+            "text_stroke_fill": [
+                0,
+                0,
+                0,
+                255
+            ]
+        },
+        {
+            "name": "lagg_credits",
+            "is_attribute": false,
+            "is_image": false,
+            "source": "Created by El Laggron",
+            "anchor": [
+                30,
+                1870
+            ],
+            "text_font": "arial.ttf",
+            "text_line_height": 43,
+            "text_fill": "auto",
+            "text_font_size": 40,
+            "text_stroke_width": 0
+        },
+        {
+            "name": "special_credits",
+            "is_attribute": true,
+            "is_image": false,
+            "source": "specialcard.credits",
+            "anchor": [
+                "lagg_credits",
+                1870
+            ],
+            "text_font": "arial.ttf",
+            "text_fill": "auto",
+            "text_font_size": 40,
+            "text_template": " • Special author: $data",
+            "text_stroke_width": 0
+        },
+        {
+            "name": "credits",
+            "is_attribute": true,
+            "is_image": false,
+            "source": "countryball.credits",
+            "anchor": [
+                30,
+                "lagg_credits"
+            ],
+            "text_font": "arial.ttf",
+            "text_fill": "auto",
+            "text_font_size": 40,
+            "text_template": "Artwork author: $data",
+            "text_stroke_width": 0
+        }
+    ]
+}

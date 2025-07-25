@@ -1,4 +1,4 @@
-from .ball import BallAdmin, EconomyAdmin, RegimeAdmin
+from .ball import BallAdmin, CardTemplateAdmin, EconomyAdmin, RegimeAdmin
 from .ball_instance import BallInstanceAdmin
 from .guild import GuildAdmin
 from .player import PlayerAdmin
@@ -13,5 +13,6 @@ __all__ = [
     "GuildAdmin",
     "PlayerAdmin",
     "SpecialAdmin",
+    "CardTemplateAdmin",
     "TradeAdmin",
 ]

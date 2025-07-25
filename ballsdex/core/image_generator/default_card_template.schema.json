@@ -1,0 +1,184 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "CardTemplate",
+    "type": "object",
+    "required": [
+        "canvas_size",
+        "layers"
+    ],
+    "properties": {
+        "canvas_size": {
+            "type": "array",
+            "items": {
+                "type": "integer"
+            },
+            "minItems": 2,
+            "maxItems": 2
+        },
+        "layers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "is_attribute",
+                    "is_image",
+                    "source",
+                    "anchor"
+                ],
+                "properties": {
+                    "name": {
+                        "description": "The name of the layer, to be used when referenced elsewhere",
+                        "type": "string"
+                    },
+                    "is_attribute": {
+                        "description": "If true, then it will fetch the attribute listed in source from the ball instance",
+                        "type": "boolean"
+                    },
+                    "is_image": {
+                        "description": "If true, render as image (source is a path to something in media dir)",
+                        "type": "boolean"
+                    },
+                    "source": {
+                        "description": "Where to get the data (or if not attribute, the data itself)",
+                        "oneOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        ]
+                    },
+                    "anchor": {
+                        "description": "Coords to anchor one of the corners at (typically top left)",
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                    },
+                    "size": {
+                        "description": "Size of image, ignored if text",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "default": [
+                            0,
+                            0
+                        ]
+                    },
+                    "offset": {
+                        "description": "Offset away from anchor (useful for anchoring on another layer)",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "default": [
+                            0,
+                            0
+                        ]
+                    },
+                    "text_template": {
+                        "description": "String template. Use $data to replace with data in source attribute.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "text_wrap": {
+                        "description": "Number of chars to wrap",
+                        "type": "integer",
+                        "default": 0
+                    },
+                    "text_font_size": {
+                        "type": "integer",
+                        "default": 11
+                    },
+                    "text_font": {
+                        "description": "Font, with extension",
+                        "type": "string",
+                        "default": "arial.ttf"
+                    },
+                    "text_line_height": {
+                        "description": "Line height in px",
+                        "type": "integer",
+                        "default": 80
+                    },
+                    "text_fill": {
+                        "description": "Either 4-tuple of ints as a RGBA color, or \"auto\" to pick best between black and white",
+                        "anyOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 255
+                                },
+                                "minItems": 4,
+                                "maxItems": 4,
+                                "default": [
+                                    255,
+                                    255,
+                                    255,
+                                    255
+                                ]
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "auto"
+                                ]
+                            }
+                        ]
+                    },
+                    "text_stroke_fill": {
+                        "description": "Text outline color",
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 255
+                        },
+                        "minItems": 4,
+                        "maxItems": 4,
+                        "default": [
+                            0,
+                            0,
+                            0,
+                            255
+                        ]
+                    },
+                    "text_stroke_width": {
+                        "description": "Outline width",
+                        "type": "integer",
+                        "default": 0
+                    },
+                    "text_anchor": {
+                        "description": "Pillow text anchor (see https://pillow.readthedocs.io/en/stable/handbook/text-anchors.html)",
+                        "type": "string",
+                        "default": "la"
+                    }
+                },
+                "additionalProperties": false
+            }
+        }
+    },
+    "additionalProperties": false
+}
