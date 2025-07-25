@@ -125,11 +125,11 @@ class StarrDrop(commands.Cog):
 
             if reward.endswith("pp") or reward.endswith("c"):
                 amount = int(reward.rstrip("pc"))
-                currency_type = "points" if reward.endswith("pp") else "credits"
+                currency_type = "power_points" if reward.endswith("pp") else "credits"
                 emoji_id = 1364807487106191471 if currency_type == "points" else 1364877727601004634
                 if currency_type == "credits" and amount >= 40:
                     emoji_id = 1364877745032794192
-                elif currency_type == "points" and amount >= 75:
+                elif currency_type == "power_points" and amount >= 75:
                     emoji_id = 1364817571819425833
                 mj = self.bot.get_emoji(emoji_id)
 
@@ -148,11 +148,11 @@ class StarrDrop(commands.Cog):
                     await view.continued.wait()
 
                     await interaction.edit_original_response(
-                        content=f"{mj} You got {amount} {currency_type.capitalize()}!",
+                        content=f"{mj} You got {amount} {currency_type.replace("_", " ").title()}!",
                         view=None
                     )
                 else:
-                    totalrewards.append(f"{mj}{amount} {currency_type}")
+                    totalrewards.append(f"{mj}{amount} {currency_type.replace("_", " ").title()}")
             else:
                 brawler_ids = {
                     "mythic_brawler": {8},
@@ -211,7 +211,7 @@ class StarrDrop(commands.Cog):
                         view=view
                     )
                 else:
-                    totalrewards.append(f"{self.bot.get_emoji(claimed_ball.emoji_id)}{claimed_ball.country}")
+                    totalrewards.append(f"{self.bot.get_emoji(claimed_ball.emoji_id)}[{claimed_ball.country}](https://brawldex.fandom.com/wiki/{claimed_ball.country.replace(" ", "_")})")
 
         if totalcredits > 0:
             player.credits += totalcredits
