@@ -126,7 +126,7 @@ class StarrDrop(commands.Cog):
             if reward.endswith("pp") or reward.endswith("c"):
                 amount = int(reward.rstrip("pc"))
                 currency_type = "power_points" if reward.endswith("pp") else "credits"
-                emoji_id = 1364807487106191471 if currency_type == "points" else 1364877727601004634
+                emoji_id = 1364807487106191471 if currency_type == "power_points" else 1364877727601004634
                 if currency_type == "credits" and amount >= 40:
                     emoji_id = 1364877745032794192
                 elif currency_type == "power_points" and amount >= 75:
