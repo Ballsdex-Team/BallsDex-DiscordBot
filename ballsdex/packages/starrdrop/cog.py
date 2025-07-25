@@ -61,7 +61,7 @@ class StarrDrop(commands.Cog):
 
         if player.sdcount < openamount:
             await interaction.response.send_message(
-                "You don't have enough Starr Drops, get them by catching brawlers or skins!",
+                "You don't have enough Starr Drops, get them by catching Brawlers or Skins!",
                 ephemeral=True
             )
             return
