@@ -198,7 +198,7 @@ class StarrDrop(commands.Cog):
                 if openamount == 1:
                     view = ContinueView(author=interaction.user)
                     await interaction.response.send_message(
-                        f"{self.bot.get_emoji(claimed_ball.emoji_id)} Opening a {rarity.replace('_', ' ').title()} Starr Drop...",
+                        f"# {DROP_RARITY_EMOJI} {rarity.replace('_', ' ').title()} Starr Drop {DROP_RARITY_EMOJI}",
                         view=view,
                         ephemeral=False
                     )
@@ -206,7 +206,7 @@ class StarrDrop(commands.Cog):
 
                     data, file, view = await ball_instance.prepare_for_message(interaction)
                     await interaction.edit_original_response(
-                        content=f"{self.bot.get_emoji(claimed_ball.emoji_id)} You got **{claimed_ball.country}**!",
+                        content=f"You opened your {rarity.replace('_', ' ').title()} Starr Drop and got...\n{data}",
                         attachments=[file],
                         view=view
                     )
