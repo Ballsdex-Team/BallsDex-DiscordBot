@@ -73,6 +73,14 @@ class StarrDrop(commands.Cog):
             ("mythic", 5, 0.8),
             ("legendary", 2, 1.0),
         ]
+        DROP_RARITY_EMOJIS = {
+            "rare": 1330493249235714189,
+            "super_rare": 1330493410884456528,
+            "epic": 1330493427011555460,
+            "mythic": 1330493448469483580,
+            "legendary": 1330493465221529713
+        }
+        DROP_RARITY_EMOJI = ""
         rarities = [{"name": n, "weight": w, "multiplier": m} for n, w, m in raw_rarities]
         total = sum(r["weight"] for r in rarities)
         normalized_weights = [r["weight"] / total for r in rarities]
@@ -97,13 +105,18 @@ class StarrDrop(commands.Cog):
 
             if rarity == "rare":
                 reward = random.choices(["25pp", "100c", "rare_skin"], weights=[50, 30, 20], k=1)[0]
+                DROP_RARITY_EMOJI = interaction.client.get_emoji(DROP_RARITY_EMOJIS.get(rarity))
             elif rarity == "super_rare":
                 reward = random.choices(["50pp", "200c", "super_skin"], weights=[50, 30, 20], k=1)[0]
+                DROP_RARITY_EMOJI = interaction.client.get_emoji(DROP_RARITY_EMOJIS.get(rarity))
             elif rarity == "epic":
                 reward = random.choices(["100pp", "500c", "epic_skin"], weights=[50, 30, 20], k=1)[0]
+                DROP_RARITY_EMOJI = interaction.client.get_emoji(DROP_RARITY_EMOJIS.get(rarity))
             elif rarity == "mythic":
                 reward = random.choices(["1000c", "mythic_brawler", "mythic_skin"], weights=[35, 40, 25], k=1)[0]
+                DROP_RARITY_EMOJI = interaction.client.get_emoji(DROP_RARITY_EMOJIS.get(rarity))
             elif rarity == "legendary":
+                DROP_RARITY_EMOJI = interaction.client.get_emoji(DROP_RARITY_EMOJIS.get(rarity))
                 reward = random.choices(
                     ["legendary_brawler", "legendary_skin", "ultra_legendary", "ultimate_skin", "hypercharged_skin"],
                     weights=[40, 35, 5, 15, 5],
@@ -128,7 +141,7 @@ class StarrDrop(commands.Cog):
                 if openamount == 1:
                     view = ContinueView(author=interaction.user)
                     await interaction.response.send_message(
-                        f"{rarity.replace('_', ' ').title()} Starr Drop",
+                        f"# {DROP_RARITY_EMOJI} {rarity.replace('_', ' ').title()} Starr Drop {DROP_RARITY_EMOJI}",
                         view=view,
                         ephemeral=False
                     )
