@@ -211,7 +211,7 @@ class StarrDrop(commands.Cog):
                         view=view
                     )
                 else:
-                    totalrewards.append(f"{self.bot.get_emoji(claimed_ball.emoji_id)}[{claimed_ball.country}](https://brawldex.fandom.com/wiki/{claimed_ball.country.replace(" ", "_")})")
+                    totalrewards.append(f"{self.bot.get_emoji(claimed_ball.emoji_id)}[{claimed_ball.country}](<https://brawldex.fandom.com/wiki/{claimed_ball.country.replace(" ", "_")}>)")
 
         if totalcredits > 0:
             player.credits += totalcredits
