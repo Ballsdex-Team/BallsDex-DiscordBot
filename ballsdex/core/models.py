@@ -49,7 +49,8 @@ FANMADE_SKINS = [
     322,
     337,
     338,
-    324
+    324,
+    336
 ]
 CHINA_SKINS = [
     220,
