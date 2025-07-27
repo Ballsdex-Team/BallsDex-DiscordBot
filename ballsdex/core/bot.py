@@ -25,6 +25,7 @@ from rich.table import Table
 
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
+from ballsdex.core.customexceptions import NotAdminGuildError
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.models import (
     Ball,
@@ -214,7 +215,7 @@ class BallsDexBot(commands.AutoShardedBot):
 
     async def brawl_pass_check(self, interaction: discord.Interaction[BallsDexBot]) -> Tuple[str, str]:
         if interaction.guild.id != settings.admin_guild_ids[0]:
-            raise 
+            raise NotAdminGuildError("You are not allowed to use this function in this guild.")
             return
         if isinstance(interaction.user, discord.Member):
             roles = {role.id for role in interaction.user.roles}
