@@ -121,7 +121,7 @@ class Joke(commands.Cog):
       if target_user is None:
           return
 
-      await ctx.send(f"I have sent a Grom Bomb to {target_user.mention}'s location!")
+      await ctx.send(f"I have sent a Grom Bomb to {target_user.mention}'s location!", file=discord.File("admin_panel/media/GROM_BOMB.mp3"))
       try:
           await ctx.message.delete()
       except discord.Forbidden:
