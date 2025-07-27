@@ -97,3 +97,32 @@ class Joke(commands.Cog):
           await ctx.message.delete()
       except discord.Forbidden:
           log.warning("Bot could not delete the message, permission denied.")
+
+  @commands.command()
+  @commands.is_owner()
+  async def grombomb(self, ctx: commands.Context, user: str):
+      """
+      Sends a Grom Bomb!
+      """
+      target_user = None
+
+      try:
+          target_user = await commands.UserConverter().convert(ctx, user)
+      except commands.BadArgument:
+          pass
+
+      if target_user is None:
+        user_input_lower = user.lower()
+        for member in ctx.guild.members:
+            if member.name.lower() == user_input_lower or member.display_name.lower() == user_input_lower:
+                user = member
+                break
+                
+      if target_user is None:
+          return
+
+      await ctx.send(f"I have sent a Grom Bomb to {target_user.mention}'s location!")
+      try:
+          await ctx.message.delete()
+      except discord.Forbidden:
+          log.warning("Bot could not delete the message, permission denied.")
