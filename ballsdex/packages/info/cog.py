@@ -234,11 +234,16 @@ class Info(commands.Cog):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
-    async def profile(self, interaction: discord.Interaction["BallsDexBot"]):
+    @app_commands.describe(user="Optionally view other users' profiles")
+    async def profile(
+        self, 
+        interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User | None = None
+    ):
         """
         Show your collection progressions and currency amounts.
         """
-        user_obj = interaction.user
+        user_obj = user or interaction.user
         player_obj, _ = await Player.get_or_create(discord_id=user_obj.id)
         brawler_emoji = self.bot.get_emoji(1372376567153557514)
         skin_emoji = self.bot.get_emoji(1373356124681535582)
