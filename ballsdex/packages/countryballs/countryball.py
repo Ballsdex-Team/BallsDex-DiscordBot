@@ -34,11 +34,11 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.countryballs")
 
 
-class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
+class CountryballNamePrompt(Modal, title=f"You're in a Brawl!"):
     name = TextInput(
-        label=f"Name of this collectible",
+        label=f"Write the name of this collectible to obtain them",
         style=discord.TextStyle.short,
-        placeholder="Your guess",
+        placeholder="Write the name here",
     )
 
     def __init__(self, view: BallSpawnView, button: Button):
@@ -46,8 +46,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this collectible!"):
         self.view = view
         self.button = button
         self.CollectibleName = view.RegimeName
-        self.name.label = f"Name of this {self.CollectibleName}"
-        self.title = f"Catch this {self.CollectibleName}!"
+        self.name.label = f"Write the name of this {self.CollectibleName} to obtain them"
+        self.title = f"You're in a Brawl!"
 
     async def on_error(
         self, interaction: discord.Interaction["BallsDexBot"], error: Exception, /  # noqa: W504
