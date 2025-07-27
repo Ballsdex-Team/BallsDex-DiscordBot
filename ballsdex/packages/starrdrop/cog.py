@@ -8,7 +8,6 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, button
 from ballsdex.core.models import Ball, BallInstance, balls, Player
-from ballsdex.core.bot import brawl_pass_check
 from ballsdex.core.customexceptions import NotAdminGuildError
 from ballsdex.settings import settings
 from datetime import datetime, timedelta, timezone
@@ -246,7 +245,7 @@ class StarrDrop(commands.Cog):
     async def claim_brawlpass_drops(self, interaction: discord.Interaction["BallsDexBot"]):
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
         try:
-            bp_type, bp_msg = await brawl_pass_check(interaction)
+            bp_type, bp_msg = await interaction.client.brawl_pass_check(interaction)
         except NotAdminGuildError as e:
             log.error("Not possible to execute this command here", exc_info=e)
             return
