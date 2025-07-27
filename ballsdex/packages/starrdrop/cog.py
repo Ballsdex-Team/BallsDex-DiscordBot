@@ -36,8 +36,6 @@ class ContinueView(discord.ui.View):
         self.stop()
 
 
-@app_commands.allowed_installs(guilds=True, users=True)
-@app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
 class StarrDrop(commands.Cog):
     """
     The daily starr drop command.
@@ -47,6 +45,8 @@ class StarrDrop(commands.Cog):
         self.bot = bot
 
     @app_commands.command()
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
     async def starrdrop(
         self,
