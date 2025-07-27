@@ -8,6 +8,8 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, button
 from ballsdex.core.models import Ball, BallInstance, balls, Player
+from ballsdex.core.bot import brawl_pass_check
+from ballsdex.core.customexceptions import NotAdminGuildError
 from ballsdex.settings import settings
 from datetime import datetime, timedelta, timezone
 from collections import Counter
@@ -237,3 +239,28 @@ class StarrDrop(commands.Cog):
                 content=f"You opened your {openamount} Starr Drops and got...\n\n{reward_list}",
                 view=None
             )
+
+    @app_commands.command(name="brawlpass", description="Claim your daily Starr Drops if you have Brawl Pass!")
+    @app_commands.guilds(*settings.admin_guild_ids)
+    @app_commands.checks.cooldown(1, 86400, key=lambda i: i.user.id)
+    async def claim_brawlpass_drops(self, interaction: discord.Interaction["BallsDexBot"]):
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        try:
+            bp_type, bp_msg = await brawl_pass_check(interaction)
+        except NotAdminGuildError as e:
+            log.error("Not possible to execute this command here", exc_info=e)
+            return
+        if bp_type == "Brawl Pass Plus":
+            player.sdcount += 2
+            await player.save()
+            await interaction.response.send_message("Successfully claimed 2 Starr Drops since you have Brawl Pass Plus!", ephemeral=True)
+            log.debug(f"{bp_msg} 2 Starr Drops are given. (User ID: {interaction.user.id})")
+        elif bp_type == "Brawl Pass":
+            player.sdcount += 1
+            await player.save()
+            await interaction.response.send_message("Successfully claimed a Starr Drop since you have Brawl Pass!", ephemeral=True)
+            log.debug(f"{bp_msg} A Starr Drop is given. (User ID: {interaction.user.id})")
+
+        else:
+            await interaction.response.send_message("You can't use this command as you don't have Brawl Pass!", ephemeral=True)
+            log.debug(f"{bp_msg} No any Starr Drops are given. (User ID: {interaction.user.id})")
