@@ -104,17 +104,11 @@ class Joke(commands.Cog):
       """
       Sends a Grom Bomb!
       """
-      target_user = None
 
-      try:
-          target_user = await commands.UserConverter().convert(ctx, user)
-      except commands.BadArgument:
-          pass
-
-      if target_user is None:
+      if user is None:
           return
 
-      await ctx.send(f"I have sent a Grom Bomb to {target_user.mention}'s location!", file=discord.File("admin_panel/media/GROM_BOMB.mp3"))
+      await ctx.send(f"I have sent a Grom Bomb to {user.mention}'s location!", file=discord.File("admin_panel/media/GROM_BOMB.mp3"))
       try:
           await ctx.message.delete()
       except discord.Forbidden:
