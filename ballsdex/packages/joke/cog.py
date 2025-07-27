@@ -112,7 +112,7 @@ class Joke(commands.Cog):
           pass
 
       if target_user is None:
-        user_input_lower = user.lower()
+        user_input_lower = target_user.lower()
         for member in ctx.guild.members:
             if member.name.lower() == user_input_lower or member.display_name.lower() == user_input_lower:
                 target_user = member
