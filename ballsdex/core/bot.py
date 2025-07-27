@@ -7,7 +7,7 @@ import math
 import time
 import types
 from datetime import datetime
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Self, cast, Tuple
 
 import aiohttp
 import discord
@@ -211,6 +211,19 @@ class BallsDexBot(commands.AutoShardedBot):
 
     def get_emoji(self, id: int) -> discord.Emoji | None:
         return self.application_emojis.get(id) or super().get_emoji(id)
+
+    async def brawl_pass_check(self, interaction: discord.Interaction[BallsDexBot]) -> Tuple[str, str]:
+        if interaction.guild.id != settings.admin_guild_ids[0]:
+            raise 
+            return
+        if isinstance(interaction.user, discord.Member):
+            roles = {role.id for role in interaction.user.roles}
+            if 1335320375948607610 in roles:
+                return "Brawl Pass Plus", "This user has Brawl Pass Plus."
+            elif 1334774634826043433 in roles:
+                return "Brawl Pass", "This user has Brawl Pass."
+            else:
+                return "No Pass", "This user has none of the passes."
 
     async def load_cache(self):
         table = Table(box=box.SIMPLE)
