@@ -100,7 +100,7 @@ class Joke(commands.Cog):
 
   @commands.command()
   @commands.is_owner()
-  async def grombomb(self, ctx: commands.Context, user: str):
+  async def grombomb(self, ctx: commands.Context, user: discord.User):
       """
       Sends a Grom Bomb!
       """
@@ -111,13 +111,6 @@ class Joke(commands.Cog):
       except commands.BadArgument:
           pass
 
-      if target_user is None:
-        user_input_lower = target_user.lower()
-        for member in ctx.guild.members:
-            if member.name.lower() == user_input_lower or member.display_name.lower() == user_input_lower:
-                target_user = member
-                break
-                
       if target_user is None:
           return
 
