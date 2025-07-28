@@ -67,7 +67,22 @@ class Config(commands.GroupCog):
                 return
 
         view = AcceptTOSView(interaction, channel, user)
-        message = await channel.send(embed=activation_embed, view=view)
+        embed = activation_embed.copy()
+
+        guild = interaction.guild
+        assert guild
+        readable_channels = len(
+            [x for x in guild.text_channels if x.permissions_for(guild.me).read_messages]
+        )
+        if readable_channels / len(guild.text_channels) < 0.75:
+            embed.add_field(
+                name="\N{WARNING SIGN}\N{VARIATION SELECTOR-16} Warning",
+                value=f"This server has {len(guild.text_channels)} channels, but "
+                f"{settings.bot_name} can only read {readable_channels} channels.\n"
+                "Spawn is based on message activity, too few readable channels will result in "
+                "fewer spawns. It is recommended that you inspect your permissions.",
+            )
+        message = await channel.send(embed=embed, view=view)
         view.message = message
 
         await interaction.response.send_message(

@@ -94,7 +94,8 @@ services:
   postgres-backup:
     image: prodrigestivill/postgres-backup-local
     restart: always
-    user: postgres:postgres
+    # Uncomment to have the backup files owned by your local user instead of root
+    # user: username
     volumes:
       - ./pgbackups:/backups
     depends_on:

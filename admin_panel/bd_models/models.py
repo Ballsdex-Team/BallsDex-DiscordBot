@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, Iterable, cast
+from typing import Iterable, cast
 
 from django.contrib import admin
 from django.core.cache import cache
@@ -64,6 +64,11 @@ class FriendPolicy(models.IntegerChoices):
     DENY = 2
 
 
+class TradeCooldownPolicy(models.IntegerChoices):
+    COOLDOWN = 1
+    BYPASS = 2
+
+
 class Player(models.Model):
     discord_id = models.BigIntegerField(unique=True, help_text="Discord user ID")
     donation_policy = models.SmallIntegerField(
@@ -77,6 +82,9 @@ class Player(models.Model):
     )
     friend_policy = models.SmallIntegerField(
         choices=FriendPolicy.choices, help_text="Open or close your friend requests"
+    )
+    trade_cooldown_policy = models.SmallIntegerField(
+        choices=TradeCooldownPolicy.choices, help_text="To bypass or not the trade cooldown"
     )
     extra_data = models.JSONField(blank=True, default=dict)
 
@@ -170,7 +178,7 @@ class Special(models.Model):
 
 
 class Ball(models.Model):
-    country = models.CharField(unique=True, max_length=48)
+    country = models.CharField(unique=True, max_length=48, verbose_name="Name")
     health = models.IntegerField(help_text="Ball health stat")
     attack = models.IntegerField(help_text="Ball attack stat")
     rarity = models.FloatField(help_text="Rarity of this ball")
@@ -254,6 +262,8 @@ class Ball(models.Model):
     class Meta:
         managed = True
         db_table = "ball"
+        verbose_name = settings.collectible_name
+        verbose_name_plural = settings.plural_collectible_name
 
 
 class BallInstance(models.Model):
@@ -285,14 +295,6 @@ class BallInstance(models.Model):
     )
     spawned_time = models.DateTimeField(blank=True, null=True)
 
-    def __getattribute__(self, name: str) -> Any:
-        if name == "ball":
-            balls = cast(list[Ball], cache.get_or_set("balls", Ball.objects.all(), timeout=30))
-            for ball in balls:
-                if ball.pk == self.ball_id:
-                    return ball
-        return super().__getattribute__(name)
-
     def __str__(self) -> str:
         text = ""
         if self.locked and self.locked > now() - timedelta(minutes=30):
@@ -321,6 +323,7 @@ class BallInstance(models.Model):
         managed = True
         db_table = "ballinstance"
         unique_together = (("player", "id"),)
+        verbose_name = f"{settings.collectible_name} instance"
 
 
 class BlacklistedID(models.Model):

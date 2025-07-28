@@ -61,29 +61,49 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
         if self.view.caught:
+            slow_message = random.choice(settings.slow_messages).format(
+                user=interaction.user.mention,
+                collectible=settings.collectible_name,
+                ball=self.view.name,
+                collectibles=settings.plural_collectible_name,
+            )
+
             await interaction.followup.send(
-                f"{interaction.user.mention} I was caught already!",
+                slow_message,
                 ephemeral=True,
-                allowed_mentions=can_mention([player]),
+                allowed_mentions=await can_mention([player]),
             )
             return
 
-        if self.view.is_name_valid(self.name.value):
-            ball, has_caught_before = await self.view.catch_ball(
-                interaction.user, player=player, guild=interaction.guild
-            )
+        if not self.view.is_name_valid(self.name.value):
+            if len(self.name.value) > 500:
+                wrong_name = self.name.value[:500] + "..."
+            else:
+                wrong_name = self.name.value
 
-            await interaction.followup.send(
-                f"{interaction.user.mention} {self.view.get_message(ball, has_caught_before)}",
-                allowed_mentions=can_mention([player]),
+            wrong_message = random.choice(settings.wrong_messages).format(
+                user=interaction.user.mention,
+                collectible=settings.collectible_name,
+                ball=self.view.name,
+                collectibles=settings.plural_collectible_name,
+                wrong=wrong_name,
             )
-            await interaction.followup.edit_message(self.view.message.id, view=self.view)
-        else:
             await interaction.followup.send(
-                f"{interaction.user.mention} Wrong name!",
-                allowed_mentions=can_mention([player]),
+                wrong_message,
+                allowed_mentions=await can_mention([player]),
                 ephemeral=False,
             )
+            return
+
+        ball, has_caught_before = await self.view.catch_ball(
+            interaction.user, player=player, guild=interaction.guild
+        )
+
+        await interaction.followup.send(
+            self.view.get_catch_message(ball, has_caught_before, interaction.user.mention),
+            allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+        )
+        await interaction.followup.edit_message(self.view.message.id, view=self.view)
 
 
 class BallSpawnView(View):
@@ -127,6 +147,7 @@ class BallSpawnView(View):
         self.special: Special | None = None
         self.atk_bonus: int | None = None
         self.hp_bonus: int | None = None
+        self.og_id: int
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
@@ -165,6 +186,7 @@ class BallSpawnView(View):
 
         view = cls(bot, ball_instance.ball)
         view.ballinstance = ball_instance
+        view.og_id = ball_instance.player.discord_id
         return view
 
     @classmethod
@@ -182,6 +204,32 @@ class BallSpawnView(View):
     @property
     def name(self):
         return self.model.country
+
+    def get_random_special(self) -> Special | None:
+        population = [
+            x
+            for x in specials.values()
+            # handle null start/end dates with infinity times
+            if (x.start_date or datetime.min.replace(tzinfo=get_default_timezone()))
+            <= tortoise_now()
+            <= (x.end_date or datetime.max.replace(tzinfo=get_default_timezone()))
+        ]
+
+        if not population:
+            return None
+
+        common_weight: float = 1 - sum(x.rarity for x in population)
+
+        if common_weight < 0:
+            common_weight = 0
+
+        weights = [x.rarity for x in population] + [common_weight]
+        # None is added representing the common countryball
+        special: Special | None = random.choices(
+            population=population + [None], weights=weights, k=1
+        )[0]
+
+        return special
 
     async def spawn(self, channel: discord.TextChannel) -> bool:
         """
@@ -210,8 +258,14 @@ class BallSpawnView(View):
         try:
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
+                spawn_message = random.choice(settings.spawn_messages).format(
+                    collectible=settings.collectible_name,
+                    ball=self.name,
+                    collectibles=settings.plural_collectible_name,
+                )
+
                 self.message = await channel.send(
-                    f"A wild {settings.collectible_name} appeared!",
+                    spawn_message,
                     view=self,
                     file=discord.File(file_location, filename=file_name),
                 )
@@ -305,7 +359,7 @@ class BallSpawnView(View):
             self.ballinstance.trade_player = self.ballinstance.player
             self.ballinstance.player = player
             self.ballinstance.locked = None  # type: ignore
-            await self.ballinstance.save(update_fields=("player", "trade_player", "locked"))
+            await self.ballinstance.save(update_fields=("player_id", "trade_player_id", "locked"))
             return self.ballinstance, is_new
 
         # stat may vary by +/- 20% of base stat
@@ -321,26 +375,10 @@ class BallSpawnView(View):
         )
 
         # check if we can spawn cards with a special background
-        special = self.special
-        population = [
-            x
-            for x in specials.values()
-            # handle null start/end dates with infinity times
-            if (x.start_date or datetime.min.replace(tzinfo=get_default_timezone()))
-            <= tortoise_now()
-            <= (x.end_date or datetime.max.replace(tzinfo=get_default_timezone()))
-        ]
-        if not special and population:
-            # Here we try to determine what should be the chance of having a common card
-            # since the rarity field is a value between 0 and 1, 1 being no common
-            # and 0 only common, we get the remaining value by doing (1-rarity)
-            # We then sum each value for each current event, and we should get an algorithm
-            # that kinda makes sense.
-            common_weight = sum(1 - x.rarity for x in population)
+        special: Special | None = self.special
 
-            weights = [x.rarity for x in population] + [common_weight]
-            # None is added representing the common countryball
-            special = random.choices(population=population + [None], weights=weights, k=1)[0]
+        if not special:
+            special = self.get_random_special()
 
         ball = await BallInstance.create(
             ball=self.model,
@@ -368,7 +406,7 @@ class BallSpawnView(View):
 
         return ball, is_new
 
-    def get_message(self, ball: BallInstance, new_ball: bool) -> str:
+    def get_catch_message(self, ball: BallInstance, new_ball: bool, mention: str) -> str:
         """
         Generate a user-facing message after a ball has been caught.
 
@@ -388,7 +426,20 @@ class BallSpawnView(View):
                 f"This is a **new {settings.collectible_name}** "
                 "that has been added to your completion!"
             )
+        if self.ballinstance:
+            text += f"This {settings.collectible_name} was dropped by <@{self.og_id}>\n"
+
+        caught_message = (
+            random.choice(settings.caught_messages).format(
+                user=mention,
+                collectible=settings.collectible_name,
+                ball=self.name,
+                collectibles=settings.plural_collectible_name,
+            )
+            + " "
+        )
+
         return (
-            f"You caught **{self.name}!** "
-            f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n{text}"
+            caught_message
+            + f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n{text}"
         )

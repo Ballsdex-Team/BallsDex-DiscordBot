@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from asgiref.sync import async_to_sync
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
+from django.db.models import OuterRef, Subquery
 from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_action_forms import action_with_form
@@ -33,20 +34,33 @@ class BallInstanceTabular(TabularInlinePaginated):
     can_delete = False
 
     # adding a countryball cannot work from here since all fields are readonly
-    def has_add_permission(self, request: "HttpRequest", obj: "Player") -> bool:
+    def has_add_permission(  # pyright: ignore [reportIncompatibleMethodOverride]
+        self, request: "HttpRequest", obj: "Player"
+    ) -> bool:
         return False
+
+    def get_queryset(self, request: HttpRequest) -> "QuerySet[BallInstance]":
+        return (
+            super()
+            .get_queryset(request)
+            .prefetch_related("ball", "special")
+            .annotate(
+                guild_config_id=Subquery(
+                    GuildConfig.objects.filter(guild_id=OuterRef("server_id")).values("pk")[:1]
+                )
+            )
+        )
 
     @admin.display(description="Server")
     def server(self, obj: BallInstance):
-        guild = GuildConfig.objects.get(guild_id=obj.server_id)
-        opts = guild._meta
+        opts = GuildConfig._meta
         admin_url = reverse(
             "%s:%s_%s_change" % (self.admin_site.name, opts.app_label, opts.model_name),
             None,
-            (quote(guild.pk),),
+            (quote(obj.guild_config_id),),  # type: ignore
         )
         # Display a link to the admin page.
-        return format_html(f'<a href="{admin_url}">{guild}</a>')
+        return format_html(f'<a href="{admin_url}">{obj.server_id}</a>')
 
 
 @admin.register(Player)

@@ -10,10 +10,13 @@ from pathlib import Path
 from signal import SIGTERM
 
 import discord
+import sentry_sdk
 import yarl
 from discord.ext.commands import when_mentioned_or
 from rich import print
+from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from tortoise import Tortoise
+from yaml import YAMLError
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
@@ -241,6 +244,17 @@ async def init_tortoise(db_url: str, *, skip_migrations: bool = False):
     await Tortoise.init(config=TORTOISE_ORM)
 
 
+async def init_sentry():
+    if settings.sentry_dsn:
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            environment=settings.sentry_environment,
+            release=bot_version,
+            integrations=[AsyncioIntegration()],
+        )  # TODO: Add breadcrumbs for clustering
+        log.info("Sentry initialized.")
+
+
 def main():
     bot = None
     server = None
@@ -252,13 +266,28 @@ def main():
         print("[yellow]Resetting configuration file.[/yellow]")
         reset_settings(cli_flags.config_file)
 
-    try:
-        read_settings(cli_flags.config_file)
-    except FileNotFoundError:
+    if not cli_flags.config_file.exists():
         print("[yellow]The config file could not be found, generating a default one.[/yellow]")
         reset_settings(cli_flags.config_file)
-    else:
-        update_settings(cli_flags.config_file)
+
+    update_settings(cli_flags.config_file)
+
+    try:
+        read_settings(cli_flags.config_file)
+    except YAMLError:
+        print(
+            "[red]Your YAML is invalid!\nError parsing config file, please check your config"
+            " and try again[/red]"
+        )
+        time.sleep(1)
+        sys.exit(0)
+    except KeyError as missing_key:
+        print(
+            f"[red]Config file missing key {missing_key}!\nError parsing config file, please"
+            " check your config and try again[/red]"
+        )
+        time.sleep(1)
+        sys.exit(0)
 
     print_welcome()
     queue_listener: logging.handlers.QueueListener | None = None
@@ -306,6 +335,7 @@ def main():
             skip_tree_sync=cli_flags.skip_tree_sync,
         )
 
+        loop.run_until_complete(init_sentry())
         exc_handler = functools.partial(global_exception_handler, bot)
         loop.set_exception_handler(exc_handler)
         try:

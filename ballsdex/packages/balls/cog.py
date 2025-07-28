@@ -1,5 +1,6 @@
 import enum
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -9,10 +10,18 @@ from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
 from tortoise.functions import Count
 
-from ballsdex.core.models import BallInstance, DonationPolicy, Player, Trade, TradeObject, balls
+from ballsdex.core.models import (
+    BallInstance,
+    DonationPolicy,
+    Player,
+    Special,
+    Trade,
+    TradeObject,
+    balls,
+)
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
-from ballsdex.core.utils.sorting import SortingChoices, sort_balls
+from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
@@ -123,6 +132,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         reverse: bool = False,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        filter: FilteringChoices | None = None,
     ):
         """
         List your countryballs.
@@ -139,6 +149,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Filter the list by a specific countryball.
         special: Special
             Filter the list by a specific special event.
+        filter: FilteringChoices
+            Filter the list by a specific filter.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -170,6 +182,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         await player.fetch_related("balls")
         query = player.balls.all()
+        if filter:
+            query = filter_balls(filter, query, interaction.guild_id)
         if countryball:
             query = query.filter(ball__id=countryball.pk)
         if special:
@@ -220,6 +234,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
+        self_caught: bool | None = None,
     ):
         """
         Show your current completion of the BallsDex.
@@ -230,6 +245,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user whose completion you want to view, if not yours.
         special: Special
             The special you want to see the completion of
+        self_caught: bool
+            Filter only for countryballs that the user themself caught/didn't catch (ie no trades)
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -269,6 +286,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 for x, y in balls.items()
                 if y.enabled and (special.end_date is None or y.created_at < special.end_date)
             }
+
+        if self_caught is not None:
+            filters["trade_player_id__isnull"] = self_caught
+
         if not bot_countryballs:
             await interaction.followup.send(
                 f"There are no {extra_text}{settings.plural_collectible_name}"
@@ -335,8 +356,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
         special_str = f" ({special.name})" if special else ""
+        original_catcher_string = (
+            f" ({'not ' if self_caught is False else ''}self-caught)"
+            if self_caught is not None
+            else ""
+        )
         source.embed.description = (
-            f"{settings.bot_name}{special_str} progression: "
+            f"{settings.bot_name}{original_catcher_string}{special_str} progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
         )
         source.embed.colour = discord.Colour.blurple()
@@ -674,7 +700,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
     async def duplicate(
-        self, interaction: discord.Interaction["BallsDexBot"], type: DuplicateType
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        type: DuplicateType,
+        limit: int | None = None,
     ):
         """
         Shows your most duplicated countryballs or specials.
@@ -683,6 +712,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         type: DuplicateType
             Type of duplicate to check (countryballs or specials).
+        limit: int | None
+            The amount of countryballs to show, can only be used with `countryballs`.
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
 
@@ -694,33 +725,37 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
             annotations = {"name": "special__name", "emoji": "special__emoji"}
-            limit = 5
+            apply_limit = False
         else:
             queryset = queryset.filter(ball__tradeable=True)
             annotations = {"name": "ball__country", "emoji": "ball__emoji_id"}
-            limit = 50
+            apply_limit = True
 
-        results = (
-            await queryset.annotate(count=Count("id"))
-            .group_by(*annotations.values())
-            .order_by("-count")
-            .limit(limit)
-            .values(*annotations.values(), "count")
+        query = (
+            queryset.annotate(count=Count("id")).group_by(*annotations.values()).order_by("-count")
         )
+
+        if apply_limit and limit is not None:
+            query = query.limit(limit)
+
+        query = query.values(*annotations.values(), "count")
+        results = await query
 
         if not results:
             await interaction.followup.send(
                 f"You don't have any {type.value} duplicates in your inventory.", ephemeral=True
             )
             return
+
         entries = [
             {
                 "name": item[annotations["name"]],
-                "emoji": self.bot.get_emoji(item[annotations["emoji"]])
-                or item[annotations["emoji"]],
+                "emoji": (
+                    self.bot.get_emoji(item[annotations["emoji"]]) or item[annotations["emoji"]]
+                ),
                 "count": item["count"],
             }
-            for i, item in enumerate(results)
+            for item in results
         ]
 
         source = DuplicateViewMenu(interaction, entries, type.value)
@@ -742,7 +777,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user: discord.User
             The user you want to compare with
         special: Special
-            Filter the results of autocompletion to a special event. Ignored afterwards.
+            Filter the results of the comparison to a special event.
         """
         await interaction.response.defer(thinking=True)
         if interaction.user == user:
@@ -846,3 +881,78 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         pages = Pages(source=source, interaction=interaction, compact=True)
         await pages.start()
+
+    @app_commands.command()
+    async def collection(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        countryball: BallEnabledTransform | None = None,
+        ephemeral: bool = False,
+    ):
+        """
+        Show the collection of a specific countryball.
+
+        Parameters
+        ----------
+        countryball: Ball
+            The countryball you want to see the collection of
+        ephemeral: bool
+            Whether or not to send the command ephemerally.
+        """
+        await interaction.response.defer(thinking=True, ephemeral=ephemeral)
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+
+        query = BallInstance.filter(player=player).prefetch_related(
+            "player", "trade_player", "special"
+        )
+        if countryball:
+            query = query.filter(ball=countryball)
+        balls = await query
+
+        if not balls:
+            if countryball:
+                await interaction.followup.send(
+                    f"You don't have any {countryball.country} "
+                    f"{settings.plural_collectible_name} yet."
+                )
+            else:
+
+                await interaction.followup.send(
+                    f"You don't have any {settings.plural_collectible_name} yet."
+                )
+            return
+        total = len(balls)
+        total_traded = len([x for x in balls if x.trade_player])
+        total_caught_self = total - total_traded
+        special_count = len([x for x in balls if x.special])
+        specials = defaultdict(int)
+        all_specials = await Special.filter(hidden=False)
+        special_emojis = {x.name: x.emoji for x in all_specials}
+        for ball in balls:
+            if ball.special:
+                specials[ball.special] += 1
+
+        desc = (
+            f"**Total**: {total:,} ({total_caught_self:,} caught, "
+            f"{total_traded:,} received from trade)\n"
+            f"**Total Specials**: {special_count:,}\n\n"
+        )
+        if specials:
+            desc += "**Specials**:\n"
+        for special, count in sorted(specials.items(), key=lambda x: x[1], reverse=True):
+            emoji = special_emojis.get(special.name, "")
+            desc += f"{emoji} {special.name}: {count:,}\n"
+
+        embed = discord.Embed(
+            title=f"Collection of {countryball.country}" if countryball else "Total Collection",
+            description=desc,
+            color=discord.Color.blurple(),
+        )
+        embed.set_author(
+            name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
+        )
+        if countryball:
+            emoji = self.bot.get_emoji(countryball.emoji_id)
+            if emoji:
+                embed.set_thumbnail(url=emoji.url)
+        await interaction.followup.send(embed=embed)

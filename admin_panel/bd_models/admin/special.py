@@ -18,7 +18,7 @@ class SpecialAdmin(admin.ModelAdmin):
         (
             None,
             {
-                "fields": ["name", "catch_phrase", "rarity", "emoji", "background"],
+                "fields": ["name", "catch_phrase", "rarity", "emoji", "background", "credits"],
             },
         ),
         (
