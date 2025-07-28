@@ -8,6 +8,7 @@ from discord.ui import Button
 
 from ballsdex.core.models import Ball, GuildConfig
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
+from ballsdex.core.customexceptions import NotAdminGuildError
 from ballsdex.settings import settings
 
 from .balls import Balls as BallsGroup
@@ -258,3 +259,13 @@ class Admin(commands.GroupCog):
             )
         )
         await pages.start(ephemeral=True)
+
+    @app_commands.command(name="debug_bpc", description="Debug the Brawl Pass Check function.")
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def debug_bpc(self, interaction: discord.Interaction["BallsDexBot"]):
+        try:
+            bp_type, bp_msg = await interaction.client.brawl_pass_check(interaction)
+        except NotAdminGuildError:
+            await interaction.response.send_message("This guild is not allowed to use this command.", ephemeral=True)
+            return
+        await interaction.response.send_message(f"Debug complete!\n\nType: {bp_type}\nMessage: {bp_msg}", ephemeral=True)
