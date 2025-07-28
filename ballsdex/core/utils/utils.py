@@ -67,4 +67,4 @@ async def can_mention(players: List[Player]) -> discord.AllowedMentions:
     for player in players:
         if player.can_be_mentioned:
             can_mention.append(discord.Object(id=player.discord_id))
-    return discord.AllowedMentions(users=can_mention)
+    return discord.AllowedMentions(users=can_mention, roles=False, everyone=False)
