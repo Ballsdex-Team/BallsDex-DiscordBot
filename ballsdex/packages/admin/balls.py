@@ -58,6 +58,11 @@ class Balls(app_commands.Group):
         special: Special | None = None,
         atk_bonus: int | None = None,
         hp_bonus: int | None = None,
+        fakespawn: bool,
+        buttondanger: bool,
+        buttontext: str | None = None,
+        buttonemoji: discord.Emoji | None = None,
+        usertimeout: int | None = None,
     ):
         spawned = 0
 
@@ -87,6 +92,11 @@ class Balls(app_commands.Group):
                 ball.special = special
                 ball.atk_bonus = atk_bonus
                 ball.hp_bonus = hp_bonus
+                ball.fakespawn = fakespawn
+                ball.buttondanger = buttondanger
+                ball.buttontext = buttontext
+                ball.buttonemoji = buttonemoji
+                ball.usertimeout = usertimeout if usertimeout > 0 else None
                 result = await ball.spawn(channel)
                 if not result:
                     task.cancel()
@@ -109,6 +119,11 @@ class Balls(app_commands.Group):
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
+    @app_commands.describe(fakespawn="If enabled, the caught item won't be saved to inventory.")
+    @app_commands.describe(buttondanger="If enabled, button will turned to red.")
+    @app_commands.describe(buttontext="Override the BRAWL! text on the button.")
+    @app_commands.describe(buttonemoji="Optionally add an emoji to the button.")
+    @app_commands.describe(usertimeout="Timeout an user after catch attempt (seconds)")
     async def spawn(
         self,
         interaction: discord.Interaction[BallsDexBot],
@@ -118,6 +133,11 @@ class Balls(app_commands.Group):
         special: SpecialTransform | None = None,
         atk_bonus: int | None = None,
         hp_bonus: int | None = None,
+        fakespawn: bool = False,
+        buttondanger: bool = False,
+        buttontext: str | None = None,
+        buttonemoji: str | None = None,
+        usertimeout: int | None = None,
     ):
         """
         Force spawn a random or specified countryball.
@@ -167,6 +187,11 @@ class Balls(app_commands.Group):
                 special,
                 atk_bonus,
                 hp_bonus,
+                fakespawn,
+                buttondanger,
+                buttontext,
+                buttonemoji,
+                usertimeout,
             )
             await log_action(
                 f"{interaction.user} spawned {settings.collectible_name}"
@@ -184,6 +209,11 @@ class Balls(app_commands.Group):
         ball.special = special
         ball.atk_bonus = atk_bonus
         ball.hp_bonus = hp_bonus
+        ball.fakespawn = fakespawn
+        ball.buttondanger = buttondanger
+        ball.buttontext = buttontext
+        ball.buttonemoji = buttonemoji
+        ball.usertimeout = usertimeout if usertimeout > 0 else None
         result = await ball.spawn(channel or interaction.channel)  # type: ignore
 
         if result:
@@ -197,6 +227,16 @@ class Balls(app_commands.Group):
                 special_attrs.append(f"atk={atk_bonus}")
             if hp_bonus is not None:
                 special_attrs.append(f"hp={hp_bonus}")
+            if fakespawn is not None:
+                special_attrs.append(f"fakespawn={fakespawn}")
+            if buttondanger is not None:
+                special_attrs.append(f"buttondanger={buttondanger}")
+            if buttontext is not None:
+                special_attrs.append(f"buttontext={buttontext}")
+            if buttonemoji is not None:
+                special_attrs.append(f"buttonemoji={buttonemoji}")
+            if usertimeout is not None:
+                special_attrs.append(f"usertimeout={usertimeout}")
             await log_action(
                 f"{interaction.user} spawned {settings.collectible_name} {ball.name} "
                 f"in {channel or interaction.channel}"
