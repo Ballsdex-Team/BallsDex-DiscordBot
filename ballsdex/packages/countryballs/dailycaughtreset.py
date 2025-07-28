@@ -1,7 +1,7 @@
 import logging
 import asyncio
 import discord
-from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from ballsdex.core.models import Player
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils.logging import log_action
@@ -19,4 +19,8 @@ async def dailycaughtreset(self, bot: BallsDexBot):
         await Player.filter(dailycaught__gt=0).update(dailycaught=0)
     except Exception as e:
         log.error("An error occured while triggering the daily caught reset", exc_info=e)
-    
+
+scheduler = AsyncIOScheduler()
+scheduler.add_job(dailycaughtreset, 'cron', hour=9, minute=0)
+scheduler.start()
+asyncio.get_event_loop().run_forever()
