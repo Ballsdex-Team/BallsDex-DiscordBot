@@ -296,7 +296,7 @@ class TradeMenu:
             "is proposing a trade with you!",
             embed=self.embed,
             view=self.current_view,
-            allowed_mentions=can_mention([self.trader2.player]),
+            allowed_mentions=await can_mention([self.trader2.player]),
         )
         self.task = self.bot.loop.create_task(self.update_message_loop())
 
