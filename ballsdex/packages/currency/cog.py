@@ -73,6 +73,10 @@ class UpgradeConfirmView(View):
         next_plvl_emoji = interaction.client.get_emoji(plevel_emojis[current_plvl])
         hp_emoji = interaction.client.get_emoji(1399770718794809385)
         atk_emoji = interaction.client.get_emoji(1399770723060289557)
+        current_hp = int(self.model.health * float(f"1.{self.brawler.health_bonus}")) if float(f"1.{self.brawler.health_bonus}") != 1.100 else int(self.model.health * 2)
+        current_atk = int(self.model.attack * float(f"1.{self.brawler.attack_bonus}")) if float(f"1.{self.brawler.attack_bonus}") != 1.100 else int(self.model.attack * 2)
+        
+        
         
 @app_commands.allowed_installs(guilds=True, users=True)
 @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
