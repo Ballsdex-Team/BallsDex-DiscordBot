@@ -414,11 +414,24 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
         """
+        SKIN_REGIMES = [
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            37,
+            40,
+            39,
+            38,
+            35
+        ]
         if not countryball:
             return
         if not countryball.is_tradeable:
             await interaction.response.send_message(
-                f"You cannot donate this {settings.collectible_name}.", ephemeral=True
+                f"You cannot donate this {"skin" if countryball.ball.regime_id in SKIN_REGIMES else "brawler"}.", ephemeral=True
             )
             return
         if user.bot:
@@ -426,7 +439,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if await countryball.is_locked():
             await interaction.response.send_message(
-                f"This {settings.collectible_name} is currently locked for a trade. "
+                f"This {"skin" if countryball.ball.regime_id in SKIN_REGIMES else "brawler"} is currently locked for a trade. "
                 "Please try again later.",
                 ephemeral=True,
             )
@@ -435,11 +448,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if favorite:
             view = ConfirmChoiceView(
                 interaction,
-                accept_message=f"{settings.collectible_name.title()} donated.",
+                accept_message=f"{"Skin" if countryball.ball.regime_id in SKIN_REGIMES else "Brawler"} donated.",
                 cancel_message="This request has been cancelled.",
             )
             await interaction.response.send_message(
-                f"This {settings.collectible_name} is a favorite, "
+                f"This {"skin" if countryball.ball.regime_id in SKIN_REGIMES else "brawler"} is a favorite, "
                 "are you sure you want to donate it?",
                 view=view,
                 ephemeral=True,
@@ -456,7 +469,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if new_player == old_player:
             await interaction.followup.send(
-                f"You cannot give a {settings.collectible_name} to yourself.", ephemeral=True
+                f"You cannot give a {"skin" if countryball.ball.regime_id in SKIN_REGIMES else "brawler"} to yourself.", ephemeral=True
             )
             await countryball.unlock()
             return
@@ -515,12 +528,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if favorite:
             await interaction.followup.send(
                 f"{interaction.user.mention}, you just gave the "
-                f"{settings.collectible_name} {cb_txt} to {user.mention}!",
+                f"{"skin" if countryball.ball.regime_id in SKIN_REGIMES else "brawler"} {cb_txt} to {user.mention}!",
                 allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
             )
         else:
             await interaction.followup.send(
-                f"You just gave the {settings.collectible_name} {cb_txt} to {user.mention}!",
+                f"You just gave the {"skin" if countryball.ball.regime_id in SKIN_REGIMES else "brawler"} {cb_txt} to {user.mention}!",
                 allowed_mentions=discord.AllowedMentions(users=new_player.can_be_mentioned),
             )
         await countryball.unlock()
