@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 import discord
 from discord import app_commands
 from discord.ext import commands
+from discord.ui import View, Button, button
 
 import asyncio
 import io
@@ -30,6 +31,15 @@ from tortoise.exceptions import DoesNotExist
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 log = logging.getLogger("ballsdex.packages.currency")
+
+class UpgradeConfirmView(View):
+    def __init__(self, author: discord.User | discord.Member, brawler: BallInstance):
+        super().__init__(timeout=60)
+        self.author = author
+        self.brawler = brawler
+        
+    @button(label="Confirm", style=discord.ButtonStyle.secondary)
+    async def confirm_upgrade(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
 
 @app_commands.allowed_installs(guilds=True, users=True)
 @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
