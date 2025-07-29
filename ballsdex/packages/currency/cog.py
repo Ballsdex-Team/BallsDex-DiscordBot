@@ -37,9 +37,24 @@ class UpgradeConfirmView(View):
         super().__init__(timeout=60)
         self.author = author
         self.brawler = brawler
+        self.model = brawler.ball
         
     @button(label="Confirm", style=discord.ButtonStyle.secondary)
     async def confirm_upgrade(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        SKIN_REGIMES = [
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            37,
+            40,
+            39,
+            38,
+            35
+        ]
+        plvl = int((self.brawler.health_bonus+self.brawler.attack_bonus+20)/20+1)
 
 @app_commands.allowed_installs(guilds=True, users=True)
 @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
@@ -166,24 +181,12 @@ class PowerPoints(commands.GroupCog, group_name="powerpoints"):
         brawler: BallInstance
             The Brawler you want to Upgrade.
         """
-        SKIN_REGIMES = [
-            22,
-            23,
-            24,
-            25,
-            26,
-            27,
-            37,
-            40,
-            39,
-            38,
-            35
-        ]
+        
         playerm = await PlayerModel.get(discord_id=interaction.user.id)
         if not brawler or brawler.player != playerm:
             return
         
-        plvl = int((brawler.health_bonus+brawler.attack_bonus+20)/20+1)
+        
         cost = self.NextUpgradeCost[plvl]
         if brawler.health_bonus >= 100 and brawler.attack_bonus >= 100 or cost is None:
             await interaction.response.send_message("This brawler can not be upgraded further.", ephemeral=True)
