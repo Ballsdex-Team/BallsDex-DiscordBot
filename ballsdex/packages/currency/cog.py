@@ -38,6 +38,7 @@ class UpgradeConfirmView(View):
         self.author = author
         self.brawler = brawler
         self.model = brawler.ball
+        self.NextUpgradeCost = {2: 20, 3: 30, 4: 50, 5: 80, 6: 130, 7: 210, 8: 340, 9: 550, 10: 890, 11: 1440}
         
     @button(label="Confirm", style=discord.ButtonStyle.secondary)
     async def confirm_upgrade(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
@@ -67,8 +68,12 @@ class UpgradeConfirmView(View):
             1366788095227199569,
             1366788107747328122
         ]
-        plvl = int((self.brawler.health_bonus+self.brawler.attack_bonus+20)/20+1)
-
+        current_plvl = int((self.brawler.health_bonus+self.brawler.attack_bonus+20)/20+1)
+        current_plvl_emoji = interaction.client.get_emoji(plevel_emojis[current_plvl-1])
+        next_plvl_emoji = interaction.client.get_emoji(plevel_emojis[current_plvl])
+        hp_emoji = interaction.client.get_emoji(1399770718794809385)
+        atk_emoji = interaction.client.get_emoji(1399770723060289557)
+        
 @app_commands.allowed_installs(guilds=True, users=True)
 @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
 class Credits(commands.GroupCog, group_name="credits"):
@@ -156,7 +161,6 @@ class Credits(commands.GroupCog, group_name="credits"):
 class PowerPoints(commands.GroupCog, group_name="powerpoints"):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
-        self.NextUpgradeCost = {2: 20, 3: 30, 4: 50, 5: 80, 6: 130, 7: 210, 8: 340, 9: 550, 10: 890, 11: 1440}
     
     @app_commands.command(name="shop")
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.channel.id)
