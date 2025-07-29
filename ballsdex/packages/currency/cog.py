@@ -297,19 +297,22 @@ class Currency(commands.Cog):
         funny_freebie_sticker = self.bot.get_sticker(1376630320144715809)
         sticker_array = []
         sticker_array.append(funny_freebie_sticker)
-        sticker_server_id = 1295410565145165884
+        sticker_server_id = settings.admin_guild_ids[0]
 
             
         options = ["powerpoints", "credits", "powerpoints10", "credits10"]
         chances = [96, 96, 4, 4]
 
+        trigger_sticker = True
         choice = random.choices(options, weights=chances, k=1)[0]
+        if choice != "powerpoints":
+            trigger_sticker = False
         picked_fortune = random.choice(fortunes)
         
         player, _ = await PlayerModel.get_or_create(discord_id=interaction.user.id)  
         await interaction.response.defer(thinking=True)    
         cmnt = self.CurrencyPortion[choice.replace("10", "")] 
-        jackpot = choice        
+        jackpot = choice
         if "10" in choice:
             choice = choice.replace("10", "")
             jackpot = jackpot.replace("10", ", You hit the Jackpot, You get 10x the reward!")
@@ -317,5 +320,5 @@ class Currency(commands.Cog):
         setattr(player, choice, getattr(player, choice) + cmnt)
         await player.save(update_fields=(choice,))
         cmd_msg = await interaction.followup.send(f"You received your {cmnt} {jackpot}\n{fortune_cookie_1}*{picked_fortune}*{fortune_cookie_2}", ephemeral=True)
-        if interaction.guild and interaction.guild.id == sticker_server_id:
+        if interaction.guild and interaction.guild.id == sticker_server_id and trigger_sticker == True:
             await interaction.channel.send(stickers=sticker_array, reference=cmd_msg)
