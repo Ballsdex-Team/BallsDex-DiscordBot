@@ -54,6 +54,19 @@ class UpgradeConfirmView(View):
             38,
             35
         ]
+        plevel_emojis = [
+            1366783166941102081,
+            1366783917314674698,
+            1366784186941177977,
+            1366784841487745034,
+            1366784908575510558,
+            1366785648370909327,
+            1366785660605698058,
+            1366786928338407424,
+            1366786943790088345,
+            1366788095227199569,
+            1366788107747328122
+        ]
         plvl = int((self.brawler.health_bonus+self.brawler.attack_bonus+20)/20+1)
 
 @app_commands.allowed_installs(guilds=True, users=True)
