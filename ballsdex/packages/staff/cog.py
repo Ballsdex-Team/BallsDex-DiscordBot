@@ -15,7 +15,7 @@ from ballsdex.packages.staff.cardgenerator import CardGenerator
 # from ballsdex.packages.staff.customcard import CardConfig, draw_card
 from ballsdex.settings import settings
 from ballsdex.core.utils.transformers import BallTransform, SpecialTransform
-from ballsdex.core.models import Ball, Special
+from ballsdex.core.models import Ball, Special, Player
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -182,6 +182,24 @@ class Staff(commands.GroupCog, group_name="staff"):
         except BaseORMException as e:
             await interaction.followup.send("Failed to update the brawler.", ephemeral=True)
             log.exception("Failed to update the brawler", exc_info=True)
+            
+    @app_commands.command(name="currency", description="Give some currency to a user!")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
+    @app_commands.choices(currency_type=[
+        app_commands.Choice(name="Power Points", value="powerpoints"),
+        app_commands.Choice(name="Credits", value="credits")
+        app_commands.Choice(name="Starr Drops", value="starrdrops")
+        ])
+    @app_commands.describe(currency_type="The currency type to give")
+    @app_commands.describe(user="The target user to give a currency")
+    @app_commands.describe(remove="If enabled, the command will remove the currency instead.")
+    async def currency(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        currency_type: app_commands.Choice[str],
+        user: discord.User,
+        remove: bool | None = None
+        ):
 
   #  @app_commands.command(name="customcard", description="Generate a custom card with your own assets!")
   #  @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
