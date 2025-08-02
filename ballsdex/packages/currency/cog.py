@@ -91,7 +91,20 @@ class UpgradeConfirmView(View):
             new_hp = int(self.model.health * float(f"1.{self.brawler.health_bonus}")) if float(f"1.{self.brawler.health_bonus}") != 1.100 else int(self.model.health * 2)
             new_atk = int(self.model.attack * float(f"1.{self.brawler.attack_bonus}")) if float(f"1.{self.brawler.attack_bonus}") != 1.100 else int(self.model.attack * 2)
             await interaction.edit_original_response(content=f"{brawler_emoji}[{self.model.country}](<https://brawldex.fandom.com/wiki/{self.model.country.replace(" ", "_")}>) was upgraded from {current_plvl_emoji} to {next_plvl_emoji}!\n{current_hp}{hp_emoji}→{new_hp}{hp_emoji}  {current_atk}{atk_emoji}→{new_atk}{atk_emoji}")
-    
+            
+    @button(label="Cancel", style=discord.ButtonStyle.danger)
+    async def cancel_upgrade(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        await interaction.edit_original_response(content="The operation was cancelled.")
+
+    async def on_timeout(self):
+        for item in self.children:
+            if isinstance(item, Button):
+                item.disabled = True
+        try:
+            await self.interaction.edit_original_response(view=self)
+        except discord.NotFound:
+            pass
+
         
 @app_commands.allowed_installs(guilds=True, users=True)
 @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
