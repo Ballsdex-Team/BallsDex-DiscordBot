@@ -73,10 +73,16 @@ class UpgradeConfirmView(View):
         next_plvl_emoji = interaction.client.get_emoji(plevel_emojis[current_plvl])
         hp_emoji = interaction.client.get_emoji(1399770718794809385)
         atk_emoji = interaction.client.get_emoji(1399770723060289557)
+        pp_emoji = interaction.client.get_emoji(1364807487106191471)
+        brawler_emoji = interaction.client.get_emoji(self.model.emoji_id)
         current_hp = int(self.model.health * float(f"1.{self.brawler.health_bonus}")) if float(f"1.{self.brawler.health_bonus}") != 1.100 else int(self.model.health * 2)
         current_atk = int(self.model.attack * float(f"1.{self.brawler.attack_bonus}")) if float(f"1.{self.brawler.attack_bonus}") != 1.100 else int(self.model.attack * 2)
+        cost = self.NextUpgradeCost[current_plvl]
+        player = await PlayerModel.get(discord_id=interaction.user.id)
+        if player.powerpoints < cost:
+            await interaction.edit_original_response(content=f"You're missing {cost-player.powerpoints}{pp_emoji} to upgrade {brawler_emoji}[{self.model.country}](<https://brawldex.fandom.com/wiki/{self.model.country.replace(" ", "_")}>) to {next_plvl_emoji}.")
         
-        
+    
         
 @app_commands.allowed_installs(guilds=True, users=True)
 @app_commands.allowed_contexts(dms=True, private_channels=True, guilds=True)
