@@ -240,6 +240,43 @@ class Staff(commands.GroupCog, group_name="staff"):
                     except Exception as e:
                         log.error("An error occured while removing currency.", exc_info=e)
                         return
+            else:
+                if currency_type.value == "powerpoints":
+                    try:
+                        player.powerpoints += amount
+                        await player.save()
+                        await interaction.response.send_message(f"{interaction.user.mention} gave {amount} Power Points to {user.mention}! {pp_emoji}", ephemeral=False)
+                        await log_action(f"{interaction.user.name} gave {amount} Power Points to {user.name}.", interaction.client)
+                    except Exception as e:
+                        log.error("An error occured while adding currency.", exc_info=e)
+                        return
+                elif currency_type.value == "credits":
+                    try:
+                        player.credits += amount
+                        await player.save()
+                        await interaction.response.send_message(f"{interaction.user.mention} gave {amount} Credits to {user.mention}! {credit_emoji}", ephemeral=False)
+                        await log_action(f"{interaction.user.name} gave {amount} Credits to {user.name}.", interaction.client)
+                    except Exception as e:
+                        log.error("An error occured while adding currency.", exc_info=e)
+                        return
+                elif currency_type.value == "starrdrops":
+                    if amount > 50:
+                        await interaction.response.send_message("The amount can't exceed 50 Starr Drops!", ephemeral=True)
+                        return
+                    elif amount + player.sdcount > 50:
+                        await interaction.response.send_message(f"This user has {player.sdcount} Starr Drops. The amount you tried to give will exceed the limit. {f"It is recommended to give {50-player.sdcount} Starr Drops maximum to reach the limit instead." if player.sdcount < 50 else "You can't give more drops until they uses them."}", ephemeral=True)
+                        return
+                    else:
+                        try:
+                            player.sdcount += amount
+                            await player.save()
+                            await interaction.response.send_message(f"{interaction.user.mention} gave {amount} Starr Drops to {user.mention}! {sd_emoji}", ephemeral=False)
+                            await log_action(f"{interaction.user.name} gave {amount} Starr Drops to {user.name}.", interaction.client)
+                        except Exception as e:
+                            log.error("An error occured while adding currency.", exc_info=e)
+                            return
+                
+   
                     
         
   #  @app_commands.command(name="customcard", description="Generate a custom card with your own assets!")
