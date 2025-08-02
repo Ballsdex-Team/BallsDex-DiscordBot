@@ -192,15 +192,56 @@ class Staff(commands.GroupCog, group_name="staff"):
         ])
     @app_commands.describe(currency_type="The currency type to give")
     @app_commands.describe(user="The target user to give a currency")
+    @app_commands.describe(amount="Amount of currencies to give")
     @app_commands.describe(remove="If enabled, the command will remove the currency instead.")
     async def currency(
         self,
         interaction: discord.Interaction["BallsDexBot"],
         currency_type: app_commands.Choice[str],
         user: discord.User,
+        amount: int,
         remove: bool | None = None
         ):
-
+            player, _ = await Player.get_or_create(discord_id=user.id)
+            pp_emoji = interaction.client.get_emoji(1364817571819425833)
+            credit_emoji = interaction.client.get_emoji(1364877745032794192)
+            sd_emoji = interaction.client.get_emoji(1363188571099496699)
+            if amount <= 0:
+                await interaction.response.send_message("You can't add/remove less than or equal to zero amount!", ephemeral=True)
+                return
+            if type(amount) == "float":
+                await interaction.response.send_mesaage("The amount must be an integer, not a float!", ephemeral=True)
+                return
+            if remove and remove == True:
+                if currency_type.value == "powerpoints":
+                    try:
+                        player.powerpoints -= amount
+                        await player.save()
+                        await interaction.response.send_message(f"{interaction.user.mention} removed {amount} Power Points from {user.mention}! {pp_emoji}", ephemeral=False)
+                        await log_action(f"{interaction.user.name} removed {amount} Power Points from {user.name}.", interaction.client)
+                    except Exception as e:
+                        log.error("An error occured while removing currency.", exc_info=e)
+                        return
+                elif currency_type.value == "credits":
+                    try:
+                        player.credits -= amount
+                        await player.save()
+                        await interaction.response.send_message(f"{interaction.user.mention} removed {amount} Credits from {user.mention}! {credit_emoji}", ephemeral=False)
+                        await log_action(f"{interaction.user.name} removed {amount} Credits from {user.name}.", interaction.client)
+                    except Exception as e:
+                        log.error("An error occured while removing currency.", exc_info=e)
+                        return
+                elif currency_type.value == "starrdrops":
+                    try:
+                        player.sdcount -= amount
+                        await player.save()
+                        await interaction.response.send_message(f"{interaction.user.mention} removed {amount} Starr Drops from {user.mention}! {sd_emoji}", ephemeral=False)
+                        await log_action(f"{interaction.user.name} removed {amount} Starr Drops from {user.name}.", interaction.client)
+                    except Exception as e:
+                        log.error("An error occured while removing currency.", exc_info=e)
+                        return
+                    
+        
   #  @app_commands.command(name="customcard", description="Generate a custom card with your own assets!")
   #  @app_commands.checks.has_any_role(*settings.root_role_ids, 1357857303222816859)
   #  @app_commands.describe(name="The name of the card character")
