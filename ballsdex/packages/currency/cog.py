@@ -74,6 +74,8 @@ class UpgradeConfirmView(View):
         hp_emoji = interaction.client.get_emoji(1399770718794809385)
         atk_emoji = interaction.client.get_emoji(1399770723060289557)
         pp_emoji = interaction.client.get_emoji(1364807487106191471)
+        new_hp = None
+        new_atk = None
         brawler_emoji = interaction.client.get_emoji(self.model.emoji_id)
         current_hp = int(self.model.health * float(f"1.{self.brawler.health_bonus}")) if float(f"1.{self.brawler.health_bonus}") != 1.100 else int(self.model.health * 2)
         current_atk = int(self.model.attack * float(f"1.{self.brawler.attack_bonus}")) if float(f"1.{self.brawler.attack_bonus}") != 1.100 else int(self.model.attack * 2)
@@ -81,7 +83,14 @@ class UpgradeConfirmView(View):
         player = await PlayerModel.get(discord_id=interaction.user.id)
         if player.powerpoints < cost:
             await interaction.edit_original_response(content=f"You're missing {cost-player.powerpoints}{pp_emoji} to upgrade {brawler_emoji}[{self.model.country}](<https://brawldex.fandom.com/wiki/{self.model.country.replace(" ", "_")}>) to {next_plvl_emoji}.")
-        
+        else:
+            player.powerpoints -= cost
+            await player.save(update_fields=("powerpoints",))
+            self.brawler.health_bonus += 10; self.brawler.attack_bonus += 10
+            await self.brawler.save()
+            new_hp = int(self.model.health * float(f"1.{self.brawler.health_bonus}")) if float(f"1.{self.brawler.health_bonus}") != 1.100 else int(self.model.health * 2)
+            new_atk = int(self.model.attack * float(f"1.{self.brawler.attack_bonus}")) if float(f"1.{self.brawler.attack_bonus}") != 1.100 else int(self.model.attack * 2)
+            await interaction.edit_original_response(content=f"{brawler_emoji}[{self.model.country}](<https://brawldex.fandom.com/wiki/{self.model.country.replace(" ", "_")}>) was upgraded from {current_plvl_emoji} to {next_plvl_emoji}!\n{current_hp}{hp_emoji}→{new_hp}{hp_emoji}  {current_atk}{atk_emoji}→{new_atk}{atk_emoji}")
     
         
 @app_commands.allowed_installs(guilds=True, users=True)
