@@ -16,32 +16,32 @@ dependencies = [
     "discord.py[speed]==2.5.0",
 
     # database ORM
-    "tortoise-orm[asyncpg] ==0.22.2",
+    "tortoise-orm[asyncpg]==0.25.1",
     "tortoise-cli==0.1.2",
 
     # django admin panel
-    "uvicorn[standard]==0.32.0",
-    "django==5.1.4",
+    "uvicorn[standard]==0.35.0",
+    "django==5.2.4",
     "django-allow-cidr (>=0.7.1,<0.8.0)",
     "django-nonrelated-inlines==0.2",
     "django-admin-autocomplete-filter==0.7.1",
     "django-admin-action-forms==1.3.0",
     "django-admin-inline-paginator==0.4.0",
     "dj-database-url==2.3.0",
-    "social-auth-app-django==5.4.2",
-    "psycopg==3.2.3",
-    "psycopg-binary==3.2.3",
+    "social-auth-app-django==5.5.1",
+    "psycopg==3.2.9",
+    "psycopg-binary==3.2.9",
 
     # metrics
-    "prometheus-client==0.20.0",
+    "prometheus-client==0.22.1",
 
     # misc
-    "rich==13.8.0",
+    "rich==14.0.0",
     "python-dateutil==2.9.0",
-    "Pillow==11.2.1",
+    "Pillow==11.3.0",
     "pyyaml==6.0.2",
-    "cachetools==5.5.0",
-    "sentry-sdk[asyncpg]==2.27.0"
+    "cachetools==6.1.0",
+    "sentry-sdk[asyncpg]==2.33.0"
 ]
 
 [project.optional-dependencies]

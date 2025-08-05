@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
+from ballsdex.settings import settings
+
 if TYPE_CHECKING:
     from ballsdex.core.models import BallInstance
 
@@ -89,7 +91,14 @@ def draw_card(
             stroke_width=2,
             stroke_fill=(0, 0, 0, 255),
         )
-    for i, line in enumerate(textwrap.wrap(ball.capacity_description, width=32)):
+
+    capacity_description_lines = (
+        wrapped_line
+        for newline in ball.capacity_description.splitlines()
+        for wrapped_line in textwrap.wrap(newline, 32)
+    )
+
+    for i, line in enumerate(capacity_description_lines):
         draw.text(
             (60, 1100 + 100 * len(cap_name) + 80 * i),
             line,
@@ -115,6 +124,14 @@ def draw_card(
         stroke_fill=(0, 0, 0, 255),
         anchor="ra",
     )
+    if settings.show_rarity:
+        draw.text(
+            (1200, 50),
+            str(ball.rarity),
+            font=stats_font,
+            stroke_width=2,
+            stroke_fill=(0, 0, 0, 255),
+        )
     if card_name in credits_color_cache:
         credits_color = credits_color_cache[card_name]
     else:

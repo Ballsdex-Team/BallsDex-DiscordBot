@@ -14,11 +14,12 @@
         "prometheus",
         "owners"
     ],
+    "additionalProperties": false,
     "properties": {
         "discord-token": {
             "description": "The Discord bot token",
             "type": "string",
-            "minLength": 72,
+            "minLength": 70,
             "maxLength": 72
         },
         "text-prefix": {
@@ -30,6 +31,7 @@
         "about": {
             "type": "object",
             "description": "Information used in /about",
+            "additionalProperties": false,
             "properties": {
                 "description": {
                     "type": "string",
@@ -56,12 +58,18 @@
                     "format": "uri"
                 }
             },
-            "required": ["description", "github-link", "discord-invite", "terms-of-service", "privacy-policy"]
+            "required": [
+                "description",
+                "github-link",
+                "discord-invite",
+                "terms-of-service",
+                "privacy-policy"
+            ]
         },
         "collectible-name": {
             "type": "string",
             "description": "The name of the collectible, used everywhere except command descriptions.",
-            "example": "ball"
+            "default": "countryball"
         },
         "max-favorites": {
             "type": "integer",
@@ -77,65 +85,79 @@
         "max-attack-bonus": {
             "type": "integer",
             "description": "The biggest/smallest attack bonus that a spawned countryball can have.",
-            "example": "20"
+            "default": 20
         },
         "max-health-bonus": {
             "type": "integer",
             "description": "The biggest/smallest health bonus that a spawned countryball can have.",
-            "example": "20"
+            "default": 20
         },
         "plural-collectible-name": {
             "type": "string",
             "description": "The plural name of the collectible, used everywhere except command descriptions.",
-            "example": "balls"
+            "default": "countryballs"
+        },
+        "show-rarity": {
+            "type": "boolean",
+            "description": "Enables the display of rarity in the top right hand corner of a card. Should not be used with economies.",
+            "default": false
         },
         "bot-name": {
             "type": "string",
             "description": "The name of the bot, used in places such as the /completion command",
-            "example": "BallsDex"
+            "default": "BallsDex"
         },
         "players-group-cog-name": {
             "type": "string",
             "description": "Name of the slash command managing the collectibles (list, info, completion...). Do not add a leading slash!",
-            "example": "balls"
+            "default": "balls"
         },
         "admin-command": {
             "type": "object",
             "description": "Manages access to the admin command",
+            "additionalProperties": false,
             "properties": {
                 "guild-ids": {
-                    "type": ["array", "null"],
+                    "type": [
+                        "array",
+                        "null"
+                    ],
                     "description": "IDs of guilds with the /admin command registered",
                     "items": {
-                        "type": "integer",
-                        "minimum": 10000000000000000,
-                        "maximum": 99999999999999999999
+                        "$ref": "#/$defs/discord-id"
                     }
                 },
                 "root-role-ids": {
-                    "type": ["array", "null"],
+                    "type": [
+                        "array",
+                        "null"
+                    ],
                     "description": "IDs of roles with full access to /admin",
                     "items": {
-                        "type": "integer",
-                        "minimum": 10000000000000000,
-                        "maximum": 99999999999999999999
+                        "$ref": "#/$defs/discord-id"
                     }
                 },
                 "admin-role-ids": {
-                    "type": ["array", "null"],
+                    "type": [
+                        "array",
+                        "null"
+                    ],
                     "description": "IDs of roles with partial access to /admin: blacklist control and guilds ownership inspection",
                     "items": {
-                        "type": "integer",
-                        "minimum": 10000000000000000,
-                        "maximum": 99999999999999999999
+                        "$ref": "#/$defs/discord-id"
                     }
                 }
             },
-            "required": ["guild-ids", "root-role-ids", "admin-role-ids"]
+            "required": [
+                "guild-ids",
+                "root-role-ids",
+                "admin-role-ids"
+            ]
         },
         "prometheus": {
             "type": "object",
             "description": "Prometheus metrics configuration",
+            "additionalProperties": false,
             "properties": {
                 "enabled": {
                     "type": "boolean",
@@ -155,14 +177,17 @@
             }
         },
         "log-channel": {
-            "type": ["integer", "null"],
+            "type": [
+                "integer",
+                "null"
+            ],
             "description": "ID of the channel to log events to",
-            "minimum": 10000000000000000,
-            "maximum": 99999999999999999999
+            "$ref": "#/$defs/discord-id"
         },
         "owners": {
             "type": "object",
             "description": "Manages ownership of the bot",
+            "additionalProperties": false,
             "properties": {
                 "team-members-are-owners": {
                     "type": "boolean",
@@ -170,15 +195,156 @@
                     "default": false
                 },
                 "co-owners": {
-                    "type": ["array", "null"],
+                    "type": [
+                        "array",
+                        "null"
+                    ],
                     "description": "IDs of users with ownership",
                     "items": {
-                        "type": "integer",
-                        "minimum": 10000000000000000,
-                        "maximum": 99999999999999999999
+                        "$ref": "#/$defs/discord-id"
+                    }
+                },
+                "hide-owner": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Hides the owner name in /about"
+                }
+            }
+        },
+        "spawn-manager": {
+            "$ref": "#/$defs/python-path",
+            "description": "Override the default spawn manager with your own implementation. Must be an importable Python path to a SpawnManager class.",
+            "default": "ballsdex.packages.countryballs.spawn.SpawnManager"
+        },
+        "packages": {
+            "type": "array",
+            "description": "List of packages to load on start. Must be importable Python paths to a discord.py package.",
+            "items": {
+                "$ref": "#/$defs/python-path"
+            }
+        },
+        "admin-panel": {
+            "type": "object",
+            "description": "Django admin panel settings",
+            "additionalProperties": false,
+            "properties": {
+                "client-id": {
+                    "$ref": "#/$defs/discord-id",
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "description": "To enable Discord OAuth2, fill the ID of your Discord application here."
+                },
+                "client-secret": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "To enable Discord OAuth2, fill the OAuth2 secret of your Discord application here.",
+                    "pattern": "^[a-zA-Z0-9-_]{32}$"
+                },
+                "webhook-url": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Link to a Discord webhook for admin panel notifications",
+                    "pattern": "^https://discord.com/api/webhooks/[0-9]{17,22}/[a-zA-Z0-9-_]{68}$"
+                },
+                "url": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "URL to your admin panel. If null, disables all hyperlinks to the admin panel in the bot.",
+                    "$ref": "#/$defs/url"
+                }
+            }
+        },
+        "sentry": {
+            "type": "object",
+            "description": "Configures sentry for reporting logging events",
+            "additionalProperties": false,
+            "properties": {
+                "dsn": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "URL to your sentry DSN (Data Source Name)"
+                },
+                "environment": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "An identifier to use for the environment the bot runs in.",
+                    "default": "production"
+                }
+            }
+        },
+        "catch": {
+            "type": "object",
+            "description": "Customize the messages sent when attempting to catch a countryball",
+            "additionalProperties": false,
+            "properties": {
+                "caught_msgs": {
+                    "type": "array",
+                    "description": "A list of messages to use when a countryball is caught. ID and stats are appended to these.\n{user}: Mention of interacting user\n{collectible}: Collectible name\n{collectibles}: Plural collectible name",
+                    "default": [
+                        "{user} You caught **{ball}**!"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "wrong_msgs": {
+                    "type": "array",
+                    "description": "A list of messages to use when a wrong name was attempted.\n{user}: Mention of interacting user\n{wrong}: The name attempted\n{collectible}: Collectible name\n{collectibles}: Plural collectible name",
+                    "default": [
+                        "{user} Wrong name!"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "spawn_msgs": {
+                    "type": "array",
+                    "description": "A list of messages to use when spawning an item.\n{collectible}: Collectible name\n{collectibles}: Plural collectible name",
+                    "default": [
+                        "A wild {collectible} appeared!"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "slow_msgs": {
+                    "type": "array",
+                    "description": "A list of messages to use when a user attempted to catch a ball, but someone else caught it before.\n{user}: Mention of interacting user\n{collectible}: Collectible name\n{collectibles}: Plural collectible name",
+                    "default": [
+                        "{user} Sorry, this {collectible} was caught already!"
+                    ],
+                    "items": {
+                        "type": "string"
                     }
                 }
             }
+        }
+    },
+    "$defs": {
+        "python-path": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+$"
+        },
+        "discord-id": {
+            "type": "integer",
+            "minimum": 10000000000000000,
+            "maximum": 99999999999999999999
+        },
+        "url": {
+            "type": "string",
+            "pattern": "^https?://[^\n\r\t\\?/]+$"
         }
     }
 }

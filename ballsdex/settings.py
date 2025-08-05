@@ -84,6 +84,7 @@ class Settings:
     max_favorites: int = 50
     max_attack_bonus: int = 20
     max_health_bonus: int = 20
+    show_rarity: bool = False
 
     # /about
     about_description: str = ""
@@ -147,6 +148,7 @@ def read_settings(path: "Path"):
     settings.bot_name = content["bot-name"]
     settings.players_group_cog_name = content["players-group-cog-name"]
     settings.favorited_collectible_emoji = content.get("favorited-collectible-emoji", "❤️")
+    settings.show_rarity = content.get("show-rarity", False)
 
     settings.about_description = content["about"]["description"]
     settings.github_link = content["about"]["github-link"]

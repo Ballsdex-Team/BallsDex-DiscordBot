@@ -27,8 +27,9 @@ async def notify_admins(
 
     Set `wait` to `False` to ignore the resulting messsage, or failures to send it.
     """
+    log.info(f"Admin notification: {message}")
     if not settings.webhook_url:
-        log.warning(f"Discord webhook URL not configured, attempted to send: {message}")
+        log.warning("Discord webhook URL not configured")
         return
     async with aiohttp.ClientSession() as session:
         webhook = discord.Webhook.from_url(settings.webhook_url, session=session)
