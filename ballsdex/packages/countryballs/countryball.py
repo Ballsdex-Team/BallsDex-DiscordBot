@@ -299,8 +299,6 @@ class BallSpawnView(View):
             possible_names = (self.name.lower(), *self.model.catch_names.split(";"))
         else:
             possible_names = (self.name.lower(),)
-        if self.model.translations:
-            possible_names += tuple(x.lower() for x in self.model.translations.split(";"))
         cname = text.lower().strip()
         # Remove fancy unicode characters like ’ to replace to '
         cname = cname.replace("\u2019", "'")
