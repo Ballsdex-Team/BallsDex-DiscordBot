@@ -211,6 +211,21 @@
                 }
             }
         },
+        "spawn-chance-range": {
+            "type": "array",
+            "description": "Spawn chance range. Minimum and maximum values in minutes for the spawn manager to determine when the next countryball should spawn (before taking into account activity)",
+            "prefixItems": [
+                {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            ],
+            "items": false
+        }
         "spawn-manager": {
             "$ref": "#/$defs/python-path",
             "description": "Override the default spawn manager with your own implementation. Must be an importable Python path to a SpawnManager class.",
