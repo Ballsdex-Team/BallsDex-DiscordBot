@@ -60,6 +60,8 @@ class Translator(app_commands.Translator):
             .replace("countryball", settings.collectible_name)
             .replace("/balls", f"/{settings.players_group_cog_name}")
             .replace("BallsDex", settings.bot_name)
+            .replace(" ", "-")
+            .lower()
         )
 
 
