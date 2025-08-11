@@ -13,6 +13,7 @@ from ballsdex.core.models import BallInstance, Player, Trade, TradeCooldownPolic
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.sorting import SortingChoices
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
@@ -596,12 +597,14 @@ class TradeViewMenu(Pages):
         interaction: discord.Interaction["BallsDexBot"],
         proposal: List[TradingUser],
         cog: TradeCog,
+        sort: SortingChoices | None = None,
     ):
         self.bot = interaction.client
         source = TradeViewSource(proposal)
         super().__init__(source, interaction=interaction)
         self.add_item(self.select_player_menu)
         self.cog = cog
+        self.sort = sort
 
     def set_options(self, players: List[TradingUser]):
         options: List[discord.SelectOption] = []
@@ -642,6 +645,46 @@ class TradeViewMenu(Pages):
                 f"{trade_player.user} has not added any {settings.plural_collectible_name}.",
                 ephemeral=True,
             )
+        if self.sort == SortingChoices.duplicates:
+            ball_instances = sorted(
+                ball_instances, key=lambda x: x.countryball.country, reverse=True
+            )
+        elif self.sort == SortingChoices.alphabetic:
+            ball_instances = sorted(ball_instances, key=lambda x: x.countryball.country.lower())
+        elif self.sort == SortingChoices.rarity:
+            ball_instances = sorted(
+                ball_instances, key=lambda x: x.countryball.rarity, reverse=True
+            )
+        elif self.sort == SortingChoices.health:
+            ball_instances = sorted(
+                ball_instances, key=lambda x: x.health_bonus + x.ball.health, reverse=True
+            )
+        elif self.sort == SortingChoices.attack:
+            ball_instances = sorted(
+                ball_instances, key=lambda x: x.attack_bonus + x.ball.attack, reverse=True
+            )
+        elif self.sort == SortingChoices.health_bonus:
+            ball_instances = sorted(ball_instances, key=lambda x: x.health_bonus, reverse=True)
+        elif self.sort == SortingChoices.attack_bonus:
+            ball_instances = sorted(ball_instances, key=lambda x: x.attack_bonus, reverse=True)
+        elif self.sort == SortingChoices.total_stats:
+            ball_instances = sorted(
+                ball_instances,
+                key=lambda x: x.attack_bonus + x.health_bonus + x.ball.attack + x.ball.health,
+                reverse=True,
+            )
+        elif self.sort == SortingChoices.stats_bonus:
+            ball_instances = sorted(
+                ball_instances,
+                key=lambda x: x.attack_bonus + x.health_bonus,
+                reverse=True,
+            )
+        elif self.sort == SortingChoices.special:
+            ball_instances = sorted(
+                ball_instances, key=lambda x: x.special_id is not None, reverse=True
+            )
+        elif self.sort == SortingChoices.catch_date:
+            ball_instances = sorted(ball_instances, key=lambda x: x.catch_date, reverse=True)
 
         paginator = CountryballsViewer(interaction, ball_instances)
         await paginator.start()
