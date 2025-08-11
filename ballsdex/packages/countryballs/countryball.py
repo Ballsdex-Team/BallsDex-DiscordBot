@@ -23,6 +23,7 @@ from ballsdex.core.models import (
     balls,
     specials,
 )
+from ballsdex.core.utils.utils import can_mention
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -70,7 +71,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             await interaction.followup.send(
                 slow_message,
                 ephemeral=True,
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                allowed_mentions=await can_mention([player]),
             )
             return
 
@@ -87,12 +88,9 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 collectibles=settings.plural_collectible_name,
                 wrong=wrong_name,
             )
-
             await interaction.followup.send(
                 wrong_message,
-                allowed_mentions=discord.AllowedMentions(
-                    users=player.can_be_mentioned, everyone=False, roles=False
-                ),
+                allowed_mentions=await can_mention([player]),
                 ephemeral=False,
             )
             return

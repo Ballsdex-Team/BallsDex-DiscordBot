@@ -13,6 +13,7 @@ from ballsdex.core.models import BallInstance, Player, Trade, TradeCooldownPolic
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
+from ballsdex.core.utils.utils import can_mention
 from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
@@ -295,7 +296,7 @@ class TradeMenu:
             "is proposing a trade with you!",
             embed=self.embed,
             view=self.current_view,
-            allowed_mentions=discord.AllowedMentions(users=self.trader2.player.can_be_mentioned),
+            allowed_mentions=await can_mention([self.trader2.player]),
         )
         self.task = self.bot.loop.create_task(self.update_message_loop())
 
