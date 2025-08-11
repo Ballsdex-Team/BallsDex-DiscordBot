@@ -133,7 +133,7 @@ class TradeView(View):
 
 class ConfirmView(View):
     def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=60 * 15)
+        super().__init__(timeout=60 * 14 + 55)
         self.trade = trade
         self.cooldown_duration = timedelta(seconds=10)
 
