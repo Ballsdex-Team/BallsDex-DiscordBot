@@ -133,9 +133,17 @@ class TradeView(View):
 
 class ConfirmView(View):
     def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=90)
+        super().__init__(timeout=60 * 15)
         self.trade = trade
         self.cooldown_duration = timedelta(seconds=10)
+
+    async def on_timeout(self):
+        """
+        When the view times out, we cancel the trade.
+        """
+        if self.trade.task:
+            self.trade.task.cancel()
+        await self.trade.cancel("The trade has timed out.")
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         try:
