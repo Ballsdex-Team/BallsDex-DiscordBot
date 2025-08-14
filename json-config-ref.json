@@ -304,7 +304,7 @@
             "description": "Customize the messages sent when attempting to catch a countryball",
             "additionalProperties": false,
             "properties": {
-                "button_label": {
+                "catch_button_label": {
                     "type": "string",
                     "description": "The label displayed on the catch button",
                     "default": "Catch me!"

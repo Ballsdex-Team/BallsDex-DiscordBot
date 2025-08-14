@@ -208,7 +208,11 @@ def read_settings(path: "Path"):
         settings.slow_messages = catch.get("slow_msgs") or [
             "{user} Sorry, this {collectible} was caught already!"
         ]
-        settings.catch_button_label = catch.get("button_label", "Catch me!")
+        # support both new key and legacy key
+        settings.catch_button_label = catch.get(
+            "catch_button_label",
+            catch.get("button_label", "Catch me!"),
+        )
 
     log.info("Settings loaded.")
 
@@ -351,7 +355,7 @@ catch:
   # {collectibles} is collectible plural.
 
   # the label shown on the catch button
-  button_label: "Catch me!"
+  catch_button_label: "Catch me!"
 
   # the message that appears when a user catches a ball 
   caught_msgs:
@@ -503,7 +507,7 @@ catch:
   # {collectibles} is collectible plural.
 
   # the label shown on the catch button
-  button_label: "Catch me!"
+  catch_button_label: "Catch me!"
 
   # the message that appears when a user catches a ball
   caught_msgs:
