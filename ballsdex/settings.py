@@ -208,11 +208,7 @@ def read_settings(path: "Path"):
         settings.slow_messages = catch.get("slow_msgs") or [
             "{user} Sorry, this {collectible} was caught already!"
         ]
-        # support both new key and legacy key
-        settings.catch_button_label = catch.get(
-            "catch_button_label",
-            catch.get("button_label", "Catch me!"),
-        )
+        settings.catch_button_label = catch.get("catch_button_label", "Catch me!")
 
     log.info("Settings loaded.")
 
