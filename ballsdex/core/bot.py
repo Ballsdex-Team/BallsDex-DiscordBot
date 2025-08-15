@@ -55,14 +55,20 @@ class Translator(app_commands.Translator):
     async def translate(
         self, string: locale_str, locale: Locale, context: TranslationContextTypes
     ) -> str | None:
-        return (
-            string.message.replace("countryballs", settings.plural_collectible_name)
+        text = (
+            string.message
+            .replace("countryballs", settings.plural_collectible_name)
             .replace("countryball", settings.collectible_name)
             .replace("/balls", f"/{settings.players_group_cog_name}")
             .replace("BallsDex", settings.bot_name)
-            .replace(" ", "-")
-            .lower()
         )
+        if context.location in (
+            TranslationContextType.command_name,
+            TranslationContextType.subcommand_name,
+        ):
+            text = text.replace(" ", "-").lower()
+
+        return text
 
 
 # observing the duration and status code of HTTP requests through aiohttp TraceConfig
