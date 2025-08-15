@@ -149,6 +149,8 @@ class BallSpawnView(View):
         self.hp_bonus: int | None = None
         self.og_id: int
 
+        self.catch_button.label = settings.catch_button_label
+
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
 

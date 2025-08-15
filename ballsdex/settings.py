@@ -130,6 +130,8 @@ class Settings:
     spawn_messages: list[str] = field(default_factory=list)
     slow_messages: list[str] = field(default_factory=list)
 
+    catch_button_label: str = "Catch me!"
+
 
 settings = Settings()
 
@@ -206,6 +208,7 @@ def read_settings(path: "Path"):
         settings.slow_messages = catch.get("slow_msgs") or [
             "{user} Sorry, this {collectible} was caught already!"
         ]
+        settings.catch_button_label = catch.get("catch_button_label", "Catch me!")
 
     log.info("Settings loaded.")
 
@@ -346,6 +349,9 @@ catch:
   # one each time.
   # {user} is mention. {collectible} is collectible name. {ball} is ball name, and 
   # {collectibles} is collectible plural.
+
+  # the label shown on the catch button
+  catch_button_label: "Catch me!"
 
   # the message that appears when a user catches a ball 
   caught_msgs:
@@ -495,6 +501,9 @@ catch:
   # one each time.
   # {user} is mention. {collectible} is collectible name. {ball} is ball name, and
   # {collectibles} is collectible plural.
+
+  # the label shown on the catch button
+  catch_button_label: "Catch me!"
 
   # the message that appears when a user catches a ball
   caught_msgs:
