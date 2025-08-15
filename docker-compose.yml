@@ -11,8 +11,11 @@ services:
     restart: "no"
     image: ballsdex
     build: .
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - *postgres-url
+      - PROXY_PORT=2080
     depends_on:
       migration:
         condition: service_completed_successfully
@@ -32,7 +35,7 @@ services:
     image: ballsdex
     build: .
     ports:
-      - "8000:8000"
+      - "8411:8000"
     networks:
       - internal
     environment:

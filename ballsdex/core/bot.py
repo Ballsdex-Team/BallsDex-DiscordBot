@@ -298,6 +298,8 @@ class BallsDexBot(commands.AutoShardedBot):
         assert self.user
         log.info(f"Successfully logged in as {self.user} ({self.user.id})!")
 
+        await self.tree.sync()
+
         # set bot owners
         assert self.application
         if self.application.team:

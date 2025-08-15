@@ -333,6 +333,7 @@ def main():
             disable_message_content=cli_flags.disable_message_content,
             disable_time_check=cli_flags.disable_time_check,
             skip_tree_sync=cli_flags.skip_tree_sync,
+            proxy="http://host.docker.internal:"+str(os.environ.get("PROXY_PORT", 2080))
         )
 
         loop.run_until_complete(init_sentry())
