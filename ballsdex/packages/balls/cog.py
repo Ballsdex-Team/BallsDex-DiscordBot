@@ -399,7 +399,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
     async def last(
-        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User | None = None
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User | None = None,
+        filter: FilteringChoices | None = None,
     ):
         """
         Display info of your or another users last caught countryball.
@@ -408,6 +411,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         user: discord.Member
             The user you would like to see
+        filter: FilteringChoices
+            Filter the last caught countryball by a specific filter.
+            Only works if the user has caught at least one countryball.
         """
         user_obj = user if user else interaction.user
         await interaction.response.defer(thinking=True)
@@ -435,8 +441,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
-
-        countryball = await player.balls.all().order_by("-id").first().select_related("ball")
+        await player.fetch_related("balls")
+        query = player.balls.all()
+        filter_msg = ""
+        if filter:
+            filter_msg = f" with the `{filter.value.replace('_', ' ')}` filter"
+            query = filter_balls(filter, query, interaction.guild_id)
+        countryball = await query.order_by("-id").first()
         if not countryball:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
@@ -448,7 +459,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         content, file, view = await countryball.prepare_for_message(interaction)
         if user is not None and user.id != interaction.user.id:
             content = (
-                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}.\n"
+                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}"
+                f"{filter_msg}.\n" + content
+            )
+        else:
+            content = (
+                f"You are viewing your last caught {settings.collectible_name}{filter_msg}.\n"
                 + content
             )
         await interaction.followup.send(content=content, file=file, view=view)
