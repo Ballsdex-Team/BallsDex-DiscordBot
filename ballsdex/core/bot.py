@@ -15,7 +15,11 @@ import discord.gateway
 from aiohttp import ClientTimeout
 from cachetools import TTLCache
 from discord import app_commands
-from discord.app_commands.translator import TranslationContextTypes, locale_str
+from discord.app_commands.translator import (
+    TranslationContextLocation,
+    TranslationContextTypes,
+    locale_str,
+)
 from discord.enums import Locale
 from discord.ext import commands
 from prometheus_client import Histogram
@@ -55,12 +59,19 @@ class Translator(app_commands.Translator):
     async def translate(
         self, string: locale_str, locale: Locale, context: TranslationContextTypes
     ) -> str | None:
-        return (
+        text = (
             string.message.replace("countryballs", settings.plural_collectible_name)
             .replace("countryball", settings.collectible_name)
             .replace("/balls", f"/{settings.players_group_cog_name}")
             .replace("BallsDex", settings.bot_name)
         )
+        if context.location in (
+            TranslationContextLocation.command_name,
+            TranslationContextLocation.group_name,
+        ):
+            text = text.replace(" ", "-").lower()
+
+        return text
 
 
 # observing the duration and status code of HTTP requests through aiohttp TraceConfig
