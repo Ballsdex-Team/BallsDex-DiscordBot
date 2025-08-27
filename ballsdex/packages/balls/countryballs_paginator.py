@@ -147,7 +147,7 @@ class DuplicateViewMenu(Pages):
             countries = defaultdict(int)
             for ball in balls:
                 countries[ball.countryball] += 1
-            desc = "**Countries**: (Top 15)\n"
+            desc = f"**{settings.plural_collectible_name}**: (Top 15)\n"
             for country, count in sorted(countries.items(), key=lambda x: x[1], reverse=True)[:15]:
                 emoji = self.bot.get_emoji(country.emoji_id)
                 desc += f"{emoji} {country}: {count:,}\n"
