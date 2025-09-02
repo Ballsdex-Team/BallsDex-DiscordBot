@@ -717,7 +717,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
-        await player.fetch_related("balls")
         is_special = type == DuplicateType.specials
         queryset = BallInstance.filter(player=player)
 
