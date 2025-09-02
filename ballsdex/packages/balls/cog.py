@@ -180,13 +180,13 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
 
-        query = BallInstance.filter(player__id=player.pk).prefetch_related("ball", "special")
+        query = BallInstance.filter(player=player).prefetch_related("ball", "special")
         if filter:
             query = filter_balls(filter, query, interaction.guild_id)
         if countryball:
-            query = query.filter(ball__id=countryball.pk)
+            query = query.filter(ball=countryball)
         if special:
-            query = query.filter(special__id=special.pk)
+            query = query.filter(special=special)
         if sort:
             countryballs = await sort_balls(sort, query)
         else:
@@ -279,7 +279,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         # Set of ball IDs owned by the player
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
         if special:
-            filters["special__id"] = special.pk
+            filters["special"] = special
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
@@ -676,9 +676,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         assert interaction.guild
         filters = {}
         if countryball:
-            filters["ball__id"] = countryball.pk
+            filters["ball"] = countryball
         if special:
-            filters["special__id"] = special.pk
+            filters["special"] = special
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
@@ -719,7 +719,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
         await player.fetch_related("balls")
         is_special = type == DuplicateType.specials
-        queryset = BallInstance.filter(player__id=player.pk)
+        queryset = BallInstance.filter(player=player)
 
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
@@ -820,14 +820,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         queryset = BallInstance.filter(ball__enabled=True).distinct()
         if special:
-            queryset = queryset.filter(special__id=special.pk)
+            queryset = queryset.filter(special=special)
         user1_balls = cast(
             list[int],
-            await queryset.filter(player__id=player1.pk).values_list("ball_id", flat=True),
+            await queryset.filter(player=player1).values_list("ball_id", flat=True),
         )
         user2_balls = cast(
             list[int],
-            await queryset.filter(player__id=player2.pk).values_list("ball_id", flat=True),
+            await queryset.filter(player=player2).values_list("ball_id", flat=True),
         )
         both = set(user1_balls) & set(user2_balls)
         user1_only = set(user1_balls) - set(user2_balls)
@@ -901,11 +901,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer(thinking=True, ephemeral=ephemeral)
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
-        query = BallInstance.filter(player__id=player.pk).prefetch_related(
+        query = BallInstance.filter(player=player).prefetch_related(
             "player", "trade_player", "special"
         )
         if countryball:
-            query = query.filter(ball__id=countryball.pk)
+            query = query.filter(ball=countryball)
         balls = await query
 
         if not balls:
