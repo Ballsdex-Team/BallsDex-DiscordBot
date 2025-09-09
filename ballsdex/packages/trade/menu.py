@@ -644,5 +644,5 @@ class TradeViewMenu(Pages):
                 ephemeral=True,
             )
 
-        paginator = CountryballsViewer(interaction, ball_instances)
+        paginator = CountryballsViewer(interaction, [x.pk for x in ball_instances])
         await paginator.start()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from itertools import batched
+from typing import TYPE_CHECKING, Iterable, List
 
 import discord
 
@@ -14,22 +15,38 @@ if TYPE_CHECKING:
 
 
 class CountryballsSource(menus.ListPageSource):
-    def __init__(self, entries: List[BallInstance]):
+    def __init__(self, entries: list[int]):
         super().__init__(entries, per_page=25)
+        self.cache: dict[int, Iterable[BallInstance]] = {}
 
-    async def format_page(self, menu: CountryballsSelector, balls: List[BallInstance]):
+    async def prepare(self):
+        first_entries = (
+            self.entries[: self.per_page * 5]
+            if len(self.entries) > self.per_page * 5
+            else self.entries
+        )
+        balls = await BallInstance.filter(id__in=first_entries)
+        for i, chunk in enumerate(batched(balls, self.per_page)):
+            self.cache[i] = chunk
+
+    async def format_page(self, menu: CountryballsSelector, ball_ids: list[int]):
+        if balls := self.cache.get(menu.current_page):
+            menu.set_options(balls)
+            return True
+        balls = await BallInstance.filter(id__in=ball_ids)
+        self.cache[menu.current_page] = balls
         menu.set_options(balls)
         return True  # signal to edit the page
 
 
 class CountryballsSelector(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[BallInstance]):
+    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: list[int]):
         self.bot = interaction.client
         source = CountryballsSource(balls)
         super().__init__(source, interaction=interaction)
         self.add_item(self.select_ball_menu)
 
-    def set_options(self, balls: List[BallInstance]):
+    def set_options(self, balls: Iterable[BallInstance]):
         options: List[discord.SelectOption] = []
         for ball in balls:
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))

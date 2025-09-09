@@ -188,9 +188,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if special:
             query = query.filter(special=special)
         if sort:
-            countryballs = await sort_balls(sort, query)
+            query = sort_balls(sort, query)
         else:
-            countryballs = await query.order_by("-favorite")
+            query = query.order_by("-favorite")
+        countryballs = cast(list[int], await query.values_list("id", flat=True))
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
