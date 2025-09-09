@@ -268,7 +268,9 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        query = BallInstance.filter(player__discord_id=interaction.user.id)
+        query = BallInstance.filter(player__discord_id=interaction.user.id).exclude(
+            tradeable=False, ball__tradeable=False
+        )
         if countryball:
             query = query.filter(ball=countryball)
         if special:
@@ -277,15 +279,14 @@ class Trade(commands.GroupCog):
             query = sort_balls(sort, query)
         if filter:
             query = filter_balls(filter, query, interaction.guild_id)
-        balls = await query
+        balls = cast(list[int], await query.values_list("id", flat=True))
         if not balls:
             await interaction.followup.send(
                 f"No {settings.plural_collectible_name} found.", ephemeral=True
             )
             return
-        balls = [x for x in balls if x.is_tradeable]
 
-        view = BulkAddView(interaction, balls, self)  # type: ignore
+        view = BulkAddView(interaction, balls, self)
         await view.start(
             content=f"Select the {settings.plural_collectible_name} you want to add "
             "to your proposal, note that the display will wipe on pagination however "

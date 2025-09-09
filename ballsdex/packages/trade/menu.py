@@ -14,7 +14,7 @@ from ballsdex.core.utils import menus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.core.utils.utils import can_mention
-from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
+from ballsdex.packages.balls.countryballs_paginator import CountryballsSource, CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
@@ -420,20 +420,11 @@ class TradeMenu:
         return result
 
 
-class CountryballsSource(menus.ListPageSource):
-    def __init__(self, entries: List[BallInstance]):
-        super().__init__(entries, per_page=25)
-
-    async def format_page(self, menu: CountryballsSelector, balls: List[BallInstance]):
-        menu.set_options(balls)
-        return True  # signal to edit the page
-
-
 class CountryballsSelector(Pages):
     def __init__(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        balls: List[BallInstance],
+        balls: List[int],
         cog: TradeCog,
     ):
         self.bot = interaction.client
