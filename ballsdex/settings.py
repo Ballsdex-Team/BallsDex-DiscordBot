@@ -1,4 +1,5 @@
 import logging
+import sys
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -209,6 +210,11 @@ def read_settings(path: "Path"):
             "{user} Sorry, this {collectible} was caught already!"
         ]
         settings.catch_button_label = catch.get("catch_button_label", "Catch me!")
+
+    # avoids signaling needed migrations
+    if "makemigrations" in sys.argv:
+        settings.collectible_name = "ball"
+        settings.plural_collectible_name = "balls"
 
     log.info("Settings loaded.")
 
