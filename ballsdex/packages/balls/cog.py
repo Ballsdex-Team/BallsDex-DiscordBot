@@ -228,7 +228,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
     async def completion(
         self,
         interaction: discord.Interaction["BallsDexBot"],
@@ -397,7 +397,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         file.close()
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
     async def last(
         self, interaction: discord.Interaction["BallsDexBot"], user: discord.User | None = None
     ):
@@ -698,7 +698,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         )
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
     async def duplicate(
         self,
         interaction: discord.Interaction["BallsDexBot"],
@@ -761,7 +761,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await source.start(content=f"View your duplicate {type.value}.")
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
     async def compare(
         self,
         interaction: discord.Interaction["BallsDexBot"],
