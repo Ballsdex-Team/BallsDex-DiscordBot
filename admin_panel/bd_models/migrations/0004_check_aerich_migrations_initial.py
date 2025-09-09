@@ -3,7 +3,6 @@
 from typing import TYPE_CHECKING
 
 import django.db.models.deletion
-from bd_models.models import Economy, Regime, Special
 from django.db import migrations, models
 
 if TYPE_CHECKING:
@@ -12,6 +11,10 @@ if TYPE_CHECKING:
 
 
 def default_models_forward(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+    Regime = apps.get_model("bd_models", "Regime")
+    Economy = apps.get_model("bd_models", "Economy")
+    Special = apps.get_model("bd_models", "Special")
+
     default_economies = {
         "Capitalist": "capitalist.png",
         "Communist": "communist.png",
@@ -277,8 +280,9 @@ class Migration(migrations.Migration):
                 (
                     "rarity",
                     models.FloatField(
-                        help_text="Value between 0 and 1, chances of using this "
-                        "special background."
+                        help_text=(
+                            "Value between 0 and 1, chances of using this special background."
+                        )
                     ),
                 ),
                 (
@@ -396,8 +400,10 @@ class Migration(migrations.Migration):
                     "catch_names",
                     models.TextField(
                         blank=True,
-                        help_text="Additional possible names for catching this ball, "
-                        "separated by semicolons",
+                        help_text=(
+                            "Additional possible names for catching this ball, "
+                            "separated by semicolons"
+                        ),
                         null=True,
                     ),
                 ),
