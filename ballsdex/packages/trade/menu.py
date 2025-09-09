@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from ballsdex.packages.trade.cog import Trade as TradeCog
 
 log = logging.getLogger("ballsdex.packages.trade.menu")
+TRADE_TIMEOUT = 30
 
 
 class InvalidTradeOperation(Exception):
@@ -32,7 +33,7 @@ class InvalidTradeOperation(Exception):
 
 class TradeView(View):
     def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=60 * 30)
+        super().__init__(timeout=60 * TRADE_TIMEOUT + 1)
         self.trade = trade
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
@@ -133,9 +134,17 @@ class TradeView(View):
 
 class ConfirmView(View):
     def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=90)
+        super().__init__(timeout=60 * 14 + 55)
         self.trade = trade
         self.cooldown_duration = timedelta(seconds=10)
+
+    async def on_timeout(self):
+        """
+        When the view times out, we cancel the trade.
+        """
+        if self.trade.task:
+            self.trade.task.cancel()
+        await self.trade.cancel("The trade has timed out.")
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         try:
@@ -248,7 +257,7 @@ class TradeMenu:
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*This trade will timeout "
-            f"{format_dt(utcnow() + timedelta(minutes=30), style='R')}.*\n\n"
+            f"{format_dt(utcnow() + timedelta(minutes=TRADE_TIMEOUT), style='R')}.*\n\n"
             f"Use the {view_command} command to see the full"
             f" list of {settings.plural_collectible_name}."
         )
@@ -263,13 +272,13 @@ class TradeMenu:
         """
 
         assert self.task
-        start_time = datetime.utcnow()
+        start_time = utcnow()
 
         while True:
             await asyncio.sleep(15)
-            if datetime.utcnow() - start_time > timedelta(minutes=15):
+            if utcnow() - start_time > timedelta(minutes=TRADE_TIMEOUT):
                 self.embed.colour = discord.Colour.dark_red()
-                await self.cancel("The trade timed out")
+                self.bot.loop.create_task(self.cancel("The trade timed out"))
                 return
 
             try:
@@ -282,7 +291,7 @@ class TradeMenu:
                     f"trader1={self.trader1.user.id} trader2={self.trader2.user.id}"
                 )
                 self.embed.colour = discord.Colour.dark_red()
-                await self.cancel("The trade timed out")
+                self.bot.loop.create_task(self.cancel("The trade errored"))
                 return
 
     async def start(self):
