@@ -277,7 +277,6 @@ class TradeMenu:
         while True:
             await asyncio.sleep(15)
             if utcnow() - start_time > timedelta(minutes=TRADE_TIMEOUT):
-                self.embed.colour = discord.Colour.dark_red()
                 self.bot.loop.create_task(self.cancel("The trade timed out"))
                 return
 
@@ -290,7 +289,6 @@ class TradeMenu:
                     f"guild={self.message.guild.id} "  # type: ignore
                     f"trader1={self.trader1.user.id} trader2={self.trader2.user.id}"
                 )
-                self.embed.colour = discord.Colour.dark_red()
                 self.bot.loop.create_task(self.cancel("The trade errored"))
                 return
 
@@ -324,6 +322,7 @@ class TradeMenu:
             item.disabled = True  # type: ignore
 
         fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
+        self.embed.colour = discord.Colour.dark_red()
         self.embed.description = f"**{reason}**"
         if getattr(self, "message", None):
             await self.message.edit(content=None, embed=self.embed, view=self.current_view)
@@ -336,6 +335,9 @@ class TradeMenu:
         if self.trader1.locked and self.trader2.locked:
             if self.task:
                 self.task.cancel()
+            if not self.trader1.proposal and not self.trader2.proposal:
+                await self.cancel("Nothing has been proposed in the trade, it has been cancelled.")
+                return
             self.current_view.stop()
             fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
 
@@ -352,7 +354,6 @@ class TradeMenu:
         Register a user request to cancel the trade
         """
         trader.cancelled = True
-        self.embed.colour = discord.Colour.red()
         await self.cancel()
 
     async def perform_trade(self):
