@@ -1,6 +1,5 @@
 import enum
 import logging
-from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -8,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
+from tortoise.expressions import RawSQL
 from tortoise.functions import Count
 
 from ballsdex.core.models import (
@@ -900,14 +900,28 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer(thinking=True, ephemeral=ephemeral)
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
-        query = BallInstance.filter(player=player).prefetch_related(
-            "player", "trade_player", "special"
+        query = (
+            BallInstance.filter(player=player)
+            .annotate(
+                total=RawSQL("COUNT(*)"),
+                traded=RawSQL("SUM(CASE WHEN trade_player_id IS NULL THEN 0 ELSE 1 END)"),
+                specials=RawSQL("SUM(CASE WHEN special_id IS NULL THEN 0 ELSE 1 END)"),
+            )
+            .group_by("player_id")
+        )
+        specials = (
+            BallInstance.filter(player=player)
+            .exclude(special=None)
+            .annotate(count=Count("id"))
+            .group_by("special__name")
         )
         if countryball:
             query = query.filter(ball=countryball)
-        balls = await query
+            specials = specials.filter(ball=countryball)
+        counts = (await query.values("player_id", "total", "traded", "specials"))[0]
+        specials = await specials.values("special__name", "count")
 
-        if not balls:
+        if not counts["total"]:
             if countryball:
                 await interaction.followup.send(
                     f"You don't have any {countryball.country} "
@@ -919,27 +933,19 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                     f"You don't have any {settings.plural_collectible_name} yet."
                 )
             return
-        total = len(balls)
-        total_traded = len([x for x in balls if x.trade_player])
-        total_caught_self = total - total_traded
-        special_count = len([x for x in balls if x.special])
-        specials = defaultdict(int)
         all_specials = await Special.filter(hidden=False)
         special_emojis = {x.name: x.emoji for x in all_specials}
-        for ball in balls:
-            if ball.special:
-                specials[ball.special] += 1
 
         desc = (
-            f"**Total**: {total:,} ({total_caught_self:,} caught, "
-            f"{total_traded:,} received from trade)\n"
-            f"**Total Specials**: {special_count:,}\n\n"
+            f"**Total**: {counts["total"]:,} ({counts["total"] - counts["traded"]:,} caught, "
+            f"{counts['traded']:,} received from trade)\n"
+            f"**Total Specials**: {counts['specials']:,}\n\n"
         )
-        if specials:
+        if counts["specials"]:
             desc += "**Specials**:\n"
-        for special, count in sorted(specials.items(), key=lambda x: x[1], reverse=True):
-            emoji = special_emojis.get(special.name, "")
-            desc += f"{emoji} {special.name}: {count:,}\n"
+        for special in sorted(specials, key=lambda x: x["count"], reverse=True):
+            emoji = special_emojis.get(special["special__name"], "")
+            desc += f"{emoji} {special['special__name']}: {special["count"]:,}\n"
 
         embed = discord.Embed(
             title=f"Collection of {countryball.country}" if countryball else "Total Collection",
