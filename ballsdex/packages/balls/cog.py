@@ -919,10 +919,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if countryball:
             query = query.filter(ball=countryball)
             specials = specials.filter(ball=countryball)
-        counts = (await query.values("player_id", "total", "traded", "specials"))[0]
+        counts_list = await query.values("player_id", "total", "traded", "specials")
         specials = await specials.values("special__name", "count")
 
-        if not counts["total"]:
+        if not counts_list:
             if countryball:
                 await interaction.followup.send(
                     f"You don't have any {countryball.country} "
@@ -934,6 +934,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                     f"You don't have any {settings.plural_collectible_name} yet."
                 )
             return
+        counts = counts_list[0]
         all_specials = await Special.filter(hidden=False)
         special_emojis = {x.name: x.emoji for x in all_specials}
 

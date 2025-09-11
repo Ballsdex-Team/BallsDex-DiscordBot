@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from itertools import batched
-from typing import TYPE_CHECKING, Iterable, List
+from typing import TYPE_CHECKING, AsyncIterator, List
 
 import discord
 
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
 class CountryballsSource(menus.ListPageSource):
     def __init__(self, entries: list[int]):
         super().__init__(entries, per_page=25)
-        self.cache: dict[int, Iterable[BallInstance]] = {}
+        self.cache: dict[int, BallInstance] = {}
 
     async def prepare(self):
         first_entries = (
@@ -26,16 +25,20 @@ class CountryballsSource(menus.ListPageSource):
             else self.entries
         )
         balls = await BallInstance.filter(id__in=first_entries)
-        for i, chunk in enumerate(batched(balls, self.per_page)):
-            self.cache[i] = chunk
+        for ball in balls:
+            self.cache[ball.pk] = ball
+
+    async def fetch_page(self, ball_ids: list[int]) -> AsyncIterator[BallInstance]:
+        if ball_ids[0] not in self.cache:
+            async for ball in BallInstance.filter(id__in=ball_ids):
+                self.cache[ball.pk] = ball
+                yield ball
+        else:
+            for id in ball_ids:
+                yield self.cache[id]
 
     async def format_page(self, menu: CountryballsSelector, ball_ids: list[int]):
-        if balls := self.cache.get(menu.current_page):
-            menu.set_options(balls)
-            return True
-        balls = await BallInstance.filter(id__in=ball_ids)
-        self.cache[menu.current_page] = balls
-        menu.set_options(balls)
+        await menu.set_options(self.fetch_page(ball_ids))
         return True  # signal to edit the page
 
 
@@ -46,9 +49,9 @@ class CountryballsSelector(Pages):
         super().__init__(source, interaction=interaction)
         self.add_item(self.select_ball_menu)
 
-    def set_options(self, balls: Iterable[BallInstance]):
+    async def set_options(self, balls: AsyncIterator[BallInstance]):
         options: List[discord.SelectOption] = []
-        for ball in balls:
+        async for ball in balls:
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
             special = ball.special_emoji(self.bot, True)

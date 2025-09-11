@@ -26,7 +26,7 @@ class SortingChoices(enum.Enum):
     health_bonus = "-health_bonus"
     attack_bonus = "-attack_bonus"
     stats_bonus = "stats"
-    total_stats = "total_stats"
+    # total_stats = "total_stats"
     duplicates = "duplicates"
 
 
@@ -65,14 +65,14 @@ def sort_balls(
         return queryset.annotate(
             **{f"{sort.value}_sort": F(f"{sort.value}_bonus") + F(f"ball__{sort.value}")}
         ).order_by(f"-{sort.value}_sort")
-    elif sort == SortingChoices.total_stats:
-        return (
-            queryset.select_related("ball")
-            .annotate(
-                stats=RawSQL("ballinstance__ball.health + " "ballinstance__ball.attack :: BIGINT")
-            )
-            .order_by("-stats")
-        )
+    # elif sort == SortingChoices.total_stats:
+    #     return (
+    #         queryset.select_related("ball")
+    #         .annotate(
+    #             stats=RawSQL("ballinstance__ball.health + ballinstance__ball.attack :: BIGINT")
+    #         )
+    #         .order_by("-stats")
+    #     )
     elif sort == SortingChoices.rarity:
         return queryset.order_by(sort.value, "ball__country")
     else:

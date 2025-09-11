@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, List, Set, cast
+from typing import TYPE_CHECKING, AsyncIterator, List, Set, cast
 
 import discord
 from discord.ui import Button, View, button
@@ -448,9 +448,9 @@ class CountryballsSelector(Pages):
         self.balls_selected: Set[BallInstance] = set()
         self.cog = cog
 
-    def set_options(self, balls: List[BallInstance]):
+    async def set_options(self, balls: AsyncIterator[BallInstance]):
         options: List[discord.SelectOption] = []
-        for ball in balls:
+        async for ball in balls:
             if ball.is_tradeable is False:
                 continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
