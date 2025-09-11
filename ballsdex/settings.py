@@ -101,8 +101,10 @@ class Settings:
     root_role_ids: list[int] = field(default_factory=list)
     admin_role_ids: list[int] = field(default_factory=list)
 
-    log_channel: int | None = None
-
+    # log_channel: int | None = None
+    webhook_url = "https://discord.com/api/webhooks/your_webhook_url_here"
+    
+    
     team_owners: bool = False
     co_owners: list[int] = field(default_factory=list)
 
