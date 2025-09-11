@@ -354,7 +354,6 @@ class Dev(commands.Cog):
                 ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1
             )
             return
-        t2 = time.time()
 
         func = env["func"]
         result = None
@@ -362,8 +361,10 @@ class Dev(commands.Cog):
             with redirect_stdout(stdout):
                 result = await func()
         except Exception:
+            t2 = time.time()
             printed = "{}{}".format(stdout.getvalue(), traceback.format_exc())
         else:
+            t2 = time.time()
             printed = stdout.getvalue()
             await ctx.message.add_reaction("✅")
 
