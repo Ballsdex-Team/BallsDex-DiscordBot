@@ -32,10 +32,8 @@ class CountryballsSource(menus.ListPageSource):
         if ball_ids[0] not in self.cache:
             async for ball in BallInstance.filter(id__in=ball_ids):
                 self.cache[ball.pk] = ball
-                yield ball
-        else:
-            for id in ball_ids:
-                yield self.cache[id]
+        for id in ball_ids:
+            yield self.cache[id]
 
     async def format_page(self, menu: CountryballsSelector, ball_ids: list[int]):
         await menu.set_options(self.fetch_page(ball_ids))
