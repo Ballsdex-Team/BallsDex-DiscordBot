@@ -36,7 +36,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     name = TextInput(
         label=f"Name of this {settings.collectible_name}",
         style=discord.TextStyle.short,
-        placeholder="Your guess",
+        placeholder="Your answer",
     )
 
     def __init__(self, view: BallSpawnView):
@@ -164,7 +164,7 @@ class BallSpawnView(View):
         if self.ballinstance and not self.caught:
             await self.ballinstance.unlock()
 
-    @button(style=discord.ButtonStyle.primary, label="Catch me!")
+    @button(style=discord.ButtonStyle.primary, label="Catch me :3")
     async def catch_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         if self.caught:
             await interaction.response.send_message("I was caught already!", ephemeral=True)
