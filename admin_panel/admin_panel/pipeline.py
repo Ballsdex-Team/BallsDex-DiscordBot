@@ -157,7 +157,7 @@ async def configure_status(
         # check if user owns the application, or is part of the team and team members are co owners
         async with session.get("applications/@me") as resp:
             info = await resp.json()
-            if info["owner"]["id"] == uid:
+            if info["owner"]["id"] == uid or (info["team"] and info["team"]["owner_user_id"] == uid):
                 await assign_status(request, response, user, Status.OWNER)
                 return
             if settings.team_owners and info["team"] and uid in (x["user"]["id"] for x in info["team"]["members"]):

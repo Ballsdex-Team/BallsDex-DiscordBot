@@ -1,4 +1,5 @@
 import logging
+import sys
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -60,6 +61,8 @@ class Settings:
         List of roles that have partial access to the /admin command (only blacklist and guilds)
     packages: list[str]
         List of packages the bot will load upon startup
+    spawn_chance_range: tuple[int, int] = (40, 55)
+        default spawn range
     spawn_manager: str
         Python path to a class implementing `BaseSpawnManager`, handling cooldowns and anti-cheat
     webhook_url: str | None
@@ -84,6 +87,7 @@ class Settings:
     max_favorites: int = 50
     max_attack_bonus: int = 20
     max_health_bonus: int = 20
+    show_rarity: bool = False
 
     # /about
     about_description: str = ""
@@ -109,6 +113,7 @@ class Settings:
     prometheus_host: str = "0.0.0.0"
     prometheus_port: int = 15260
 
+    spawn_chance_range: tuple[int, int] = (40, 55)
     spawn_manager: str = "ballsdex.packages.countryballs.spawn.SpawnManager"
 
     # django admin panel
@@ -126,6 +131,8 @@ class Settings:
     spawn_messages: list[str] = field(default_factory=list)
     slow_messages: list[str] = field(default_factory=list)
 
+    catch_button_label: str = "Catch me!"
+
 
 settings = Settings()
 
@@ -140,11 +147,12 @@ def read_settings(path: "Path"):
     settings.team_owners = content.get("owners", {}).get("team-members-are-owners", False)
     settings.co_owners = content.get("owners", {}).get("co-owners", [])
 
-    settings.collectible_name = content["collectible-name"]
-    settings.plural_collectible_name = content.get("plural-collectible-name", content["collectible-name"] + "s")
+    settings.collectible_name = content["collectible-name"].lower()
+    settings.plural_collectible_name = content.get("plural-collectible-name", content["collectible-name"] + "s").lower()
     settings.bot_name = content["bot-name"]
-    settings.players_group_cog_name = content["players-group-cog-name"]
+    settings.players_group_cog_name = content["players-group-cog-name"].lower()
     settings.favorited_collectible_emoji = content.get("favorited-collectible-emoji", "❤️")
+    settings.show_rarity = content.get("show-rarity", False)
 
     settings.about_description = content["about"]["description"]
     settings.github_link = content["about"]["github-link"]
@@ -176,6 +184,8 @@ def read_settings(path: "Path"):
         "ballsdex.packages.trade",
     ]
 
+    spawn_range = content.get("spawn-chance-range", [40, 55])
+    settings.spawn_chance_range = tuple(spawn_range)
     settings.spawn_manager = content.get("spawn-manager", "ballsdex.packages.countryballs.spawn.SpawnManager")
 
     if admin := content.get("admin-panel"):
@@ -193,6 +203,12 @@ def read_settings(path: "Path"):
         settings.caught_messages = catch.get("caught_msgs") or ["{user} You caught **{ball}**!"]
         settings.wrong_messages = catch.get("wrong_msgs") or ["{user} Wrong name!"]
         settings.slow_messages = catch.get("slow_msgs") or ["{user} Sorry, this {collectible} was caught already!"]
+        settings.catch_button_label = catch.get("catch_button_label", "Catch me!")
+
+    # avoids signaling needed migrations
+    if "makemigrations" in sys.argv:
+        settings.collectible_name = "ball"
+        settings.plural_collectible_name = "balls"
 
     log.info("Settings loaded.")
 
@@ -313,7 +329,12 @@ packages:
 prometheus:
   enabled: false
   host: "0.0.0.0"
-  port: 15260
+  port: 15260 
+
+# spawn chance range
+# with the default spawn manager, this is *approximately* the min/max number of minutes
+# until spawning a countryball, before processing activity
+spawn-chance-range: [40, 55] 
 
 spawn-manager: ballsdex.packages.countryballs.spawn.SpawnManager
 
@@ -328,6 +349,9 @@ catch:
   # one each time.
   # {user} is mention. {collectible} is collectible name. {ball} is ball name, and 
   # {collectibles} is collectible plural.
+
+  # the label shown on the catch button
+  catch_button_label: "Catch me!"
 
   # the message that appears when a user catches a ball 
   caught_msgs:
@@ -362,6 +386,7 @@ def update_settings(path: "Path"):
     add_max_health = "max-health-bonus" not in content
     add_plural_collectible = "plural-collectible-name" not in content
     add_packages = "packages:" not in content
+    add_spawn_chance_range = "spawn-chance-range" not in content
     add_spawn_manager = "spawn-manager" not in content
     add_django = "Admin panel related settings" not in content
     add_sentry = "sentry:" not in content
@@ -427,6 +452,13 @@ packages:
   - ballsdex.packages.trade
 """
 
+    if add_spawn_chance_range:
+        content += """
+# spawn chance range
+# with the default spawn manager, this is *approximately* the min/max number of minutes
+# until spawning a countryball, before processing activity
+spawn-chance-range: [40, 55]
+"""
     if add_spawn_manager:
         content += """
 # define a custom spawn manager implementation
@@ -470,6 +502,9 @@ catch:
   # {user} is mention. {collectible} is collectible name. {ball} is ball name, and
   # {collectibles} is collectible plural.
 
+  # the label shown on the catch button
+  catch_button_label: "Catch me!"
+
   # the message that appears when a user catches a ball
   caught_msgs:
     - "{user} You caught **{ball}**!"
@@ -500,6 +535,7 @@ catch:
             add_max_health,
             add_plural_collectible,
             add_packages,
+            add_spawn_chance_range,
             add_spawn_manager,
             add_django,
             add_sentry,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, List, Set, cast
+from typing import TYPE_CHECKING, AsyncIterator, List, Set, cast
 
 import discord
 from discord.ui import Button, View, button
@@ -12,7 +12,8 @@ from discord.utils import format_dt, utcnow
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages
-from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer
+from ballsdex.core.utils.utils import can_mention
+from ballsdex.packages.balls.countryballs_paginator import CountryballsSource, CountryballsViewer
 from ballsdex.packages.trade.display import fill_trade_embed_fields
 from ballsdex.packages.trade.trade_user import TradingUser
 from ballsdex.settings import settings
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
     from ballsdex.packages.trade.cog import Trade as TradeCog
 
 log = logging.getLogger("ballsdex.packages.trade.menu")
+TRADE_TIMEOUT = 30
 
 
 class InvalidTradeOperation(Exception):
@@ -32,7 +34,7 @@ class InvalidTradeOperation(Exception):
 
 class TradeView(View):
     def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=60 * 30)
+        super().__init__(timeout=60 * TRADE_TIMEOUT + 1)
         self.trade = trade
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
@@ -118,9 +120,17 @@ class TradeView(View):
 
 class ConfirmView(View):
     def __init__(self, trade: TradeMenu):
-        super().__init__(timeout=90)
+        super().__init__(timeout=60 * 14 + 55)
         self.trade = trade
         self.cooldown_duration = timedelta(seconds=10)
+
+    async def on_timeout(self):
+        """
+        When the view times out, we cancel the trade.
+        """
+        if self.trade.task:
+            self.trade.task.cancel()
+        await self.trade.cancel("The trade has timed out.")
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         try:
@@ -148,10 +158,10 @@ class ConfirmView(View):
                     ephemeral=True,
                 )
                 return
+        await interaction.response.defer(ephemeral=True, thinking=True)
         if trader.accepted:
             await interaction.response.send_message("You have already accepted this trade.", ephemeral=True)
             return
-        await interaction.response.defer(ephemeral=True, thinking=True)
         result = await self.trade.confirm(trader)
         if self.trade.trader1.accepted and self.trade.trader2.accepted:
             if result:
@@ -216,7 +226,7 @@ class TradeMenu:
             "Once you're finished, click the lock button below to confirm your proposal.\n"
             "You can also lock with nothing if you're receiving a gift.\n\n"
             "*This trade will timeout "
-            f"{format_dt(utcnow() + timedelta(minutes=30), style='R')}.*\n\n"
+            f"{format_dt(utcnow() + timedelta(minutes=TRADE_TIMEOUT), style='R')}.*\n\n"
             f"Use the {view_command} command to see the full"
             f" list of {settings.plural_collectible_name}."
         )
@@ -230,13 +240,12 @@ class TradeMenu:
         """
 
         assert self.task
-        start_time = datetime.utcnow()
+        start_time = utcnow()
 
         while True:
             await asyncio.sleep(15)
-            if datetime.utcnow() - start_time > timedelta(minutes=15):
-                self.embed.colour = discord.Colour.dark_red()
-                await self.cancel("The trade timed out")
+            if utcnow() - start_time > timedelta(minutes=TRADE_TIMEOUT):
+                self.bot.loop.create_task(self.cancel("The trade timed out"))
                 return
 
             try:
@@ -248,8 +257,7 @@ class TradeMenu:
                     f"guild={self.message.guild.id} "  # type: ignore
                     f"trader1={self.trader1.user.id} trader2={self.trader2.user.id}"
                 )
-                self.embed.colour = discord.Colour.dark_red()
-                await self.cancel("The trade timed out")
+                self.bot.loop.create_task(self.cancel("The trade errored"))
                 return
 
     async def start(self):
@@ -262,7 +270,7 @@ class TradeMenu:
             content=f"Hey {self.trader2.user.mention}, {self.trader1.user.name} is proposing a trade with you!",
             embed=self.embed,
             view=self.current_view,
-            allowed_mentions=discord.AllowedMentions(users=self.trader2.player.can_be_mentioned),
+            allowed_mentions=await can_mention([self.trader2.player]),
         )
         self.task = self.bot.loop.create_task(self.update_message_loop())
 
@@ -281,6 +289,7 @@ class TradeMenu:
             item.disabled = True  # type: ignore
 
         fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
+        self.embed.colour = discord.Colour.dark_red()
         self.embed.description = f"**{reason}**"
         if getattr(self, "message", None):
             await self.message.edit(content=None, embed=self.embed, view=self.current_view)
@@ -293,6 +302,9 @@ class TradeMenu:
         if self.trader1.locked and self.trader2.locked:
             if self.task:
                 self.task.cancel()
+            if not self.trader1.proposal and not self.trader2.proposal:
+                await self.cancel("Nothing has been proposed in the trade, it has been cancelled.")
+                return
             self.current_view.stop()
             fill_trade_embed_fields(self.embed, self.bot, self.trader1, self.trader2)
 
@@ -307,7 +319,6 @@ class TradeMenu:
         Register a user request to cancel the trade
         """
         trader.cancelled = True
-        self.embed.colour = discord.Colour.red()
         await self.cancel()
 
     async def perform_trade(self):
@@ -384,17 +395,8 @@ class TradeMenu:
         return result
 
 
-class CountryballsSource(menus.ListPageSource):
-    def __init__(self, entries: List[BallInstance]):
-        super().__init__(entries, per_page=25)
-
-    async def format_page(self, menu: CountryballsSelector, balls: List[BallInstance]):
-        menu.set_options(balls)
-        return True  # signal to edit the page
-
-
 class CountryballsSelector(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[BallInstance], cog: TradeCog):
+    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[int], cog: TradeCog):
         self.bot = interaction.client
         self.interaction = interaction
         source = CountryballsSource(balls)
@@ -406,9 +408,9 @@ class CountryballsSelector(Pages):
         self.balls_selected: Set[BallInstance] = set()
         self.cog = cog
 
-    def set_options(self, balls: List[BallInstance]):
+    async def set_options(self, balls: AsyncIterator[BallInstance]):
         options: List[discord.SelectOption] = []
-        for ball in balls:
+        async for ball in balls:
             if ball.is_tradeable is False:
                 continue
             emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
@@ -570,5 +572,5 @@ class TradeViewMenu(Pages):
                 f"{trade_player.user} has not added any {settings.plural_collectible_name}.", ephemeral=True
             )
 
-        paginator = CountryballsViewer(interaction, ball_instances)
+        paginator = CountryballsViewer(interaction, [x.pk for x in ball_instances])
         await paginator.start()

@@ -12,6 +12,7 @@ from discord.ui import Button, Modal, TextInput, View, button
 from django.utils import timezone
 
 from ballsdex.core.metrics import caught_balls
+from ballsdex.core.utils.utils import can_mention
 from ballsdex.settings import settings
 from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls, specials
 
@@ -54,9 +55,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 collectibles=settings.plural_collectible_name,
             )
 
-            await interaction.followup.send(
-                slow_message, ephemeral=True, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned)
-            )
+            await interaction.followup.send(slow_message, ephemeral=True, allowed_mentions=await can_mention([player]))
             return
 
         if not self.view.is_name_valid(self.name.value):
@@ -72,9 +71,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 collectibles=settings.plural_collectible_name,
                 wrong=wrong_name,
             )
-
             await interaction.followup.send(
-                wrong_message, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned), ephemeral=False
+                wrong_message, allowed_mentions=await can_mention([player]), ephemeral=False
             )
             return
 
@@ -128,6 +126,9 @@ class BallSpawnView(View):
         self.special: Special | None = None
         self.atk_bonus: int | None = None
         self.hp_bonus: int | None = None
+        self.og_id: int
+
+        self.catch_button.label = settings.catch_button_label
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
@@ -166,6 +167,7 @@ class BallSpawnView(View):
 
         view = cls(bot, ball_instance.ball)
         view.ballinstance = ball_instance
+        view.og_id = ball_instance.player.discord_id
         return view
 
     @classmethod
@@ -244,9 +246,9 @@ class BallSpawnView(View):
                 )
                 return True
             else:
-                log.error("Missing permission to spawn ball in channel %s.", channel)
+                log.warning("Missing permission to spawn ball in channel %s.", channel)
         except discord.Forbidden:
-            log.error(f"Missing permission to spawn ball in channel {channel}.")
+            log.warning(f"Missing permission to spawn ball in channel {channel}.")
         except discord.HTTPException:
             log.error("Failed to spawn ball", exc_info=True)
         return False
@@ -270,8 +272,6 @@ class BallSpawnView(View):
             possible_names = (self.name.lower(), *self.model.catch_names.split(";"))
         else:
             possible_names = (self.name.lower(),)
-        if self.model.translations:
-            possible_names += tuple(x.lower() for x in self.model.translations.split(";"))
         cname = text.lower().strip()
         # Remove fancy unicode characters like ’ to replace to '
         cname = cname.replace("\u2019", "'")
@@ -392,6 +392,8 @@ class BallSpawnView(View):
             text += f"*{ball.specialcard.catch_phrase}*\n"
         if new_ball:
             text += f"This is a **new {settings.collectible_name}** that has been added to your completion!"
+        if self.ballinstance:
+            text += f"This {settings.collectible_name} was dropped by <@{self.og_id}>\n"
 
         caught_message = (
             random.choice(settings.caught_messages).format(

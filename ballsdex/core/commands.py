@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import discord
@@ -8,7 +9,7 @@ from discord.ext import commands
 from django.db import connection
 
 from ballsdex.core.dev import pagify, send_interactive
-from ballsdex.settings import settings
+from ballsdex.settings import read_settings, settings
 from bd_models.models import Ball
 
 log = logging.getLogger("ballsdex.core.commands")
@@ -84,6 +85,16 @@ class Core(commands.Cog):
             log.error(f"Failed to reload extension {package}", exc_info=True)
         else:
             await ctx.send("Extension reloaded.")
+
+    @commands.command()
+    @commands.is_owner()
+    async def reloadconf(self, ctx: commands.Context):
+        """
+        Reload the config file
+        """
+
+        read_settings(Path("./config.yml"))
+        await ctx.message.reply("Config values have been updated. Some changes may require a restart.")
 
     @commands.command()
     @commands.is_owner()

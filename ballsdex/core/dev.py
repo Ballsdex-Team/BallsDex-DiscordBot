@@ -10,11 +10,13 @@ import traceback
 from contextlib import redirect_stdout
 from copy import copy
 from io import BytesIO
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Any, Iterable
 
 import aiohttp
 import discord
+import psycopg
 from discord.ext import commands
+from django.db import connection
 
 from ballsdex.core.utils.formatting import pagify
 from bd_models import models
@@ -48,6 +50,10 @@ https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/core/dev_c
 https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/core/utils/chat_formatting.py
 https://github.com/Rapptz/RoboDanny/blob/master/cogs/repl.py
 """
+
+
+def format_duration(time_taken: float) -> str:
+    return f"{round(time_taken * 1000)}ms" if time_taken < 1 else f"{round(time_taken, 3)}s"
 
 
 def box(text: str, lang: str = "") -> str:
@@ -115,8 +121,7 @@ async def send_interactive(
         else:
             text = page
         if time_taken and idx == len(messages):
-            time = f"{round(time_taken * 1000)}ms" if time_taken < 1 else f"{round(time_taken, 3)}s"
-            text += f"\n-# Took {time}"
+            text += f"\n-# Took {format_duration(time_taken)}"
         msg = await ctx.channel.send(text)
         ret.append(msg)
         n_remaining = len(messages) - idx
@@ -155,7 +160,7 @@ async def send_interactive(
     return ret
 
 
-START_CODE_BLOCK_RE = re.compile(r"^((```py(thon)?)(?=\s)|(```))")
+START_CODE_BLOCK_RE = re.compile(r"^((```(py(thon)?)|sql)(?=\s)|(```))")
 
 
 class Dev(commands.Cog):
@@ -339,7 +344,6 @@ class Dev(commands.Cog):
             t2 = time.time()
             await send_interactive(ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1)
             return
-        t2 = time.time()
 
         func = env["func"]
         result = None
@@ -347,8 +351,10 @@ class Dev(commands.Cog):
             with redirect_stdout(stdout):
                 result = await func()
         except Exception:
+            t2 = time.time()
             printed = "{}{}".format(stdout.getvalue(), traceback.format_exc())
         else:
+            t2 = time.time()
             printed = stdout.getvalue()
             await ctx.message.add_reaction("✅")
 
@@ -360,6 +366,60 @@ class Dev(commands.Cog):
         msg = self.sanitize_output(ctx, msg)
 
         await send_interactive(ctx, self.get_pages(msg), time_taken=t2 - t1)
+
+    @commands.command()
+    @commands.is_owner()
+    async def dbeval(self, ctx: commands.Context, *, content: str):
+        """
+        Execute the given SQL query and return the result.
+        """
+        body = self.cleanup_code(content)
+
+        # To achieve a proper psql prompt, we want to use "COPY" and send the output, without processing it.
+        # However, we have two problems
+        # - Django ORM doesn't expose COPY methods, so we need to get the low-end psycopg cursor
+        # - The query must be made async, but Django still uses the synchronous API of psycopg
+        # For that reason, we will just instanciate our own async psycopg connection
+        #
+        # Sources:
+        # https://www.psycopg.org/psycopg3/docs/advanced/async.html#async
+        # https://www.psycopg.org/psycopg3/docs/basic/copy.html
+
+        # get the connection parameters from django
+        db_params: dict[str, Any] = connection.get_connection_params()
+        # remove django's custom objects
+        db_params.pop("cursor_factory", None)
+        db_params.pop("context", None)
+
+        t1 = time.time()
+        try:
+            async with await psycopg.AsyncConnection.connect(**db_params) as conn:
+                async with conn.cursor() as cursor:
+                    try:
+                        async with cursor.copy(f"COPY ({body}) TO STDOUT HEADER") as copy:  # pyright: ignore[reportArgumentType]
+                            buffer = BytesIO()
+                            # it's important to iterate the query to avoid unfinished commands
+                            async for row in copy:
+                                buffer.write(row)
+                            buffer.seek(0)
+                    except psycopg.errors.FeatureNotSupported:
+                        # the command is not a SELECT and does not have a RETURNING instruction
+                        # in that case, we just execute the query and return the status (number of rows affected)
+                        await conn.rollback()  # required to avoid InFailedSqlTransaction error
+                        await cursor.execute(body)  # pyright: ignore[reportArgumentType]
+                        t2 = time.time()
+                        time_taken = format_duration(t2 - t1)
+                        await ctx.send(f"```sql\n{cursor.statusmessage}\n```\n-# Took {time_taken}")
+                        return
+            t2 = time.time()
+        except psycopg.errors.Error as e:
+            t2 = time.time()
+            await send_interactive(ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1)
+            raise e
+        time_taken = format_duration(t2 - t1)
+        # always send the result as a file to allow horizontal scrolling in Discord
+        # using a code block creates wrapping, which looks horrible on psql output
+        await ctx.send(f"-# Took {time_taken}", file=discord.File(buffer, filename="output.txt"))
 
     @commands.command()
     @commands.is_owner()

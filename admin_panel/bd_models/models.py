@@ -352,14 +352,6 @@ class BallInstance(models.Model):
             models.Index(fields=("special_id",)),
         )
 
-    def __getattribute__(self, name: str) -> Any:
-        if name == "ball":
-            balls = cast(list[Ball], cache.get_or_set("balls", Ball.objects.all(), timeout=30))
-            for ball in balls:
-                if ball.pk == self.ball_id:
-                    return ball
-        return super().__getattribute__(name)
-
     def short_description(self, *, is_trade: bool = False) -> str:
         """
         Return a short string representation. Similar to str(x) without arguments.
