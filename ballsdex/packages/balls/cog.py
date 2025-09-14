@@ -886,6 +886,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         countryball: BallEnabledTransform | None = None,
+        user: discord.User | None = None,
         ephemeral: bool = False,
     ):
         """
@@ -895,11 +896,38 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         countryball: Ball
             The countryball you want to see the collection of
+        user: discord.User
+            The user whose collection you want to view, if not yours.
         ephemeral: bool
             Whether or not to send the command ephemerally.
         """
+        user_obj = user or interaction.user
         await interaction.response.defer(thinking=True, ephemeral=ephemeral)
-        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        
+        if user is not None:
+            try:
+                player = await Player.get(discord_id=user_obj.id)
+            except DoesNotExist:
+                await interaction.followup.send(
+                    f"{user_obj.name} doesn't have any "
+                    f"{settings.plural_collectible_name} yet."
+                )
+                return
+
+            interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+
+            blocked = await player.is_blocked(interaction_player)
+            if blocked and not is_staff(interaction):
+                await interaction.followup.send(
+                    "You cannot view the collection of a user that has blocked you.",
+                    ephemeral=True,
+                )
+                return
+
+            if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
+                return
+        else:
+            player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
         query = (
             BallInstance.filter(player=player)
@@ -955,7 +983,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             color=discord.Color.blurple(),
         )
         embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
+            name=user_obj.display_name, icon_url=user_obj.display_avatar.url
         )
         if countryball:
             emoji = self.bot.get_emoji(countryball.emoji_id)
