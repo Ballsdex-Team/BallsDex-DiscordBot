@@ -125,6 +125,12 @@ if "startbot" in sys.argv:
 
 DATABASES = {"default": dj_database_url.config("BALLSDEXBOT_DB_URL")}
 
+# Enable connection pooling with a max size larger that default
+# This allows multiple concurrent connections to be made and divide the load
+DATABASES["default"]["OPTIONS"]["pool"] = {  # pyright: ignore[reportTypedDictNotRequiredAccess]
+    "max_size": 20
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
