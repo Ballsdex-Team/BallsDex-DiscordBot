@@ -148,7 +148,9 @@ class BallsDexBot(commands.AutoShardedBot):
             guilds=True,
             guild_messages=True,
             emojis_and_stickers=True,
-            message_content=not disable_message_content,
+            message_content=True,
+            members=True,  # needed for fetching guild members
+            presences=True,  # needed for status based economy boosts
         )
         if disable_message_content:
             log.warning("Message content disabled, this will make spam detection harder")
