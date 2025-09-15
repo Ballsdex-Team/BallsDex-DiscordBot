@@ -11,7 +11,7 @@ You can invite the official bot [here](https://discord.com/oauth2/authorize?clie
 
 > You can find the server of our official Minerdex bot here:
 > 
-> [![Discord server](https://discord.com/api/guilds/1405512069465374730/widget.json)](https://discord.gg/P3pyCW4Ree)
+> [![Discord server](https://discord.com/api/guilds/1405512069465374730/embed.png?style=banner3)](https://discord.gg/P3pyCW4Ree)
 
 ## Suggestions, issues and bug reports
 
