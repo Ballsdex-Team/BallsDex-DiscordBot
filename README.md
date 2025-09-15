@@ -1,8 +1,6 @@
 # BallsDex Discord Bot
 
-[![Discord server](https://img.shields.io/discord/1049118743101452329?color=7489d5&logo=discord&logoColor=ffffff)](https://discord.gg/Qn2Rkdkxwc)
-[![Pre-commit](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/laggron42/BallsDex-DiscordBot/actions/workflows/pre-commit.yml)
-[![Issues](https://img.shields.io/github/issues/laggron42/BallsDex-DiscordBot)](https://github.com/laggron42/BallsDex-DiscordBot/issues)
+[![Discord server](https://img.shields.io/discord/1049118743101452329?color=7489d5&logo=discord&logoColor=ffffff)](https://discord.gg/P3pyCW4Ree)
 [![discord.py](https://img.shields.io/badge/discord-py-blue.svg)](https://github.com/Rapptz/discord.py)
 [![Black coding style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![Patreon](https://img.shields.io/badge/Patreon-donate-orange.svg)](https://patreon.com/retke)
