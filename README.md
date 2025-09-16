@@ -1,26 +1,21 @@
-# Minerdex Discord Bot
+# MinerDex Discord Bot
 
-[![Discord server](https://img.shields.io/discord/1405512069465374730?color=7489d5&logo=discord&logoColor=ffffff)](https://discord.gg/P3pyCW4Ree)
-[![discord.py](https://img.shields.io/badge/discord-py-blue.svg)](https://github.com/Rapptz/discord.py)
+> [!NOTE]
+> This README and most of the things are not modified yet. The purpose of this repo is only to open source the bot that we are using, with its modifications, so any bugs or issues related to the bot itself should go to [Laggron's repo](https://github.com/laggron42/BallsDex-Discordbot/). Our modifications _should_ work on your machine, even it's not intended to work eveywhere.
 
-Minerdex is a bot for collecting Minecraft mobs on Discord and exchange them with your friends!
+# BallsDex Discord Bot
 
-You can invite the official bot [here](https://discord.com/oauth2/authorize?client_id=1404108193520418836).
+[![Discord server](https://img.shields.io/discord/1405512069465374730?color=7489d5&logo=discord&logoColor=ffffff)](https://discord.gg/tEyn42WJRQ)
 
-## Discord server
+Minerdex is a bot for collecting Minecraft entities on Discord and exchange them with your friends!
 
-> You can find the server of our official Minerdex bot here:
-> 
-> [![Discord server](https://discord.com/api/guilds/1405512069465374730/embed.png?style=banner3)](https://discord.gg/P3pyCW4Ree)
+## Suggestions, issues and bug reports
 
-## Documentation
-
-Since Minerdex is a fork of Ballsdex you can find useful informations about it in [here](https://github.com/laggron42/BallsDex-Discordbot)
+Any bugs, suggestions or issues about the bot itself can be raised by creating an issue on [Laggron's repo](https://github.com/laggron42/BallsDex-Discordbot/)
 
 ## Notice
 
-Minerdex is not affiliated or endorsed by __**Mojang**__ or __**Minecraft**__.
-
+If you appreciate Laggron work, you can support him on his [Patreon](https://patreon.com/retke)!
 
 ## License
 
