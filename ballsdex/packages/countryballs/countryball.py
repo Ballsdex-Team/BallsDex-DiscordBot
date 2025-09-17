@@ -273,9 +273,9 @@ class BallSpawnView(View):
                 )
                 return True
             else:
-                log.error("Missing permission to spawn ball in channel %s.", channel)
+                log.warning("Missing permission to spawn ball in channel %s.", channel)
         except discord.Forbidden:
-            log.error(f"Missing permission to spawn ball in channel {channel}.")
+            log.warning(f"Missing permission to spawn ball in channel {channel}.")
         except discord.HTTPException:
             log.error("Failed to spawn ball", exc_info=True)
         return False

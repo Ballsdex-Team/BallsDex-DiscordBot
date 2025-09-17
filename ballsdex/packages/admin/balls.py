@@ -647,3 +647,4 @@ class Balls(app_commands.Group):
                 f"{health=} {attack=} {rarity=} {enabled=} {tradeable=} emoji={emoji}",
                 files=files,
             )
+            log.info(f'{interaction.user} has created the {settings.collectible_name} "{name}"')
