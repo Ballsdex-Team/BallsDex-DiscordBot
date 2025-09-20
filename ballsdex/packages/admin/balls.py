@@ -560,18 +560,18 @@ class Balls(app_commands.Group):
         *,
         name: app_commands.Range[str, None, 48],
         regime: RegimeTransform,
+        economy: EconomyTransform,
         health: int,
         attack: int,
         emoji_id: app_commands.Range[str, 17, 21],
         capacity_name: app_commands.Range[str, None, 64],
         capacity_description: app_commands.Range[str, None, 256],
+        wild_card: discord.Attachment,
         collection_card: discord.Attachment,
         image_credits: str,
-        economy: EconomyTransform | None = None,
         rarity: float = 0.0,
         enabled: bool = False,
         tradeable: bool = False,
-        wild_card: discord.Attachment | None = None,
     ):
         """
         Shortcut command for creating countryballs. They are disabled by default.
@@ -580,13 +580,14 @@ class Balls(app_commands.Group):
         ----------
         name: str
         regime: Regime
-        economy: Economy | None
+        economy: Economy
         health: int
         attack: int
         emoji_id: str
             An emoji ID, the bot will check if it can access the custom emote
         capacity_name: str
         capacity_description: str
+        wild_card: discord.Attachment
         collection_card: discord.Attachment
         image_credits: str
         rarity: float
@@ -595,10 +596,11 @@ class Balls(app_commands.Group):
             If true, the countryball can spawn and will show up in global completion
         tradeable: bool
             If false, all instances are untradeable
-        wild_card: discord.Attachment
-            Artwork used to spawn the countryball, with a default
         """
-        if regime is None or interaction.response.is_done():  # economy autocomplete failed
+        if regime is None or interaction.response.is_done():  # regime autocomplete failed
+            return
+
+        if economy is None or interaction.response.is_done():  # economy autocomplete failed
             return
 
         if not emoji_id.isnumeric():
@@ -614,15 +616,6 @@ class Balls(app_commands.Group):
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        default_path = Path("./ballsdex/core/image_generator/src/default.png")
-        missing_default = ""
-        if not wild_card and not default_path.exists():
-            missing_default = (
-                "**Warning:** The default spawn image is not set. This will result in errors when "
-                f"attempting to spawn this {settings.collectible_name}. You can edit this on the "
-                "web panel or add an image at `./ballsdex/core/image_generator/src/default.png`.\n"
-            )
-
         try:
             collection_card_path = await save_file(collection_card)
         except Exception as e:
@@ -634,7 +627,7 @@ class Balls(app_commands.Group):
             )
             return
         try:
-            wild_card_path = await save_file(wild_card) if wild_card else default_path
+            wild_card_path = await save_file(wild_card)
         except Exception as e:
             log.exception("Failed saving file when creating countryball", exc_info=True)
             await interaction.followup.send(
@@ -669,9 +662,7 @@ class Balls(app_commands.Group):
                 "The full error is in the bot logs."
             )
         else:
-            files = [await collection_card.to_file()]
-            if wild_card:
-                files.append(await wild_card.to_file())
+            files = [await collection_card.to_file(), await wild_card.to_file()]
             await interaction.client.load_cache()
             admin_url = (
                 f"[View online](<{settings.admin_url}/bd_models/ball/{ball.pk}/change/>)\n"
@@ -681,8 +672,7 @@ class Balls(app_commands.Group):
             await interaction.followup.send(
                 f"Successfully created a {settings.collectible_name} with ID {ball.pk}! "
                 f"The internal cache was reloaded.\n{admin_url}"
-                f"{missing_default}\n"
-                f"{name=} regime={regime.name} economy={economy.name if economy else None} "
+                f"{name=} regime={regime.name} economy={economy.name} "
                 f"{health=} {attack=} {rarity=} {enabled=} {tradeable=} emoji={emoji}",
                 files=files,
             )
