@@ -672,6 +672,7 @@ class Balls(app_commands.Group):
             await interaction.followup.send(
                 f"Successfully created a {settings.collectible_name} with ID {ball.pk}! "
                 f"The internal cache was reloaded.\n{admin_url}"
+                "\n"
                 f"{name=} regime={regime.name} economy={economy.name} "
                 f"{health=} {attack=} {rarity=} {enabled=} {tradeable=} emoji={emoji}",
                 files=files,
