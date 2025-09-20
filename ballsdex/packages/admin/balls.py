@@ -521,7 +521,7 @@ class Balls(app_commands.Group):
         *,
         name: app_commands.Range[str, None, 48],
         regime: RegimeTransform,
-        economy: EconomyTransform,
+        economy: EconomyTransform | None = None,
         health: int,
         attack: int,
         emoji_id: app_commands.Range[str, 17, 21],
@@ -541,7 +541,7 @@ class Balls(app_commands.Group):
         ----------
         name: str
         regime: Regime
-        economy: Economy
+        economy: Economy | None
         health: int
         attack: int
         emoji_id: str
@@ -559,9 +559,6 @@ class Balls(app_commands.Group):
             If false, all instances are untradeable
         """
         if regime is None or interaction.response.is_done():  # regime autocomplete failed
-            return
-
-        if economy is None or interaction.response.is_done():  # economy autocomplete failed
             return
 
         if not emoji_id.isnumeric():
@@ -634,7 +631,7 @@ class Balls(app_commands.Group):
                 f"Successfully created a {settings.collectible_name} with ID {ball.pk}! "
                 f"The internal cache was reloaded.\n{admin_url}"
                 "\n"
-                f"{name=} regime={regime.name} economy={economy.name} "
+                f"{name=} regime={regime.name} economy={economy.name if economy else None} "
                 f"{health=} {attack=} {rarity=} {enabled=} {tradeable=} emoji={emoji}",
                 files=files,
             )
