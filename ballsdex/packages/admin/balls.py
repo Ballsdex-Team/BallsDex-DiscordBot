@@ -560,7 +560,7 @@ class Balls(app_commands.Group):
         *,
         name: app_commands.Range[str, None, 48],
         regime: RegimeTransform,
-        economy: EconomyTransform | None = None,
+
         health: int,
         attack: int,
         emoji_id: app_commands.Range[str, 17, 21],
@@ -569,6 +569,7 @@ class Balls(app_commands.Group):
         wild_card: discord.Attachment,
         collection_card: discord.Attachment,
         image_credits: str,
+        economy: EconomyTransform | None = None,
         rarity: float = 0.0,
         enabled: bool = False,
         tradeable: bool = False,
