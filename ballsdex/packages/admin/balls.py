@@ -670,7 +670,7 @@ class Balls(app_commands.Group):
                 "The full error is in the bot logs."
             )
         else:
-            files = [await wild_card.to_file(),await collection_card.to_file()]
+            files = [await wild_card.to_file(), await collection_card.to_file()]
             await interaction.client.load_cache()
             admin_url = (
                 f"[View online](<{settings.admin_url}/bd_models/ball/{ball.pk}/change/>)\n"
