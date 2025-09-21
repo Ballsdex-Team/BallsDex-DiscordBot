@@ -594,6 +594,7 @@ class Balls(app_commands.Group):
         wild_card: discord.Attachment
             Artwork used when a countryball spawns
         collection_card: discord.Attachment
+            Artwork used when viewing a countryball
         image_credits: str
             Author of the artwork
         rarity: float
