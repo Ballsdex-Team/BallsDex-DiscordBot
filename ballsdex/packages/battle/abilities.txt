@@ -1,0 +1,7 @@
+0. Ball Name - Ability Name - Ability Description - Logic (What it's supposed to do)
+4. Missing Ball - The only missing! - Missing ball can make the opponent's ball disappear for 5 turns from the Battlefield. (Usable twice) - The opponent's ball disappears (cannot attack and cannot be attacked) for 2 rounds. During this time the opponent cannot perform any actions.
+5. Thaitangle - Black May - Thaitangle can boost its attack by 200% for 3 rounds, but if the targeted ball does not die, then it dies immediately. - Attack stats are doubled for 3 rounds, but if the opposing ball does not die, then Thaitangle dies immediately.
+6. Mauritangle - Tangle Time!!! - Mauritangle can make the opponents dance to the tango for 5 rounds, decreasing their attack by 33% - The opposing ball loses 33% of their attack stat for 5 rounds
+7. Random Ball - Randomizer! - When Random ball gets killed, it chooses a random ball from the opponent's deck and uses it's attack and hp. (Usable once) - When this ball dies, it gets a second life using stats from a random ball in the opponent's deck.
+10. Arctic Ocean - Ice Berg Crash! - Arctic ocean can use its icebergs to stun the opponent for 2 turns and deal 420 damage. (Usable twice)	- Opposing balls gets stunned for two turns and takes 420 damage, usable twice, ability cannot be used if the ball is currently stunned.
+11. Antarctic Empire - Brothers made of Snow and Ice! - When Arctic Ocean is in your deck, both gain 300 stats - If arctic ocean is in the deck, both arctic ocean and Antarctic empire gain 300 in both stats.

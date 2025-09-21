@@ -1,0 +1,3 @@
+-- upgrade --
+ALTER TABLE "player" ADD COLUMN IF NOT EXISTS "coins" INT NOT NULL DEFAULT 0;
+ALTER TABLE "player" DROP COLUMN IF EXISTS "coins";
