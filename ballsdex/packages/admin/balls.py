@@ -575,11 +575,12 @@ class Balls(app_commands.Group):
         tradeable: bool = False,
     ):
         """
-        Shortcut command for creating countryballs. They are disabled by default.
+        Admin command for creating countryballs. They are disabled by default.
 
         Parameters
         ----------
         name: str
+            Name to be used for this countryball
         regime: Regime
         economy: Economy | None
         health: int
@@ -587,10 +588,14 @@ class Balls(app_commands.Group):
         emoji_id: str
             An emoji ID, the bot will check if it can access the custom emote
         capacity_name: str
+            Title of the countryball capacity
         capacity_description: str
+            Description of the countryball capacity
         wild_card: discord.Attachment
+            Artwork used when a countryball spawns
         collection_card: discord.Attachment
         image_credits: str
+            Author of the artwork
         rarity: float
             Value defining the rarity of this countryball, if enabled
         enabled: bool
