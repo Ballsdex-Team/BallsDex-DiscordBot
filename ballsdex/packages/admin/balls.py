@@ -582,9 +582,13 @@ class Balls(app_commands.Group):
         name: str
             Name to be used for this countryball
         regime: Regime
+            Regime to be used for this countryball
         economy: Economy | None
+            Economy to be used for this countryball
         health: int
+            Health to be used for this countryball
         attack: int
+            Attack to be used for this countryball
         emoji_id: str
             An emoji ID, the bot will check if it can access the custom emote
         capacity_name: str
@@ -621,7 +625,7 @@ class Balls(app_commands.Group):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         try:
-            collection_card_path = await save_file(collection_card)
+            wild_card_path = await save_file(wild_card)
         except Exception as e:
             log.exception("Failed saving file when creating countryball", exc_info=True)
             await interaction.followup.send(
@@ -631,7 +635,7 @@ class Balls(app_commands.Group):
             )
             return
         try:
-            wild_card_path = await save_file(wild_card)
+            collection_card_path = await save_file(collection_card)
         except Exception as e:
             log.exception("Failed saving file when creating countryball", exc_info=True)
             await interaction.followup.send(
@@ -666,7 +670,7 @@ class Balls(app_commands.Group):
                 "The full error is in the bot logs."
             )
         else:
-            files = [await collection_card.to_file(), await wild_card.to_file()]
+            files = [await wild_card.to_file(),await collection_card.to_file()]
             await interaction.client.load_cache()
             admin_url = (
                 f"[View online](<{settings.admin_url}/bd_models/ball/{ball.pk}/change/>)\n"
