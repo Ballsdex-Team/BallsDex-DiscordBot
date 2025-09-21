@@ -7,7 +7,6 @@ from discord.utils import format_dt
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.models import BallInstance, GuildConfig, Player
-from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.enums import (
     DONATION_POLICY_MAP,
     FRIEND_POLICY_MAP,
