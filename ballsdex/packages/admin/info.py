@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 import discord
 from discord import app_commands
@@ -15,6 +16,7 @@ from ballsdex.core.utils.enums import (
 from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
 from ballsdex.settings import settings
 
+log = logging.getLogger("ballsdex.packages.admin.info")
 
 class Info(app_commands.Group):
     """
@@ -98,6 +100,7 @@ class Info(app_commands.Group):
         if guild.icon:
             embed.set_thumbnail(url=guild.icon.url)
         await interaction.followup.send(embed=embed, ephemeral=True)
+        log.info(f'{interaction.user} has viewed info for guild {guild.id}')
 
     @app_commands.command()
     async def user(
@@ -168,3 +171,4 @@ class Info(app_commands.Group):
         )
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
         await interaction.followup.send(embed=embed, ephemeral=True)
+        log.info(f'{interaction.user} has viewed info for user {user.id}')
