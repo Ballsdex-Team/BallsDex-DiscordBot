@@ -6,4 +6,5 @@ config.yml
 ballsdex.log*
 venv
 .venv
+.python-version
 __pycache__
