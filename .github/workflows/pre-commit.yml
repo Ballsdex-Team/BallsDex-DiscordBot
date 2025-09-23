@@ -22,14 +22,5 @@ jobs:
           python-version-file: pyproject.toml
       - name: Install dependencies
         run: uv sync --locked --all-extras --dev && echo "$PWD/.venv/bin" >> $GITHUB_PATH
-      - name: Check linter
-        run: flake8 --format=default
-      - name: Check formatter
-        run: uv run black --check --diff $(git ls-files "*.py")
-        # keep going even if previous failed
-        if: '!cancelled()'
-      - name: Check pyright
-        if: '!cancelled()'
-        uses: jakebailey/pyright-action@v2
-        with:
-          version: PATH
+      - name: Run pre-commit checks
+        run: uv run pre-commit run -a
