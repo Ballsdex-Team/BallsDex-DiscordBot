@@ -33,10 +33,10 @@ COPY --from=ghcr.io/astral-sh/uv:0.7.3 /uv /uvx /bin/
 COPY uv.lock pyproject.toml /code/
 RUN --mount=type=cache,target=/root/.cache/ \
     uv venv $VIRTUAL_ENV && \
-    uv sync --locked --no-install-project
+    uv sync --locked --no-install-project --active
 COPY . /code/
 RUN --mount=type=cache,target=/root/.cache/ \
-    uv sync --locked
+    uv sync --locked --active
 
 FROM base AS production
 COPY --from=builder-base /opt/venv /opt/venv

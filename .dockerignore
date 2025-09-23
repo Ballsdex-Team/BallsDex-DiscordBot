@@ -6,9 +6,5 @@ config.yml
 ballsdex.log*
 venv
 .venv
-<<<<<<< HEAD
-__pycache__
-=======
 .python-version
 __pycache__
->>>>>>> 9716cd3 (docker: use ruff)
