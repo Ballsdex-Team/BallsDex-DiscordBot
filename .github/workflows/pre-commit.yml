@@ -23,9 +23,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --all-extras --dev && echo "$PWD/.venv/bin" >> $GITHUB_PATH
       - name: Check linter
-        run: ruff check --output-format=github
+        run: flake8 --format=default
       - name: Check formatter
-        run: ruff format --check --diff
+        run: uv run black --check --diff $(git ls-files "*.py")
         # keep going even if previous failed
         if: '!cancelled()'
       - name: Check pyright
