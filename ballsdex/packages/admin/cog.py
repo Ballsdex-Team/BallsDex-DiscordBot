@@ -20,6 +20,7 @@ from .logs import Logs as LogsGroup
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
+    from ballsdex.packages.trade.cog import Trade
 
 
 @app_commands.guilds(*settings.admin_guild_ids)
@@ -90,6 +91,46 @@ class Admin(commands.GroupCog):
             activity = discord.Activity(name=name or state, state=state, type=activity_type)
         await self.bot.change_presence(status=status, activity=activity)
         await interaction.response.send_message("Status updated.", ephemeral=True)
+
+    @app_commands.command()
+    @app_commands.checks.has_any_role(*settings.root_role_ids)
+    async def trade_lockdown(
+        self, interaction: discord.Interaction["BallsDexBot"], *, reason: str
+    ):
+        """
+        Cancel all ongoing trades and lock down further trades from being started.
+
+        Parameters
+        ----------
+        reason: str
+            The reason of the lockdown. This will be displayed to all trading users.
+        """
+        cog = cast("Trade | None", self.bot.get_cog("Trade"))
+        if not cog:
+            await interaction.response.send_message("The trade cog is not loaded.", ephemeral=True)
+            return
+
+        await interaction.response.defer(thinking=True)
+        result = await cog.cancel_all_trades(reason)
+
+        assert self.bot.user
+        prefix = (
+            settings.prefix if self.bot.intents.message_content else f"{self.bot.user.mention} "
+        )
+
+        if not result:
+            await interaction.followup.send(
+                "All trades were successfully cancelled, and further trades cannot be started "
+                f'anymore.\nTo enable trades again, the bot owner must use the "{prefix}reload '
+                'trade" command.'
+            )
+        else:
+            await interaction.followup.send(
+                "Lockdown mode enabled, trades can no longer be started. "
+                f"While cancelling ongoing trades, {len(result)} failed to cancel, check your "
+                "logs for info.\nTo enable trades again, the bot owner must use the "
+                f'"{prefix}reload trade" command.'
+            )
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
