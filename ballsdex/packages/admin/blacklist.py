@@ -62,7 +62,6 @@ class Blacklist(app_commands.Group):
             await log_action(
                 f"{interaction.user} blacklisted {user} ({user.id})"
                 f" for the following reason: {reason}.",
-                interaction.client,
             )
 
     @app_commands.command(name="remove")
@@ -103,7 +102,6 @@ class Blacklist(app_commands.Group):
             await log_action(
                 f"{interaction.user} removed blacklist for user {user} ({user.id})."
                 f"\nReason: {reason}",
-                interaction.client,
             )
 
     @app_commands.command(name="info")
@@ -242,7 +240,6 @@ class BlacklistGuild(app_commands.Group):
             await log_action(
                 f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
                 f"for the following reason: {reason}.",
-                interaction.client,
             )
 
     @app_commands.command(name="remove")
@@ -299,7 +296,6 @@ class BlacklistGuild(app_commands.Group):
             await log_action(
                 f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).\n"
                 f"Reason: {reason}",
-                interaction.client,
             )
 
     @app_commands.command(name="info")

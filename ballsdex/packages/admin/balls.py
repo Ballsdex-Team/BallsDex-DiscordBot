@@ -179,7 +179,6 @@ class Balls(app_commands.Group):
                 f"{interaction.user} spawned {settings.collectible_name}"
                 f" {countryball or 'random'} {n} times in {channel or interaction.channel}"
                 + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
-                interaction.client,
             )
 
             return
@@ -202,7 +201,6 @@ class Balls(app_commands.Group):
                 f"{interaction.user} spawned {settings.collectible_name} {ball.name} "
                 f"in {channel or interaction.channel}"
                 + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
-                interaction.client,
             )
 
     @app_commands.command()
@@ -259,7 +257,6 @@ class Balls(app_commands.Group):
             f"{interaction.user} gave {settings.collectible_name} "
             f"{countryball.country} to {user}. (Special={special.name if special else None} "
             f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
-            interaction.client,
         )
 
     @app_commands.command(name="info")
@@ -316,7 +313,7 @@ class Balls(app_commands.Group):
             f"**Traded:** {ball.trade_player}\n{admin_url}",
             ephemeral=True,
         )
-        await log_action(f"{interaction.user} got info for {ball}({ball.pk}).", interaction.client)
+        await log_action(f"{interaction.user} got info for {ball}({ball.pk}).")
 
     @app_commands.command(name="delete")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -349,7 +346,7 @@ class Balls(app_commands.Group):
         await interaction.response.send_message(
             f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True
         )
-        await log_action(f"{interaction.user} deleted {ball}({ball.pk}).", interaction.client)
+        await log_action(f"{interaction.user} deleted {ball}({ball.pk}).")
 
     @app_commands.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -396,7 +393,6 @@ class Balls(app_commands.Group):
         )
         await log_action(
             f"{interaction.user} transferred {ball}({ball.pk}) from {original_player} to {user}.",
-            interaction.client,
         )
 
     @app_commands.command(name="reset")
@@ -465,7 +461,6 @@ class Balls(app_commands.Group):
         await log_action(
             f"{interaction.user} deleted {percentage or 100}% of "
             f"{player}'s {settings.plural_collectible_name}.",
-            interaction.client,
         )
 
     @app_commands.command(name="count")
