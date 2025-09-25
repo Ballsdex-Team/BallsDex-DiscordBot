@@ -63,7 +63,7 @@ class Blacklist(app_commands.Group):
             await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
             log.info(
                 f"{interaction.user} blacklisted {user} ({user.id})"
-                f" for the following reason: {reason}.",
+                f" for the following reason: {reason}."
             )
 
     @app_commands.command(name="remove")
@@ -103,7 +103,7 @@ class Blacklist(app_commands.Group):
             )
             log.info(
                 f"{interaction.user} removed blacklist for user {user} ({user.id})."
-                f"\nReason: {reason}",
+                f"\nReason: {reason}"
             )
 
     @app_commands.command(name="info")
@@ -241,7 +241,7 @@ class BlacklistGuild(app_commands.Group):
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
             log.info(
                 f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
-                f"for the following reason: {reason}.",
+                f"for the following reason: {reason}."
             )
 
     @app_commands.command(name="remove")
@@ -297,7 +297,7 @@ class BlacklistGuild(app_commands.Group):
             )
             log.info(
                 f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).\n"
-                f"Reason: {reason}",
+                f"Reason: {reason}"
             )
 
     @app_commands.command(name="info")

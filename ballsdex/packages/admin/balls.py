@@ -178,7 +178,7 @@ class Balls(app_commands.Group):
             log.info(
                 f"{interaction.user} spawned {settings.collectible_name}"
                 f" {countryball or 'random'} {n} times in {channel or interaction.channel}"
-                + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
+                + (f" ({", ".join(special_attrs)})." if special_attrs else ".")
             )
 
             return
@@ -200,7 +200,7 @@ class Balls(app_commands.Group):
             log.info(
                 f"{interaction.user} spawned {settings.collectible_name} {ball.name} "
                 f"in {channel or interaction.channel}"
-                + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
+                + (f" ({", ".join(special_attrs)})." if special_attrs else ".")
             )
 
     @app_commands.command()
@@ -256,7 +256,7 @@ class Balls(app_commands.Group):
         log.info(
             f"{interaction.user} gave {settings.collectible_name} "
             f"{countryball.country} to {user}. (Special={special.name if special else None} "
-            f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
+            f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d})."
         )
 
     @app_commands.command(name="info")
@@ -392,7 +392,7 @@ class Balls(app_commands.Group):
             ephemeral=True,
         )
         log.info(
-            f"{interaction.user} transferred {ball}({ball.pk}) from {original_player} to {user}.",
+            f"{interaction.user} transferred {ball}({ball.pk}) from {original_player} to {user}."
         )
 
     @app_commands.command(name="reset")
@@ -460,7 +460,7 @@ class Balls(app_commands.Group):
         )
         log.info(
             f"{interaction.user} deleted {percentage or 100}% of "
-            f"{player}'s {settings.plural_collectible_name}.",
+            f"{player}'s {settings.plural_collectible_name}."
         )
 
     @app_commands.command(name="count")
