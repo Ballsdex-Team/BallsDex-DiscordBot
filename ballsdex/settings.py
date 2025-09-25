@@ -304,6 +304,7 @@ admin-panel:
     # to enable Discord OAuth2 login, fill this
     # client ID of the Discord application (not the bot's user ID)
     client-id: 
+
     # client secret of the Discord application (this is not the bot token)
     client-secret: 
 
