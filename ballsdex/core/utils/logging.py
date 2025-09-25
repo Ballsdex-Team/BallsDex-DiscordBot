@@ -7,12 +7,11 @@ import discord
 from ballsdex.settings import settings
 
 log = logging.getLogger("ballsdex.core.utils.logging")
-log.setLevel(logging.INFO)
 
 
-class WebhookLogger(logging.Handler):
+class WebhookLoggingHandler(logging.Handler):
     """
-    Logs messages via Discord webhooks.
+    Allows messages to be logged to a Discord webhook.
     """
 
     def __init__(self, webhook: str):
@@ -24,9 +23,8 @@ class WebhookLogger(logging.Handler):
     async def send_to_webhook(self, message: str):
         try:
             await self.webhook.send(message)
-        except Exception as error:
-            print("Failed to send message to webhook")
-            print(error)
+        except Exception:
+            log.error("Failed to send message to webhook", exc_info=True)
 
     def emit(self, record):
         try:
@@ -38,36 +36,18 @@ class WebhookLogger(logging.Handler):
         asyncio.create_task(self.session.close())
 
 
-def init_logger():
+def webhook_logger(name: str | None = None) -> logging.Logger:
     """
-    Initiates a new `WebhookLogger` and adds it as a handler if `settings.webhook_url` is not None.
+    Creates a new logger and automatically adds `WebhookLoggingHandler` as a handler.
     """
-    if not settings.webhook_url:
-        return
+    new_logger = logging.getLogger(name)
 
-    webhook_logger: WebhookLogger | None = None
+    if not settings.webhook_url:
+        return new_logger
 
     try:
-        webhook_logger = WebhookLogger(settings.webhook_url)
+        new_logger.addHandler(WebhookLoggingHandler(settings.webhook_url))
     except Exception:
-        log.error("An error occured while trying to initialize `WebhookLogger`", exc_info=True)
-        return
+        log.warning("Failed to add `WebhookLoggingHandler` handler", exc_info=True)
 
-    log.addHandler(webhook_logger)
-
-
-async def log_action(message: str):
-    """
-    Logs an action through the `webhook_url` setting.
-    Automatically logs the action to the console if webhook logging is not supported.
-
-    Parameters
-    ----------
-    message: str
-        The message you want to log.
-    """
-    log.propagate = len(log.handlers) == 0
-    log.info(message)
-
-
-init_logger()
+    return new_logger

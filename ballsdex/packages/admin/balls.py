@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import random
 import re
 from pathlib import Path
@@ -13,7 +12,7 @@ from tortoise.exceptions import BaseORMException, DoesNotExist
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.logging import log_action
+from ballsdex.core.utils.logging import webhook_logger
 from ballsdex.core.utils.transformers import (
     BallTransform,
     EconomyTransform,
@@ -26,7 +25,8 @@ if TYPE_CHECKING:
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
     from ballsdex.packages.countryballs.countryball import BallSpawnView
 
-log = logging.getLogger("ballsdex.packages.admin.balls")
+log = webhook_logger("ballsdex.packages.admin.balls")
+
 FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
 
 
@@ -175,7 +175,7 @@ class Balls(app_commands.Group):
                 atk_bonus,
                 hp_bonus,
             )
-            await log_action(
+            log.info(
                 f"{interaction.user} spawned {settings.collectible_name}"
                 f" {countryball or 'random'} {n} times in {channel or interaction.channel}"
                 + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
@@ -197,7 +197,7 @@ class Balls(app_commands.Group):
             await interaction.followup.send(
                 f"{settings.collectible_name.title()} spawned.", ephemeral=True
             )
-            await log_action(
+            log.info(
                 f"{interaction.user} spawned {settings.collectible_name} {ball.name} "
                 f"in {channel or interaction.channel}"
                 + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
@@ -253,7 +253,7 @@ class Balls(app_commands.Group):
             f"`{user}`.\nSpecial: `{special.name if special else None}` • ATK: "
             f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
         )
-        await log_action(
+        log.info(
             f"{interaction.user} gave {settings.collectible_name} "
             f"{countryball.country} to {user}. (Special={special.name if special else None} "
             f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
@@ -313,7 +313,7 @@ class Balls(app_commands.Group):
             f"**Traded:** {ball.trade_player}\n{admin_url}",
             ephemeral=True,
         )
-        await log_action(f"{interaction.user} got info for {ball}({ball.pk}).")
+        log.info(f"{interaction.user} got info for {ball}({ball.pk}).")
 
     @app_commands.command(name="delete")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -346,7 +346,7 @@ class Balls(app_commands.Group):
         await interaction.response.send_message(
             f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True
         )
-        await log_action(f"{interaction.user} deleted {ball}({ball.pk}).")
+        log.info(f"{interaction.user} deleted {ball}({ball.pk}).")
 
     @app_commands.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -391,7 +391,7 @@ class Balls(app_commands.Group):
             f"Transfered {ball}({ball.pk}) from {original_player} to {user}.",
             ephemeral=True,
         )
-        await log_action(
+        log.info(
             f"{interaction.user} transferred {ball}({ball.pk}) from {original_player} to {user}.",
         )
 
@@ -458,7 +458,7 @@ class Balls(app_commands.Group):
             f"{count} {settings.plural_collectible_name} from {user} have been deleted.",
             ephemeral=True,
         )
-        await log_action(
+        log.info(
             f"{interaction.user} deleted {percentage or 100}% of "
             f"{player}'s {settings.plural_collectible_name}.",
         )
