@@ -22,7 +22,7 @@ class WebhookLoggingHandler(logging.Handler):
 
     async def send_to_webhook(self, message: str):
         try:
-            await self.webhook.send(message)
+            await self.webhook.send(message, username=f"{settings.bot_name} logging")
         except Exception:
             log.error("Failed to send message to webhook", exc_info=True)
 
