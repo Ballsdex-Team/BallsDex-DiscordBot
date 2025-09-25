@@ -479,7 +479,7 @@ admin-panel:
     # client secret of the Discord application (this is not the bot token)
     client-secret:
 
-    # to get admin notifications from the admin panel, create a Discord webhook and paste the url
+    # to get admin notifications, create a Discord webhook and paste the url
     webhook-url:
 
     # this will provide some hyperlinks to the admin panel when using /admin commands
