@@ -17,14 +17,15 @@ class WebhookLoggingHandler(logging.Handler):
     def __init__(self, webhook: str):
         super().__init__(logging.INFO)
 
-        self.session = aiohttp.ClientSession()
-        self.webhook = discord.Webhook.from_url(webhook, session=self.session)
+        self.webhook = webhook
 
     async def send_to_webhook(self, message: str):
-        try:
-            await self.webhook.send(message, username=f"{settings.bot_name} logging")
-        except Exception:
-            log.error("Failed to send message to webhook", exc_info=True)
+        async with aiohttp.ClientSession() as session:
+            try:
+                webhook = discord.Webhook.from_url(self.webhook, session=session)
+                await webhook.send(message, username=f"{settings.bot_name} logging")
+            except Exception:
+                log.error("Failed to send message to webhook", exc_info=True)
 
     def emit(self, record):
         try:
@@ -32,22 +33,24 @@ class WebhookLoggingHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
-    def close(self):
-        asyncio.create_task(self.session.close())
 
-
-def webhook_logger(name: str | None = None) -> logging.Logger:
+def webhook_logger(name: str | None = None, webhook_url: str | None = None) -> logging.Logger:
     """
-    Creates a new logger and automatically adds `WebhookLoggingHandler` as a handler.
+    Returns a logger with a `WebhookLoggingHandler` handler.
+
+    Parameters
+    ----------
+    name: str | None
+        The name of the logger.
+    webhook_url: str | None
+        The webhook URL you want to log to. Defaults to `settings.webhook_url`.
     """
     new_logger = logging.getLogger(name)
 
-    if not settings.webhook_url:
-        return new_logger
+    if webhook_url is None:
+        webhook_url = settings.webhook_url
 
-    try:
-        new_logger.addHandler(WebhookLoggingHandler(settings.webhook_url))
-    except Exception:
-        log.warning("Failed to add `WebhookLoggingHandler` handler", exc_info=True)
+    if webhook_url is not None:
+        new_logger.addHandler(WebhookLoggingHandler(webhook_url))
 
     return new_logger
