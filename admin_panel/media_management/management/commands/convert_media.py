@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -7,6 +8,7 @@ from django.db import transaction
 
 DEFAULT_MEDIA_PATH: str = "./media/"
 DEFAULT_TARGET_FORMAT = "webp"
+CONVERTABLE_FORMATS = [".jpeg", ".png", ".jpg", ".bmp", ".gif", ".webp", ".avif"]
 
 
 class Command(BaseCommand):
@@ -68,6 +70,16 @@ class Command(BaseCommand):
             if file.suffix == target_format:
                 continue
 
+            if file.suffix not in CONVERTABLE_FORMATS:
+                self.stdout.write(
+                    self.style.WARNING(
+                        (
+                            f"Skipping converting {file.name} since it does "
+                            "not appear to be an image format"
+                        )
+                    )
+                )
+
             target = file.with_suffix(target_format)
 
             if target.exists():
@@ -79,13 +91,23 @@ class Command(BaseCommand):
 
         self.stdout.write("")
         if not options["yes"] and not media_manager.boolean_input(
-            f"Convert {len(to_convert)} files? This will not erase existing files.", default=True
+            f"Convert {len(to_convert)} files? This will not erase existing files.",
+            default=True,
         ):
             self.stdout.write(self.style.ERROR("Conversion cancelled."))
             return
 
+        tmp_dir = Path("/tmp/bd-convert-dest")
+        try:
+            shutil.rmtree(tmp_dir)
+        except FileNotFoundError:
+            pass
+        tmp_dir.mkdir()
+
         if to_convert:
-            command = self._get_ffmpeg_command(to_convert)
+            command = self._get_ffmpeg_command(
+                {src: (tmp_dir / target.name).absolute() for src, target in to_convert.items()}
+            )
 
             result = subprocess.run(command, capture_output=True, text=True)
 
@@ -93,6 +115,8 @@ class Command(BaseCommand):
                 raise CommandError(f"FFmpeg exited with non-0 exit code {result.returncode}!")
 
             self.stdout.write(self.style.SUCCESS("Files converted!"))
+            shutil.copytree(tmp_dir, media_path, dirs_exist_ok=True)
+            self.stdout.write(self.style.SUCCESS("Moved files to media dir!"))
 
             for model_instance, model_image, media_attr in medias:
                 model_image_path = model_image.absolute()
