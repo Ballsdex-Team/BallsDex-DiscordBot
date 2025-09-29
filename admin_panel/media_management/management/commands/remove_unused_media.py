@@ -39,17 +39,19 @@ class Command(BaseCommand):
 
         if unused_files:
             self.stdout.write(
-                f"Unused files: \n - {"\n - ".join(file.name for file in unused_files)}"
+                f"Unused files: \n - {'\n - '.join(file.name for file in unused_files)}"
             )
         else:
             self.stdout.write("No unused files!")
             return
 
         if options["yes"] or media_manager.boolean_input(
-            "Do you want to remove any of these files?"
+            "Do you want to remove all of these files? "
+            + self.style.WARNING("WARNING: there is no going back from this."),
+            default=False,
         ):
             for file in unused_files:
-                if options["yes"] or media_manager.boolean_input(
-                    f"Remove {file.name}?", default=True
-                ):
-                    file.unlink()
+                self.stdout.write(f"Removed {file.name}")
+                file.unlink()
+        else:
+            self.stdout.write("Aborting")
