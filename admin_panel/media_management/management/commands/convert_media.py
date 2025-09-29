@@ -89,7 +89,10 @@ class Command(BaseCommand):
             to_convert[file] = target
             self.stdout.write(f"Will convert {file.name} to {target.name}")
 
-        self.stdout.write("")
+        if not to_convert:
+            self.stderr.write(self.style.ERROR("Nothing to convert!"))
+            return
+
         if not options["yes"] and not media_manager.boolean_input(
             f"Convert {len(to_convert)} files? This will not erase existing files.",
             default=True,
@@ -104,29 +107,28 @@ class Command(BaseCommand):
             pass
         tmp_dir.mkdir()
 
-        if to_convert:
-            command = self._get_ffmpeg_command(
-                {src: (tmp_dir / target.name).absolute() for src, target in to_convert.items()}
-            )
+        command = self._get_ffmpeg_command(
+            {src: (tmp_dir / target.name).absolute() for src, target in to_convert.items()}
+        )
 
-            result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, text=True)
 
-            if result.returncode != 0:
-                raise CommandError(f"FFmpeg exited with non-0 exit code {result.returncode}!")
+        if result.returncode != 0:
+            raise CommandError(f"FFmpeg exited with non-0 exit code {result.returncode}!")
 
-            self.stdout.write(self.style.SUCCESS("Files converted!"))
-            shutil.copytree(tmp_dir, media_path, dirs_exist_ok=True)
-            self.stdout.write(self.style.SUCCESS("Moved files to media dir!"))
+        self.stdout.write(self.style.SUCCESS("Files converted!"))
+        shutil.copytree(tmp_dir, media_path, dirs_exist_ok=True)
+        self.stdout.write(self.style.SUCCESS("Moved files to media dir!"))
 
-            for model_instance, model_image, media_attr in medias:
-                model_image_path = model_image.absolute()
-                if model_image_path in to_convert:
-                    model_image_field = getattr(model_instance, media_attr)
-                    new_path = to_convert[model_image_path]
+        for model_instance, model_image, media_attr in medias:
+            model_image_path = model_image.absolute()
+            if model_image_path in to_convert:
+                model_image_field = getattr(model_instance, media_attr)
+                new_path = to_convert[model_image_path]
 
-                    # Django won't take a non-relative path here
-                    model_image_field.name = str(new_path.relative_to(media_path.absolute()))
-                    model_instance.save()
+                # Django won't take a non-relative path here
+                model_image_field.name = str(new_path.relative_to(media_path.absolute()))
+                model_instance.save()
 
-            self.stdout.write(self.style.SUCCESS("Database updated!"))
-            self.stdout.write("You may want to run remove_unused_files to remove the old copies.")
+        self.stdout.write(self.style.SUCCESS("Database updated!"))
+        self.stdout.write("You may want to run remove_unused_files to remove the old copies.")
