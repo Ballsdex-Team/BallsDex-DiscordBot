@@ -103,8 +103,10 @@ class Command(BaseCommand):
         tmp_dir = Path("/tmp/bd-convert-dest")
         try:
             shutil.rmtree(tmp_dir)
+            self.stdout.write(self.style.WARNING("Temp dir already exists. Deleting."))
         except FileNotFoundError:
             pass
+
         tmp_dir.mkdir()
 
         command = self._get_ffmpeg_command(
@@ -114,11 +116,17 @@ class Command(BaseCommand):
         result = subprocess.run(command, capture_output=True, text=True)
 
         if result.returncode != 0:
-            raise CommandError(f"FFmpeg exited with non-0 exit code {result.returncode}!")
+            try:
+                raise CommandError(f"ffmpeg exited with non-0 exit code {result.returncode}!")
+            finally:
+                self.stdout.write(f"ffmpeg did not complete successfully: error: {result.stderr}")
+                self.stdout.write(self.style.ERROR("Cleaned up temp dir"))
 
         self.stdout.write(self.style.SUCCESS("Files converted!"))
         shutil.copytree(tmp_dir, media_path, dirs_exist_ok=True)
         self.stdout.write(self.style.SUCCESS("Moved files to media dir!"))
+        shutil.rmtree(tmp_dir)
+        self.stdout.write(self.style.SUCCESS("Cleaned up temp dir!"))
 
         for model_instance, model_image, media_attr in medias:
             model_image_path = model_image.absolute()
