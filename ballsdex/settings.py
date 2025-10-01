@@ -99,6 +99,7 @@ class Settings:
     admin_guild_ids: list[int] = field(default_factory=list)
     root_role_ids: list[int] = field(default_factory=list)
     admin_role_ids: list[int] = field(default_factory=list)
+    admin_channel_ids: list[int] = field(default_factory=list)
 
     log_channel: int | None = None
 
@@ -164,6 +165,7 @@ def read_settings(path: "Path"):
     settings.admin_guild_ids = content["admin-command"]["guild-ids"] or []
     settings.root_role_ids = content["admin-command"]["root-role-ids"] or []
     settings.admin_role_ids = content["admin-command"]["admin-role-ids"] or []
+    settings.admin_channel_ids = content["admin-command"].get("channel-ids", []) or []
 
     settings.log_channel = content.get("log-channel", None)
 
@@ -286,6 +288,9 @@ admin-command:
 
   # list of role IDs having partial access to /admin
   admin-role-ids:
+
+# list of channel IDs where admins can bypass privacy settings
+  admin-channel-ids:
 
 # log channel for moderation actions
 log-channel:
