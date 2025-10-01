@@ -289,7 +289,7 @@ admin-command:
   # list of role IDs having partial access to /admin
   admin-role-ids:
 
-# list of channel IDs where admins can bypass privacy settings
+  # list of channel IDs where admins can bypass privacy settings, empty means no restriction
   admin-channel-ids:
 
 # log channel for moderation actions
