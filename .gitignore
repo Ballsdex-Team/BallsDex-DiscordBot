@@ -18,9 +18,6 @@ venv
 .venv
 .python-version
 
-# Visual Studio code settings
-.vscode
-
 # database
 *sqlite3*
 *.rdb

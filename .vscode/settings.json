@@ -1,0 +1,12 @@
+{
+    "[python]": {
+        "editor.rulers": [
+            120
+        ],
+        "editor.defaultFormatter": "charliermarsh.ruff",
+    },
+    "python.languageServer": "Pylance",
+    "python.analysis.languageServerMode": "full",
+    "python.analysis.diagnosticsSource": "Pyright",
+    "ruff.importStrategy": "fromEnvironment",
+}
