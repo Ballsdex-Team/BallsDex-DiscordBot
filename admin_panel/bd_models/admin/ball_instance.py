@@ -38,14 +38,21 @@ class BallInstanceAdmin(admin.ModelAdmin):
             "Advanced",
             {
                 "classes": ("collapse",),
-                "fields": ("tradeable", "server_id", "spawned_time", "locked", "extra_data"),
+                "fields": (
+                    "tradeable",
+                    "server_id",
+                    "spawned_time",
+                    "locked",
+                    "extra_data",
+                    "deleted",
+                ),
             },
         ),
     ]
 
     list_display = ("description", "player", "server_id", "catch_time")
     list_select_related = ("ball", "special", "player")
-    list_filter = (SpecialFilter, BallFilter, PlayerFilter, "tradeable", "favorite")
+    list_filter = (SpecialFilter, BallFilter, PlayerFilter, "tradeable", "favorite", "deleted")
     show_facets = (
         admin.ShowFacets.NEVER  # type: ignore
     )  # hide filtered counts (considerable slowdown)
@@ -54,6 +61,8 @@ class BallInstanceAdmin(admin.ModelAdmin):
 
     search_help_text = "Search by hexadecimal ID or Discord ID"
     search_fields = ("id",)  # field is ignored, but required for the text area to show up
+
+    actions = ("soft_delete",)
 
     def get_search_results(
         self, request: "HttpRequest", queryset: "QuerySet[BallInstance]", search_term: str
@@ -113,3 +122,13 @@ class BallInstanceAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context["trades"] = list(_get_trades())
         return super().change_view(request, object_id, form_url, extra_context)
+
+    @admin.action(description="Soft delete/undo selected instances", permissions=("change",))
+    def soft_delete(self, request: "HttpRequest", queryset: "QuerySet[BallInstance]"):
+        if all(queryset.values_list("deleted", flat=True)):
+            # all of the selected instances are soft deleted, restoring
+            count = queryset.update(deleted=False)
+            self.message_user(request, f"{count} instances were restored.", messages.SUCCESS)
+        else:
+            count = queryset.update(deleted=True)
+            self.message_user(request, f"{count} instances were soft deleted.", messages.SUCCESS)

@@ -301,6 +301,8 @@ class BallInstance(models.Model):
 
     def __str__(self) -> str:
         text = ""
+        if self.deleted:
+            text += "\N{NO ENTRY SIGN}"
         if self.locked and self.locked > now() - timedelta(minutes=30):
             text += "🔒"
         if self.favorite:
