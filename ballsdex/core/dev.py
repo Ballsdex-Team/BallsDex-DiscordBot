@@ -10,11 +10,13 @@ import traceback
 from contextlib import redirect_stdout
 from copy import copy
 from io import BytesIO
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, cast
 
 import aiohttp
+import asyncpg.exceptions
 import discord
 from discord.ext import commands
+from tortoise import connections
 
 from ballsdex.core import models
 from ballsdex.core.models import (
@@ -40,6 +42,9 @@ from ballsdex.core.models import (
 from ballsdex.core.utils.formatting import pagify
 
 if TYPE_CHECKING:
+    import asyncpg.connection
+    from tortoise.backends.asyncpg.client import AsyncpgDBClient
+
     from ballsdex.core.bot import BallsDexBot
 
 """
@@ -51,6 +56,10 @@ https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/core/dev_c
 https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/core/utils/chat_formatting.py
 https://github.com/Rapptz/RoboDanny/blob/master/cogs/repl.py
 """
+
+
+def format_duration(time_taken: float) -> str:
+    return f"{round(time_taken * 1000)}ms" if time_taken < 1 else f"{round(time_taken, 3)}s"
 
 
 def box(text: str, lang: str = "") -> str:
@@ -118,10 +127,7 @@ async def send_interactive(
         else:
             text = page
         if time_taken and idx == len(messages):
-            time = (
-                f"{round(time_taken * 1000)}ms" if time_taken < 1 else f"{round(time_taken, 3)}s"
-            )
-            text += f"\n-# Took {time}"
+            text += f"\n-# Took {format_duration(time_taken)}"
         msg = await ctx.channel.send(text)
         ret.append(msg)
         n_remaining = len(messages) - idx
@@ -164,7 +170,7 @@ async def send_interactive(
     return ret
 
 
-START_CODE_BLOCK_RE = re.compile(r"^((```py(thon)?)(?=\s)|(```))")
+START_CODE_BLOCK_RE = re.compile(r"^((```(py(thon)?)|sql)(?=\s)|(```))")
 
 
 class Dev(commands.Cog):
@@ -354,7 +360,6 @@ class Dev(commands.Cog):
                 ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1
             )
             return
-        t2 = time.time()
 
         func = env["func"]
         result = None
@@ -362,8 +367,10 @@ class Dev(commands.Cog):
             with redirect_stdout(stdout):
                 result = await func()
         except Exception:
+            t2 = time.time()
             printed = "{}{}".format(stdout.getvalue(), traceback.format_exc())
         else:
+            t2 = time.time()
             printed = stdout.getvalue()
             await ctx.message.add_reaction("✅")
 
@@ -375,6 +382,38 @@ class Dev(commands.Cog):
         msg = self.sanitize_output(ctx, msg)
 
         await send_interactive(ctx, self.get_pages(msg), time_taken=t2 - t1)
+
+    @commands.command()
+    @commands.is_owner()
+    async def dbeval(self, ctx: commands.Context, *, content: str):
+        """
+        Execute the given SQL query and return the result.
+        """
+        body = self.cleanup_code(content)
+        connection = cast("AsyncpgDBClient", connections.get("default"))
+        t1 = time.time()
+        try:
+            conn: "asyncpg.connection.Connection"
+            async with connection.acquire_connection() as conn:
+                buffer = io.BytesIO()
+                await conn.copy_from_query(body, output=buffer, header=True)
+                buffer.seek(0)
+            t2 = time.time()
+        except asyncpg.exceptions.FeatureNotSupportedError:
+            async with connection.acquire_connection() as conn:
+                res = await conn.execute(body)
+            t2 = time.time()
+            time_taken = format_duration(t2 - t1)
+            await ctx.send(f"```\n{res}\n```\n-# Took {time_taken}")
+            return
+        except Exception as e:
+            t2 = time.time()
+            await send_interactive(
+                ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1
+            )
+            return
+        time_taken = format_duration(t2 - t1)
+        await ctx.send(f"\n-# Took {time_taken}", file=discord.File(buffer, filename="output.txt"))
 
     @commands.command()
     @commands.is_owner()

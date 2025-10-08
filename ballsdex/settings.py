@@ -1,4 +1,5 @@
 import logging
+import sys
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -107,6 +108,8 @@ class Settings:
     co_owners: list[int] = field(default_factory=list)
 
     packages: list[str] = field(default_factory=list)
+    tortoise_models: list[str] = field(default_factory=list)
+    django_apps: list[str] = field(default_factory=list)
 
     # metrics and prometheus
     prometheus_enabled: bool = False
@@ -186,6 +189,8 @@ def read_settings(path: "Path"):
         "ballsdex.packages.players",
         "ballsdex.packages.trade",
     ]
+    settings.tortoise_models = content.get("extra-tortoise-models") or []
+    settings.django_apps = content.get("extra-django-apps") or []
 
     spawn_range = content.get("spawn-chance-range", [40, 55])
     settings.spawn_chance_range = tuple(spawn_range)
@@ -211,6 +216,11 @@ def read_settings(path: "Path"):
             "{user} Sorry, this {collectible} was caught already!"
         ]
         settings.catch_button_label = catch.get("catch_button_label", "Catch me!")
+
+    # avoids signaling needed migrations
+    if "makemigrations" in sys.argv:
+        settings.collectible_name = "ball"
+        settings.plural_collectible_name = "balls"
 
     log.info("Settings loaded.")
 
@@ -330,6 +340,13 @@ packages:
   - ballsdex.packages.players
   - ballsdex.packages.trade
 
+# extend the database registered models, useful for 3rd party packages
+extra-tortoise-models:
+
+# extend the Django admin panel with extra apps
+# you can also edit DJANGO_SETTINGS_MODULE for extended configuration
+extra-django-apps:
+
 # prometheus metrics collection, leave disabled if you don't know what this is
 prometheus:
   enabled: false
@@ -396,6 +413,7 @@ def update_settings(path: "Path"):
     add_django = "Admin panel related settings" not in content
     add_sentry = "sentry:" not in content
     add_catch_messages = "catch:" not in content
+    add_extra_models = "extra-tortoise-models:" not in content
 
     for line in content.splitlines():
         if line.startswith("owners:"):
@@ -531,6 +549,16 @@ catch:
     - "{user} Sorry, this {collectible} was caught already!"
 """
 
+    if add_extra_models:
+        content += """
+# extend the database registered models, useful for 3rd party packages
+extra-tortoise-models:
+
+# extend the Django admin panel with extra apps
+# you can also edit DJANGO_SETTINGS_MODULE for extended configuration
+extra-django-apps:
+"""
+
     if any(
         (
             add_owners,
@@ -545,6 +573,7 @@ catch:
             add_django,
             add_sentry,
             add_catch_messages,
+            add_extra_models,
         )
     ):
         path.write_text(content)

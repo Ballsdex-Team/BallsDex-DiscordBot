@@ -1,6 +1,5 @@
 import enum
 import logging
-from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -8,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View, button
 from tortoise.exceptions import DoesNotExist
+from tortoise.expressions import RawSQL
 from tortoise.functions import Count
 
 from ballsdex.core.models import (
@@ -180,18 +180,18 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
 
-        await player.fetch_related("balls")
-        query = player.balls.all()
+        query = BallInstance.filter(player=player).prefetch_related("ball", "special")
         if filter:
             query = filter_balls(filter, query, interaction.guild_id)
         if countryball:
-            query = query.filter(ball__id=countryball.pk)
+            query = query.filter(ball=countryball)
         if special:
             query = query.filter(special=special)
         if sort:
-            countryballs = await sort_balls(sort, query)
+            query = sort_balls(sort, query)
         else:
-            countryballs = await query.order_by("-favorite")
+            query = query.order_by("-favorite")
+        countryballs = cast(list[int], await query.values_list("id", flat=True))
 
         if len(countryballs) < 1:
             ball_txt = countryball.country if countryball else ""
@@ -228,7 +228,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
     async def completion(
         self,
         interaction: discord.Interaction["BallsDexBot"],
@@ -397,7 +397,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         file.close()
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
     async def last(
         self, interaction: discord.Interaction["BallsDexBot"], user: discord.User | None = None
     ):
@@ -693,12 +693,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         guild = f" caught in {interaction.guild.name}" if current_server else ""
 
         await interaction.followup.send(
-            f"You have {balls} {special_str}"
+            f"You have {balls:,} {special_str}"
             f"{country}{settings.collectible_name}{plural}{guild}."
         )
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
     async def duplicate(
         self,
         interaction: discord.Interaction["BallsDexBot"],
@@ -718,7 +718,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
-        await player.fetch_related("balls")
         is_special = type == DuplicateType.specials
         queryset = BallInstance.filter(player=player)
 
@@ -762,7 +761,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await source.start(content=f"View your duplicate {type.value}.")
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
     async def compare(
         self,
         interaction: discord.Interaction["BallsDexBot"],
@@ -902,14 +901,28 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer(thinking=True, ephemeral=ephemeral)
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
 
-        query = BallInstance.filter(player=player).prefetch_related(
-            "player", "trade_player", "special"
+        query = (
+            BallInstance.filter(player=player)
+            .annotate(
+                total=RawSQL("COUNT(*)"),
+                traded=RawSQL("SUM(CASE WHEN trade_player_id IS NULL THEN 0 ELSE 1 END)"),
+                specials=RawSQL("SUM(CASE WHEN special_id IS NULL THEN 0 ELSE 1 END)"),
+            )
+            .group_by("player_id")
+        )
+        specials = (
+            BallInstance.filter(player=player)
+            .exclude(special=None)
+            .annotate(count=Count("id"))
+            .group_by("special__name")
         )
         if countryball:
             query = query.filter(ball=countryball)
-        balls = await query
+            specials = specials.filter(ball=countryball)
+        counts_list = await query.values("player_id", "total", "traded", "specials")
+        specials = await specials.values("special__name", "count")
 
-        if not balls:
+        if not counts_list:
             if countryball:
                 await interaction.followup.send(
                     f"You don't have any {countryball.country} "
@@ -921,27 +934,20 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                     f"You don't have any {settings.plural_collectible_name} yet."
                 )
             return
-        total = len(balls)
-        total_traded = len([x for x in balls if x.trade_player])
-        total_caught_self = total - total_traded
-        special_count = len([x for x in balls if x.special])
-        specials = defaultdict(int)
+        counts = counts_list[0]
         all_specials = await Special.filter(hidden=False)
         special_emojis = {x.name: x.emoji for x in all_specials}
-        for ball in balls:
-            if ball.special:
-                specials[ball.special] += 1
 
         desc = (
-            f"**Total**: {total:,} ({total_caught_self:,} caught, "
-            f"{total_traded:,} received from trade)\n"
-            f"**Total Specials**: {special_count:,}\n\n"
+            f"**Total**: {counts["total"]:,} ({counts["total"] - counts["traded"]:,} caught, "
+            f"{counts['traded']:,} received from trade)\n"
+            f"**Total Specials**: {counts['specials']:,}\n\n"
         )
-        if specials:
+        if counts["specials"]:
             desc += "**Specials**:\n"
-        for special, count in sorted(specials.items(), key=lambda x: x[1], reverse=True):
-            emoji = special_emojis.get(special.name, "")
-            desc += f"{emoji} {special.name}: {count:,}\n"
+        for special in sorted(specials, key=lambda x: x["count"], reverse=True):
+            emoji = special_emojis.get(special["special__name"], "")
+            desc += f"{emoji} {special['special__name']}: {special["count"]:,}\n"
 
         embed = discord.Embed(
             title=f"Collection of {countryball.country}" if countryball else "Total Collection",
