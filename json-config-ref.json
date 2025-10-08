@@ -152,7 +152,7 @@
                         "array",
                         "null"
                     ],
-                    "description": "IDs of channels in which privacy settings can be bypasses. Empty means any channel is allowed.",
+                    "description": "IDs of channels in which privacy settings can be bypassed. Empty means any channel is allowed.",
                     "items": {
                         "$ref": "#/$defs/discord-id"
                     }
