@@ -168,7 +168,7 @@ def read_settings(path: "Path"):
     settings.admin_guild_ids = content["admin-command"]["guild-ids"] or []
     settings.root_role_ids = content["admin-command"]["root-role-ids"] or []
     settings.admin_role_ids = content["admin-command"]["admin-role-ids"] or []
-    settings.admin_channel_ids = content["admin-command"].get("channel-ids", []) or []
+    settings.admin_channel_ids = content["admin-command"].get("admin-channel-ids", []) or []
 
     settings.log_channel = content.get("log-channel", None)
 
