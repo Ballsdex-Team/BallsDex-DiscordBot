@@ -497,9 +497,16 @@ class Trade(commands.GroupCog):
     async def view(
         self,
         interaction: discord.Interaction["BallsDexBot"],
+        sort: SortingChoices | None = None,
     ):
         """
         View the countryballs added to an ongoing trade.
+
+        Parameters
+        ----------
+        sort: SortingChoices | None
+            The sorting method to use when displaying the countryballs.
+            If not provided, the default sorting will be used.
         """
         trade, trader = self.get_trade(interaction)
         if not trade or not trader:
@@ -508,5 +515,5 @@ class Trade(commands.GroupCog):
             )
             return
 
-        source = TradeViewMenu(interaction, [trade.trader1, trade.trader2], self)
+        source = TradeViewMenu(interaction, [trade.trader1, trade.trader2], self, sort)
         await source.start(content="Select a user to view their proposal.")
