@@ -12,6 +12,9 @@ if TYPE_CHECKING:
 def is_staff(interaction: discord.Interaction["BallsDexBot"]) -> bool:
     if interaction.user.id in interaction.client.owner_ids:
         return True
+    if settings.admin_channel_ids:
+        if interaction.channel_id not in settings.admin_channel_ids:
+            return False
     if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
         roles = settings.admin_role_ids + settings.root_role_ids
         if any(role.id in roles for role in interaction.user.roles):  # type: ignore

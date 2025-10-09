@@ -241,6 +241,7 @@ class RemoveWSBehindMsg(logging.Filter):
 
 async def init_tortoise(db_url: str, *, skip_migrations: bool = False):
     log.debug(f"Database URL: {db_url}")
+    TORTOISE_ORM["apps"]["models"]["models"].extend(settings.tortoise_models)
     await Tortoise.init(config=TORTOISE_ORM)
 
 
