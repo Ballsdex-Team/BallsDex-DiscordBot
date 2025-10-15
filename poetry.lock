@@ -557,6 +557,7 @@ description = "Foreign Function Interface for Python calling C code."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
+markers = "python_version <= \"3.13\" or sys_platform != \"win32\" or platform_python_implementation != \"PyPy\""
 files = [
     {file = "cffi-1.17.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:df8b1c11f177bc2313ec4b2d46baec87a5f3e71fc8b45dab2ee7cae86d9aba14"},
     {file = "cffi-1.17.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:8f2cdc858323644ab277e9bb925ad72ae0e67f69e804f4898c070998d50b1a67"},
@@ -847,14 +848,14 @@ files = [
 
 [[package]]
 name = "discord-py"
-version = "2.6.3"
+version = "2.6.4"
 description = "A Python wrapper for the Discord API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "discord_py-2.6.3-py3-none-any.whl", hash = "sha256:69835269d73d9889a2f0efff4c91264a18998db0fdc4295a3c886fe9196dea4e"},
-    {file = "discord_py-2.6.3.tar.gz", hash = "sha256:92bb3ef9dbe08525803be1e357bc0191f59ae16956690fc96c34f40bcd02c649"},
+    {file = "discord_py-2.6.4-py3-none-any.whl", hash = "sha256:2783b7fb7f8affa26847bfc025144652c294e8fe6e0f8877c67ed895749eb227"},
+    {file = "discord_py-2.6.4.tar.gz", hash = "sha256:44384920bae9b7a073df64ae9b14c8cf85f9274b5ad5d1d07bd5a67539de2da9"},
 ]
 
 [package.dependencies]
@@ -863,7 +864,7 @@ aiohttp = ">=3.7.4,<4"
 audioop-lts = {version = "*", markers = "python_version >= \"3.13\""}
 Brotli = {version = "*", optional = true, markers = "extra == \"speed\""}
 orjson = {version = ">=3.5.4", optional = true, markers = "extra == \"speed\""}
-zstandard = {version = ">=0.23.0", optional = true, markers = "extra == \"speed\""}
+zstandard = {version = ">=0.23.0", optional = true, markers = "python_version <= \"3.13\" and extra == \"speed\""}
 
 [package.extras]
 dev = ["ruff (==0.12)", "typing_extensions (>=4.3,<5)"]
@@ -2219,6 +2220,7 @@ description = "C parser in Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
+markers = "python_version <= \"3.13\" or sys_platform != \"win32\" or platform_python_implementation != \"PyPy\""
 files = [
     {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
     {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
@@ -3265,6 +3267,7 @@ description = "Zstandard bindings for Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
+markers = "python_version <= \"3.13\""
 files = [
     {file = "zstandard-0.23.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:bf0a05b6059c0528477fba9054d09179beb63744355cab9f38059548fedd46a9"},
     {file = "zstandard-0.23.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:fc9ca1c9718cb3b06634c7c8dec57d24e9438b2aa9a0f02b8bb36bf478538880"},
@@ -3377,4 +3380,4 @@ dev = ["black", "django-debug-toolbar", "django-types", "flake8", "flake8-pyproj
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "2c139256d45ee85372f7039502e09c8d30eea55c7a93988d3cd0ecdb4c302faa"
+content-hash = "0fe81f8f830b36c83da7285b92fcc6d96961982b2f962b1aab44f86b2117da2a"

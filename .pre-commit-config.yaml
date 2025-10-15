@@ -32,7 +32,7 @@ repos:
       - id: pyright
         language_version: python3.13
         additional_dependencies:
-          - discord.py==2.5.0
+          - discord.py==2.6.4
           - cachetools
           - rich
           - Pillow
