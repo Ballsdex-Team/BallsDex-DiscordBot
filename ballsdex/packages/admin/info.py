@@ -15,22 +15,33 @@ from ballsdex.core.utils.enums import (
 from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
 from ballsdex.settings import settings
 
+
 class PlayerInfoView(discord.ui.View):
     def __init__(self, player: Player, username: str):
         super().__init__()
         self.player = player
         self.username = username
+
     @discord.ui.button(label="Recent Catches", style=discord.ButtonStyle.primary)
     async def recently_caught(self, interaction: discord.Interaction, button: discord.ui.Button):
         # Display the last 10 catches of the user, and how long it took for each catch
-        recent_balls = await BallInstance.filter(
-            player=self.player,
-        ).order_by("-catch_date").limit(10)
+        recent_balls = (
+            await BallInstance.filter(
+                player=self.player,
+            )
+            .order_by("-catch_date")
+            .limit(10)
+        )
         embed = discord.Embed(title=f"Last {len(recent_balls)} catches for {self.username}")
         for ball in recent_balls:
             catch_time = int((ball.catch_date - ball.spawned_time).total_seconds())
-            embed.add_field(name=ball.description(short=True),value=f"{catch_time//60}:{catch_time%60:02} in {ball.server_id}",inline=False)
+            embed.add_field(
+                name=ball.description(short=True),
+                value=f"{catch_time//60}:{catch_time%60:02} in {ball.server_id}",
+                inline=False,
+            )
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
 class Info(app_commands.Group):
     """
@@ -183,4 +194,6 @@ class Info(app_commands.Group):
             value=len(set([x.server_id for x in total_user_balls])),
         )
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
-        await interaction.followup.send(embed=embed, ephemeral=True, view=PlayerInfoView(player,user.name))
+        await interaction.followup.send(
+            embed=embed, ephemeral=True, view=PlayerInfoView(player, user.name)
+        )
