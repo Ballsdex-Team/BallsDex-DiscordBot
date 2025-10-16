@@ -113,7 +113,7 @@ class Info(app_commands.Group):
 
         if guild.icon:
             embed.set_thumbnail(url=guild.icon.url)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command()
     async def user(
