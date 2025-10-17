@@ -218,7 +218,7 @@ def read_settings(path: "Path"):
         settings.catch_button_label = catch.get("catch_button_label", "Catch me!")
 
     # avoids signaling needed migrations
-    if "makemigrations" in sys.argv:
+    if "makemigrations" in sys.argv or "migrate" in sys.argv:
         settings.collectible_name = "ball"
         settings.plural_collectible_name = "balls"
 
