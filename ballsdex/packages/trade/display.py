@@ -29,7 +29,7 @@ class TradeViewFormat(menus.ListPageSource):
     async def format_page(self, menu: Pages, trade: TradeModel) -> discord.Embed:
         embed = discord.Embed(
             title=f"Trade history for {self.header}",
-            description=f"Trade ID: {trade.pk:0X}",
+            description=f"Trade ID: `#{trade.pk:0X}`",
             url=self.url if self.is_admin else None,
             timestamp=trade.date,
         )

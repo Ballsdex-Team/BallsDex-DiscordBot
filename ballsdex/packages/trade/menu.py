@@ -280,11 +280,11 @@ class TradeMenu:
         """
         if self.task:
             self.task.cancel()
+        self.current_view.stop()
 
         for countryball in self.trader1.proposal + self.trader2.proposal:
             await countryball.unlock()
 
-        self.current_view.stop()
         for item in self.current_view.children:
             item.disabled = True  # type: ignore
 
@@ -323,6 +323,7 @@ class TradeMenu:
 
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
+        self.current_view.stop()
 
         trade = await Trade.objects.acreate(player1=self.trader1.player, player2=self.trader2.player)
 

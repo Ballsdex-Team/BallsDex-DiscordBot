@@ -299,7 +299,9 @@ class Balls(app_commands.Group):
 
     @app_commands.command(name="delete")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def balls_delete(self, interaction: discord.Interaction[BallsDexBot], countryball_id: str):
+    async def balls_delete(
+        self, interaction: discord.Interaction[BallsDexBot], countryball_id: str, soft_delete: bool = True
+    ):
         """
         Delete a countryball.
 
@@ -307,6 +309,8 @@ class Balls(app_commands.Group):
         ----------
         countryball_id: str
             The ID of the countryball you want to delete.
+        soft_delete: bool
+            Whether the countryball should be kept in database or fully wiped.
         """
         try:
             ballIdConverted = int(countryball_id, 16)
@@ -322,11 +326,19 @@ class Balls(app_commands.Group):
                 f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True
             )
             return
-        await ball.adelete()
-        await interaction.response.send_message(
-            f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True
-        )
-        await log_action(f"{interaction.user} deleted {ball}({ball.pk}).", interaction.client)
+        if soft_delete:
+            ball.deleted = True
+            await ball.asave()
+            await interaction.response.send_message(
+                f"{settings.collectible_name.title()} {countryball_id} soft deleted.", ephemeral=True
+            )
+            await log_action(f"{interaction.user} soft deleted {ball}({ball.pk}).", interaction.client)
+        else:
+            await ball.adelete()
+            await interaction.response.send_message(
+                f"{settings.collectible_name.title()} {countryball_id} hard deleted.", ephemeral=True
+            )
+            await log_action(f"{interaction.user} hard deleted {ball}({ball.pk}).", interaction.client)
 
     @app_commands.command(name="transfer")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -374,7 +386,11 @@ class Balls(app_commands.Group):
     @app_commands.command(name="reset")
     @app_commands.checks.has_any_role(*settings.root_role_ids)
     async def balls_reset(
-        self, interaction: discord.Interaction[BallsDexBot], user: discord.User, percentage: int | None = None
+        self,
+        interaction: discord.Interaction[BallsDexBot],
+        user: discord.User,
+        percentage: int | None = None,
+        soft_delete: bool = True,
     ):
         """
         Reset a player's countryballs.
@@ -385,6 +401,9 @@ class Balls(app_commands.Group):
             The user you want to reset the countryballs of.
         percentage: int | None
             The percentage of countryballs to delete, if not all. Used for sanctions.
+        soft_delete: bool
+            If true, the countryballs will be marked as deleted instead of being removed from the
+            database.
         """
         player = await Player.objects.aget_or_none(discord_id=user.id)
         if not player:
@@ -395,13 +414,17 @@ class Balls(app_commands.Group):
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
 
+        method = "soft" if soft_delete else "hard"
         if not percentage:
-            text = f"Are you sure you want to delete {user}'s {settings.plural_collectible_name}?"
+            text = f"Are you sure you want to {method} delete {user}'s {settings.plural_collectible_name}?"
         else:
-            text = f"Are you sure you want to delete {percentage}% of {user}'s {settings.plural_collectible_name}?"
+            text = (
+                f"Are you sure you want to {method} delete {percentage}% of "
+                f"{user}'s {settings.plural_collectible_name}?"
+            )
         view = ConfirmChoiceView(
             interaction,
-            accept_message=f"Confirmed, deleting the {settings.plural_collectible_name}...",
+            accept_message=f"Confirmed, {method} deleting the {settings.plural_collectible_name}...",
             cancel_message="Request cancelled.",
         )
         await interaction.followup.send(text, view=view, ephemeral=True)
@@ -412,10 +435,17 @@ class Balls(app_commands.Group):
             balls = [x async for x in BallInstance.objects.filter(player=player)]
             to_delete = random.sample(balls, int(len(balls) * (percentage / 100)))
             for ball in to_delete:
-                await ball.adelete()
+                if soft_delete:
+                    ball.deleted = True
+                    await ball.asave()
+                else:
+                    await ball.adelete()
             count = len(to_delete)
         else:
-            count = await BallInstance.objects.filter(player=player).adelete()
+            if soft_delete:
+                count = await BallInstance.all_objects.filter(player=player).aupdate(deleted=True)
+            else:
+                count = await BallInstance.all_objects.filter(player=player).adelete()
         await interaction.followup.send(
             f"{count} {settings.plural_collectible_name} from {user} have been deleted.", ephemeral=True
         )
@@ -432,6 +462,7 @@ class Balls(app_commands.Group):
         user: discord.User | None = None,
         countryball: BallTransform | None = None,
         special: SpecialTransform | None = None,
+        deleted: bool = False,
     ):
         """
         Count the number of countryballs that a player has or how many exist in total.
@@ -442,6 +473,8 @@ class Balls(app_commands.Group):
             The user you want to count the countryballs of.
         countryball: Ball
         special: Special
+        deleted: bool
+            Include soft deleted countryballs
         """
         if interaction.response.is_done():
             return
@@ -453,7 +486,8 @@ class Balls(app_commands.Group):
         if user:
             filters["player__discord_id"] = user.id
         await interaction.response.defer(ephemeral=True, thinking=True)
-        balls = await BallInstance.objects.filter(**filters).acount()
+        qs = BallInstance.all_objects if deleted else BallInstance.objects
+        balls = await qs.filter(**filters).acount()
         verb = "is" if balls == 1 else "are"
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""

@@ -1,6 +1,8 @@
+import asyncio
 import datetime
+import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Coroutine, Optional, cast
 
 import discord
 from cachetools import TTLCache
@@ -28,6 +30,8 @@ from bd_models.models import Trade as TradeModel
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
+log = logging.getLogger("ballsdex.packages.trade")
+
 
 @app_commands.guild_only()
 class Trade(commands.GroupCog):
@@ -38,6 +42,49 @@ class Trade(commands.GroupCog):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
         self.trades: TTLCache[int, dict[int, list[TradeMenu]]] = TTLCache(maxsize=999999, ttl=1800)
+        self.lockdown: str | None = None
+
+    async def cancel_all_trades(self, reason: str) -> list[BaseException]:
+        """
+        Turn on lockdown mode, preventing any trade from starting, and cancel all ongoing trades
+        with the reason given.
+
+        This is not persistent and will reset as soon as the bot is restarted or when the cog is
+        reloaded with "b.reload trade".
+
+        Parameters
+        ----------
+        reason: str
+            The reason why you're locking down trades. This will be shown to the ongoing cancelled
+            trades and when attempting to start a new trade.
+
+        Returns
+        -------
+        list[BaseException]
+            The list of errors, as returned by asyncio.gather. If this list is empty, all the
+            trades were successfully cancelled.
+        """
+        self.lockdown = reason
+        tasks: list[Coroutine] = []
+        for guild in self.trades.values():
+            for channel in guild.values():
+                for trade in channel:
+                    if trade.current_view.is_finished() or trade.trader1.cancelled or trade.trader2.cancelled:
+                        continue
+                    tasks.append(
+                        trade.cancel(
+                            f"Trading has been turned off temporarily by admins for the following reason: {reason}"
+                        )
+                    )
+        log.warning(f'Lockdown mode turned on for the reason "{reason}". Cancelling {len(tasks)} ongoing trades...')
+
+        result = [x for x in await asyncio.gather(*tasks, return_exceptions=True) if x is not None]
+        if result:
+            log.error(
+                f"Locking down trades resulted in {len(result)} exceptions. Showing first exception below.",
+                exc_info=result[0],
+            )
+        return result
 
     bulk = app_commands.Group(name="bulk", description="Bulk Commands")
 
@@ -106,6 +153,13 @@ class Trade(commands.GroupCog):
         user: discord.User
             The user you want to trade with
         """
+        if self.lockdown is not None:
+            await interaction.response.send_message(
+                f"Trading has been globally disabled by the admins for the following reason: {self.lockdown}",
+                ephemeral=True,
+            )
+            return
+
         if user.bot:
             await interaction.response.send_message("You cannot trade with bots.", ephemeral=True)
             return

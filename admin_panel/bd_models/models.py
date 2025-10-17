@@ -208,6 +208,11 @@ class SpecialEnabledManager(Manager["Special"]):
         return super().get_queryset().filter(hidden=False)
 
 
+class BallInstanceManager[T: models.Model](Manager[T]):
+    def get_queryset(self) -> models.QuerySet[T]:
+        return super().get_queryset().filter(deleted=False)
+
+
 class Special(models.Model):
     name = models.CharField(max_length=64)
     catch_phrase = models.CharField(
@@ -335,11 +340,15 @@ class BallInstance(models.Model):
     server_id = models.BigIntegerField(null=True, help_text="Discord server ID where this ball was caught")
     tradeable = models.BooleanField(default=True)
     extra_data = models.JSONField(blank=True, default=dict)
-    locked = models.DateTimeField(null=True, help_text="If the instance was locked for a trade and when", default=None)
+    locked = models.DateTimeField(
+        blank=True, null=True, help_text="If the instance was locked for a trade and when", default=None
+    )
     spawned_time = models.DateTimeField(null=True)
+    deleted = models.BooleanField(default=False, help_text="Whether this instance was deleted or not.")
 
-    objects: Manager[Self] = Manager()
+    objects: Manager[Self] = BallInstanceManager()
     tradeable_objects: TradeableManager[Self] = TradeableManager()
+    all_objects: Manager[Self] = Manager()
 
     class Meta:
         managed = True
@@ -350,6 +359,7 @@ class BallInstance(models.Model):
             models.Index(fields=("ball_id",)),
             models.Index(fields=("player_id",)),
             models.Index(fields=("special_id",)),
+            models.Index(fields=("deleted",)),
         )
 
     def short_description(self, *, is_trade: bool = False) -> str:
@@ -357,6 +367,8 @@ class BallInstance(models.Model):
         Return a short string representation. Similar to str(x) without arguments.
         """
         text = ""
+        if self.deleted:
+            text += "\N{NO ENTRY SIGN}"
         if not is_trade and self.locked and self.locked > now() - timedelta(minutes=30):
             text += "🔒"
         if self.favorite:

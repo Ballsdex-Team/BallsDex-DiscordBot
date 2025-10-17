@@ -190,7 +190,7 @@ class History(app_commands.Group):
         embed = discord.Embed(
             title=f"Trade {trade.pk:0X}",
             url=(f"{settings.admin_url}/bd_models/trade/{trade.pk}/change/" if settings.admin_url else None),
-            description=f"Trade ID: {trade.pk:0X}",
+            description=f"Trade ID: `#{trade.pk:0X}`",
             timestamp=trade.date,
         )
         embed.set_footer(text="Trade date: ")

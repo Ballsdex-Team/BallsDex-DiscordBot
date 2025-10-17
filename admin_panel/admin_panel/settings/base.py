@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     "admin_panel.apps.BallsdexAdminConfig",
     "bd_models",
     "preview",
-]
+] + settings.django_apps
 
 MIDDLEWARE = [
     "allow_cidr.middleware.AllowCIDRMiddleware",

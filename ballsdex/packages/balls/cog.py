@@ -643,7 +643,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         guild = f" caught in {interaction.guild.name}" if current_server else ""
 
         await interaction.followup.send(
-            f"You have {balls} {special_str}{country}{settings.collectible_name}{plural}{guild}."
+            f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural}{guild}."
         )
 
     @app_commands.command()
