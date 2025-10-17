@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("bd_models", "0009_player_money_trade_player1_money_trade_player2_money")]
+    dependencies = [("bd_models", "0010_player_money_trade_player1_money_trade_player2_money")]
 
     operations = [
         migrations.AlterField(model_name="ballinstance", name="attack_bonus", field=models.IntegerField(default=0)),

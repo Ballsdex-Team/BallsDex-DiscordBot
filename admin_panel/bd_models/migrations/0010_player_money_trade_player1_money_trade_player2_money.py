@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("bd_models", "0008_alter_ball_options_alter_ballinstance_options_and_more")]
+    dependencies = [("bd_models", "0009_ballinstance_deleted_and_more")]
 
     operations = [
         migrations.AddField(
