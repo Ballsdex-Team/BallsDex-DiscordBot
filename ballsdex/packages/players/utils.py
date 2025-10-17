@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from tortoise.expressions import Q
+from django.db.models import Q
 
 from ballsdex.settings import settings
 from bd_models.models import BallInstance, Player, Trade, TradeObject
