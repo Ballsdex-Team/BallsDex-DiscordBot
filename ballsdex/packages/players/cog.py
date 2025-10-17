@@ -529,19 +529,11 @@ class Player(commands.GroupCog):
             f"**Special {settings.collectible_name.title()}s:** {len(special):,}\n"
             f"**Trades Completed:** {len(trades):,}\n"
             f"**Amount of Users Traded With:** {len(trade_partners):,}\n"
-            f"**Current Balance:** {player.money:,}"
+            # f"**Current Balance:** {player.money:,}"
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
         await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @money.command()
-    async def balance(self, interaction: discord.Interaction):
-        """
-        Check your balance.
-        """
-        player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
-        await interaction.response.send_message(f"Your balance is **{player.money:,}**.", ephemeral=True)
 
     @money.command()
     async def give(self, interaction: discord.Interaction, user: discord.User, amount: int):
