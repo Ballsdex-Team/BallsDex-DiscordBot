@@ -30,9 +30,15 @@ FROM base AS builder-base
 # Pillow build dependencies
 RUN apk add --no-cache gcc libc-dev
 
-COPY poetry.lock pyproject.toml /code/
+COPY poetry.lock pyproject.toml dependencies.txt* /code/
+
 RUN --mount=type=cache,target=/root/.cache/ \
     pip install poetry==2.0.1 && poetry install --no-root
+
+RUN if [ -f dependencies.txt ]; then \
+    poetry run pip install -r dependencies.txt; \
+fi
+
 COPY . /code/
 RUN poetry install
 
