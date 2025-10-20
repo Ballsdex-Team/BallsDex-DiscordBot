@@ -102,8 +102,6 @@ class Settings:
     admin_role_ids: list[int] = field(default_factory=list)
     admin_channel_ids: list[int] = field(default_factory=list)
 
-    log_channel: int | None = None
-
     team_owners: bool = False
     co_owners: list[int] = field(default_factory=list)
 
@@ -169,8 +167,6 @@ def read_settings(path: "Path"):
     settings.root_role_ids = content["admin-command"]["root-role-ids"] or []
     settings.admin_role_ids = content["admin-command"]["admin-role-ids"] or []
     settings.admin_channel_ids = content["admin-command"].get("admin-channel-ids", []) or []
-
-    settings.log_channel = content.get("log-channel", None)
 
     settings.prometheus_enabled = content["prometheus"]["enabled"]
     settings.prometheus_host = content["prometheus"]["host"]
@@ -302,9 +298,6 @@ admin-command:
   # list of channel IDs where admins can bypass privacy settings, empty means no restriction
   admin-channel-ids:
 
-# log channel for moderation actions
-log-channel:
-
 # manage bot ownership
 owners:
   # if enabled and the application is under a team, all team members will be considered as owners
@@ -320,10 +313,11 @@ admin-panel:
     # to enable Discord OAuth2 login, fill this
     # client ID of the Discord application (not the bot's user ID)
     client-id: 
+
     # client secret of the Discord application (this is not the bot token)
     client-secret: 
 
-    # to get admin notifications from the admin panel, create a Discord webhook and paste the url
+    # to get admin notifications, create a Discord webhook and paste the url
     webhook-url: 
 
     # this will provide some hyperlinks to the admin panel when using /admin commands
@@ -415,6 +409,8 @@ def update_settings(path: "Path"):
     add_catch_messages = "catch:" not in content
     add_extra_models = "extra-tortoise-models:" not in content
 
+    remove_log_channel = "log-channel" in content
+
     for line in content.splitlines():
         if line.startswith("owners:"):
             add_owners = False
@@ -496,10 +492,11 @@ admin-panel:
     # to enable Discord OAuth2 login, fill this
     # client ID of the Discord application (not the bot's user ID)
     client-id:
+
     # client secret of the Discord application (this is not the bot token)
     client-secret:
 
-    # to get admin notifications from the admin panel, create a Discord webhook and paste the url
+    # to get admin notifications, create a Discord webhook and paste the url
     webhook-url:
 
     # this will provide some hyperlinks to the admin panel when using /admin commands
@@ -549,6 +546,19 @@ catch:
     - "{user} Sorry, this {collectible} was caught already!"
 """
 
+    if remove_log_channel:
+        log.warning(
+            "Channel logging is no longer supported. "
+            "Please ensure your 'webhook-url' setting is valid to continue using Discord logging."
+        )
+
+        content = "\n".join(
+            line
+            for line in content.splitlines()
+            if not line.strip().startswith("log-channel:")
+            and not line.strip().startswith("# log channel")
+        )
+
     if add_extra_models:
         content += """
 # extend the database registered models, useful for 3rd party packages
@@ -573,6 +583,7 @@ extra-django-apps:
             add_django,
             add_sentry,
             add_catch_messages,
+            remove_log_channel,
             add_extra_models,
         )
     ):
