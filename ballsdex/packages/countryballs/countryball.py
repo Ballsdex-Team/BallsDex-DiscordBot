@@ -8,9 +8,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
-from discord.ui import Button, Modal, TextInput, View, button
+from discord.ui import Button, TextInput, button
 from django.utils import timezone
 
+from ballsdex.core.discord import Modal, View
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.utils import can_mention
 from ballsdex.settings import settings
@@ -37,6 +38,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         error: Exception,
         /,  # noqa: W504
     ) -> None:
+        if isinstance(error, discord.NotFound) and error.code == 10062:
+            return
         log.exception("An error occured in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
             await interaction.followup.send(f"An error occured with this {settings.collectible_name}.")

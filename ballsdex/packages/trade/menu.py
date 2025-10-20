@@ -6,9 +6,10 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, AsyncIterator, List, Set, cast
 
 import discord
-from discord.ui import Button, View, button
+from discord.ui import Button, button
 from discord.utils import format_dt, utcnow
 
+from ballsdex.core.discord import View
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import Pages

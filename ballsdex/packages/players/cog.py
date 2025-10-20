@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord.utils import format_dt
 from django.db.models import Q
 
+from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
@@ -45,7 +46,7 @@ class Player(commands.GroupCog):
         Edit your player settings
         """
         player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
-        layout = discord.ui.LayoutView()
+        layout = LayoutView()
         container = SettingsContainer()
         container.configure(interaction, player)
         layout.add_item(container)

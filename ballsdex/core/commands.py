@@ -9,6 +9,7 @@ from discord.ext import commands
 from django.db import connection
 
 from ballsdex.core.dev import pagify, send_interactive
+from ballsdex.core.discord import View
 from ballsdex.settings import read_settings, settings
 from bd_models.models import Ball
 
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from .bot import BallsDexBot
 
 
-class SimpleCheckView(discord.ui.View):
+class SimpleCheckView(View):
     def __init__(self, ctx: commands.Context):
         super().__init__(timeout=30)
         self.ctx = ctx

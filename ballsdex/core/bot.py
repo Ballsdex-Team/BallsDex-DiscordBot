@@ -374,115 +374,97 @@ class BallsDexBot(commands.AutoShardedBot):
             )
         return True
 
-    async def on_command_error(self, context: commands.Context, exception: commands.errors.CommandError):
+    async def on_command_error(
+        self, context: commands.Context, exception: commands.errors.CommandError | app_commands.AppCommandError
+    ):
         if isinstance(exception, (commands.CommandNotFound, commands.DisabledCommand)):
             return
 
         assert context.command
-        if isinstance(exception, (commands.ConversionError, commands.UserInputError)):
-            # in case we need to know what happened
-            log.debug("Silenced command exception", exc_info=exception)
-            await context.send_help(context.command)
-            return
+        match exception:
+            case commands.ConversionError() | commands.UserInputError():
+                # in case we need to know what happened
+                log.debug("Silenced command exception", exc_info=exception)
+                await context.send_help(context.command)
 
-        if isinstance(exception, commands.MissingRequiredAttachment):
-            await context.send("An attachment is missing.")
-            return
+            case commands.MissingRequiredAttachment():
+                await context.send("An attachment is missing.")
 
-        if isinstance(exception, commands.CheckFailure):
-            if isinstance(exception, commands.BotMissingPermissions):
-                missing_perms = ", ".join(exception.missing_permissions)
+            case app_commands.CommandOnCooldown() | commands.CommandOnCooldown():
                 await context.send(
-                    f"The bot is missing the permissions: `{missing_perms}`."
-                    " Give the bot those permissions for the command to work as expected."
+                    f"This command is on cooldown. Please retry <t:{math.ceil(time.time() + exception.retry_after)}:R>."
                 )
-                return
 
-            if isinstance(exception, commands.MissingPermissions):
-                missing_perms = ", ".join(exception.missing_permissions)
-                await context.send(
-                    f"You are missing the following permissions: `{missing_perms}`."
-                    " You need those permissions to run this command."
-                )
-                return
+            case app_commands.TransformerError():
+                await context.send("One of the arguments provided cannot be parsed.")
+                log.debug("Failed running converter", exc_info=exception)
 
-            return
+            case commands.CheckFailure():
+                match exception:
+                    case commands.BotMissingPermissions():
+                        missing_perms = ", ".join(exception.missing_permissions)
+                        await context.send(
+                            f"The bot is missing the permissions: `{missing_perms}`."
+                            " Give the bot those permissions for the command to work as expected."
+                        )
 
-        if isinstance(exception, commands.CommandInvokeError):
-            await context.send("An error occured when running the command. Contact support if this persists.")
-            log.error(f"Unknown error in text command {context.command.qualified_name}", exc_info=exception)
+                    case commands.MissingPermissions():
+                        missing_perms = ", ".join(exception.missing_permissions)
+                        await context.send(
+                            f"You are missing the following permissions: `{missing_perms}`."
+                            " You need those permissions to run this command."
+                        )
+
+                    case _:
+                        await context.send("You are not allowed to use this command.")
+
+            case commands.CommandInvokeError():
+                match exception.original:
+                    case discord.Forbidden():
+                        await context.send("The bot does not have the permission to do something.")
+                        # log to know where permissions are lacking
+                        log.warning(
+                            f"Missing permissions for command {context.command.qualified_name}",
+                            exc_info=exception.original,
+                        )
+
+                    case discord.InteractionResponded():
+                        # most likely an interaction received twice (happens sometimes),
+                        # or two instances are running on the same token.
+                        log.warning(
+                            f"Tried invoking command {context.command.qualified_name}, but the "
+                            "interaction was already responded to.",
+                            exc_info=exception.original,
+                        )
+
+                    case discord.NotFound(code=10062):
+                        log.warning("Expired interaction", exc_info=exception.original)
+
+                    case _:
+                        # still including traceback because it may be a programming error
+                        await context.send(
+                            "An error occured when running the command. Contact support if this persists."
+                        )
+                        log.error(
+                            f"Unknown error in {'slash' if context.interaction else 'text'} command "
+                            f"{context.command.qualified_name}",
+                            exc_info=exception,
+                        )
+
+            case app_commands.CommandNotFound() | app_commands.CommandSignatureMismatch():
+                await context.send("Commands desynchronized, contact support to fix this.")
+                log.error(exception.args[0])
+
+            case _:
+                await context.send("An unknown error occured, contact support if this persists.")
+                log.error("Unknown exception", exc_info=exception)
 
     async def on_application_command_error(
         self, interaction: discord.Interaction[Self], error: app_commands.AppCommandError
     ):
-        async def send(content: str):
-            if interaction.response.is_done():
-                await interaction.followup.send(content, ephemeral=True)
-            else:
-                await interaction.response.send_message(content, ephemeral=True)
-
-        if isinstance(error, app_commands.CommandOnCooldown):
-            await send(f"This command is on cooldown. Please retry <t:{math.ceil(time.time() + error.retry_after)}:R>.")
-            return
-
-        if isinstance(error, app_commands.CheckFailure):
-            if isinstance(error, app_commands.BotMissingPermissions):
-                missing_perms = ", ".join(error.missing_permissions)
-                await send(
-                    f"The bot is missing the permissions: `{missing_perms}`."
-                    " Give the bot those permissions for the command to work as expected."
-                )
-                return
-
-            if isinstance(error, app_commands.MissingPermissions):
-                missing_perms = ", ".join(error.missing_permissions)
-                await send(
-                    f"You are missing the following permissions: `{missing_perms}`."
-                    " You need those permissions to run this command."
-                )
-                return
-
-            return
-
-        if isinstance(error, app_commands.TransformerError):
-            await send("One of the arguments provided cannot be parsed.")
-            log.debug("Failed running converter", exc_info=error)
-            return
-
-        if isinstance(error, app_commands.CommandInvokeError):
-            assert interaction.command
-
-            if isinstance(error.original, discord.Forbidden):
-                await send("The bot does not have the permission to do something.")
-                # log to know where permissions are lacking
-                log.warning(
-                    f"Missing permissions for app command {interaction.command.qualified_name}", exc_info=error.original
-                )
-                return
-
-            if isinstance(error.original, discord.InteractionResponded):
-                # most likely an interaction received twice (happens sometimes),
-                # or two instances are running on the same token.
-                log.warning(
-                    f"Tried invoking command {interaction.command.qualified_name}, but the "
-                    "interaction was already responded to.",
-                    exc_info=error.original,
-                )
-                # still including traceback because it may be a programming error
-
-            log.error(f"Error in slash command {interaction.command.qualified_name}", exc_info=error.original)
-            await send("An error occured when running the command. Contact support if this persists.")
-            return
-
-        if isinstance(error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)):
-            await send("Commands desynchronized, contact support to fix this.")
-            log.error(error.args[0])
-
-        await send("An error occured when running the command. Contact support if this persists.")
-        log.error("Unknown error in interaction", exc_info=error)
+        await self.on_command_error(await commands.Context.from_interaction(interaction), error)
 
     async def on_error(self, event_method: str, /, *args, **kwargs):
         formatted_args = ", ".join((repr(x) for x in args))
         formatted_kwargs = " ".join(f"{x}={y:r}" for x, y in kwargs.items())
         log.error(f"Error in event {event_method}. Args: {formatted_args}. Kwargs: {formatted_kwargs}", exc_info=True)
-        self.tree.interaction_check

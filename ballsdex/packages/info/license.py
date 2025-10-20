@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING
 
 import discord
-from discord.ui import Button, View, button
+from discord.ui import Button, button
+
+from ballsdex.core.discord import View
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

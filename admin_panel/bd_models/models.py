@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
 
+from ballsdex.core.discord import View
 from ballsdex.core.image_generator.image_gen import draw_card
 from ballsdex.settings import settings
 
@@ -451,7 +452,7 @@ class BallInstance(models.Model):
 
     async def prepare_for_message(
         self, interaction: discord.Interaction["BallsDexBot"]
-    ) -> tuple[str, discord.File, discord.ui.View]:
+    ) -> tuple[str, discord.File, View]:
         # message content
         trade_content = ""
         if self.trade_player:
@@ -484,7 +485,7 @@ class BallInstance(models.Model):
         with ThreadPoolExecutor() as pool:
             buffer = await interaction.client.loop.run_in_executor(pool, self.draw_card)
 
-        view = discord.ui.View()
+        view = View()
         return content, discord.File(buffer, "card.webp"), view
 
     async def lock_for_trade(self):

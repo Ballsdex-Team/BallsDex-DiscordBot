@@ -5,20 +5,9 @@ from typing import TYPE_CHECKING, NamedTuple, cast
 
 import discord
 from discord import ButtonStyle, SeparatorSpacing
-from discord.ui import (
-    ActionRow,
-    Button,
-    Container,
-    Label,
-    Modal,
-    Section,
-    Select,
-    Separator,
-    TextDisplay,
-    Thumbnail,
-    button,
-)
+from discord.ui import ActionRow, Button, Container, Label, Section, Select, Separator, TextDisplay, Thumbnail, button
 
+from ballsdex.core.discord import Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.settings import settings
 from bd_models.models import DonationPolicy, FriendPolicy, MentionPolicy, Player, PrivacyPolicy, TradeCooldownPolicy

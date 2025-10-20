@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 import discord
 from discord.ext.commands import Paginator as CommandPaginator
 
+from ballsdex.core.discord import Modal, View
 from ballsdex.core.utils import menus
 
 if TYPE_CHECKING:
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.core.utils.paginator")
 
 
-class NumberedPageModal(discord.ui.Modal, title="Go to page"):
+class NumberedPageModal(Modal, title="Go to page"):
     page = discord.ui.TextInput(label="Page", placeholder="Enter a number", min_length=1)
 
     def __init__(self, max_pages: Optional[int]) -> None:
@@ -31,7 +32,7 @@ class NumberedPageModal(discord.ui.Modal, title="Go to page"):
         self.stop()
 
 
-class Pages(discord.ui.View):
+class Pages(View):
     def __init__(
         self,
         source: menus.PageSource,

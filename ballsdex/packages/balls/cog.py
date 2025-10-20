@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button, View, button
+from discord.ui import Button, button
 from django.db.models import Count, Q
 
+from ballsdex.core.discord import View
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
