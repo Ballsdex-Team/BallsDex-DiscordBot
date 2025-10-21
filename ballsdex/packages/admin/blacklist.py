@@ -11,10 +11,12 @@ from ballsdex.core.models import (
     GuildConfig,
     Player,
 )
-from ballsdex.core.utils.logging import log_action
+from ballsdex.core.utils.logging import webhook_logger
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.packages.admin.menu import BlacklistViewFormat
 from ballsdex.settings import settings
+
+log = webhook_logger("ballsdex.packages.admin.blacklist")
 
 
 class Blacklist(app_commands.Group):
@@ -59,10 +61,9 @@ class Blacklist(app_commands.Group):
         else:
             interaction.client.blacklist.add(user.id)
             await interaction.response.send_message("User is now blacklisted.", ephemeral=True)
-            await log_action(
+            log.info(
                 f"{interaction.user} blacklisted {user} ({user.id})"
-                f" for the following reason: {reason}.",
-                interaction.client,
+                f" for the following reason: {reason}."
             )
 
     @app_commands.command(name="remove")
@@ -100,10 +101,9 @@ class Blacklist(app_commands.Group):
             await interaction.response.send_message(
                 "User is now removed from blacklist.", ephemeral=True
             )
-            await log_action(
+            log.info(
                 f"{interaction.user} removed blacklist for user {user} ({user.id})."
-                f"\nReason: {reason}",
-                interaction.client,
+                f"\nReason: {reason}"
             )
 
     @app_commands.command(name="info")
@@ -239,10 +239,9 @@ class BlacklistGuild(app_commands.Group):
         else:
             interaction.client.blacklist_guild.add(guild.id)
             await interaction.response.send_message("Guild is now blacklisted.", ephemeral=True)
-            await log_action(
+            log.info(
                 f"{interaction.user} blacklisted the guild {guild}({guild.id}) "
-                f"for the following reason: {reason}.",
-                interaction.client,
+                f"for the following reason: {reason}."
             )
 
     @app_commands.command(name="remove")
@@ -296,10 +295,9 @@ class BlacklistGuild(app_commands.Group):
             await interaction.response.send_message(
                 "Guild is now removed from blacklist.", ephemeral=True
             )
-            await log_action(
+            log.info(
                 f"{interaction.user} removed blacklist for guild {guild} ({guild.id}).\n"
-                f"Reason: {reason}",
-                interaction.client,
+                f"Reason: {reason}"
             )
 
     @app_commands.command(name="info")
