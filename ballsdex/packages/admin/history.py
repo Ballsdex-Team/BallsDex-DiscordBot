@@ -215,7 +215,7 @@ class History(app_commands.Group):
                 if settings.admin_url
                 else None
             ),
-            description=f"Trade ID: {trade.pk:0X}",
+            description=f"Trade ID: `#{trade.pk:0X}`",
             timestamp=trade.date,
         )
         embed.set_footer(text="Trade date: ")
