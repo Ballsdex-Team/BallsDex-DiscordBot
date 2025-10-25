@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button, button
-from django.db.models import Count, Q
+from discord.ui import Button, LayoutView, TextDisplay, button
+from django.db.models import Count, F, Q
 
 from ballsdex.core.discord import View
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.menus import FieldPageSource, Menu
+from ballsdex.core.utils.menus import ChunkedListSource, Menu, SelectFormatter, TextFormatter, TextSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
@@ -19,10 +19,11 @@ from ballsdex.core.utils.transformers import (
     TradeCommandType,
 )
 from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
-from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer, DuplicateSource
 from ballsdex.settings import settings
 from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls
+
+from .countryballs_paginator import CountryballsDuplicateSource, CountryballsViewer
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -152,16 +153,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
-        interaction_player, _ = await Player.objects.prefetch_related("balls").aget_or_create(
-            discord_id=interaction.user.id
-        )
+        interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
         if blocked and not is_staff(interaction):
             await interaction.followup.send("You cannot view the list of a user that has you blocked.", ephemeral=True)
             return
 
-        query = player.balls.all()
+        query = BallInstance.objects.filter(player=player).prefetch_related("trade_player")
         if filter:
             query = filter_balls(filter, query, interaction.guild_id)
         if countryball:
@@ -173,7 +172,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         else:
             query = query.order_by("-favorite")
 
-        if await query.aexists():
+        if not await query.aexists():
             ball_txt = countryball.country if countryball else ""
             special_txt = special if special else ""
 
@@ -198,11 +197,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if reverse:
             query = query.reverse()
 
-        paginator = Menu(await CountryballsViewer.new(query), interaction=interaction)
-        if user_obj == interaction.user:
-            await paginator.start()
+        view = CountryballsViewer()
+        menu = Menu.countryballs(self.bot, view, view.selected, query)
+        await menu.init()
+        if user_obj != interaction.user:
+            view.header.content = f"Viewing {user_obj.name}'s {settings.plural_collectible_name}"
         else:
-            await paginator.start(content=f"Viewing {user_obj.name}'s {settings.plural_collectible_name}")
+            view.header.content = f"Viewing your {settings.plural_collectible_name}"
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
@@ -281,64 +283,42 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             ]
         )
 
-        entries: list[tuple[str, str]] = []
-
-        def fill_fields(title: str, emoji_ids: set[int]):
-            # check if we need to add "(continued)" to the field name
-            first_field_added = False
-            buffer = ""
-
-            for emoji_id in emoji_ids:
-                emoji = self.bot.get_emoji(emoji_id)
-                if not emoji:
-                    continue
-
-                text = f"{emoji} "
-                if len(buffer) + len(text) > 1024:
-                    # hitting embed limits, adding an intermediate field
-                    if first_field_added:
-                        entries.append(("\u200b", buffer))
-                    else:
-                        entries.append((f"__**{title}**__", buffer))
-                        first_field_added = True
-                    buffer = ""
-                buffer += text
-
-            if buffer:  # add what's remaining
-                if first_field_added:
-                    entries.append(("\u200b", buffer))
-                else:
-                    entries.append((f"__**{title}**__", buffer))
-
-        if owned_countryballs:
-            # Getting the list of emoji IDs from the IDs of the owned countryballs
-            fill_fields(
-                f"Owned {settings.plural_collectible_name}", set(bot_countryballs[x] for x in owned_countryballs)
-            )
-        else:
-            entries.append((f"__**Owned {settings.plural_collectible_name}**__", "Nothing yet."))
-
-        if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields(f"Missing {settings.plural_collectible_name}", missing)
-        else:
-            entries.append(
-                (f"__**:tada: No missing {settings.plural_collectible_name}, congratulations! :tada:**__", "\u200b")
-            )  # force empty field value
-
-        source = FieldPageSource(entries, per_page=5, inline=False)
         special_str = f" ({special.name})" if special else ""
         original_catcher_string = (
             f" ({'not ' if self_caught is False else ''}self-caught)" if self_caught is not None else ""
         )
-        source.embed.description = (
-            f"{settings.bot_name}{original_catcher_string}{special_str} progression: "
-            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
+        text = (
+            f"## {settings.bot_name}{original_catcher_string}{special_str} progression: "
+            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**\n"
         )
-        source.embed.colour = discord.Colour.blurple()
-        source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
 
-        pages = Menu(source=source, interaction=interaction, compact=True)
-        await pages.start()
+        def fill_fields(title: str, emoji_ids: set[int]):
+            nonlocal text
+            text += f"### {title}\n"
+            if not emoji_ids:
+                text += "Nothing yet."
+                return
+            for emoji_id in emoji_ids:
+                emoji = self.bot.get_emoji(emoji_id)
+                if not emoji:
+                    continue
+                text += f"{emoji} "
+            text += "\n"
+
+        # Getting the list of emoji IDs from the IDs of the owned countryballs
+        fill_fields(f"Owned {settings.plural_collectible_name}", set(bot_countryballs[x] for x in owned_countryballs))
+
+        if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
+            fill_fields(f"Missing {settings.plural_collectible_name}", missing)
+        else:
+            text += f"### :tada: No missing {settings.plural_collectible_name}, congratulations! :tada:"
+
+        view = LayoutView()
+        display = TextDisplay("")
+        view.add_item(display)
+        menu = Menu(self.bot, view, TextSource(text, delims=["\n###", " "]), TextFormatter(display))
+        await menu.init()
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
@@ -669,14 +649,18 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
-            annotations = {"name": "special__name", "emoji": "special__emoji"}
+            annotations = {"name": F("special__name"), "emoji": F("special__emoji"), "value_id": F("special_id")}
             apply_limit = False
         else:
             queryset = queryset.filter(ball__tradeable=True)
-            annotations = {"name": "ball__country", "emoji": "ball__emoji_id"}
+            annotations = {"name": F("ball__country"), "emoji": F("ball__emoji_id"), "value_id": F("ball_id")}
             apply_limit = True
 
-        query = queryset.values("id", *annotations.values()).annotate(count=Count("id")).order_by("-count")
+        query = (
+            queryset.values(annotations["value_id"].name)
+            .annotate(**annotations, count=Count("value_id"))
+            .order_by("-count")
+        )
 
         if apply_limit and limit is not None:
             query = query[:limit]
@@ -689,16 +673,19 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         entries = [
             discord.SelectOption(
-                label=item[annotations["name"]],
-                emoji=self.bot.get_emoji(item[annotations["emoji"]]) or item[annotations["emoji"]],
+                label=item["name"],
+                emoji=self.bot.get_emoji(item["emoji"]) or item["emoji"],
                 description=f"Count: {item['count']}",
-                value=item["id"],
+                value=item["value_id"],
             )
             async for item in query
         ]
 
-        source = Menu(DuplicateSource(type.value, entries), interaction=interaction)
-        await source.start(content=f"View your duplicate {type.value}.")
+        view = CountryballsDuplicateSource()
+        view.header.content = f"View your duplicate {type.value}."
+        menu = Menu(self.bot, view, ChunkedListSource(entries), SelectFormatter(view.callback))
+        await menu.init()
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
@@ -768,52 +755,36 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user2_only = set(user2_balls) - set(user1_balls)
         neither = set(bot_countryballs.keys()) - both - user1_only - user2_only
 
-        entries = []
+        special_str = f" ({special.name})" if special else ""
+        text = (
+            f"## Comparison of {interaction.user.display_name} and {user.display_name}'s "
+            f"{settings.plural_collectible_name}{special_str}\n"
+        )
 
         def fill_fields(title: str, ids: set[int]):
-            first_field_added = False
-            buffer = ""
+            if not ids:
+                return
+            nonlocal text
+            text += f"### {title}\n"
 
             for ball_id in ids:
                 emoji = self.bot.get_emoji(bot_countryballs[ball_id])
                 if not emoji:
                     continue
+                text += f"{emoji} "
+            text += "\n"
 
-                text = f"{emoji} "
-                if len(buffer) + len(text) > 1024:
-                    # hitting embed limits, adding an intermediate field
-                    if first_field_added:
-                        entries.append(("\u200b", buffer))
-                    else:
-                        entries.append((f"__**{title}**__", buffer))
-                        first_field_added = True
-                    buffer = ""
-                buffer += text
-
-            if buffer:  # add what's remaining
-                if first_field_added:
-                    entries.append(("\u200b", buffer))
-                else:
-                    entries.append((f"__**{title}**__", buffer))
-
-        if both:
-            fill_fields("Both have", both)
-        else:
-            entries.append(("__**Both have**__", "None"))
+        fill_fields("Both have", both)
         fill_fields(f"{interaction.user.display_name} has", user1_only)
         fill_fields(f"{user.display_name} has", user2_only)
         fill_fields("Neither have", neither)
 
-        source = FieldPageSource(entries, per_page=5, inline=False)
-        special_str = f" ({special.name})" if special else ""
-        source.embed.title = (
-            f"Comparison of {interaction.user.display_name} and {user.display_name}'s "
-            f"{settings.plural_collectible_name}{special_str}"
-        )
-        source.embed.colour = discord.Colour.blurple()
-
-        pages = Menu(source=source, interaction=interaction, compact=True)
-        await pages.start()
+        view = LayoutView()
+        display = TextDisplay("")
+        view.add_item(display)
+        menu = Menu(self.bot, view, TextSource(text, delims=["\n###", " "]), TextFormatter(display))
+        await menu.init()
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     async def collection(
