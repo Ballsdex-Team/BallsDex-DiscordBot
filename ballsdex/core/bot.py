@@ -388,15 +388,17 @@ class BallsDexBot(commands.AutoShardedBot):
                 await context.send_help(context.command)
 
             case commands.MissingRequiredAttachment():
-                await context.send("An attachment is missing.")
+                await context.send("An attachment is missing.", ephemeral=True)
 
             case app_commands.CommandOnCooldown() | commands.CommandOnCooldown():
                 await context.send(
-                    f"This command is on cooldown. Please retry <t:{math.ceil(time.time() + exception.retry_after)}:R>."
+                    "This command is on cooldown. Please retry "
+                    f"<t:{math.ceil(time.time() + exception.retry_after)}:R>.",
+                    ephemeral=True,
                 )
 
             case app_commands.TransformerError():
-                await context.send("One of the arguments provided cannot be parsed.")
+                await context.send("One of the arguments provided cannot be parsed.", ephemeral=True)
                 log.debug("Failed running converter", exc_info=exception)
 
             case commands.CheckFailure():
@@ -405,23 +407,25 @@ class BallsDexBot(commands.AutoShardedBot):
                         missing_perms = ", ".join(exception.missing_permissions)
                         await context.send(
                             f"The bot is missing the permissions: `{missing_perms}`."
-                            " Give the bot those permissions for the command to work as expected."
+                            " Give the bot those permissions for the command to work as expected.",
+                            ephemeral=True,
                         )
 
                     case commands.MissingPermissions():
                         missing_perms = ", ".join(exception.missing_permissions)
                         await context.send(
                             f"You are missing the following permissions: `{missing_perms}`."
-                            " You need those permissions to run this command."
+                            " You need those permissions to run this command.",
+                            ephemeral=True,
                         )
 
                     case _:
-                        await context.send("You are not allowed to use this command.")
+                        await context.send("You are not allowed to use this command.", ephemeral=True)
 
             case app_commands.CommandInvokeError() | commands.CommandInvokeError():
                 match exception.original:
                     case discord.Forbidden():
-                        await context.send("The bot does not have the permission to do something.")
+                        await context.send("The bot does not have the permission to do something.", ephemeral=True)
                         # log to know where permissions are lacking
                         log.warning(
                             f"Missing permissions for command {context.command.qualified_name}",
@@ -437,13 +441,14 @@ class BallsDexBot(commands.AutoShardedBot):
                             exc_info=exception.original,
                         )
 
-                    case discord.NotFound(code=10062):
+                    case discord.NotFound(code=10062) | discord.NotFound(code=10015):
                         log.warning("Expired interaction", exc_info=exception.original)
 
                     case _:
                         # still including traceback because it may be a programming error
                         await context.send(
-                            "An error occured when running the command. Contact support if this persists."
+                            "An error occured when running the command. Contact support if this persists.",
+                            ephemeral=True,
                         )
                         log.error(
                             f"Unknown error in {'slash' if context.interaction else 'text'} command "

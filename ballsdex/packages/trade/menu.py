@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, AsyncIterator, List, Set, cast
+from typing import TYPE_CHECKING, List, cast
 
 import discord
 from discord.ui import Button, button
@@ -21,6 +21,8 @@ from bd_models.enums import TradeCooldownPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 
 if TYPE_CHECKING:
+    from django.db.models import QuerySet
+
     from ballsdex.core.bot import BallsDexBot
     from ballsdex.packages.trade.cog import Trade as TradeCog
 
@@ -396,61 +398,29 @@ class TradeMenu:
         return result
 
 
-class CountryballsSelector(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], balls: List[int], cog: TradeCog):
-        self.bot = interaction.client
-        self.interaction = interaction
-        source = CountryballsSource(balls)
-        super().__init__(source, interaction=interaction)
-        self.add_item(self.select_ball_menu)
-        self.add_item(self.confirm_button)
-        self.add_item(self.select_all_button)
-        self.add_item(self.clear_button)
-        self.balls_selected: Set[BallInstance] = set()
-        self.cog = cog
+class TradeCountryballSelector(CountryballsSource):
+    async def format_page(self, menu, page: "QuerySet[BallInstance]"):
+        (select,) = await super().format_page(menu, page)
+        select_all = Button(label="Select Page", style=discord.ButtonStyle.secondary)
+        select_all.callback = self.select_all_button(page)
+        return (select,)  # select_all
 
-    async def set_options(self, balls: AsyncIterator[BallInstance]):
-        options: List[discord.SelectOption] = []
-        async for ball in balls:
-            if ball.is_tradeable is False:
-                continue
-            emoji = self.bot.get_emoji(int(ball.countryball.emoji_id))
-            favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
-            special = ball.specialcard.emoji if ball.specialcard else ""
-            options.append(
-                discord.SelectOption(
-                    label=f"{favorite}{special}#{ball.pk:0X} {ball.countryball.country}",
-                    description=f"ATK: {ball.attack_bonus:+d}% • HP: {ball.health_bonus:+d}% • "
-                    f"Caught on {ball.catch_date.strftime('%d/%m/%y %H:%M')}",
-                    emoji=emoji,
-                    value=f"{ball.pk}",
-                    default=ball in self.balls_selected,
-                )
+    def select_all_button(self, page: "QuerySet[BallInstance]"):
+        async def select_all_button(interaction: discord.Interaction["BallsDexBot"]):
+            await interaction.response.defer(thinking=True, ephemeral=True)
+            async for ball in page:
+                ball_instance = await BallInstance.objects.prefetch_related("ball", "player").aget(id=int(ball.value))
+                if ball_instance not in self.balls_selected:
+                    self.balls_selected.add(ball_instance)
+            await interaction.followup.send(
+                (
+                    f"All {settings.plural_collectible_name} on this page have been selected.\n"
+                    "Note that the menu may not reflect this change until you change page."
+                ),
+                ephemeral=True,
             )
-        self.select_ball_menu.options = options
-        self.select_ball_menu.max_values = len(options)
 
-    @discord.ui.select(min_values=1, max_values=25)
-    async def select_ball_menu(self, interaction: discord.Interaction["BallsDexBot"], item: discord.ui.Select):
-        for value in item.values:
-            ball_instance = await BallInstance.objects.prefetch_related("ball", "player").aget(id=int(value))
-            self.balls_selected.add(ball_instance)
-        await interaction.response.defer()
-
-    @discord.ui.button(label="Select Page", style=discord.ButtonStyle.secondary)
-    async def select_all_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
-        await interaction.response.defer(thinking=True, ephemeral=True)
-        for ball in self.select_ball_menu.options:
-            ball_instance = await BallInstance.objects.prefetch_related("ball", "player").aget(id=int(ball.value))
-            if ball_instance not in self.balls_selected:
-                self.balls_selected.add(ball_instance)
-        await interaction.followup.send(
-            (
-                f"All {settings.plural_collectible_name} on this page have been selected.\n"
-                "Note that the menu may not reflect this change until you change page."
-            ),
-            ephemeral=True,
-        )
+        return select_all_button
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
     async def confirm_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):

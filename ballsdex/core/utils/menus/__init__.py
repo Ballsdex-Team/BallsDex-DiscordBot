@@ -1,2 +1,4 @@
-from .menus import *  # noqa: F403, F401
-from .source import *  # noqa: F403, F401
+# ruff: noqa: F403
+from .formatter import *
+from .menus import *
+from .source import *

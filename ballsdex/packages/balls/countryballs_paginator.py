@@ -1,41 +1,34 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import discord
+from discord.ui import ActionRow, Select, TextDisplay
 
-from ballsdex.core.utils import menus
-from ballsdex.settings import settings
+from ballsdex.core.discord import LayoutView
 from bd_models.models import BallInstance
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
-
     from ballsdex.core.bot import BallsDexBot
 
 
-class CountryballsViewer(menus.CountryballsSource):
-    async def selected(self, interaction: discord.Interaction["BallsDexBot"], queryset: "QuerySet[BallInstance]"):
-        content, file, view = await (await queryset.aget()).prepare_for_message(interaction)
+class CountryballsViewer(LayoutView):
+    header = TextDisplay("")
+    select_row = ActionRow()
+
+    @select_row.select()
+    async def selected(self, interaction: discord.Interaction["BallsDexBot"], select: Select):
+        await interaction.response.defer(thinking=True)
+        ball = await BallInstance.objects.prefetch_related("trade_player").aget(pk=select.values[0])
+        content, file, view = await ball.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file, view=view)
         file.close()
 
 
-class DuplicateSource(menus.SelectListPageSource):
-    def __init__(self, dupe_type: str, entries: list[discord.SelectOption], **select_kwargs: Any):
-        self.dupe_type = dupe_type
-        super().__init__(entries, **select_kwargs)
+class CountryballsDuplicateSource(LayoutView):
+    header = TextDisplay("")
+    select_row = ActionRow()
 
-    async def callback(self, interaction: discord.Interaction["BallsDexBot"], select, values):
-        await interaction.response.defer(thinking=True, ephemeral=True)
-        if self.dupe_type == settings.plural_collectible_name:
-            balls = await BallInstance.objects.filter(
-                ball_id=values[0], player__discord_id=interaction.user.id
-            ).acount()
-        else:
-            balls = await BallInstance.objects.filter(
-                special_id=values[0], player__discord_id=interaction.user.id
-            ).acount()
-
-        plural = settings.collectible_name if balls == 1 else settings.plural_collectible_name
-        await interaction.followup.send(f"You have {balls:,} {values[0]} {plural}.")
+    @select_row.select()
+    async def callback(self, interaction: discord.Interaction["BallsDexBot"], select: Select):
+        await interaction.response.defer()
