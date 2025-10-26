@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, AsyncIterator, List, Set, cast
 import discord
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
+from tortoise import transactions
 
 from ballsdex.core.models import BallInstance, Player, Trade, TradeCooldownPolicy, TradeObject
 from ballsdex.core.utils import menus
@@ -158,7 +159,8 @@ class ConfirmView(View):
             return True
 
     @discord.ui.button(
-        style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
+        style=discord.ButtonStyle.success,
+        emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}",
     )
     async def accept_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
@@ -188,11 +190,13 @@ class ConfirmView(View):
                 await interaction.followup.send("The trade is now concluded.", ephemeral=True)
             else:
                 await interaction.followup.send(
-                    ":warning: An error occurred while concluding the trade.", ephemeral=True
+                    ":warning: An error occurred while concluding the trade.",
+                    ephemeral=True,
                 )
         else:
             await interaction.followup.send(
-                "You have accepted the trade, waiting for the other user...", ephemeral=True
+                "You have accepted the trade, waiting for the other user...",
+                ephemeral=True,
             )
 
     @discord.ui.button(
@@ -213,6 +217,11 @@ class ConfirmView(View):
         await view.wait()
         if not view.value:
             return
+
+        if self.trade.trader1.accepted and self.trade.trader2.accepted:
+            await interaction.followup.send(
+                "You can't cancel now; the trade has already gone through."
+            )
 
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
         await interaction.followup.send("Trade has been cancelled.", ephemeral=True)
@@ -268,7 +277,7 @@ class TradeMenu:
 
     async def update_message_loop(self):
         """
-        A loop task that updates each 5 second the menu with the new content.
+        A loop task that updates every 15 seconds with the new content.
         """
 
         assert self.task
@@ -356,6 +365,7 @@ class TradeMenu:
         trader.cancelled = True
         await self.cancel()
 
+    @transactions.atomic()
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
         self.current_view.stop()
@@ -376,6 +386,7 @@ class TradeMenu:
             )
 
         for countryball in self.trader2.proposal:
+            await countryball.refresh_from_db()
             if countryball.player.discord_id != self.trader2.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
@@ -561,7 +572,8 @@ class CountryballsSelector(Pages):
             else f"{settings.plural_collectible_name}"
         )
         await interaction.followup.send(
-            f"{len(self.balls_selected)} {grammar} added to your proposal.", ephemeral=True
+            f"{len(self.balls_selected)} {grammar} added to your proposal.",
+            ephemeral=True,
         )
         self.balls_selected.clear()
 
@@ -639,7 +651,10 @@ class TradeViewMenu(Pages):
         trade_player = (
             trade.trader1 if trade.trader1.user.id == player.discord_id else trade.trader2
         )
-        ball_instances = trade_player.proposal
+        ball_instances = sorted(
+            trade_player.proposal,
+            key=lambda ball: ball.special_id if ball.special_id else -1,
+        )
         if len(ball_instances) == 0:
             return await interaction.followup.send(
                 f"{trade_player.user} has not added any {settings.plural_collectible_name}.",

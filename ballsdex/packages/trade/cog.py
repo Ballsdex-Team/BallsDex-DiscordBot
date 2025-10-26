@@ -187,13 +187,15 @@ class Trade(commands.GroupCog):
         blocked = await player1.is_blocked(player2)
         if blocked:
             await interaction.response.send_message(
-                "You cannot begin a trade with a user that you have blocked.", ephemeral=True
+                "You cannot begin a trade with a user that you have blocked.",
+                ephemeral=True,
             )
             return
         blocked2 = await player2.is_blocked(player1)
         if blocked2:
             await interaction.response.send_message(
-                "You cannot begin a trade with a user that has blocked you.", ephemeral=True
+                "You cannot begin a trade with a user that has blocked you.",
+                ephemeral=True,
             )
             return
 
@@ -206,7 +208,8 @@ class Trade(commands.GroupCog):
             return
         if trade2 or trader2:
             await interaction.response.send_message(
-                "The user you are trying to trade with is already in a trade.", ephemeral=True
+                "The user you are trying to trade with is already in a trade.",
+                ephemeral=True,
             )
             return
 
@@ -219,7 +222,10 @@ class Trade(commands.GroupCog):
             return
 
         menu = TradeMenu(
-            self, interaction, TradingUser(interaction.user, player1), TradingUser(user, player2)
+            self,
+            interaction,
+            TradingUser(interaction.user, player1),
+            TradingUser(user, player2),
         )
         self.trades[interaction.guild.id][interaction.channel.id].append(menu)  # type: ignore
         await menu.start()
@@ -392,7 +398,8 @@ class Trade(commands.GroupCog):
             return
         if countryball not in trader.proposal:
             await interaction.response.send_message(
-                f"That {settings.collectible_name} is not in your proposal.", ephemeral=True
+                f"That {settings.collectible_name} is not in your proposal.",
+                ephemeral=True,
             )
             return
         trader.proposal.remove(countryball)
@@ -412,6 +419,11 @@ class Trade(commands.GroupCog):
                 "You do not have an ongoing trade.", ephemeral=True
             )
             return
+
+        if trade.trader1.accepted and trade.trader2.accepted:
+            await interaction.followup.send(
+                "You can't cancel now; the trade has already gone through."
+            )
 
         await trade.user_cancel(trader)
         await interaction.response.send_message("Trade cancelled.", ephemeral=True)
@@ -454,7 +466,8 @@ class Trade(commands.GroupCog):
 
         if days is not None and days < 0:
             await interaction.followup.send(
-                "Invalid number of days. Please provide a non-negative value.", ephemeral=True
+                "Invalid number of days. Please provide a non-negative value.",
+                ephemeral=True,
             )
             return
 
