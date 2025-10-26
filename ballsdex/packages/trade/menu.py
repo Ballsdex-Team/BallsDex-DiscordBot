@@ -222,6 +222,7 @@ class ConfirmView(View):
             await interaction.followup.send(
                 "You can't cancel now; the trade has already gone through."
             )
+            return
 
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
         await interaction.followup.send("Trade has been cancelled.", ephemeral=True)
