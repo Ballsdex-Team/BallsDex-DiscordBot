@@ -159,8 +159,7 @@ class ConfirmView(View):
             return True
 
     @discord.ui.button(
-        style=discord.ButtonStyle.success,
-        emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}",
+        style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
     )
     async def accept_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         trader = self.trade._get_trader(interaction.user)
@@ -190,13 +189,11 @@ class ConfirmView(View):
                 await interaction.followup.send("The trade is now concluded.", ephemeral=True)
             else:
                 await interaction.followup.send(
-                    ":warning: An error occurred while concluding the trade.",
-                    ephemeral=True,
+                    ":warning: An error occurred while concluding the trade.", ephemeral=True
                 )
         else:
             await interaction.followup.send(
-                "You have accepted the trade, waiting for the other user...",
-                ephemeral=True,
+                "You have accepted the trade, waiting for the other user...", ephemeral=True
             )
 
     @discord.ui.button(
@@ -573,8 +570,7 @@ class CountryballsSelector(Pages):
             else f"{settings.plural_collectible_name}"
         )
         await interaction.followup.send(
-            f"{len(self.balls_selected)} {grammar} added to your proposal.",
-            ephemeral=True,
+            f"{len(self.balls_selected)} {grammar} added to your proposal.", ephemeral=True
         )
         self.balls_selected.clear()
 
