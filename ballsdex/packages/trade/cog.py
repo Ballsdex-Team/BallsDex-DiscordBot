@@ -413,6 +413,11 @@ class Trade(commands.GroupCog):
             )
             return
 
+        if trade.trader1.accepted and trade.trader2.accepted:
+            await interaction.followup.send(
+                "You can't cancel now; the trade has already gone through."
+            )
+
         await trade.user_cancel(trader)
         await interaction.response.send_message("Trade cancelled.", ephemeral=True)
 
