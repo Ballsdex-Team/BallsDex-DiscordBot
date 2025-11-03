@@ -9,12 +9,24 @@ from discord.ui import ActionRow, Button, Container, Label, Section, Select, Sep
 
 from ballsdex.core.discord import Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.menus import Formatter
 from ballsdex.settings import settings
-from bd_models.models import DonationPolicy, FriendPolicy, MentionPolicy, Player, PrivacyPolicy, TradeCooldownPolicy
+from bd_models.models import (
+    Block,
+    DonationPolicy,
+    FriendPolicy,
+    Friendship,
+    MentionPolicy,
+    Player,
+    PrivacyPolicy,
+    TradeCooldownPolicy,
+)
 
 from .utils import get_items_csv, get_trades_csv
 
 if TYPE_CHECKING:
+    from django.db.models import QuerySet
+
     from ballsdex.core.bot import BallsDexBot
 
 type Interaction = discord.Interaction["BallsDexBot"]
@@ -218,3 +230,58 @@ class SettingsContainer(Container):
                     item.disabled = True
                     item.style = ButtonStyle.primary
                 row.add_item(item)
+
+
+class RelationContainer(Container):
+    title = TextDisplay("")
+    sep1 = Separator()
+
+    async def paginate_relations[M: Friendship | Block](self, qs: "QuerySet[M]", player: Player) -> list[list[Section]]:
+        assert self.view
+        if TYPE_CHECKING:
+            assert isinstance(self.view, discord.ui.LayoutView)
+
+        def get_button(relationship: M):
+            b = Button(label="Remove", style=discord.ButtonStyle.secondary)
+
+            async def button_callback(interaction: Interaction):
+                # should be handled by the view's interaction_check, but just in case
+                assert interaction.user.id == player.discord_id
+
+                await interaction.response.defer()
+                await relationship.adelete()
+                b.disabled = True
+                b.parent.children[0].content += "-# Removed"  # type: ignore
+                await interaction.edit_original_response(view=self.view)
+
+            b.callback = button_callback
+            return b
+
+        sections = []
+        current_chunk = []
+        async for x in qs:
+            other = x.player2 if x.player1 == player else x.player2
+            item = Section(TextDisplay(f"<@{other.discord_id}>"), accessory=get_button(x))
+            self.add_item(item)
+            current_chunk.append(item)
+            if self.view.content_length() > 5900 or self.view.total_children_count > 30:
+                sections.append(current_chunk)
+                for old_item in current_chunk:
+                    self.remove_item(old_item)
+                current_chunk = []
+        if current_chunk:
+            sections.append(current_chunk)
+            for old_item in current_chunk:
+                self.remove_item(old_item)
+        return sections
+
+
+class RelationFormatter(Formatter["list[Section]", RelationContainer]):
+    async def format_page(self, page: "list[Section]") -> None:
+        for i, item in enumerate(self.item.children):
+            if i > 1:
+                self.item.remove_item(item)
+        for section in page:
+            self.item.add_item(section)
+        if self.menu.source.get_max_pages() > 1:
+            self.item.add_item(TextDisplay(f"-# Page {self.menu.current_page + 1}/{self.menu.source.get_max_pages()}"))

@@ -24,13 +24,6 @@ class Source[P]:
         """
         pass
 
-    def is_paginating(self) -> bool:
-        """
-        Defines if the source is currently paginating. If `False`, this means there is no
-        need to paginate, and no control buttons will be shown.
-        """
-        raise NotImplementedError
-
     def get_max_pages(self) -> int:
         """
         Returns the maximum number of pages in the iterable.

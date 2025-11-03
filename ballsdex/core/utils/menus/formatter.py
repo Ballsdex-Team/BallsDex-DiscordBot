@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import discord
+import discord.ui
 from django.db.models import QuerySet
 
 from ballsdex.settings import settings

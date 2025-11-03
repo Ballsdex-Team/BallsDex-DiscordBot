@@ -164,7 +164,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "cachetools", specifier = "==6.2.1" },
-    { name = "discord-py", specifier = "==2.6.4" },
+    { name = "discord-py", git = "https://github.com/laggron42/discord.py.git?rev=6df34223da2085037ad6ecd3167b2d73d8483403" },
     { name = "dj-database-url", specifier = "==3.0.1" },
     { name = "django", specifier = "==5.2.7" },
     { name = "django-admin-action-forms", specifier = "==2.2.0" },
@@ -311,15 +311,11 @@ wheels = [
 
 [[package]]
 name = "discord-py"
-version = "2.6.4"
-source = { registry = "https://pypi.org/simple" }
+version = "2.7.0a5352+g6df34223"
+source = { git = "https://github.com/laggron42/discord.py.git?rev=6df34223da2085037ad6ecd3167b2d73d8483403#6df34223da2085037ad6ecd3167b2d73d8483403" }
 dependencies = [
     { name = "aiohttp" },
     { name = "audioop-lts" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ce/e7/9b1dbb9b2fc07616132a526c05af23cfd420381793968a189ee08e12e35f/discord_py-2.6.4.tar.gz", hash = "sha256:44384920bae9b7a073df64ae9b14c8cf85f9274b5ad5d1d07bd5a67539de2da9", size = 1092623, upload-time = "2025-10-08T21:45:43.593Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/ae/3d3a89b06f005dc5fa8618528dde519b3ba7775c365750f7932b9831ef05/discord_py-2.6.4-py3-none-any.whl", hash = "sha256:2783b7fb7f8affa26847bfc025144652c294e8fe6e0f8877c67ed895749eb227", size = 1209284, upload-time = "2025-10-08T21:45:41.679Z" },
 ]
 
 [[package]]

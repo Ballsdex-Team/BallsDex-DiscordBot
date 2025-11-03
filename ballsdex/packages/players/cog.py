@@ -3,20 +3,19 @@ from typing import TYPE_CHECKING
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.utils import format_dt
 from django.db.models import Q
 
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
-from ballsdex.core.utils.menus import FieldPageSource, Menu
+from ballsdex.core.utils.menus import ListSource, Menu
 from ballsdex.settings import settings
 from bd_models.enums import FriendPolicy
 from bd_models.models import BallInstance, Block, Friendship, Trade, balls
 from bd_models.models import Player as PlayerModel
 
-from .views import SettingsContainer
+from .views import RelationContainer, RelationFormatter, SettingsContainer
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -167,37 +166,27 @@ class Player(commands.GroupCog):
         View all your friends.
         """
         player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
-
-        friendships = [
-            x
-            async for x in Friendship.objects.filter(Q(player1=player) | Q(player2=player))
+        qs = (
+            Friendship.objects.filter(Q(player1=player) | Q(player2=player))
             .select_related("player1", "player2")
             .order_by("since")
-            .all()
-        ]
+        )
 
-        if not friendships:
+        if not await qs.aexists():
             await interaction.response.send_message("You currently do not have any friends added.", ephemeral=True)
             return
 
-        entries: list[tuple[str, str]] = []
-
-        for idx, relation in enumerate(friendships, start=1):
-            if relation.player1 == player:
-                friend = relation.player2
-            else:
-                friend = relation.player1
-
-            since = format_dt(relation.since, style="f")
-            entries.append(("", f"**{idx}.** <@{friend.discord_id}> ({friend.discord_id})\nSince: {since}"))
-
-        source = FieldPageSource(entries, per_page=5, inline=False)
-        source.embed.title = "Friend List"
-        source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
-        source.embed.set_footer(text="To add a friend, use the command /player friend add.")
-
-        pages = Menu(source=source, interaction=interaction, compact=True)
-        await pages.start(ephemeral=True)
+        view = LayoutView()
+        container = RelationContainer()
+        container.title.content = "# Your friend list\nAdd friends with {cmd}".format(
+            cmd=self.friend_add.extras.get("mention", "`/player friend add`")
+        )
+        view.add_item(container)
+        menu = Menu(
+            self.bot, view, ListSource(await container.paginate_relations(qs, player)), RelationFormatter(container)
+        )
+        await menu.init()
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     @blocked.command(name="add")
     async def block_add(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
@@ -288,35 +277,23 @@ class Player(commands.GroupCog):
         View all the users you have blocked.
         """
         player, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
+        qs = Block.objects.filter(player1=player).select_related("player1", "player2").order_by("date")
 
-        blocked_relations = (
-            await Block.objects.filter(player1=player).select_related("player1", "player2").order_by("date").aall()
-        )
-
-        if not blocked_relations:
+        if not await qs.aexists():
             await interaction.response.send_message("You haven't blocked any users!", ephemeral=True)
             return
 
-        entries: list[tuple[str, str]] = []
-
-        for idx, relation in enumerate(blocked_relations, start=1):
-            if relation.player1 == player:
-                blocked_user = relation.player2
-            else:
-                blocked_user = relation.player1
-
-            since = format_dt(relation.date, style="f")
-            entries.append(
-                ("", f"**{idx}.** <@{blocked_user.discord_id}> ({blocked_user.discord_id})\nBlocked at: {since}")
-            )
-
-        source = FieldPageSource(entries, per_page=5, inline=False)
-        source.embed.title = "Blocked Users List"
-        source.embed.set_thumbnail(url=interaction.user.display_avatar.url)
-        source.embed.set_footer(text="To block a user, use the command /player block add.")
-
-        pages = Menu(source=source, interaction=interaction, compact=True)
-        await pages.start(ephemeral=True)
+        view = LayoutView()
+        container = RelationContainer()
+        container.title.content = "# Your block list\nBlock users with {cmd}".format(
+            cmd=self.block_add.extras.get("mention", "`/player block add`")
+        )
+        view.add_item(container)
+        menu = Menu(
+            self.bot, view, ListSource(await container.paginate_relations(qs, player)), RelationFormatter(container)
+        )
+        await menu.init()
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     @app_commands.command()
     async def info(self, interaction: discord.Interaction["BallsDexBot"]):
