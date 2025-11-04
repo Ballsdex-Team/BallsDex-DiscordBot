@@ -55,6 +55,23 @@ class SelectFormatter(Formatter[list[discord.SelectOption], discord.ui.Select]):
 
 
 class ItemFormatter(Formatter[Iterable[discord.ui.Item], discord.ui.Container]):
+    """
+    This formatter takes as source a list of UI items, and dynamically add them to the given container.
+    Useful for iterations where a list of `Section` or `TextDisplay` need to be given.
+
+    You are responsible of passing a list of items that respect the container limits. Use `dynamic_chunks` to
+    pagify your items while respecting limits.
+
+    Parameters
+    ----------
+    item: discord.ui.Container
+        Must be of container type.
+    position: int
+        The position at which items must be inserted.
+    footer: bool
+        Whether to include a "Page 1/max" footer at the end.
+    """
+
     def __init__(self, item: discord.ui.Container, position: int, footer: bool = True):
         super().__init__(item)
         self.position = position

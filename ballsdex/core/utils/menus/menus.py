@@ -95,6 +95,75 @@ class Controls(ActionRow):
 
 
 class Menu[P]:
+    """
+    A helper to have a pagination system inside of a `LayoutView`. It is possible to have multiple menus per view.
+
+    A menu needs an instance of `Source` for the pagination, and one or more `Formatter`s which define how to display
+    the current page. The source and formatters are not directly linked, but must follow the same type constraints, use
+    your type checker to ensure you are using compatible classes.
+
+    If there are multiple pages, then this class will add a row of buttons to the position you choose via `init`.
+
+    Examples
+    --------
+    Simple pagination for a select list, divided in sections of 25::
+
+        from ballsdex.core.utils.menus import *
+        from discord.ui import *
+
+        my_options = [...]
+
+        view = discord.ui.LayoutView()
+        select = discord.ui.Select()
+        view.add_item(select)
+
+        # max number of options for a select is 25
+        source = ChunkedListSource(my_options, per_page=25)
+        # the formatter is only linked to its UI element, not the source itself
+        formatter = SelectFormatter(select)
+
+        menu = Menu(self.bot, view, source, formatter)
+        # by default, this will add the control buttons at the end
+        await menu.init()
+        await interaction.response.send_message(view=view)
+
+    Another example with a list of `TextDisplay` items, dynamically sized to respect the view's limits
+
+        from ballsdex.core.utils.menus import *
+        from discord.ui import *
+
+        async def generate_options():
+            async for item in queryset:
+                yield TextDisplay("## Item title\nItem description...")
+
+        view = discord.ui.LayoutView()
+        container = discord.ui.Container()
+        container.add_item(Section(
+            TextDisplay("# Message title"),
+            TextDisplay("Message subtitle"),
+            accessory=Thumbnail(user.display_avatar_url),
+        )
+        container.add_item(Separator())
+
+        source = ListSource(await dynamic_chunks(view, generate_options()))
+        formatter = ItemFormatter(container, position=2)  # insert after separator
+        menu = Menu(self.bot, view, source, formatter)
+        await menu.init()
+        await interaction.response.send_message(view=view)
+
+    Parameters
+    ----------
+    bot: BallsDexBot
+        The bot instance. Unused by itself, but some formatters may find it useful to have it available.
+    view: LayoutView
+        The view you are attaching to. This is incompatible with V1 views.
+    source: Source[P]
+        The source instance providing the elements to paginate
+    *formatters: Formatter[P, discord.ui.Item]
+        One or more formatters which will display the data from the source. They are attached to an item that belongs to
+        the view.
+    """
+
     def __init__(self, bot: "BallsDexBot", view: LayoutView, source: Source[P], *formatters: Formatter[P, Any]):
         self.bot = bot
         self.view = view
@@ -118,6 +187,17 @@ class Menu[P]:
         return cls(bot, view, source, formatter)
 
     async def init(self, position: int | None = None, container: discord.ui.Container | None = None):
+        """
+        Prepare the menu before sending.
+
+        Parameters
+        ----------
+        position: int | None
+            The position at which to insert the control buttons. If `None`, this will be at the end.
+        container: discord.ui.Container | None
+            If provided, the control buttons will be inserted inside the container instead of the outer view. The
+            `position` parameter is respected within the container.
+        """
         await self.source.prepare()
         await self.set_page(0)
         if self.source.get_max_pages() <= 1:
