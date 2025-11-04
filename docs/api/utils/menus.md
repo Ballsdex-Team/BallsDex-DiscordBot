@@ -1,4 +1,13 @@
 # Menus and paginators
 
-!!! failure
-    Wait for [this PR](https://github.com/Ballsdex-Team/BallsDex-DiscordBot/pull/621/) to be merged
+::: ballsdex.core.utils.menus.menus
+::: ballsdex.core.utils.menus.source
+    options:
+        members:
+            - Source
+            - ListSource
+            - ChunkedListSource
+            - TextSource
+            - ModelSource
+::: ballsdex.core.utils.menus.formatter
+::: ballsdex.core.utils.menus.utils

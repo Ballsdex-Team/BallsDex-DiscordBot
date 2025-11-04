@@ -1,4 +1,5 @@
 import zipfile
+from collections.abc import AsyncIterable
 from enum import StrEnum
 from io import BytesIO
 from typing import TYPE_CHECKING, NamedTuple, cast
@@ -10,11 +11,22 @@ from discord.ui import ActionRow, Button, Container, Label, Section, Select, Sep
 from ballsdex.core.discord import Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.settings import settings
-from bd_models.models import DonationPolicy, FriendPolicy, MentionPolicy, Player, PrivacyPolicy, TradeCooldownPolicy
+from bd_models.models import (
+    Block,
+    DonationPolicy,
+    FriendPolicy,
+    Friendship,
+    MentionPolicy,
+    Player,
+    PrivacyPolicy,
+    TradeCooldownPolicy,
+)
 
 from .utils import get_items_csv, get_trades_csv
 
 if TYPE_CHECKING:
+    from django.db.models import QuerySet
+
     from ballsdex.core.bot import BallsDexBot
 
 type Interaction = discord.Interaction["BallsDexBot"]
@@ -218,3 +230,35 @@ class SettingsContainer(Container):
                     item.disabled = True
                     item.style = ButtonStyle.primary
                 row.add_item(item)
+
+
+class RelationContainer(Container):
+    title = TextDisplay("")
+    sep1 = Separator()
+
+    async def paginate_relations[M: Friendship | Block](
+        self, qs: "QuerySet[M]", player: Player
+    ) -> AsyncIterable[Section]:
+        assert self.view
+        if TYPE_CHECKING:
+            assert isinstance(self.view, discord.ui.LayoutView)
+
+        def get_button(relationship: M):
+            b = Button(label="Remove", style=discord.ButtonStyle.secondary)
+
+            async def button_callback(interaction: Interaction):
+                # should be handled by the view's interaction_check, but just in case
+                assert interaction.user.id == player.discord_id
+
+                await interaction.response.defer()
+                await relationship.adelete()
+                b.disabled = True
+                b.parent.children[0].content += "-# Removed"  # type: ignore
+                await interaction.edit_original_response(view=self.view)
+
+            b.callback = button_callback
+            return b
+
+        async for x in qs:
+            other = x.player2 if x.player1 == player else x.player2
+            yield Section(TextDisplay(f"<@{other.discord_id}>"), accessory=get_button(x))

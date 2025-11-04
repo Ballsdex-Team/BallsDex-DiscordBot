@@ -1,44 +1,48 @@
-from typing import TYPE_CHECKING, Iterable
-
 import discord
+from discord.ui import ActionRow, Button, Container, Section, Separator, TextDisplay, Thumbnail
 from discord.utils import format_dt
+from django.db.models import QuerySet
 
 from ballsdex.core.utils import menus
-from ballsdex.core.utils.paginator import Pages
 from ballsdex.settings import settings
 from bd_models.models import BlacklistHistory, Player
 
-if TYPE_CHECKING:
-    from ballsdex.core.bot import BallsDexBot
 
+class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Container]):
+    def __init__(self, item: Container, user: discord.User):
+        super().__init__(item)
+        self.user = user
 
-class BlacklistViewFormat(menus.ListPageSource):
-    def __init__(self, entries: Iterable[BlacklistHistory], user_id: int, bot: "BallsDexBot"):
-        self.header = user_id
-        self.bot = bot
-        super().__init__(entries, per_page=1)
-
-    async def format_page(self, menu: Pages, blacklist: BlacklistHistory) -> discord.Embed:
-        embed = discord.Embed(
-            title=f"Blacklist History for {self.header}",
-            description=f"Type: {blacklist.action_type}\nReason: {blacklist.reason}",
-            timestamp=blacklist.date,
+    async def format_page(self, page):
+        blacklist = await page.aget()
+        container = self.item
+        container.clear_items()
+        section = Section(
+            TextDisplay(f"# Blacklist history for {self.user.mention}"),
+            TextDisplay(f"Type: {blacklist.action_type}"),
+            TextDisplay(f"Action Time: {format_dt(blacklist.date, 'R')}"),
+            accessory=Thumbnail(self.user.display_avatar.url),
         )
+        container.add_item(section)
         if blacklist.moderator_id:
-            moderator = await self.bot.fetch_user(blacklist.moderator_id)
-            embed.add_field(
-                name=("Blacklisted by" if blacklist.action_type == "blacklist" else "Unblacklisted by"),
-                value=f"{moderator.display_name} ({moderator.id})",
-                inline=True,
+            moderator = await self.menu.bot.fetch_user(blacklist.moderator_id)
+            container.add_item(Separator())
+            action_type = "Blacklisted" if blacklist.action_type == "blacklist" else "Unblacklisted"
+            container.add_item(
+                Section(
+                    TextDisplay(f"### {action_type} by {moderator.mention}"),
+                    TextDisplay(f"### Reason\n{blacklist.reason}"),
+                    accessory=Thumbnail(moderator.display_avatar.url),
+                )
             )
-        embed.add_field(name="Action Time", value=format_dt(blacklist.date, "R"), inline=True)
-        if settings.admin_url and (player := await Player.objects.aget_or_none(discord_id=self.header)):
-            embed.add_field(
-                name="\u200b",
-                value=f"[View history online](<{settings.admin_url}/bd_models/player/{player.pk}/change/>)",
-                inline=False,
+        if settings.admin_url and (player := await Player.objects.aget_or_none(discord_id=self.user.id)):
+            container.add_item(
+                ActionRow(
+                    Button(
+                        url=f"{settings.admin_url}/bd_models/player/{player.pk}/change/", label="View history online"
+                    )
+                )
             )
-        embed.set_footer(
-            text=(f"Blacklist History {menu.current_page + 1}/{menu.source.get_max_pages()} | Blacklist date: ")
+        container.add_item(
+            TextDisplay(f"-# Blacklist history {self.menu.current_page + 1}/{self.menu.source.get_max_pages()}")
         )
-        return embed
