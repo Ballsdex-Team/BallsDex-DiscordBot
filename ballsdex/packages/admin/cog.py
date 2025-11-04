@@ -4,16 +4,23 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button
+from discord.ui import Button, Container, LayoutView, Section, TextDisplay
 
-from ballsdex.core.utils.menus import FieldPageSource, Menu, TextPageSource
+from ballsdex.core.utils.menus import (
+    ItemFormatter,
+    ListSource,
+    Menu,
+    TextFormatter,
+    TextSource,
+    dynamic_chunks,
+    iter_to_async,
+)
 from ballsdex.settings import settings
 from bd_models.models import Ball, GuildConfig
 
 from .balls import Balls as BallsGroup
 from .blacklist import Blacklist as BlacklistGroup
 from .blacklist import BlacklistGuild as BlacklistGuildGroup
-from .history import History as HistoryGroup
 from .info import Info as InfoGroup
 from .logs import Logs as LogsGroup
 from .money import Money as MoneyGroup
@@ -38,7 +45,7 @@ class Admin(commands.GroupCog):
         self.__cog_app_commands_group__.add_command(BallsGroup(name=settings.players_group_cog_name))
         self.__cog_app_commands_group__.add_command(BlacklistGroup())
         self.__cog_app_commands_group__.add_command(BlacklistGuildGroup())
-        self.__cog_app_commands_group__.add_command(HistoryGroup())
+        # self.__cog_app_commands_group__.add_command(HistoryGroup())
         self.__cog_app_commands_group__.add_command(LogsGroup())
         self.__cog_app_commands_group__.add_command(InfoGroup())
         self.__cog_app_commands_group__.add_command(MoneyGroup())
@@ -162,10 +169,12 @@ class Admin(commands.GroupCog):
             for i, ball in enumerate(sorted_balls, start=1):
                 text += f"{i}. {ball.country}\n"
 
-        source = TextPageSource(text, prefix="```md\n", suffix="```")
-        pages = Menu(source=source, interaction=interaction, compact=True)
-        pages.remove_item(pages.stop_pages)
-        await pages.start(ephemeral=True)
+        view = discord.ui.LayoutView()
+        text_display = discord.ui.TextDisplay("")
+        view.add_item(text_display)
+        menu = Menu(self.bot, view, TextSource(text, prefix="```md\n", suffix="```"), TextFormatter(text_display))
+        await menu.init()
+        await interaction.response.send_message(view=view)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -225,57 +234,60 @@ class Admin(commands.GroupCog):
                 )
             return
 
-        entries: list[tuple[str, str]] = []
+        entries: list[TextDisplay] = []
         for guild in guilds:
             if config := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
                 spawn_enabled = config.enabled and config.guild_id
             else:
                 spawn_enabled = False
 
-            field_name = f"`{guild.id}`"
-            field_value = ""
+            text = f"## {guild.name}\n"
 
             # highlight suspicious server names
             if any(x in guild.name.lower() for x in ("farm", "grind", "spam")):
-                field_value += f"- :warning: **{guild.name}**\n"
+                text += f"- :warning: **{guild.name}**\n"
             else:
-                field_value += f"- {guild.name}\n"
+                text += f"- {guild.name}\n"
 
             # highlight low member count
             if guild.member_count <= 3:  # type: ignore
-                field_value += f"- :warning: **{guild.member_count} members**\n"
+                text += f"- :warning: **{guild.member_count} members**\n"
             else:
-                field_value += f"- {guild.member_count} members\n"
+                text += f"- {guild.member_count} members\n"
 
             # highlight if spawning is enabled
             if spawn_enabled:
-                field_value += "- :warning: **Spawn is enabled**"
+                text += "- :warning: **Spawn is enabled**"
             else:
-                field_value += "- Spawn is disabled"
+                text += "- Spawn is disabled"
 
-            entries.append((field_name, field_value))
+            entries.append(TextDisplay(text))
 
-        source = FieldPageSource(entries, per_page=25, inline=True)
-        source.embed.set_author(name=f"{user} ({user.id})", icon_url=user.display_avatar.url)
-
-        if len(guilds) > 1:
-            source.embed.title = f"{len(guilds)} servers shared"
-        else:
-            source.embed.title = "1 server shared"
-
-        if not self.bot.intents.members:
-            source.embed.set_footer(
-                text="\N{WARNING SIGN} The bot cannot be aware of the member's "
-                "presence in servers, it is only aware of server ownerships."
-            )
-
-        pages = Menu(source=source, interaction=interaction, compact=True)
-        pages.add_item(
-            Button(
+        view = LayoutView()
+        container = Container()
+        view.add_item(container)
+        section = Section(
+            TextDisplay(f"## {len(guilds)} servers shared"),
+            TextDisplay(f"{user.mention} ({user.id})"),
+            accessory=Button(
                 style=discord.ButtonStyle.link,
                 label="View profile",
                 url=f"discord://-/users/{user.id}",
                 emoji="\N{LEFT-POINTING MAGNIFYING GLASS}",
-            )
+            ),
         )
-        await pages.start(ephemeral=True)
+        container.add_item(section)
+
+        if not self.bot.intents.members:
+            section.add_item(
+                TextDisplay(
+                    "\N{WARNING SIGN} The bot cannot be aware of the member's "
+                    "presence in servers, it is only aware of server ownerships."
+                )
+            )
+
+        pages = Menu(
+            self.bot, view, ListSource(await dynamic_chunks(view, iter_to_async(entries))), ItemFormatter(container, 1)
+        )
+        await pages.init()
+        await interaction.response.send_message(view=view)

@@ -5,10 +5,11 @@ from django.db import IntegrityError
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils.logging import log_action
-from ballsdex.core.utils.menus import Menu
-from ballsdex.packages.admin.menu import BlacklistViewFormat
+from ballsdex.core.utils.menus import Menu, ModelSource
 from ballsdex.settings import settings
 from bd_models.models import BlacklistedGuild, BlacklistedID, BlacklistHistory, GuildConfig, Player
+
+from .menu import BlacklistHistoryFormatter
 
 
 class Blacklist(app_commands.Group):
@@ -148,9 +149,20 @@ class Blacklist(app_commands.Group):
             await interaction.response.send_message("No history found for that ID.", ephemeral=True)
             return
 
-        source = await BlacklistViewFormat.new_blacklistview(history, _id)
-        pages = Menu(source=source, interaction=interaction, compact=True)
-        await pages.start(ephemeral=True)
+        try:
+            user = await interaction.client.fetch_user(_id)
+        except discord.NotFound:
+            await interaction.response.send_message("User was not found from Discord.", ephemeral=True)
+            return
+
+        view = discord.ui.LayoutView()
+        container = discord.ui.Container()
+        view.add_item(container)
+        menu = Menu(
+            interaction.client, view, ModelSource(history, per_page=1), BlacklistHistoryFormatter(container, user)
+        )
+        await menu.init()
+        await interaction.response.send_message(view=view)
 
 
 class BlacklistGuild(app_commands.Group):
