@@ -4,9 +4,10 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from ballsdex.packages.config.components import AcceptTOSView
 from ballsdex.settings import settings
 from bd_models.models import GuildConfig
+
+from .components import AcceptTOSView
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
