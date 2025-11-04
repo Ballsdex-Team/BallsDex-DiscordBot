@@ -198,6 +198,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             query = query.reverse()
 
         view = CountryballsViewer()
+        view.restrict_author(interaction.user.id)
         menu = Menu.countryballs(self.bot, view, view.selected, query)
         await menu.init()
         if user_obj != interaction.user:
