@@ -418,7 +418,7 @@ class BallsDexBot(commands.AutoShardedBot):
                     case _:
                         await context.send("You are not allowed to use this command.")
 
-            case commands.CommandInvokeError():
+            case app_commands.CommandInvokeError() | commands.CommandInvokeError():
                 match exception.original:
                     case discord.Forbidden():
                         await context.send("The bot does not have the permission to do something.")
@@ -448,12 +448,8 @@ class BallsDexBot(commands.AutoShardedBot):
                         log.error(
                             f"Unknown error in {'slash' if context.interaction else 'text'} command "
                             f"{context.command.qualified_name}",
-                            exc_info=exception,
+                            exc_info=exception.original,
                         )
-
-            case app_commands.CommandNotFound() | app_commands.CommandSignatureMismatch():
-                await context.send("Commands desynchronized, contact support to fix this.")
-                log.error(exception.args[0])
 
             case _:
                 await context.send("An unknown error occured, contact support if this persists.")
@@ -462,6 +458,15 @@ class BallsDexBot(commands.AutoShardedBot):
     async def on_application_command_error(
         self, interaction: discord.Interaction[Self], error: app_commands.AppCommandError
     ):
+        if isinstance(error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)):
+            if not self.is_ready():
+                log.warning("Command not found, but the bot hasn't started yet.")
+                return
+            send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
+            await send("Commands desynchronized, contact support to fix this.")
+            log.error(error.args[0])
+            return
+
         await self.on_command_error(await commands.Context.from_interaction(interaction), error)
 
     async def on_error(self, event_method: str, /, *args, **kwargs):
