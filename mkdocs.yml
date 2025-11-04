@@ -106,6 +106,8 @@ plugins:
             separate_signature: true
             signature_crossrefs: true
             find_stubs_package: true
+            type_parameter_headings: true
+            show_signature_type_parameters: true
           inventories:
             - https://discordpy.readthedocs.io/en/latest/objects.inv
             - https://docs.python.org/3/objects.inv

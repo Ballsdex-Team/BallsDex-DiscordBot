@@ -96,17 +96,20 @@ class Controls(ActionRow):
 
 class Menu[P]:
     """
-    A helper to have a pagination system inside of a `LayoutView`. It is possible to have multiple menus per view.
+    A helper to have a pagination system inside of a [`LayoutView`][discord.ui.LayoutView]. It is possible to have
+    multiple menus per view.
 
-    A menu needs an instance of `Source` for the pagination, and one or more `Formatter`s which define how to display
-    the current page. The source and formatters are not directly linked, but must follow the same type constraints, use
-    your type checker to ensure you are using compatible classes.
+    A menu needs an instance of [`Source`][ballsdex.core.utils.menus.Source] for the pagination, and one or more
+    [`Formatter`][ballsdex.core.utils.menus.Source]s which define how to display the current page. The source and
+    formatters are not directly linked, but must follow the same type
+    constraints, use your type checker to ensure you are using compatible classes.
 
-    If there are multiple pages, then this class will add a row of buttons to the position you choose via `init`.
+    If there are multiple pages, then this class will add a row of buttons to the position you choose via
+    [`init`][ballsdex.core.utils.menus.Source].
 
-    Examples
-    --------
-    Simple pagination for a select list, divided in sections of 25::
+    Example
+    -------
+    Simple pagination for a select list, divided in sections of 25
 
         from ballsdex.core.utils.menus import *
         from discord.ui import *
@@ -134,7 +137,7 @@ class Menu[P]:
 
         async def generate_options():
             async for item in queryset:
-                yield TextDisplay("## Item title\nItem description...")
+                yield TextDisplay("## Item title\\nItem description...")
 
         view = discord.ui.LayoutView()
         container = discord.ui.Container()
@@ -151,6 +154,18 @@ class Menu[P]:
         await menu.init()
         await interaction.response.send_message(view=view)
 
+    Tip
+    ---
+    Using a type checker can reveal incompatible types
+
+        from ballsdex.core.utils.menus import *
+
+        source = ModelSource(BallInstance.objects.filter(player=player))
+        formatter = TextSource(item)
+        menu = Menu(self.bot, view, source, formatter)
+        # Argument of type "TextSource" cannot be assigned to parameter "formatters" of type "Formatter[P@Menu, Any]" in function "__init__"
+        #   "TextSource" is not assignable to "Formatter[QuerySet[BallInstance], Any]"
+
     Parameters
     ----------
     bot: BallsDexBot
@@ -162,7 +177,7 @@ class Menu[P]:
     *formatters: Formatter[P, discord.ui.Item]
         One or more formatters which will display the data from the source. They are attached to an item that belongs to
         the view.
-    """
+    """  # noqa: E501
 
     def __init__(self, bot: "BallsDexBot", view: LayoutView, source: Source[P], *formatters: Formatter[P, Any]):
         self.bot = bot

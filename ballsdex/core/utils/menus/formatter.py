@@ -57,10 +57,11 @@ class SelectFormatter(Formatter[list[discord.SelectOption], discord.ui.Select]):
 class ItemFormatter(Formatter[Iterable[discord.ui.Item], discord.ui.Container]):
     """
     This formatter takes as source a list of UI items, and dynamically add them to the given container.
-    Useful for iterations where a list of `Section` or `TextDisplay` need to be given.
+    Useful for iterations where a list of [`Section`][discord.ui.Section] or [`TextDisplay`][discord.ui.TextDisplay]
+    need to be given.
 
-    You are responsible of passing a list of items that respect the container limits. Use `dynamic_chunks` to
-    pagify your items while respecting limits.
+    You are responsible of passing a list of items that respect the container limits. Use
+    [`dynamic_chunks`][ballsdex.core.utils.menus.utils.dynamic_chunks] to pagify your items while respecting limits.
 
     Parameters
     ----------

@@ -5,15 +5,16 @@ import discord
 
 async def dynamic_chunks[I: discord.ui.Item](view: discord.ui.LayoutView, source: AsyncIterable[I]) -> list[list[I]]:
     """
-    Transform an iterable of `discord.ui.Item`s into a list of lists. Each sublist is guaranteed to fit the limits of
-    the view given as argument.
+    Transform an iterable of [`Item`][discord.ui.Item]s into a list of lists. Each sublist is guaranteed to fit the
+    limits of the view given as argument.
 
-    This is useful combined with `ItemFormatter` to display a dynamically-sized list of items.
+    This is useful combined with [`ItemFormatter`][ballsdex.core.utils.menus.ItemFormatter] to display a
+    dynamically-sized list of items.
 
     Warning
     -------
-        This will ensure the limits of the view are respected at the time this function is called. Do not append new
-        items to your view after calling this function as the results will be inaccurate.
+    This will ensure the limits of the view are respected at the time this function is called. Do not append new
+    items to your view after calling this function as the results will be inaccurate.
 
     Parameters
     ----------

@@ -15,7 +15,7 @@ type Interaction = discord.Interaction["BallsDexBot"]
 
 class Source[P]:
     """
-    A source of long items to paginate and display over Discord.
+    A source of long items to paginate and display over a [`LayoutView`][discord.ui.LayoutView].
     """
 
     async def prepare(self):
