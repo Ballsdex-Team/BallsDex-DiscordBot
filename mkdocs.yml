@@ -65,7 +65,7 @@ nav:
       - api/models.md
       - Utils:
           - api/utils/buttons.md
-          - api/utils/db.md
+          - api/utils/django.md
           - api/utils/enums.md
           - api/utils/formatting.md
           - api/utils/logging.md
