@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 import discord
 import discord.ui
@@ -52,6 +52,24 @@ class TextFormatter(Formatter[str, discord.ui.TextDisplay]):
 class SelectFormatter(Formatter[list[discord.SelectOption], discord.ui.Select]):
     async def format_page(self, page):
         self.item.options = page
+
+
+class ItemFormatter(Formatter[Iterable[discord.ui.Item], discord.ui.Container]):
+    def __init__(self, item: discord.ui.Container, position: int, footer: bool = True):
+        super().__init__(item)
+        self.position = position
+        self.footer = footer
+
+    async def format_page(self, page):
+        for i, item in enumerate(self.item.children):
+            if i > self.position:
+                self.item.remove_item(item)
+        for section in page:
+            self.item.add_item(section)
+        if self.footer and self.menu.source.get_max_pages() > 1:
+            self.item.add_item(
+                discord.ui.TextDisplay(f"-# Page {self.menu.current_page + 1}/{self.menu.source.get_max_pages()}")
+            )
 
 
 class CountryballFormatter(Formatter[QuerySet[BallInstance], discord.ui.Select]):

@@ -78,6 +78,8 @@ class TextSource(ListSource[str]):
         escape_mass_mentions: bool = True,
         shorten_by: int = 8,
         page_length: int = 5900,
+        prefix: str = "",
+        suffix: str = "",
     ):
         pages = pagify(
             text,
@@ -86,6 +88,8 @@ class TextSource(ListSource[str]):
             escape_mass_mentions=escape_mass_mentions,
             shorten_by=shorten_by,
             page_length=page_length,
+            prefix=prefix,
+            suffix=suffix,
         )
         super().__init__(list(pages))
 

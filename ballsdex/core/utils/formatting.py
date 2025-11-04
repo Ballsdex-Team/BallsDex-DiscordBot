@@ -11,6 +11,8 @@ def pagify(
     escape_mass_mentions: bool = True,
     shorten_by: int = 8,
     page_length: int = 2000,
+    prefix: str = "",
+    suffix: str = "",
 ) -> Iterator[str]:
     """
     Generate multiple pages from the given text.
@@ -44,7 +46,7 @@ def pagify(
         Pages of the given text.
     """
     in_text = text
-    page_length -= shorten_by
+    page_length -= shorten_by + len(prefix) + len(suffix)
     while len(in_text) > page_length:
         this_page_len = page_length
         if escape_mass_mentions:
@@ -60,10 +62,11 @@ def pagify(
         else:
             to_send = in_text[:closest_delim]
         if len(to_send.strip()) > 0:
-            yield to_send
+            yield f"{prefix}{to_send}{suffix}"
         in_text = in_text[closest_delim:]
 
     if len(in_text.strip()) > 0:
+        in_text = f"{prefix}{in_text}{suffix}"
         if escape_mass_mentions:
             yield escape(in_text, mass_mentions=True)
         else:

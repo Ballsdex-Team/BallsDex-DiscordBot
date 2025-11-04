@@ -9,13 +9,13 @@ from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
-from ballsdex.core.utils.menus import ListSource, Menu
+from ballsdex.core.utils.menus import ItemFormatter, ListSource, Menu, dynamic_chunks
 from ballsdex.settings import settings
 from bd_models.enums import FriendPolicy
 from bd_models.models import BallInstance, Block, Friendship, Trade, balls
 from bd_models.models import Player as PlayerModel
 
-from .views import RelationContainer, RelationFormatter, SettingsContainer
+from .views import RelationContainer, SettingsContainer
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -183,7 +183,10 @@ class Player(commands.GroupCog):
         )
         view.add_item(container)
         menu = Menu(
-            self.bot, view, ListSource(await container.paginate_relations(qs, player)), RelationFormatter(container)
+            self.bot,
+            view,
+            ListSource(await dynamic_chunks(view, container.paginate_relations(qs, player))),
+            ItemFormatter(container, 1),
         )
         await menu.init()
         await interaction.response.send_message(view=view, ephemeral=True)
@@ -290,7 +293,10 @@ class Player(commands.GroupCog):
         )
         view.add_item(container)
         menu = Menu(
-            self.bot, view, ListSource(await container.paginate_relations(qs, player)), RelationFormatter(container)
+            self.bot,
+            view,
+            ListSource(await dynamic_chunks(view, container.paginate_relations(qs, player))),
+            ItemFormatter(container, 1),
         )
         await menu.init()
         await interaction.response.send_message(view=view, ephemeral=True)

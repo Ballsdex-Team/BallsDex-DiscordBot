@@ -1,4 +1,5 @@
 import zipfile
+from collections.abc import AsyncIterable
 from enum import StrEnum
 from io import BytesIO
 from typing import TYPE_CHECKING, NamedTuple, cast
@@ -9,7 +10,6 @@ from discord.ui import ActionRow, Button, Container, Label, Section, Select, Sep
 
 from ballsdex.core.discord import Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.menus import Formatter
 from ballsdex.settings import settings
 from bd_models.models import (
     Block,
@@ -236,7 +236,9 @@ class RelationContainer(Container):
     title = TextDisplay("")
     sep1 = Separator()
 
-    async def paginate_relations[M: Friendship | Block](self, qs: "QuerySet[M]", player: Player) -> list[list[Section]]:
+    async def paginate_relations[M: Friendship | Block](
+        self, qs: "QuerySet[M]", player: Player
+    ) -> AsyncIterable[Section]:
         assert self.view
         if TYPE_CHECKING:
             assert isinstance(self.view, discord.ui.LayoutView)
@@ -257,31 +259,6 @@ class RelationContainer(Container):
             b.callback = button_callback
             return b
 
-        sections = []
-        current_chunk = []
         async for x in qs:
             other = x.player2 if x.player1 == player else x.player2
-            item = Section(TextDisplay(f"<@{other.discord_id}>"), accessory=get_button(x))
-            self.add_item(item)
-            current_chunk.append(item)
-            if self.view.content_length() > 5900 or self.view.total_children_count > 30:
-                sections.append(current_chunk)
-                for old_item in current_chunk:
-                    self.remove_item(old_item)
-                current_chunk = []
-        if current_chunk:
-            sections.append(current_chunk)
-            for old_item in current_chunk:
-                self.remove_item(old_item)
-        return sections
-
-
-class RelationFormatter(Formatter["list[Section]", RelationContainer]):
-    async def format_page(self, page: "list[Section]") -> None:
-        for i, item in enumerate(self.item.children):
-            if i > 1:
-                self.item.remove_item(item)
-        for section in page:
-            self.item.add_item(section)
-        if self.menu.source.get_max_pages() > 1:
-            self.item.add_item(TextDisplay(f"-# Page {self.menu.current_page + 1}/{self.menu.source.get_max_pages()}"))
+            yield Section(TextDisplay(f"<@{other.discord_id}>"), accessory=get_button(x))
