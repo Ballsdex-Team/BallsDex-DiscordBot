@@ -496,8 +496,9 @@ class BallInstance(models.Model):
         self.locked = None  # type: ignore
         await self.asave(update_fields=("locked",))
 
-    async def is_locked(self):
-        await self.arefresh_from_db(fields=["locked"])
+    async def is_locked(self, refresh: bool = True):
+        if refresh:
+            await self.arefresh_from_db(fields=["locked"])
         self.locked
         return self.locked is not None and (self.locked + timedelta(minutes=30)) > timezone.now()
 
