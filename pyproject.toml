@@ -21,7 +21,7 @@ dependencies = [
 
     # django admin panel
     "uvicorn[standard]==0.35.0",
-    "django==5.2.4",
+    "django==5.2.8",
     "django-allow-cidr (>=0.7.1,<0.8.0)",
     "django-nonrelated-inlines==0.2",
     "django-admin-autocomplete-filter==0.7.1",
