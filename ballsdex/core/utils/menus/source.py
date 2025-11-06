@@ -77,7 +77,7 @@ class TextSource(ListSource[str]):
         priority: bool = True,
         escape_mass_mentions: bool = True,
         shorten_by: int = 8,
-        page_length: int = 5900,
+        page_length: int = 3900,
         prefix: str = "",
         suffix: str = "",
     ):
