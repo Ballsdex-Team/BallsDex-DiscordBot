@@ -22,8 +22,8 @@ Then you must make a dump of the database.
 === "With Docker"
 
     ```bash
-    docker compose up -d postgres-db && \
-        docker compose exec pg_dump -U ballsdex ballsdex -f data-dump.sql && \
+    docker compose up -d postgres-db --wait && \
+        docker compose exec postgres-db pg_dump -U ballsdex ballsdex -f data-dump.sql && \
         docker compose cp postgres-db:data-dump.sql .
     ```
 
@@ -40,7 +40,7 @@ This will generate a file `data-dump.sql` which you need to preserve, containing
 === "With Docker"
 
     ```bash
-    docker compose up -d postgres-db && \
+    docker compose up -d postgres-db --wait && \
         cat data-dump.sql | \
         docker compose exec -T postgres-db psql -U ballsdex ballsdex
     ```
