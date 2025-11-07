@@ -94,10 +94,10 @@ class Trade(commands.GroupCog):
                 "You cannot begin a trade with a user that has blocked you.", ephemeral=True
             )
             return
-        if self.get_trade(interaction.user) is not None:
+        if await self.get_trade(interaction.user) is not None:
             await interaction.response.send_message("You already have an active trade.", ephemeral=True)
             return
-        if self.get_trade(user) is not None:
+        if await self.get_trade(user) is not None:
             await interaction.response.send_message(f"{user.mention} already has an active trade.", ephemeral=True)
             return
 

@@ -242,8 +242,8 @@ class TradingUser(Container):
         elif self.confirmed:
             self.accent_colour = discord.Colour.green()
             section.add_item(TextDisplay("You have confirmed your trade proposal."))
-        elif self.view.confirmation_lock:
-            self.accent_colour = discord.Colour.yellow()
+        elif self.view.confirmation_phase:
+            self.accent_colour = discord.Colour.gold()
             section.add_item(TextDisplay("You have both locked your proposals, review and confirm the trade."))
         elif self.locked:
             self.accent_colour = discord.Colour.yellow()
@@ -282,7 +282,8 @@ class TradingUser(Container):
                 self.select_menu.max_values = 1
         else:
             self.add_item(self.proposal_list)
-            await self.menu.init(container=self)
+            if self.proposal:
+                await self.menu.init(container=self)
 
         self.buttons.clear_items()
         if self.view.confirmation_phase:
@@ -468,7 +469,8 @@ class TradeInstance(LayoutView):
             return
         log.exception(f"Error in trade between {self.trader1} and {self.trader2}", exc_info=error)
         await self.cleanup()
-        await interaction.response.send_message("An error occured, the trade will be cancelled.")
+        send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
+        await send("An error occured, the trade will be cancelled.", ephemeral=True)
         self.add_item(
             TextDisplay("An error occured and the trade has been cancelled! Contact support if this persists.")
         )
