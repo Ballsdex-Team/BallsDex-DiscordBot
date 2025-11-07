@@ -21,6 +21,7 @@ from bd_models.models import Ball, GuildConfig
 from .balls import Balls as BallsGroup
 from .blacklist import Blacklist as BlacklistGroup
 from .blacklist import BlacklistGuild as BlacklistGuildGroup
+from .history import History as HistoryGroup
 from .info import Info as InfoGroup
 from .logs import Logs as LogsGroup
 from .money import Money as MoneyGroup
@@ -45,7 +46,7 @@ class Admin(commands.GroupCog):
         self.__cog_app_commands_group__.add_command(BallsGroup(name=settings.players_group_cog_name))
         self.__cog_app_commands_group__.add_command(BlacklistGroup())
         self.__cog_app_commands_group__.add_command(BlacklistGuildGroup())
-        # self.__cog_app_commands_group__.add_command(HistoryGroup())
+        self.__cog_app_commands_group__.add_command(HistoryGroup())
         self.__cog_app_commands_group__.add_command(LogsGroup())
         self.__cog_app_commands_group__.add_command(InfoGroup())
         self.__cog_app_commands_group__.add_command(MoneyGroup())
