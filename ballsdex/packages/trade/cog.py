@@ -22,13 +22,14 @@ class Trade(commands.GroupCog):
         self.lockdown: str | None = None
         self.trades: dict[int, TradeInstance] = {}
 
-    def get_trade(self, user: discord.Member | discord.User) -> None | tuple[TradeInstance, TradingUser]:
+    async def get_trade(self, user: discord.Member | discord.User) -> None | tuple[TradeInstance, TradingUser]:
         trade = self.trades.get(user.id)
         if not trade:
             return None
-        if trade.is_finished():
+        if not trade.active:
             del self.trades[trade.trader1.user.id]
             del self.trades[trade.trader2.user.id]
+            await trade.cleanup()
             return None
         trader = trade.trader1 if trade.trader1.user == user else trade.trader2
         return trade, trader
@@ -89,7 +90,7 @@ class Trade(commands.GroupCog):
 
     @app_commands.command()
     async def add(self, interaction: Interaction, countryball: BallInstanceTransform):
-        result = self.get_trade(interaction.user)
+        result = await self.get_trade(interaction.user)
         if result is None:
             await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
             return
@@ -106,7 +107,7 @@ class Trade(commands.GroupCog):
 
     @app_commands.command()
     async def remove(self, interaction: Interaction, countryball: BallInstanceTransform):
-        result = self.get_trade(interaction.user)
+        result = await self.get_trade(interaction.user)
         if result is None:
             await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
             return

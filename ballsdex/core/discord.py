@@ -54,6 +54,13 @@ class LayoutView(discord.ui.LayoutView, BaseView):
     pass
 
 
+class Container(discord.ui.Container):
+    async def interaction_check(self, interaction: Interaction, /) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
+        return await super().interaction_check(interaction)
+
+
 class Modal(discord.ui.Modal):
     async def on_error(self, interaction: Interaction, error: Exception):
         if not await _error_handler(interaction, error):

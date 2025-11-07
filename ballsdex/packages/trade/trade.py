@@ -13,11 +13,12 @@ from typing import TYPE_CHECKING, cast
 
 import discord
 from asgiref.sync import sync_to_async
-from discord.ui import ActionRow, Button, Container, LayoutView, Section, Select, Separator, TextDisplay, Thumbnail
+from discord.ui import ActionRow, Button, Item, Section, Select, Separator, TextDisplay, Thumbnail
 from discord.utils import format_dt
 from django.db import transaction
 from django.utils import timezone
 
+from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
 from bd_models.models import BallInstance, Player, Trade, TradeObject
@@ -44,6 +45,8 @@ if TYPE_CHECKING:
 type Interaction = discord.Interaction[BallsDexBot]
 
 log = logging.getLogger(__name__)
+
+TRADE_TIMEOUT = 60 * 30
 
 
 class TradingUser(Container):
@@ -89,6 +92,9 @@ class TradingUser(Container):
         )
 
         self.view: TradeInstance
+
+    def __repr__(self) -> str:
+        return f"<TradingUser player_id={self.player.pk} discord_id={self.user.id}>"
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         if interaction.user.id not in (self.trade.trader1.user.id, self.trade.trader2.user.id):
@@ -404,6 +410,7 @@ class TradingUser(Container):
         """
         self.cancelled = True
         self.view.stop()
+        await self.view.cleanup()
 
     async def confirm(self):
         """
@@ -443,7 +450,7 @@ class TradeInstance(LayoutView):
     """
 
     def __init__(self, cog: "TradeCog"):
-        super().__init__(timeout=60 * 30)
+        super().__init__(timeout=TRADE_TIMEOUT)
         self.cog = cog
         self.trader1: TradingUser
         self.trader2: TradingUser
@@ -452,6 +459,25 @@ class TradeInstance(LayoutView):
         self.confirmation_lock = asyncio.Lock()
         self.edit_lock = asyncio.Lock()
         self.next_edit_interaction: Interaction | None = None
+
+        self.timeout_task = asyncio.create_task(self._timeout(), name=f"trade-timeout-{id(self)}")
+
+    async def on_error(self, interaction: Interaction, error: Exception, item: Item) -> None:
+        if isinstance(error, discord.NotFound) and error.code in UNKNOWN_INTERACTION:
+            log.warning("Expired interaction", exc_info=error)
+            return
+        log.exception(f"Error in trade between {self.trader1} and {self.trader2}", exc_info=error)
+        await self.cleanup()
+        await interaction.response.send_message("An error occured, the trade will be cancelled.")
+        self.add_item(
+            TextDisplay("An error occured and the trade has been cancelled! Contact support if this persists.")
+        )
+        await self.message.edit(view=self)
+
+    async def _timeout(self):
+        await asyncio.sleep(TRADE_TIMEOUT)
+        if self.active:
+            await self._cleanup()
 
     @classmethod
     def configure(
@@ -463,7 +489,7 @@ class TradeInstance(LayoutView):
         trade.add_item(TextDisplay(f"Hey {trader2[1].mention}, {trader1[1].mention} is proposing a trade!"))
         trade.add_item(trade.trader1)
         trade.add_item(trade.trader2)
-        timeout = datetime.now() + timedelta(seconds=trade.timeout or 1800)
+        timeout = datetime.now() + timedelta(seconds=TRADE_TIMEOUT)
         trade.add_item(TextDisplay(f"-# This trade will timeout {format_dt(timeout, style='R')}."))
         return trade
 
@@ -473,6 +499,13 @@ class TradeInstance(LayoutView):
         `True` if any of the users cancelled.
         """
         return self.trader1.cancelled or self.trader2.cancelled
+
+    @property
+    def active(self):
+        """
+        `True` if the trade is still active and hasn't timed out.
+        """
+        return not self.is_finished() and not self.cancelled
 
     @property
     def confirmation_phase(self):
@@ -571,7 +604,16 @@ class TradeInstance(LayoutView):
         if self.confirmation_lock.locked():
             raise SynchronizationError()
         await self.confirmation_lock.acquire()
+        self.timeout_task.cancel()
         trade = await sync_to_async(self.perform_trade_operation)()
         self.stop()
         # edition of the message will be triggered by the caller
         self.add_item(TextDisplay(f"## The trade has been completed!\n-# ID: `#{trade.pk:0X}`"))
+
+    async def _cleanup(self):
+        self.stop()
+        await BallInstance.objects.filter(id__in=self.trader1.proposal | self.trader2.proposal).aupdate(locked=None)
+
+    async def cleanup(self):
+        self.timeout_task.cancel()
+        await self._cleanup()
