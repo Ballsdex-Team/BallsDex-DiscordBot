@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from datetime import timedelta
 from typing import TYPE_CHECKING, Literal, cast
 
@@ -24,6 +26,8 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 type Interaction = discord.Interaction["BallsDexBot"]
+
+log = logging.getLogger(__name__)
 
 
 class Trade(commands.GroupCog):
@@ -55,6 +59,14 @@ class Trade(commands.GroupCog):
             return None
         trader = trade.trader1 if trade.trader1.user == user else trade.trader2
         return trade, trader
+
+    async def cancel_all_trades(self, reason: str):
+        log.info(f"Locking down trades globally. {reason=}")
+        self.lockdown = reason
+        tasks = set(self.trades.values())
+        results = await asyncio.gather(*(x.admin_cancel(reason) for x in tasks), return_exceptions=True)
+        for result in filter(lambda m: m is not None, results):
+            log.error("Failed to admin cancel trade", exc_info=result)
 
     @app_commands.command()
     async def start(self, interaction: Interaction, user: discord.User):
