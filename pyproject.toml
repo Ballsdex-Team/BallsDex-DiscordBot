@@ -75,7 +75,7 @@ build-backend = "hatchling.build"
 
 [tool.uv.sources]
 django-types = { git = "https://github.com/sbdchd/django-types.git", rev = "dadf37d11b2ea5517b5d5bfc51d9f93c649c5546" }
-"discord.py" = { git = "https://github.com/laggron42/discord.py.git", rev = "6df34223da2085037ad6ecd3167b2d73d8483403" }
+"discord.py" = { git = "https://github.com/Rapptz/discord.py.git", rev = "8b154754960eda6f96b59dc8ae21e3a7a8b5c357" }
 
 [tool.ruff]
 line-length = 120
