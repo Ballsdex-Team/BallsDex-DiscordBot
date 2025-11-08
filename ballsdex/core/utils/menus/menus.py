@@ -224,13 +224,13 @@ class Menu[P]:
 
         # View only supports appending at the end, not inserting, so it's done manually
         self.view._add_count(self.controls._total_count)
-        if container:
-            container._update_view(self.view)
-            self.controls._parent = container
         if position:
             item._children.insert(position, self.controls)
         else:
             item._children.append(self.controls)
+        if container:
+            container._update_view(self.view)
+            self.controls._parent = container
 
     async def set_page(self, page: int):
         p = await self.source.get_page(page)

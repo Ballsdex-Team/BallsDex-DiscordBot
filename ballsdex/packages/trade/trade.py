@@ -322,6 +322,7 @@ class TradingUser(Container):
             raise LockedError()
         if self.view.cancelled:
             raise CancelledError()
+        proposal: set[int] = set()
         async for ball in queryset.only(
             "id", "locked", "player_id", "tradeable", "ball__tradeable", "special__tradeable"
         ):
@@ -331,8 +332,9 @@ class TradingUser(Container):
                 raise AlreadyLockedError()
             if not ball.is_tradeable:
                 raise NotTradeableError()
+            proposal.add(ball.pk)
         await queryset.aupdate(locked=timezone.now())
-        self.proposal.update([x async for x in queryset.values_list("pk", flat=True)])
+        self.proposal.update(proposal)
 
     async def remove_from_proposal(self, queryset: "QuerySet[BallInstance]"):
         """

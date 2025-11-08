@@ -12,10 +12,13 @@ from django.utils import timezone
 
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.menus import Menu, ModelSource
+from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import BallEnabledTransform, BallInstanceTransform, SpecialEnabledTransform
+from ballsdex.settings import settings
 from bd_models.models import BallInstance, Player
 from bd_models.models import Trade as TradeModel
 
+from .bulk_selector import BulkSelector
 from .errors import TradeError
 from .history import HistoryView, TradeListFormatter
 from .trade import TradeInstance, TradingUser
@@ -256,4 +259,62 @@ class Trade(commands.GroupCog):
         view.add_item(action)
         menu = Menu(self.bot, view, ModelSource(queryset), TradeListFormatter(select, self, interaction.user))
         await menu.init()
+        await interaction.followup.send(view=view, ephemeral=True)
+
+    @app_commands.command()
+    async def bulk_add(
+        self,
+        interaction: Interaction,
+        countryball: BallEnabledTransform | None = None,
+        sort: SortingChoices | None = None,
+        special: SpecialEnabledTransform | None = None,
+        filter: FilteringChoices | None = None,
+    ):
+        """
+        Bulk add countryballs to the ongoing trade, with paramaters to aid with searching.
+
+        Parameters
+        ----------
+        countryball: Ball
+            The countryball you would like to filter the results to
+        sort: SortingChoices
+            Choose how countryballs are sorted. Can be used to show duplicates.
+        special: Special
+            Filter the results to a special event
+        filter: FilteringChoices
+            Filter the results to a specific filter
+        """
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        result = await self.get_trade(interaction.user)
+        if result is None:
+            await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
+            return
+        _, trader = result
+        if trader.locked:
+            await interaction.followup.send(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return
+        query = BallInstance.objects.filter(
+            Q(locked=None) | Q(locked__lt=timezone.now() - timedelta(seconds=60)),
+            player__discord_id=interaction.user.id,
+        ).exclude(tradeable=False, ball__tradeable=False)
+        if countryball:
+            query = query.filter(ball=countryball)
+        if special:
+            query = query.filter(special=special)
+        if sort:
+            query = sort_balls(sort, query)
+        if filter:
+            query = filter_balls(filter, query, interaction.guild_id)
+        if not await query.aexists():
+            await interaction.followup.send(f"No {settings.plural_collectible_name} found.", ephemeral=True)
+            return
+
+        view = LayoutView()
+        selector = BulkSelector()
+        view.add_item(selector)
+        await selector.configure(self.bot, self, query)
         await interaction.followup.send(view=view, ephemeral=True)

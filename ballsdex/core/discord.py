@@ -54,7 +54,7 @@ class LayoutView(discord.ui.LayoutView, BaseView):
     pass
 
 
-class Container(discord.ui.Container):
+class Container(discord.ui.Container[LayoutView]):
     async def interaction_check(self, interaction: Interaction, /) -> bool:
         if not await interaction.client.blacklist_check(interaction):
             return False
