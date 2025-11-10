@@ -63,11 +63,11 @@ docs = [
 ballsdex = "ballsdex.__main__:main"
 
 [tool.hatch.build.targets.sdist]
-include = ["ballsdex", "admin_panel"]
 exclude = ["result"]
 
 [tool.hatch.build.targets.wheel]
-include = ["ballsdex", "admin_panel"]
+only-include = ["ballsdex", "admin_panel"]
+sources = ["admin_panel"]
 
 [build-system]
 requires = ["hatchling"]

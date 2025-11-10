@@ -3,6 +3,7 @@
 # You should copy the production.example.py file as "production.py" and place your settings there
 # That file will not be tracked by git
 
+import os
 import sys
 from pathlib import Path
 
@@ -157,7 +158,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = "static"
+STATIC_ROOT = os.environ.get("STATIC_ROOT", "static")
 STATICFILES_DIRS = ["staticfiles"]
 
 MEDIA_URL = "media/"

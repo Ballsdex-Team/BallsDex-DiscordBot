@@ -1,6 +1,6 @@
 from .base import *
 
-DEBUG = True
+DEBUG = False
 SECRET_KEY = "insecure"
 
 # Only allow connections from local IPs

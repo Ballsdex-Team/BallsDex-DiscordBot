@@ -17,7 +17,7 @@ def init_logger(disable_rich: bool = False, debug: bool = False) -> logging.hand
     stream_handler.setFormatter(formatter if disable_rich else rich_formatter)
 
     # file handler
-    file_handler = logging.handlers.RotatingFileHandler("ballsdex.log", maxBytes=8**7, backupCount=8)
+    file_handler = logging.handlers.RotatingFileHandler("logs/ballsdex.log", maxBytes=8**7, backupCount=8)
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
 

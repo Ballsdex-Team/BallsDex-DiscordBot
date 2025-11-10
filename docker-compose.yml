@@ -5,6 +5,11 @@ x-common-env-vars:
     POSTGRES_USER=ballsdex
   - &postgres-url
     "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
+  # if serving the admin panel online, copy the file "production.example.py" and replace with
+  # - DJANGO_SETTINGS_MODULE=admin_panel.settings.production
+  - &django-settings
+    "DJANGO_SETTINGS_MODULE=admin_panel.settings"
+
 
 services:
   bot:
@@ -13,17 +18,20 @@ services:
     build: .
     environment:
       - *postgres-url
+      - *django-settings
     depends_on:
       migration:
         condition: service_completed_successfully
       postgres-db:
         condition: service_healthy
     # ports:
-    #   - "15260:15260"
+    #   - "127.0.0.1:15260:15260"
     networks:
       - internal
     volumes:
-      - "./:/code"
+      - "./config.yml:/code/config.yml:ro"
+      - "./logs/:/code/logs/:rw"
+      - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
     working_dir: /code/
     command: python3 -m ballsdex
@@ -31,21 +39,23 @@ services:
   admin-panel:
     image: ballsdex
     build: .
-    ports:
-      - "8000:8000"
+    hostname: admin-panel
     networks:
       - internal
+      - nginx
     environment:
       - *postgres-url
-      # if serving the admin panel online, copy the file "production.example.py" and uncomment
-      # - DJANGO_SETTINGS_MODULE=admin_panel.settings.production
+      - *django-settings
     depends_on:
       migration:
         condition: service_completed_successfully
       postgres-db:
         condition: service_healthy
     volumes:
-      - "./:/code"
+      - "./config.yml:/code/config.yml:ro"
+      - "./logs/:/code/logs/:rw"
+      - "./admin_panel/templates:/code/admin_panel/templates:ro"
+      - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
     working_dir: /code/admin_panel
     command: "python3 -m uvicorn admin_panel.asgi:application --host 0.0.0.0"
@@ -57,17 +67,38 @@ services:
       - internal
     environment:
       - *postgres-url
+      - *django-settings
+      - "STATIC_ROOT=/var/www/ballsdex/static"
     volumes:
-      - ./:/code
+      - "./config.yml:/code/config.yml:ro"
+      - "./admin_panel/staticfiles:/code/admin_panel/staticfiles:ro"
+      - static-files:/var/www/ballsdex/static:rw
     depends_on:
       postgres-db:
         condition: service_healthy
+    user: root
     working_dir: /code/admin_panel
     command: >
       sh -c "
-      python3 manage.py migrate --no-input --fake-initial &&
-      python3 manage.py collectstatic --no-input
+      django-admin migrate --no-input --fake-initial &&
+      django-admin collectstatic --no-input
       "
+
+  proxy:
+    image: nginx:1.29.3-alpine3.22
+    restart: on-failure:3
+    hostname: nginx
+    depends_on:
+      admin-panel:
+        condition: service_started
+    ports:
+      - "127.0.0.1:8000:80"
+    networks:
+      - nginx
+    volumes:
+      - ./bd-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./admin_panel/media:/var/www/ballsdex/media:ro
+      - static-files:/var/www/ballsdex/static:ro
 
   postgres-db:
     image: postgres
@@ -80,7 +111,7 @@ services:
       - POSTGRES_PASSWORD
     # WARNING: before exposing ports, change the default db password in the .env file!
     # ports:
-    #   - "5432:5432"
+    #   - "127.0.0.1:5432:5432"
     networks:
       - internal
     volumes:  # Persist the db data
@@ -130,6 +161,8 @@ services:
 volumes:
   database-data:
   cache-data:
+  static-files:
 
 networks:
   internal:
+  nginx:
