@@ -12,6 +12,7 @@ build
 
 # log files
 *.log*
+logs
 
 # Virtual environment
 venv
