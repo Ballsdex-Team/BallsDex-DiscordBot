@@ -50,8 +50,15 @@ class TextFormatter(Formatter[str, discord.ui.TextDisplay]):
 
 
 class SelectFormatter(Formatter[list[discord.SelectOption], discord.ui.Select]):
+    def __init__(self, item: discord.ui.Select, *, min_values: int = 1, max_values: int = 1):
+        super().__init__(item)
+        self.min_values = min_values
+        self.max_values = max_values
+
     async def format_page(self, page):
         self.item.options = page
+        self.min_values = max(self.min_values, len(page))
+        self.item.max_values = min(self.max_values, len(page))
 
 
 class ItemFormatter(Formatter[Iterable[discord.ui.Item], discord.ui.Container]):
@@ -91,6 +98,12 @@ class ItemFormatter(Formatter[Iterable[discord.ui.Item], discord.ui.Container]):
 
 
 class CountryballFormatter(Formatter[QuerySet[BallInstance], discord.ui.Select]):
+    def __init__(self, item: discord.ui.Select, *, min_values: int = 1, max_values: int = 1):
+        super().__init__(item)
+        self.min_values = min_values
+        self.max_values = max_values
+        self.defaulted: set[int] = set()
+
     async def format_page(self, page):
         self.item.options = []
         async for ball in page:
@@ -106,4 +119,7 @@ class CountryballFormatter(Formatter[QuerySet[BallInstance], discord.ui.Select])
                 ),
                 emoji=emoji,
                 value=f"{ball.pk}",
+                default=ball.pk in self.defaulted,
             )
+        self.min_values = max(self.min_values, len(page))
+        self.item.max_values = min(self.max_values, len(page))
