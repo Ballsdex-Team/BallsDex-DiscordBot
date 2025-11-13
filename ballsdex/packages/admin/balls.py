@@ -107,6 +107,7 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
     """
     Force spawn a random or specified countryball.
     """
+    # the transformer triggered a response, meaning user tried an incorrect input
     cog = cast("CountryBallsSpawner | None", ctx.bot.get_cog("CountryBallsSpawner"))
     if not cog:
         prefix = settings.prefix if ctx.bot.intents.message_content or not ctx.bot.user else f"{ctx.bot.user.mention} "
@@ -119,6 +120,13 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
         )
         return
 
+    special_attrs = []
+    if flags.special is not None:
+        special_attrs.append(f"special={flags.special.name}")
+    if flags.atk_bonus is not None:
+        special_attrs.append(f"atk={flags.atk_bonus}")
+    if flags.hp_bonus is not None:
+        special_attrs.append(f"hp={flags.hp_bonus}")
     if flags.n > 1:
         await _spawn_bomb(
             ctx,
@@ -126,13 +134,16 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
             flags.countryball,
             flags.channel or ctx.channel,  # type: ignore
             flags.n,
+            flags.special,
+            flags.atk_bonus,
+            flags.hp_bonus,
         )
         await log_action(
             f"{ctx.author} spawned {settings.collectible_name}"
-            f" {flags.countryball or 'random'} {flags.n} times in {flags.channel}.",
+            f" {flags.countryball or 'random'} {flags.n} times in {flags.channel or ctx.channel}"
+            + (f" ({', '.join(special_attrs)})." if special_attrs else "."),
             ctx.bot,
         )
-
         return
 
     await ctx.defer(ephemeral=True)
@@ -147,17 +158,9 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
 
     if result:
         await ctx.send(f"{settings.collectible_name.title()} spawned.", ephemeral=True)
-        special_attrs = []
-        if flags.special is not None:
-            special_attrs.append(f"special={flags.special.name}")
-        if flags.atk_bonus is not None:
-            special_attrs.append(f"atk={flags.atk_bonus}")
-        if flags.hp_bonus is not None:
-            special_attrs.append(f"hp={flags.hp_bonus}")
         await log_action(
             f"{ctx.author} spawned {settings.collectible_name} {ball.name} "
-            f"in {flags.channel or ctx.channel}"
-            f"{f' ({", ".join(special_attrs)})' if special_attrs else ''}.",
+            f"in {flags.channel or ctx.channel}" + (f" ({', '.join(special_attrs)})." if special_attrs else "."),
             ctx.bot,
         )
 
@@ -198,8 +201,7 @@ async def give(ctx: commands.Context[BallsDexBot], user: discord.User, *, flags:
     )
     await log_action(
         f"{ctx.author} gave {settings.collectible_name} "
-        f"{flags.countryball.country} to {user}. "
-        f"(Special={flags.special.name if flags.special else None} "
+        f"{flags.countryball.country} to {user}. (Special={flags.special.name if flags.special else None} "
         f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
         ctx.bot,
     )
@@ -254,7 +256,7 @@ async def balls_info(ctx: commands.Context[BallsDexBot], countryball_id: str):
 
 @balls.command(name="delete")
 @checks.has_permissions("bd_models.delete_ballinstance")
-async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str):
+async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str, soft_delete: bool = True):
     """
     Delete a countryball.
 
@@ -262,6 +264,8 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str):
     ----------
     countryball_id: str
         The ID of the countryball you want to delete.
+    soft_delete: bool
+        Whether the countryball should be kept in database or fully wiped.
     """
     try:
         ballIdConverted = int(countryball_id, 16)
@@ -273,9 +277,15 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str):
     except BallInstance.DoesNotExist:
         await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
         return
-    await ball.adelete()
-    await ctx.send(f"{settings.collectible_name.title()} {countryball_id} deleted.", ephemeral=True)
-    await log_action(f"{ctx.author} deleted {ball}({ball.pk}).", ctx.bot)
+    if soft_delete:
+        ball.deleted = True
+        await ball.asave()
+        await ctx.send(f"{settings.collectible_name.title()} {countryball_id} soft deleted.", ephemeral=True)
+        await log_action(f"{ctx.author} soft deleted {ball}({ball.pk}).", ctx.bot)
+    else:
+        await ball.adelete()
+        await ctx.send(f"{settings.collectible_name.title()} {countryball_id} hard deleted.", ephemeral=True)
+        await log_action(f"{ctx.author} hard deleted {ball}({ball.pk}).", ctx.bot)
 
 
 @balls.command(name="transfer")
@@ -313,8 +323,10 @@ async def balls_transfer(ctx: commands.Context[BallsDexBot], countryball_id: str
 
 
 @balls.command(name="reset")
-@checks.has_permissions("bd_models.delete_ballinstance")
-async def balls_reset(ctx: commands.Context[BallsDexBot], user: discord.User, percentage: int | None = None):
+@checks.has_permissions("bd_models.delete_ballinstance", "bd_models.change_ballinstance")
+async def balls_reset(
+    ctx: commands.Context[BallsDexBot], user: discord.User, percentage: int | None = None, soft_delete: bool = True
+):
     """
     Reset a player's countryballs.
 
@@ -324,6 +336,9 @@ async def balls_reset(ctx: commands.Context[BallsDexBot], user: discord.User, pe
         The user you want to reset the countryballs of.
     percentage: int | None
         The percentage of countryballs to delete, if not all. Used for sanctions.
+    soft_delete: bool
+        If true, the countryballs will be marked as deleted instead of being removed from the
+        database.
     """
     player = await Player.objects.aget_or_none(discord_id=user.id)
     if not player:
@@ -334,28 +349,35 @@ async def balls_reset(ctx: commands.Context[BallsDexBot], user: discord.User, pe
         return
     await ctx.defer(ephemeral=True)
 
+    method = "soft" if soft_delete else "hard"
     if not percentage:
-        text = f"Are you sure you want to delete {user}'s {settings.plural_collectible_name}?"
+        text = f"Are you sure you want to {method} delete {user}'s {settings.plural_collectible_name}?"
     else:
-        text = f"Are you sure you want to delete {percentage}% of {user}'s {settings.plural_collectible_name}?"
+        text = f"Are you sure you want to {method} delete {percentage}% of {user}'s {settings.plural_collectible_name}?"
     view = ConfirmChoiceView(
         ctx,
-        accept_message=f"Confirmed, deleting the {settings.plural_collectible_name}...",
+        accept_message=f"Confirmed, {method} deleting the {settings.plural_collectible_name}...",
         cancel_message="Request cancelled.",
     )
-    msg = await ctx.send(text, view=view, ephemeral=True)
-    view.message = msg
+    await ctx.send(text, view=view, ephemeral=True)
     await view.wait()
     if not view.value:
         return
     if percentage:
-        balls = await BallInstance.objects.filter(player=player).aall()
+        balls = [x async for x in BallInstance.objects.filter(player=player)]
         to_delete = random.sample(balls, int(len(balls) * (percentage / 100)))
         for ball in to_delete:
-            await ball.adelete()
+            if soft_delete:
+                ball.deleted = True
+                await ball.asave()
+            else:
+                await ball.adelete()
         count = len(to_delete)
     else:
-        count = len(await BallInstance.objects.filter(player=player).adelete())
+        if soft_delete:
+            count = await BallInstance.all_objects.filter(player=player).aupdate(deleted=True)
+        else:
+            count = await BallInstance.all_objects.filter(player=player).adelete()
     await ctx.send(f"{count} {settings.plural_collectible_name} from {user} have been deleted.", ephemeral=True)
     await log_action(
         f"{ctx.author} deleted {percentage or 100}% of {player}'s {settings.plural_collectible_name}.", ctx.bot
@@ -376,12 +398,17 @@ async def balls_count(ctx: commands.Context[BallsDexBot], *, flags: BallsCountFl
     if flags.user:
         filters["player__discord_id"] = flags.user.id
     await ctx.defer(ephemeral=True)
-    balls = await BallInstance.objects.filter(**filters).acount()
+    qs = BallInstance.all_objects if flags.deleted else BallInstance.objects
+    balls = await qs.filter(**filters).acount()
     verb = "is" if balls == 1 else "are"
     country = f"{flags.countryball.country} " if flags.countryball else ""
     plural = "s" if balls > 1 or balls == 0 else ""
     special_str = f"{flags.special.name} " if flags.special else ""
     if flags.user:
-        await ctx.send(f"{flags.user} has {balls} {special_str}{country}{settings.collectible_name}{plural}.")
+        await ctx.send(
+            f"{flags.user} has {balls} {special_str}{country}{settings.collectible_name}{plural}.", ephemeral=True
+        )
     else:
-        await ctx.send(f"There {verb} {balls} {special_str}{country}{settings.collectible_name}{plural}.")
+        await ctx.send(
+            f"There {verb} {balls} {special_str}{country}{settings.collectible_name}{plural}.", ephemeral=True
+        )

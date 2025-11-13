@@ -3,6 +3,7 @@
 # You should copy the production.example.py file as "production.py" and place your settings there
 # That file will not be tracked by git
 
+import os
 import sys
 from pathlib import Path
 
@@ -52,7 +53,7 @@ INSTALLED_APPS = [
     "admin_panel.apps.BallsdexAdminConfig",
     "bd_models",
     "preview",
-]
+] + settings.django_apps
 
 MIDDLEWARE = [
     "allow_cidr.middleware.AllowCIDRMiddleware",
@@ -125,6 +126,10 @@ if "startbot" in sys.argv:
 
 DATABASES = {"default": dj_database_url.config("BALLSDEXBOT_DB_URL")}
 
+# Enable connection pooling with a max size larger that default
+# This allows multiple concurrent connections to be made and divide the load
+DATABASES["default"].setdefault("OPTIONS", {})["pool"] = {"max_size": 20}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -153,7 +158,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = "static"
+STATIC_ROOT = os.environ.get("STATIC_ROOT", "static")
 STATICFILES_DIRS = ["staticfiles"]
 
 MEDIA_URL = "media/"

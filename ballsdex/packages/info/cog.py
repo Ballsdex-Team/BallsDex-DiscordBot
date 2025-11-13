@@ -135,7 +135,10 @@ class Info(commands.Cog):
 
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         v = sys.version_info
-        embed.set_footer(text=f"Python {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}")
+        python = "Python"
+        if v.major == 3 and v.minor == 14 and random.random() < 0.1:
+            python = "πthon"
+        embed.set_footer(text=f"{python} {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}")
 
         await interaction.response.send_message(embed=embed, view=LicenseInfo())
 

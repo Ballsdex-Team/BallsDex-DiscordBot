@@ -1,3 +1,8 @@
+"""
+This file contains [discord.py transformers][discord.app_commands.Transformer] used to provide autocompletion,
+parsing and validation for various Ballsdex models.
+"""
+
 import logging
 import time
 from datetime import timedelta
@@ -48,6 +53,8 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
         Column of the model to use for matching text-based conversions. Defaults to "name".
     model: T
         The Tortoise model associated to the class derivation
+    base: int
+        The base in which database IDs are converted. Defaults to decimal (10).
 
 
     Parameters
@@ -59,6 +66,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
     name: str
     column: str = "name"
     model: type[T]
+    base: int = 10
 
     def __init__(self, **filters: Any):
         self.filters = filters
@@ -89,7 +97,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
 
         Raises
         ------
-        KeyError | tortoise.exceptions.DoesNotExist
+        KeyError | django.db.models.Model.DoesNotExist
             Entry does not exist
         """
         return await self.get_queryset().aget(pk=value)
@@ -128,7 +136,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
         if not value:
             raise commands.BadArgument("You need to use the autocomplete function for the economy selection.")
         try:
-            instance = await self.get_from_pk(int(value))
+            instance = await self.get_from_pk(int(value, self.base))
             await self.validate(await commands.Context.from_interaction(interaction), instance)
         except (self.model.DoesNotExist, KeyError, ValueError):
             raise commands.BadArgument(
@@ -150,6 +158,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
 class BallInstanceTransformer(ModelTransformer[BallInstance]):
     name = settings.collectible_name
     model = BallInstance
+    base = 16
 
     def get_queryset(self) -> "QuerySet[BallInstance]":
         return super().get_queryset().prefetch_related("player")
@@ -202,7 +211,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         balls_queryset = balls_queryset[:25]
 
         choices: list[app_commands.Choice] = [
-            app_commands.Choice(name=x.description(bot=interaction.client), value=str(x.pk))
+            app_commands.Choice(name=x.description(bot=interaction.client), value=f"{x.pk:X}")
             async for x in balls_queryset
         ]
         return choices

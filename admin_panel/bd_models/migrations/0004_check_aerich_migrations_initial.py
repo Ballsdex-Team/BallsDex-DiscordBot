@@ -5,14 +5,16 @@ from typing import TYPE_CHECKING
 import django.db.models.deletion
 from django.db import migrations, models
 
-from bd_models.models import Economy, Regime, Special
-
 if TYPE_CHECKING:
     from django.apps.registry import Apps
     from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
 
 def default_models_forward(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+    Regime = apps.get_model("bd_models", "Regime")
+    Economy = apps.get_model("bd_models", "Economy")
+    Special = apps.get_model("bd_models", "Special")
+
     default_economies = {"Capitalist": "capitalist.png", "Communist": "communist.png"}
     default_regimes = {"Democracy": "democracy.png", "Dictatorship": "dictatorship.png", "Union": "union.png"}
 

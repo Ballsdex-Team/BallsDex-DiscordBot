@@ -6,6 +6,7 @@
   <h2 id="tradeobject-heading" class="inline-heading">Trades</h2>
    <table>
      <thead><tr>
+       <th class="column-id">Trade ID</th>
        <th class="column-player1">Player 1</th>
        <th class="column-player1-proposal">Player 1 proposal</th>
        <th class="column-player2-proposal">Player 2 proposal</th>
@@ -17,6 +18,7 @@
      {% for trade in trades %}
         <tr class="form-row has_original"
              id="{{ inline_admin_formset.formset.prefix }}-{% if forloop.last and inline_admin_formset.has_add_permission %}empty{% else %}{{ forloop.counter0 }}{% endif %}">
+            <td><a href="{% url 'admin:bd_models_trade_change' trade.model.id %}">#{{ trade.model.id | stringformat:"X" }}</a></td>
             <td>{% if trade.model.player1 == original.player %}<b>{% endif %}
             <a href="{% url 'admin:bd_models_player_change' trade.model.player1.id %}">{{ trade.model.player1 }}</a>
             {% if trade.model.player1 == original.player %}</b>{% endif %}</td>

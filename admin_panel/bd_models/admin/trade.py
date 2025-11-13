@@ -8,7 +8,7 @@ from django.db.models import Prefetch, Q
 from ..models import BallInstance, Player, Trade, TradeObject
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
     from django.http import HttpRequest, HttpResponse
 
 DUAL_ID_RE = re.compile(r"^[0-9]{17,20} [0-9]{17,20}$")
@@ -64,7 +64,12 @@ class TradeAdmin(admin.ModelAdmin):
         return qs.prefetch_related(
             "player1",
             "player2",
-            Prefetch("tradeobject_set", queryset=TradeObject.objects.prefetch_related("ballinstance")),
+            Prefetch(
+                "tradeobject_set",
+                queryset=TradeObject.objects.prefetch_related(
+                    "ballinstance", "ballinstance__ball", "ballinstance__special"
+                ),
+            ),
         )
 
     # It is important to use .all() and manually filter in python rather than using .filter.count

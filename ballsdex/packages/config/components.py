@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING, Optional
 
 import discord
-from discord.ui import Button, View, button
+from discord.ui import Button, button
 
+from ballsdex.core.discord import View
 from ballsdex.settings import settings
 from bd_models.models import GuildConfig
 

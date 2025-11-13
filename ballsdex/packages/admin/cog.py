@@ -5,11 +5,19 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button
+from discord.ui import Button, Container, LayoutView, Section, TextDisplay
 
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
+from ballsdex.core.utils.menus import (
+    ItemFormatter,
+    ListSource,
+    Menu,
+    TextFormatter,
+    TextSource,
+    dynamic_chunks,
+    iter_to_async,
+)
 from ballsdex.settings import settings
 from bd_models.models import Ball, GuildConfig
 
@@ -25,6 +33,7 @@ from .money import money as money_group
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
+    from ballsdex.packages.trade.cog import Trade
 
 log = logging.getLogger("ballsdex.packages.admin")
 
@@ -57,7 +66,10 @@ class Admin(commands.Cog):
             )
             interaction.extras["handled"] = True
 
-    @commands.hybrid_group(default_permissions=discord.Permissions(administrator=True))
+    @commands.hybrid_group()
+    @app_commands.guilds()
+    @app_commands.default_permissions(administrator=True)
+    @commands.has_permissions(administrator=True)
     @checks.is_staff()
     async def admin(self, ctx: commands.Context):
         """
@@ -65,7 +77,7 @@ class Admin(commands.Cog):
         """
         await ctx.send_help(ctx.command)
 
-    @admin.command()
+    @admin.command(with_app_command=False)
     @commands.is_owner()
     @commands.guild_only()
     async def syncslash(self, ctx: commands.Context["BallsDexBot"]):
@@ -119,6 +131,42 @@ class Admin(commands.Cog):
         await ctx.send("Status updated.", ephemeral=True)
 
     @admin.command()
+    @checks.is_superuser()
+    async def trade_lockdown(self, ctx: commands.Context["BallsDexBot"], *, reason: str):
+        """
+        Cancel all ongoing trades and lock down further trades from being started.
+
+        Parameters
+        ----------
+        reason: str
+            The reason of the lockdown. This will be displayed to all trading users.
+        """
+        cog = cast("Trade | None", self.bot.get_cog("Trade"))
+        if not cog:
+            await ctx.send("The trade cog is not loaded.", ephemeral=True)
+            return
+
+        await ctx.defer()
+        result = await cog.cancel_all_trades(reason)
+
+        assert self.bot.user
+        prefix = settings.prefix if self.bot.intents.message_content else f"{self.bot.user.mention} "
+
+        if not result:
+            await ctx.send(
+                "All trades were successfully cancelled, and further trades cannot be started "
+                f'anymore.\nTo enable trades again, the bot owner must use the "{prefix}reload '
+                'trade" command.'
+            )
+        else:
+            await ctx.send(
+                "Lockdown mode enabled, trades can no longer be started. "
+                f"While cancelling ongoing trades, {len(result)} failed to cancel, check your "
+                "logs for info.\nTo enable trades again, the bot owner must use the "
+                f'"{prefix}reload trade" command.'
+            )
+
+    @admin.command()
     @checks.has_permissions("bd_models.view_ball")
     async def rarity(self, ctx: commands.Context["BallsDexBot"], *, flags: RarityFlags):
         """
@@ -143,11 +191,12 @@ class Admin(commands.Cog):
             for i, ball in enumerate(sorted_balls, start=1):
                 text += f"{i}. {ball.country}\n"
 
-        source = TextPageSource(text, prefix="```md\n", suffix="```")
-        assert ctx.interaction  # TODO: handle normal cmds
-        pages = Pages(ctx, source, compact=True)
-        pages.remove_item(pages.stop_pages)
-        await pages.start(ephemeral=True)
+        view = discord.ui.LayoutView()
+        text_display = discord.ui.TextDisplay("")
+        view.add_item(text_display)
+        menu = Menu(self.bot, view, TextSource(text, prefix="```md\n", suffix="```"), TextFormatter(text_display))
+        await menu.init()
+        await ctx.send(view=view)
 
     @admin.command()
     @checks.is_superuser()
@@ -202,57 +251,60 @@ class Admin(commands.Cog):
                 )
             return
 
-        entries: list[tuple[str, str]] = []
+        entries: list[TextDisplay] = []
         for guild in guilds:
             if config := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
                 spawn_enabled = config.enabled and config.guild_id
             else:
                 spawn_enabled = False
 
-            field_name = f"`{guild.id}`"
-            field_value = ""
+            text = f"## {guild.name}\n"
 
             # highlight suspicious server names
             if any(x in guild.name.lower() for x in ("farm", "grind", "spam")):
-                field_value += f"- :warning: **{guild.name}**\n"
+                text += f"- :warning: **{guild.name}**\n"
             else:
-                field_value += f"- {guild.name}\n"
+                text += f"- {guild.name}\n"
 
             # highlight low member count
             if guild.member_count <= 3:  # type: ignore
-                field_value += f"- :warning: **{guild.member_count} members**\n"
+                text += f"- :warning: **{guild.member_count} members**\n"
             else:
-                field_value += f"- {guild.member_count} members\n"
+                text += f"- {guild.member_count} members\n"
 
             # highlight if spawning is enabled
             if spawn_enabled:
-                field_value += "- :warning: **Spawn is enabled**"
+                text += "- :warning: **Spawn is enabled**"
             else:
-                field_value += "- Spawn is disabled"
+                text += "- Spawn is disabled"
 
-            entries.append((field_name, field_value))
+            entries.append(TextDisplay(text))
 
-        source = FieldPageSource(entries, per_page=25, inline=True)
-        source.embed.set_author(name=f"{user} ({user.id})", icon_url=user.display_avatar.url)
-
-        if len(guilds) > 1:
-            source.embed.title = f"{len(guilds)} servers shared"
-        else:
-            source.embed.title = "1 server shared"
-
-        if not self.bot.intents.members:
-            source.embed.set_footer(
-                text="\N{WARNING SIGN} The bot cannot be aware of the member's "
-                "presence in servers, it is only aware of server ownerships."
-            )
-
-        pages = Pages(ctx, source, compact=True)
-        pages.add_item(
-            Button(
+        view = LayoutView()
+        container = Container()
+        view.add_item(container)
+        section = Section(
+            TextDisplay(f"## {len(guilds)} servers shared"),
+            TextDisplay(f"{user.mention} ({user.id})"),
+            accessory=Button(
                 style=discord.ButtonStyle.link,
                 label="View profile",
                 url=f"discord://-/users/{user.id}",
                 emoji="\N{LEFT-POINTING MAGNIFYING GLASS}",
-            )
+            ),
         )
-        await pages.start(ephemeral=True)
+        container.add_item(section)
+
+        if not self.bot.intents.members:
+            section.add_item(
+                TextDisplay(
+                    "\N{WARNING SIGN} The bot cannot be aware of the member's "
+                    "presence in servers, it is only aware of server ownerships."
+                )
+            )
+
+        pages = Menu(
+            self.bot, view, ListSource(await dynamic_chunks(view, iter_to_async(entries))), ItemFormatter(container, 1)
+        )
+        await pages.init()
+        await ctx.send(view=view, ephemeral=True)

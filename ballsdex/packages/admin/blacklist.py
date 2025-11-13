@@ -6,10 +6,11 @@ from django.db import IntegrityError
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.logging import log_action
-from ballsdex.core.utils.paginator import Pages
-from ballsdex.packages.admin.menu import BlacklistViewFormat
+from ballsdex.core.utils.menus import Menu, ModelSource
 from ballsdex.settings import settings
 from bd_models.models import BlacklistedGuild, BlacklistedID, BlacklistHistory, GuildConfig, Player
+
+from .menu import BlacklistHistoryFormatter
 
 
 @commands.hybrid_group()
@@ -111,12 +112,30 @@ async def blacklist_info(ctx: commands.Context[BallsDexBot], user: discord.User)
                 ephemeral=True,
             )
         else:
-            await ctx.send(
-                f"`{user}` (`{user.id}`) is currently blacklisted (date unknown)"
-                " for the following reason:\n"
-                f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
-                ephemeral=True,
-            )
+            if blacklisted.moderator_id:
+                moderator_msg = (
+                    f"Moderator: {await ctx.bot.fetch_user(blacklisted.moderator_id)} ({blacklisted.moderator_id})"
+                )
+            else:
+                moderator_msg = "Moderator: Unknown"
+            if settings.admin_url and (player := await Player.objects.aget_or_none(discord_id=user.id)):
+                admin_url = f"\n[View history online](<{settings.admin_url}/bd_models/player/{player.pk}/change/>)"
+            else:
+                admin_url = ""
+            if blacklisted.date:
+                await ctx.send(
+                    f"`{user}` (`{user.id}`) was blacklisted on {format_dt(blacklisted.date)}"
+                    f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
+                    f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
+                    ephemeral=True,
+                )
+            else:
+                await ctx.send(
+                    f"`{user}` (`{user.id}`) is currently blacklisted (date unknown)"
+                    " for the following reason:\n"
+                    f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
+                    ephemeral=True,
+                )
 
 
 @blacklist.command(name="history")
@@ -136,15 +155,24 @@ async def blacklist_history(ctx: commands.Context[BallsDexBot], user_id: str):
         await ctx.send("The ID you gave is not valid.", ephemeral=True)
         return
 
-    history = await BlacklistHistory.objects.filter(discord_id=_id).order_by("-date").aall()
+    history = BlacklistHistory.objects.filter(discord_id=_id).order_by("-date")
 
-    if not history:
+    if not await history.aexists():
         await ctx.send("No history found for that ID.", ephemeral=True)
         return
 
-    source = BlacklistViewFormat(history, _id, ctx.bot)
-    pages = Pages(ctx, source, compact=True)
-    await pages.start(ephemeral=True)
+    try:
+        user = await ctx.bot.fetch_user(_id)
+    except discord.NotFound:
+        await ctx.send("User was not found from Discord.", ephemeral=True)
+        return
+
+    view = discord.ui.LayoutView()
+    container = discord.ui.Container()
+    view.add_item(container)
+    menu = Menu(ctx.bot, view, ModelSource(history, per_page=1), BlacklistHistoryFormatter(container, user))
+    await menu.init()
+    await ctx.send(view=view, ephemeral=True)
 
 
 @commands.hybrid_group()

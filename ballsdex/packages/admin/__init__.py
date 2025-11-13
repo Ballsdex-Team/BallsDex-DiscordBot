@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from discord import app_commands
 
-from ballsdex.packages.admin.cog import Admin
+from .cog import Admin
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

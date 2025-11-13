@@ -1,0 +1,33 @@
+name: wiki
+on:
+  push:
+    branches:
+      - master
+      - 3.0-dev
+      - 3.0/docs
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+      - name: Install dependencies
+        run: uv sync --locked --extra docs && echo "$PWD/.venv/bin" >> $GITHUB_PATH
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+      - run: mkdocs gh-deploy --force

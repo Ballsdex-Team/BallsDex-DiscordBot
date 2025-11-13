@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
 
+from ballsdex.core.discord import View
 from ballsdex.core.image_generator.image_gen import draw_card
 from ballsdex.settings import settings
 
@@ -208,6 +209,11 @@ class SpecialEnabledManager(Manager["Special"]):
         return super().get_queryset().filter(hidden=False)
 
 
+class BallInstanceManager[T: models.Model](Manager[T]):
+    def get_queryset(self) -> models.QuerySet[T]:
+        return super().get_queryset().filter(deleted=False)
+
+
 class Special(models.Model):
     name = models.CharField(max_length=64)
     catch_phrase = models.CharField(
@@ -335,11 +341,15 @@ class BallInstance(models.Model):
     server_id = models.BigIntegerField(null=True, help_text="Discord server ID where this ball was caught")
     tradeable = models.BooleanField(default=True)
     extra_data = models.JSONField(blank=True, default=dict)
-    locked = models.DateTimeField(null=True, help_text="If the instance was locked for a trade and when", default=None)
+    locked = models.DateTimeField(
+        blank=True, null=True, help_text="If the instance was locked for a trade and when", default=None
+    )
     spawned_time = models.DateTimeField(null=True)
+    deleted = models.BooleanField(default=False, help_text="Whether this instance was deleted or not.")
 
-    objects: Manager[Self] = Manager()
+    objects: Manager[Self] = BallInstanceManager()
     tradeable_objects: TradeableManager[Self] = TradeableManager()
+    all_objects: Manager[Self] = Manager()
 
     class Meta:
         managed = True
@@ -350,21 +360,16 @@ class BallInstance(models.Model):
             models.Index(fields=("ball_id",)),
             models.Index(fields=("player_id",)),
             models.Index(fields=("special_id",)),
+            models.Index(fields=("deleted",)),
         )
-
-    def __getattribute__(self, name: str) -> Any:
-        if name == "ball":
-            balls = cast(list[Ball], cache.get_or_set("balls", Ball.objects.all(), timeout=30))
-            for ball in balls:
-                if ball.pk == self.ball_id:
-                    return ball
-        return super().__getattribute__(name)
 
     def short_description(self, *, is_trade: bool = False) -> str:
         """
         Return a short string representation. Similar to str(x) without arguments.
         """
         text = ""
+        if self.deleted:
+            text += "\N{NO ENTRY SIGN}"
         if not is_trade and self.locked and self.locked > now() - timedelta(minutes=30):
             text += "🔒"
         if self.favorite:
@@ -447,7 +452,7 @@ class BallInstance(models.Model):
 
     async def prepare_for_message(
         self, interaction: discord.Interaction["BallsDexBot"]
-    ) -> tuple[str, discord.File, discord.ui.View]:
+    ) -> tuple[str, discord.File, View]:
         # message content
         trade_content = ""
         if self.trade_player:
@@ -480,7 +485,7 @@ class BallInstance(models.Model):
         with ThreadPoolExecutor() as pool:
             buffer = await interaction.client.loop.run_in_executor(pool, self.draw_card)
 
-        view = discord.ui.View()
+        view = View()
         return content, discord.File(buffer, "card.webp"), view
 
     async def lock_for_trade(self):
@@ -491,8 +496,9 @@ class BallInstance(models.Model):
         self.locked = None  # type: ignore
         await self.asave(update_fields=("locked",))
 
-    async def is_locked(self):
-        await self.arefresh_from_db(fields=["locked"])
+    async def is_locked(self, refresh: bool = True):
+        if refresh:
+            await self.arefresh_from_db(fields=["locked"])
         self.locked
         return self.locked is not None and (self.locked + timedelta(minutes=30)) > timezone.now()
 

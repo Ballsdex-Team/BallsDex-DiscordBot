@@ -1,0 +1,135 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
+site_name: Ballsdex Discord bot
+site_url: https://wiki.ballsdex.com
+repo_url: https://github.com/Ballsdex-Team/BallsDex-DiscordBot
+
+copyright: Copyright &copy; 2022 - 2025 Auguste "El Laggron" Charpentier
+
+theme:
+  name: material
+
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to system preference
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to dark mode
+  
+
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.path
+    - navigation.top
+    - navigation.sections
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - content.tabs.link
+    - content.code.select
+    - content.code.copy
+
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Selfhosting:
+      - selfhosting/index.md
+      - Installation:
+          - selfhosting/installation/installing-ballsdex.md
+          - selfhosting/installation/installing-ballsdex-no-docker.md
+      - Admin panel:
+          - selfhosting/admin-panel/getting-started.md
+          - selfhosting/admin-panel/exposing-to-internet.md
+      - Misc:
+          - selfhosting/misc/rarity-mechanism.md
+          - selfhosting/misc/backup-and-transfers.md
+          - selfhosting/misc/migrating-windows-wsl.md
+  - API Reference:
+      - api/bot.md
+      - api/models.md
+      - Utils:
+          - api/utils/buttons.md
+          - api/utils/django.md
+          - api/utils/enums.md
+          - api/utils/formatting.md
+          - api/utils/logging.md
+          - api/utils/menus.md
+          - api/utils/sorting.md
+          - api/utils/transformers.md
+          - api/utils/utils.md
+
+plugins:
+  - search
+  - git-revision-date-localized
+  - mkdocstrings:
+      enable_inventory: true
+      default_handler: python
+      handlers:
+        python:
+          paths:
+            - .
+            - ./admin_panel
+          options:
+            extensions:
+              - griffe_modernized_annotations
+              - griffe_generics
+            summary: false
+            show_root_heading: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_submodules: true
+            inherited_members: false
+            docstring_style: numpy
+            docstring_section_style: list
+            merge_init_into_class: true
+            show_if_no_docstring: false
+            show_labels: false
+            show_source: true
+            show_signature: true
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
+            find_stubs_package: true
+            type_parameter_headings: true
+            show_signature_type_parameters: true
+          inventories:
+            - https://discordpy.readthedocs.io/en/latest/objects.inv
+            - https://docs.python.org/3/objects.inv
+            - https://docs.djangoproject.com/en/dev/objects.inv
+
+markdown_extensions:
+  - admonition
+  - footnotes
+  - attr_list
+  - md_in_html
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      default_lang: python
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js

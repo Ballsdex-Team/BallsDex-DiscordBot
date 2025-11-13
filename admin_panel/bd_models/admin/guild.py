@@ -16,7 +16,7 @@ from ..models import BallInstance, BlacklistedGuild, BlacklistHistory, GuildConf
 from ..utils import BlacklistTabular
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
     from django.http import HttpRequest
 
 
@@ -32,7 +32,7 @@ class BallInstanceGuildTabular(InlinePaginated, NonrelatedInlineMixin, admin.Tab
     can_delete = False
 
     def get_form_queryset(self, obj: GuildConfig):
-        return BallInstance.objects.filter(server_id=obj.guild_id).prefetch_related("player")
+        return BallInstance.objects.filter(server_id=obj.guild_id).prefetch_related("player", "ball", "special")
 
     @admin.display(description="Time to catch")
     def catch_time(self, obj: BallInstance):

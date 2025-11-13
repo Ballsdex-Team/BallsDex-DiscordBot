@@ -5,10 +5,11 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord.ext import commands
 
-from ballsdex.packages.countryballs.countryball import BallSpawnView
-from ballsdex.packages.countryballs.spawn import BaseSpawnManager
 from ballsdex.settings import settings
 from bd_models.models import GuildConfig
+
+from .countryball import BallSpawnView
+from .spawn import BaseSpawnManager
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("bd_models", "0007_player_trade_cooldown_policy")]
+    dependencies = [("bd_models", "0009_ballinstance_deleted_and_more")]
 
     operations = [
         migrations.AddField(
