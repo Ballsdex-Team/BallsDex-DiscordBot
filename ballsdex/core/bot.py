@@ -7,7 +7,7 @@ import math
 import time
 import types
 from datetime import datetime
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Self, Sequence
 
 import aiohttp
 import discord
@@ -18,6 +18,7 @@ from discord import app_commands
 from discord.app_commands.translator import TranslationContextLocation, TranslationContextTypes, locale_str
 from discord.enums import Locale
 from discord.ext import commands
+from discord.utils import MISSING
 from prometheus_client import Histogram
 from rich import box, print
 from rich.console import Console
@@ -94,10 +95,10 @@ async def on_request_end(
     http_counter.labels(route_key, params.response.status).observe(time)
 
 
-class CommandTree(app_commands.CommandTree):
+class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
     disable_time_check: bool = False
 
-    async def interaction_check(self, interaction: discord.Interaction[BallsDexBot], /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction[Bot], /) -> bool:
         # checking if the moment we receive this interaction isn't too late already
         # there is a 3 seconds limit for initial response, taking a little margin into account
         # https://discord.com/developers/docs/interactions/receiving-and-responding#responding-to-an-interaction
@@ -117,6 +118,29 @@ class CommandTree(app_commands.CommandTree):
                 )
             return False  # wait for all shards to be connected
         return await bot.blacklist_check(interaction)
+
+    async def load_command_mentions(
+        self, app_commands: list[app_commands.AppCommand] | None = None, *, cog: commands.Cog | None = None
+    ):
+        if app_commands is None:
+            cmds = {x.name: x.id for x in await self.fetch_commands()}
+        else:
+            cmds = {x.name: x.id for x in app_commands}
+
+        for cmd in (cog or self).walk_commands():
+            cmd_id = cmds.get(cmd.root_parent.name if cmd.root_parent else cmd.name, None)
+            if not cmd_id:
+                continue
+            cmd.extras["mention"] = f"</{cmd.qualified_name}:{cmd_id}>"
+
+    async def sync(self, *, guild: discord.abc.Snowflake | None = None) -> list[app_commands.AppCommand]:
+        app_commands = await super().sync(guild=guild)
+        if not guild:
+            # assign the mentions
+            await self.load_command_mentions(app_commands)
+            return app_commands
+
+        return app_commands
 
 
 class BallsDexBot(commands.AutoShardedBot):
@@ -153,7 +177,8 @@ class BallsDexBot(commands.AutoShardedBot):
         super().__init__(
             command_prefix, intents=intents, tree_cls=CommandTree, help_command=HelpCommand(width=100), **options
         )
-        self.tree.disable_time_check = disable_time_check  # type: ignore
+        self.tree: CommandTree[Self]
+        self.tree.disable_time_check = disable_time_check
         self.skip_tree_sync = skip_tree_sync
 
         self.dev = dev
@@ -176,28 +201,6 @@ class BallsDexBot(commands.AutoShardedBot):
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(self, settings.prometheus_host, settings.prometheus_port)
         await self.prometheus_server.run()
-
-    def assign_ids_to_app_groups(self, group: app_commands.Group, synced_commands: list[app_commands.AppCommandGroup]):
-        for synced_command in synced_commands:
-            bot_command = group.get_command(synced_command.name)
-            if not bot_command:
-                continue
-            bot_command.extras["mention"] = synced_command.mention
-            if isinstance(bot_command, app_commands.Group) and bot_command.commands:
-                self.assign_ids_to_app_groups(
-                    bot_command, cast(list[app_commands.AppCommandGroup], synced_command.options)
-                )
-
-    def assign_ids_to_app_commands(self, synced_commands: list[app_commands.AppCommand]):
-        for synced_command in synced_commands:
-            bot_command = self.tree.get_command(synced_command.name, type=synced_command.type)
-            if not bot_command:
-                continue
-            bot_command.extras["mention"] = synced_command.mention
-            if isinstance(bot_command, app_commands.Group) and bot_command.commands:
-                self.assign_ids_to_app_groups(
-                    bot_command, cast(list[app_commands.AppCommandGroup], synced_command.options)
-                )
 
     def get_emoji(self, id: int) -> discord.Emoji | None:
         return self.application_emojis.get(id) or super().get_emoji(id)
@@ -273,6 +276,21 @@ class BallsDexBot(commands.AutoShardedBot):
             log.warning("Gateway proxy is not ready yet, waiting 30 more seconds...")
             await asyncio.sleep(30)
 
+    # override cog reload to reconfigure app command mentions
+    async def add_cog(
+        self,
+        cog: commands.Cog,
+        /,
+        *,
+        override: bool = False,
+        guild: discord.abc.Snowflake | None = MISSING,
+        guilds: Sequence[discord.abc.Snowflake] = MISSING,
+    ) -> None:
+        await super().add_cog(cog, override=override, guild=guild, guilds=guilds)
+        if self.is_ready():
+            await self.tree.load_command_mentions(cog=cog)
+        # otherwise, bot is still starting, that will be done with the sync
+
     async def on_ready(self):
         if self.cogs != {}:
             return  # bot is reconnecting, no need to setup again
@@ -325,12 +343,9 @@ class BallsDexBot(commands.AutoShardedBot):
             log.info("No package loaded.")
 
         if not self.skip_tree_sync:
+            log.info("Syncing global commands...")
             synced_commands = await self.tree.sync()
-            log.info(f"Synced {len(synced_commands)} commands.")
-            try:
-                self.assign_ids_to_app_commands(synced_commands)
-            except Exception:
-                log.error("Failed to assign IDs to app commands", exc_info=True)
+            log.info(f"Synced {len(synced_commands)} global commands.")
         else:
             log.warning("Skipping command synchronization.")
 

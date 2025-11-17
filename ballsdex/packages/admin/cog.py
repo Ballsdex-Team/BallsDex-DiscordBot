@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button, Container, LayoutView, Section, TextDisplay
+from discord.ui import ActionRow, Button, Container, Section, TextDisplay
 
+from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import (
@@ -36,6 +37,51 @@ if TYPE_CHECKING:
     from ballsdex.packages.trade.cog import Trade
 
 log = logging.getLogger("ballsdex.packages.admin")
+
+
+class SyncView(LayoutView):
+    def __init__(self, cog: "Admin", *, timeout: float | None = 180) -> None:
+        super().__init__(timeout=timeout)
+        self.cog = cog
+
+    text = TextDisplay("Admin commands are already synced here. What would you like to do?")
+    action_row = ActionRow()
+
+    @action_row.button(
+        label="Synchronize",
+        style=discord.ButtonStyle.primary,
+        emoji="\N{CLOCKWISE RIGHTWARDS AND LEFTWARDS OPEN CIRCLE ARROWS}",
+    )
+    async def sync(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        assert interaction.guild
+        self.stop()
+        await interaction.response.defer()
+        if not interaction.client.tree.get_command("admin", guild=interaction.guild):
+            interaction.client.tree.add_command(self.cog.admin.app_command, guild=interaction.guild)
+        await interaction.client.tree.sync(guild=interaction.guild)
+        self.sync.disabled = True
+        self.remove.disabled = True
+        self.text.content += (
+            "\n\nCommands have been refreshed. You may need to reload your Discord client to see the changes applied."
+        )
+        await interaction.edit_original_response(view=self)
+
+    @action_row.button(
+        label="Remove", style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}"
+    )
+    async def remove(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        assert interaction.guild
+        self.stop()
+        await interaction.response.defer()
+        interaction.client.tree.remove_command("admin", guild=interaction.guild)
+        await interaction.client.tree.sync(guild=interaction.guild)
+        self.sync.disabled = True
+        self.remove.disabled = True
+        self.text.content += (
+            "\n\nCommands have been removed. You may need to reload your Discord client to see the changes applied."
+        )
+        await interaction.edit_original_response(view=self)
+        log.info(f"Admin commands removed from guild {interaction.guild.id} by {interaction.user}")
 
 
 class Admin(commands.Cog):
@@ -87,15 +133,10 @@ class Admin(commands.Cog):
         assert ctx.guild
         commands = await self.bot.tree.fetch_commands(guild=ctx.guild)
         if commands:
-            view = ConfirmChoiceView(ctx, accept_message="Command removed")
-            await ctx.send("Guild slash commands are already synced here. Would you like to remove them?", view=view)
-            await view.wait()
-            if not view.value:
-                return
-            self.bot.tree.remove_command(self.admin.app_command.name, guild=ctx.guild)
-            log.info(f"Admin commands removed from guild {ctx.guild.id} by {ctx.author}")
+            view = SyncView(self)
+            await ctx.send(view=view)
         else:
-            view = ConfirmChoiceView(ctx, accept_message="Command added")
+            view = ConfirmChoiceView(ctx, accept_message="Registering commands...")
             await ctx.send(
                 "Would you like to add admin slash commands in this server? "
                 "They can only be used with the appropriate Django permissions",
@@ -104,9 +145,15 @@ class Admin(commands.Cog):
             await view.wait()
             if not view.value:
                 return
-            self.bot.tree.add_command(self.admin.app_command, guild=ctx.guild)
-            log.info(f"Admin commands added to guild {ctx.guild.id} by {ctx.author}")
-        await self.bot.tree.sync(guild=ctx.guild)
+            async with ctx.typing():
+                self.bot.tree.add_command(self.admin.app_command, guild=ctx.guild)
+                await self.bot.tree.sync(guild=ctx.guild)
+                log.info(f"Admin commands added to guild {ctx.guild.id} by {ctx.author}")
+                await ctx.send(
+                    "Admin slash commands added.\nYou need admin permissions in this server to view them "
+                    f"(this can be changed [here](discord://-/guilds/{ctx.guild.id}/settings/integrations)). You might "
+                    "need to refresh your Discord client to view them."
+                )
 
     @admin.command()
     @checks.is_superuser()
