@@ -56,6 +56,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 collectible=settings.collectible_name,
                 ball=self.view.name,
                 collectibles=settings.plural_collectible_name,
+                emoji=interaction.client.get_emoji(self.view.model.emoji_id),
             )
 
             await interaction.followup.send(slow_message, ephemeral=True, allowed_mentions=await can_mention([player]))
@@ -73,6 +74,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 ball=self.view.name,
                 collectibles=settings.plural_collectible_name,
                 wrong=wrong_name,
+                emoji=interaction.client.get_emoji(self.view.model.emoji_id),
             )
             await interaction.followup.send(
                 wrong_message, allowed_mentions=await can_mention([player]), ephemeral=False
@@ -241,7 +243,10 @@ class BallSpawnView(View):
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
                 spawn_message = random.choice(settings.spawn_messages).format(
-                    collectible=settings.collectible_name, ball=self.name, collectibles=settings.plural_collectible_name
+                    collectible=settings.collectible_name,
+                    ball=self.name,
+                    collectibles=settings.plural_collectible_name,
+                    emoji=self.bot.get_emoji(self.model.emoji_id),
                 )
 
                 self.message = await channel.send(
@@ -404,6 +409,7 @@ class BallSpawnView(View):
                 collectible=settings.collectible_name,
                 ball=self.name,
                 collectibles=settings.plural_collectible_name,
+                emoji=self.bot.get_emoji(self.model.emoji_id),
             )
             + " "
         )
