@@ -1,11 +1,15 @@
+import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button, Container, LayoutView, Section, TextDisplay
+from discord.ui import ActionRow, Button, Container, Section, TextDisplay
 
+from ballsdex.core.discord import LayoutView
+from ballsdex.core.utils import checks
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import (
     ItemFormatter,
     ListSource,
@@ -18,23 +22,69 @@ from ballsdex.core.utils.menus import (
 from ballsdex.settings import settings
 from bd_models.models import Ball, GuildConfig
 
-from .balls import Balls as BallsGroup
-from .blacklist import Blacklist as BlacklistGroup
-from .blacklist import BlacklistGuild as BlacklistGuildGroup
-from .history import History as HistoryGroup
-from .info import Info as InfoGroup
-from .logs import Logs as LogsGroup
-from .money import Money as MoneyGroup
+from .balls import balls as balls_group
+from .blacklist import blacklist as blacklist_group
+from .blacklist import blacklistguild as blacklist_guild_group
+from .flags import RarityFlags, StatusFlags
+from .history import history as history_group
+from .info import info as info_group
+from .logs import logs as logs_group
+from .money import money as money_group
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
     from ballsdex.packages.trade.cog import Trade
 
+log = logging.getLogger("ballsdex.packages.admin")
 
-@app_commands.guilds(*settings.admin_guild_ids)
-@app_commands.default_permissions(administrator=True)
-class Admin(commands.GroupCog):
+
+class SyncView(LayoutView):
+    def __init__(self, cog: "Admin", *, timeout: float | None = 180) -> None:
+        super().__init__(timeout=timeout)
+        self.cog = cog
+
+    text = TextDisplay("Admin commands are already synced here. What would you like to do?")
+    action_row = ActionRow()
+
+    @action_row.button(
+        label="Synchronize",
+        style=discord.ButtonStyle.primary,
+        emoji="\N{CLOCKWISE RIGHTWARDS AND LEFTWARDS OPEN CIRCLE ARROWS}",
+    )
+    async def sync(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        assert interaction.guild
+        self.stop()
+        await interaction.response.defer()
+        if not interaction.client.tree.get_command("admin", guild=interaction.guild):
+            interaction.client.tree.add_command(self.cog.admin.app_command, guild=interaction.guild)
+        await interaction.client.tree.sync(guild=interaction.guild)
+        self.sync.disabled = True
+        self.remove.disabled = True
+        self.text.content += (
+            "\n\nCommands have been refreshed. You may need to reload your Discord client to see the changes applied."
+        )
+        await interaction.edit_original_response(view=self)
+
+    @action_row.button(
+        label="Remove", style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}"
+    )
+    async def remove(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        assert interaction.guild
+        self.stop()
+        await interaction.response.defer()
+        interaction.client.tree.remove_command("admin", guild=interaction.guild)
+        await interaction.client.tree.sync(guild=interaction.guild)
+        self.sync.disabled = True
+        self.remove.disabled = True
+        self.text.content += (
+            "\n\nCommands have been removed. You may need to reload your Discord client to see the changes applied."
+        )
+        await interaction.edit_original_response(view=self)
+        log.info(f"Admin commands removed from guild {interaction.guild.id} by {interaction.user}")
+
+
+class Admin(commands.Cog):
     """
     Bot admin commands.
     """
@@ -42,67 +92,94 @@ class Admin(commands.GroupCog):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
 
-        assert self.__cog_app_commands_group__
-        self.__cog_app_commands_group__.add_command(BallsGroup(name=settings.players_group_cog_name))
-        self.__cog_app_commands_group__.add_command(BlacklistGroup())
-        self.__cog_app_commands_group__.add_command(BlacklistGuildGroup())
-        self.__cog_app_commands_group__.add_command(HistoryGroup())
-        self.__cog_app_commands_group__.add_command(LogsGroup())
-        self.__cog_app_commands_group__.add_command(InfoGroup())
-        self.__cog_app_commands_group__.add_command(MoneyGroup())
+        self.admin.add_command(info_group)
+        self.admin.add_command(balls_group)
+        self.admin.add_command(blacklist_group)
+        self.admin.add_command(blacklist_guild_group)
+        self.admin.add_command(history_group)
+        self.admin.add_command(logs_group)
+        self.admin.add_command(money_group)
 
-    @app_commands.command()
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def status(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        status: discord.Status | None = None,
-        name: str | None = None,
-        state: str | None = None,
-        activity_type: discord.ActivityType | None = None,
+    async def cog_app_command_error(
+        self, interaction: discord.Interaction["BallsDexBot"], error: app_commands.AppCommandError
     ):
+        if isinstance(error, app_commands.CommandSignatureMismatch):
+            assert self.bot.user
+            await interaction.response.send_message(
+                "Admin commands are desynchronized and needs to be re-synced. "
+                f"Run `{self.bot.user.mention} admin syncslash` to fix this.",
+                ephemeral=True,
+            )
+            interaction.extras["handled"] = True
+
+    @commands.hybrid_group()
+    @app_commands.guilds()
+    @app_commands.default_permissions(administrator=True)
+    @commands.has_permissions(administrator=True)
+    @checks.is_staff()
+    async def admin(self, ctx: commands.Context):
+        """
+        Bot admin commands.
+        """
+        await ctx.send_help(ctx.command)
+
+    @admin.command(with_app_command=False)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def syncslash(self, ctx: commands.Context["BallsDexBot"]):
+        """
+        Synchronize all the admin commands in the current server, or remove them if already existing.
+        """
+        assert ctx.guild
+        commands = await self.bot.tree.fetch_commands(guild=ctx.guild)
+        if commands:
+            view = SyncView(self)
+            await ctx.send(view=view)
+        else:
+            view = ConfirmChoiceView(ctx, accept_message="Registering commands...")
+            await ctx.send(
+                "Would you like to add admin slash commands in this server? "
+                "They can only be used with the appropriate Django permissions",
+                view=view,
+            )
+            await view.wait()
+            if not view.value:
+                return
+            async with ctx.typing():
+                self.bot.tree.add_command(self.admin.app_command, guild=ctx.guild)
+                await self.bot.tree.sync(guild=ctx.guild)
+                log.info(f"Admin commands added to guild {ctx.guild.id} by {ctx.author}")
+                await ctx.send(
+                    "Admin slash commands added.\nYou need admin permissions in this server to view them "
+                    f"(this can be changed [here](discord://-/guilds/{ctx.guild.id}/settings/integrations)). You might "
+                    "need to refresh your Discord client to view them."
+                )
+
+    @admin.command()
+    @checks.is_superuser()
+    async def status(self, ctx: commands.Context["BallsDexBot"], *, flags: StatusFlags):
         """
         Change the status of the bot. Provide at least status or text.
-
-        Parameters
-        ----------
-        status: discord.Status
-            The status you want to set
-        name: str
-            Title of the activity, if not custom
-        state: str
-            Custom status or subtitle of the activity
-        activity_type: discord.ActivityType
-            The type of activity
         """
-        if not status and not name and not state:
-            await interaction.response.send_message(
-                "You must provide at least `status`, `name` or `state`.", ephemeral=True
-            )
+        if not flags.status and not flags.name and not flags.state:
+            await ctx.send("You must provide at least `status`, `name` or `state`.", ephemeral=True)
             return
 
         activity: discord.Activity | None = None
-        status = status or discord.Status.online
-        activity_type = activity_type or discord.ActivityType.custom
-
-        if activity_type == discord.ActivityType.custom and name and not state:
-            await interaction.response.send_message(
-                "You must provide `state` for custom activities. `name` is unused.", ephemeral=True
-            )
+        if flags.activity_type == discord.ActivityType.custom and flags.name and not flags.state:
+            await ctx.send("You must provide `state` for custom activities. `name` is unused.", ephemeral=True)
             return
-        if activity_type != discord.ActivityType.custom and not name:
-            await interaction.response.send_message(
-                "You must provide `name` for pre-defined activities.", ephemeral=True
-            )
+        if flags.activity_type != discord.ActivityType.custom and not flags.name:
+            await ctx.send("You must provide `name` for pre-defined activities.", ephemeral=True)
             return
-        if name or state:
-            activity = discord.Activity(name=name or state, state=state, type=activity_type)
-        await self.bot.change_presence(status=status, activity=activity)
-        await interaction.response.send_message("Status updated.", ephemeral=True)
+        if flags.name or flags.state:
+            activity = discord.Activity(name=flags.name or flags.state, state=flags.state, type=flags.activity_type)
+        await self.bot.change_presence(status=flags.status, activity=activity)
+        await ctx.send("Status updated.", ephemeral=True)
 
-    @app_commands.command()
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def trade_lockdown(self, interaction: discord.Interaction["BallsDexBot"], *, reason: str):
+    @admin.command()
+    @checks.is_superuser()
+    async def trade_lockdown(self, ctx: commands.Context["BallsDexBot"], *, reason: str):
         """
         Cancel all ongoing trades and lock down further trades from being started.
 
@@ -113,51 +190,42 @@ class Admin(commands.GroupCog):
         """
         cog = cast("Trade | None", self.bot.get_cog("Trade"))
         if not cog:
-            await interaction.response.send_message("The trade cog is not loaded.", ephemeral=True)
+            await ctx.send("The trade cog is not loaded.", ephemeral=True)
             return
 
-        await interaction.response.defer(thinking=True)
+        await ctx.defer()
         result = await cog.cancel_all_trades(reason)
 
         assert self.bot.user
         prefix = settings.prefix if self.bot.intents.message_content else f"{self.bot.user.mention} "
 
         if not result:
-            await interaction.followup.send(
+            await ctx.send(
                 "All trades were successfully cancelled, and further trades cannot be started "
                 f'anymore.\nTo enable trades again, the bot owner must use the "{prefix}reload '
                 'trade" command.'
             )
         else:
-            await interaction.followup.send(
+            await ctx.send(
                 "Lockdown mode enabled, trades can no longer be started. "
                 f"While cancelling ongoing trades, {len(result)} failed to cancel, check your "
                 "logs for info.\nTo enable trades again, the bot owner must use the "
                 f'"{prefix}reload trade" command.'
             )
 
-    @app_commands.command()
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def rarity(
-        self, interaction: discord.Interaction["BallsDexBot"], chunked: bool = True, include_disabled: bool = False
-    ):
+    @admin.command()
+    @checks.has_permissions("bd_models.view_ball")
+    async def rarity(self, ctx: commands.Context["BallsDexBot"], *, flags: RarityFlags):
         """
         Generate a list of countryballs ranked by rarity.
-
-        Parameters
-        ----------
-        chunked: bool
-            Group together countryballs with the same rarity.
-        include_disabled: bool
-            Include the countryballs that are disabled or with a rarity of 0.
         """
         text = ""
         balls_queryset = Ball.objects.all().order_by("rarity")
-        if not include_disabled:
+        if not flags.include_disabled:
             balls_queryset = balls_queryset.filter(rarity__gt=0, enabled=True)
         sorted_balls = [x async for x in balls_queryset]
 
-        if chunked:
+        if flags.chunked:
             indexes: dict[float, list[Ball]] = defaultdict(list)
             for ball in sorted_balls:
                 indexes[ball.rarity].append(ball)
@@ -175,11 +243,11 @@ class Admin(commands.GroupCog):
         view.add_item(text_display)
         menu = Menu(self.bot, view, TextSource(text, prefix="```md\n", suffix="```"), TextFormatter(text_display))
         await menu.init()
-        await interaction.response.send_message(view=view)
+        await ctx.send(view=view)
 
-    @app_commands.command()
-    @app_commands.checks.has_any_role(*settings.root_role_ids)
-    async def cooldown(self, interaction: discord.Interaction["BallsDexBot"], guild_id: str | None = None):
+    @admin.command()
+    @checks.is_superuser()
+    async def cooldown(self, ctx: commands.Context["BallsDexBot"], guild_id: str | None = None):
         """
         Show the details of the spawn cooldown system for the given server
 
@@ -192,22 +260,19 @@ class Admin(commands.GroupCog):
             try:
                 guild = self.bot.get_guild(int(guild_id))
             except ValueError:
-                await interaction.response.send_message(
-                    "Invalid guild ID. Please make sure it's a number.", ephemeral=True
-                )
+                await ctx.send("Invalid guild ID. Please make sure it's a number.", ephemeral=True)
                 return
         else:
-            guild = interaction.guild
+            guild = ctx.guild
         if not guild:
-            await interaction.response.send_message("The given guild could not be found.", ephemeral=True)
+            await ctx.send("The given guild could not be found.", ephemeral=True)
             return
 
         spawn_manager = cast("CountryBallsSpawner", self.bot.get_cog("CountryBallsSpawner")).spawn_manager
-        await spawn_manager.admin_explain(interaction, guild)
+        await spawn_manager.admin_explain(ctx, guild)
 
-    @app_commands.command()
-    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
-    async def guilds(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
+    @admin.command()
+    async def guilds(self, ctx: commands.Context["BallsDexBot"], user: discord.User):
         """
         Shows the guilds shared with the specified user. Provide either user or user_id.
 
@@ -223,11 +288,9 @@ class Admin(commands.GroupCog):
 
         if not guilds:
             if self.bot.intents.members:
-                await interaction.response.send_message(
-                    f"The user does not own any server with {settings.bot_name}.", ephemeral=True
-                )
+                await ctx.send(f"The user does not own any server with {settings.bot_name}.", ephemeral=True)
             else:
-                await interaction.response.send_message(
+                await ctx.send(
                     f"The user does not own any server with {settings.bot_name}.\n"
                     ":warning: *The bot cannot be aware of the member's presence in servers, "
                     "it is only aware of server ownerships.*",
@@ -291,4 +354,4 @@ class Admin(commands.GroupCog):
             self.bot, view, ListSource(await dynamic_chunks(view, iter_to_async(entries))), ItemFormatter(container, 1)
         )
         await pages.init()
-        await interaction.response.send_message(view=view)
+        await ctx.send(view=view, ephemeral=True)

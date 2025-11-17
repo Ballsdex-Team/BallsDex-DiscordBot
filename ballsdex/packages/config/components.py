@@ -10,6 +10,9 @@ from bd_models.models import GuildConfig
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
+
 
 class AcceptTOSView(View):
     """

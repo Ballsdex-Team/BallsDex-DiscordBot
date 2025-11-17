@@ -498,7 +498,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         favorite = countryball.favorite
         if favorite:
             view = ConfirmChoiceView(
-                interaction,
+                await commands.Context.from_interaction(interaction),
                 accept_message=f"{settings.collectible_name.title()} donated.",
                 cancel_message="This request has been cancelled.",
             )

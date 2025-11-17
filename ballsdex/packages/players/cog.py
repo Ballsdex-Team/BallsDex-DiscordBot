@@ -113,7 +113,10 @@ class Player(commands.GroupCog):
 
         await interaction.response.defer(thinking=True)
         view = ConfirmChoiceView(
-            interaction, user=user, accept_message="Friend request accepted!", cancel_message="Friend request declined."
+            await commands.Context.from_interaction(interaction),
+            user=user,
+            accept_message="Friend request accepted!",
+            cancel_message="Friend request declined.",
         )
         await interaction.followup.send(
             f"{user.mention}, {interaction.user} has sent you a friend request!",
@@ -226,7 +229,7 @@ class Player(commands.GroupCog):
         friended = await player1.is_friend(player2)
         if friended:
             view = ConfirmChoiceView(
-                interaction,
+                await commands.Context.from_interaction(interaction),
                 accept_message="User has been blocked.",
                 cancel_message=f"Request cancelled, {user.name} is still your friend.",
             )

@@ -217,7 +217,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "cachetools", specifier = "==6.2.1" },
-    { name = "discord-py", git = "https://github.com/Rapptz/discord.py.git?rev=8b154754960eda6f96b59dc8ae21e3a7a8b5c357" },
+    { name = "discord-py", git = "https://github.com/Rapptz/discord.py.git?rev=c342db853486ef6e26d72b10bf901e951c4b4d8e" },
     { name = "dj-database-url", specifier = "==3.0.1" },
     { name = "django", specifier = "==5.2.7" },
     { name = "django-admin-action-forms", specifier = "==2.2.0" },
@@ -425,8 +425,8 @@ wheels = [
 
 [[package]]
 name = "discord-py"
-version = "2.7.0a5353+g8b154754"
-source = { git = "https://github.com/Rapptz/discord.py.git?rev=8b154754960eda6f96b59dc8ae21e3a7a8b5c357#8b154754960eda6f96b59dc8ae21e3a7a8b5c357" }
+version = "2.7.0a5356+gc342db85"
+source = { git = "https://github.com/Rapptz/discord.py.git?rev=c342db853486ef6e26d72b10bf901e951c4b4d8e#c342db853486ef6e26d72b10bf901e951c4b4d8e" }
 dependencies = [
     { name = "aiohttp" },
     { name = "audioop-lts" },
