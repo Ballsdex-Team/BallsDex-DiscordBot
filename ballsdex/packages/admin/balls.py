@@ -251,13 +251,17 @@ class Balls(app_commands.Group):
             special=special,
         )
         await interaction.followup.send(
-            f"`{countryball.country}` {settings.collectible_name} was successfully given to "
-            f"`{user}`.\nSpecial: `{special.name if special else None}` • ATK: "
-            f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
+            (
+                f"`{countryball.country}` `({instance.pk:0X})` "
+                f"{settings.collectible_name} was successfully given to `{user}`.\n"
+                f"Special: `{special.name if special else None}` • ATK: "
+                f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
+            )
         )
         await log_action(
             f"{interaction.user} gave {settings.collectible_name} "
-            f"{countryball.country} to {user}. (Special={special.name if special else None} "
+            f"{countryball.country} `({instance.pk:0X})` to {user}. "
+            f"(Special={special.name if special else None} "
             f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
             interaction.client,
         )
