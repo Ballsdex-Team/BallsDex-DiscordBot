@@ -14,6 +14,14 @@ ALLOWED_HOSTS = [
     # "ballsdex.com"
 ]
 
+# Enable connection pooling, allowing multiple concurrent connections to be made to the database and divide the load
+# Uncomment this with an appropriate number if you have a large bot
+# DATABASES["default"].setdefault("OPTIONS", {})["pool"] = {"max_size": 20}
+# If you wonder how many pools you need, check this:
+# https://www.psycopg.org/psycopg3/docs/advanced/pool.html#what-s-the-right-size-for-the-pool
+# The following eval will show you the result of get_stats():
+# b.eval from django.db import connection; from asgiref.sync import sync_to_async; return await sync_to_async(lambda: connection.pool.get_stats())()
+
 
 # If you are handling TLS/HTTPS yourself, uncomment this line to enforce HTTPS connections
 # Do not uncomment if HTTPS is not handled locally (like Cloudflare), this will result in
