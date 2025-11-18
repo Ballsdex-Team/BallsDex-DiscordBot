@@ -33,7 +33,7 @@ class BallInstanceAdmin(admin.ModelAdmin):
     save_on_top = True
     fieldsets = [
         (None, {"fields": ("ball", "health_bonus", "attack_bonus", "special")}),
-        ("Ownership", {"fields": ("player", "favorite", "catch_date", "trade_player")}),
+        ("Ownership", {"fields": ("player", "favorite", "trade_player")}),
         (
             "Advanced",
             {
