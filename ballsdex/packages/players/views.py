@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, NamedTuple, cast
 
 import discord
 from discord import ButtonStyle, SeparatorSpacing
-from discord.ext import commands
 from discord.ui import ActionRow, Button, Container, Label, Section, Select, Separator, TextDisplay, Thumbnail, button
 
 from ballsdex.core.discord import Modal
@@ -114,7 +113,7 @@ class DataActionRow(ActionRow):
 
     @button(label="Delete all data")
     async def delete(self, interaction: Interaction, button: Button):
-        view = ConfirmChoiceView(await commands.Context.from_interaction(interaction))
+        view = ConfirmChoiceView(interaction)
         await interaction.response.send_message(
             "Are you sure you want to delete your player data?", view=view, ephemeral=True
         )

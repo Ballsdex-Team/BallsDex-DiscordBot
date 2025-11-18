@@ -46,15 +46,19 @@ class ConfirmChoiceView(View):
 
     def __init__(
         self,
-        ctx: commands.Context["BallsDexBot"],
+        ctx: discord.Interaction["BallsDexBot"] | commands.Context["BallsDexBot"],
         user: Optional[discord.User] = None,
         accept_message: str = "Confirmed",
         cancel_message: str = "Cancelled",
     ):
         super().__init__(timeout=90)
         self.value = None
-        self.ctx = ctx
-        self.user = user or ctx.author
+        if isinstance(ctx, discord.Interaction):
+            self.interaction = ctx
+            self.user = user or ctx.user
+        else:
+            self.interaction = ctx.interaction
+            self.user = user or ctx.author
         self.interaction_response: discord.Interaction["BallsDexBot"]
         self.accept_message = accept_message
         self.cancel_message = cancel_message
@@ -76,8 +80,8 @@ class ConfirmChoiceView(View):
         for item in self.children:
             item.disabled = True  # type: ignore
         try:
-            if self.ctx.interaction:
-                await self.ctx.interaction.edit_original_response(view=self)
+            if self.interaction:
+                await self.interaction.edit_original_response(view=self)
             elif self.message:
                 await self.message.edit(view=self)
         except discord.NotFound:

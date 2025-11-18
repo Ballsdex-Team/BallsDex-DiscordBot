@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, cast
 
 import discord
 from asgiref.sync import sync_to_async
-from discord.ext import commands
 from discord.ui import ActionRow, Button, Item, Section, Select, Separator, TextDisplay, Thumbnail
 from discord.utils import format_dt
 from django.db import transaction
@@ -146,9 +145,7 @@ class TradingUser(Container):
         if self.locked:
             await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
             return
-        view = ConfirmChoiceView(
-            await commands.Context.from_interaction(interaction), accept_message="Clearing your proposal..."
-        )
+        view = ConfirmChoiceView(interaction, accept_message="Clearing your proposal...")
         await interaction.response.send_message(
             "Are you sure you want to clear your proposal?", view=view, ephemeral=True
         )
@@ -175,9 +172,7 @@ class TradingUser(Container):
             )
             return
         view = ConfirmChoiceView(
-            await commands.Context.from_interaction(interaction),
-            accept_message="Cancelling the trade...",
-            cancel_message="This request has been cancelled.",
+            interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
         )
         await interaction.response.send_message(
             "Are you sure you want to cancel this trade?", view=view, ephemeral=True
