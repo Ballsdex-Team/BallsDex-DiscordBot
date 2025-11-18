@@ -186,6 +186,10 @@ def read_settings(path: "Path"):
         "ballsdex.packages.players",
         "ballsdex.packages.trade",
     ]
+    # temporary: will be removed with config rewrite
+    if index := settings.packages.index("ballsdex.packages.config"):
+        settings.packages[index] = "ballsdex.packages.guildconfig"
+
     settings.django_apps = content.get("extra-django-apps") or []
 
     spawn_range = content.get("spawn-chance-range", [40, 55])
