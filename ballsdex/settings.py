@@ -187,8 +187,11 @@ def read_settings(path: "Path"):
         "ballsdex.packages.trade",
     ]
     # temporary: will be removed with config rewrite
-    if index := settings.packages.index("ballsdex.packages.config"):
+    try:
+        index = settings.packages.index("ballsdex.packages.config")
         settings.packages[index] = "ballsdex.packages.guildconfig"
+    except ValueError:
+        pass
 
     settings.django_apps = content.get("extra-django-apps") or []
 
