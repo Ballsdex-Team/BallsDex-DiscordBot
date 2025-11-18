@@ -94,7 +94,7 @@ class Core(commands.Cog):
         Reload the config file
         """
 
-        read_settings(Path("./config.yml"))
+        read_settings(Path("./config/config.yml"))
         await ctx.message.reply("Config values have been updated. Some changes may require a restart.")
 
     @commands.command()

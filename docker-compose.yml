@@ -29,7 +29,7 @@ services:
     networks:
       - internal
     volumes:
-      - "./config.yml:/code/config.yml:ro"
+      - "./config:/code/config:rw"
       - "./logs/:/code/logs/:rw"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
@@ -52,7 +52,7 @@ services:
       postgres-db:
         condition: service_healthy
     volumes:
-      - "./config.yml:/code/config.yml:ro"
+      - "./config:/code/config:ro"
       - "./logs/:/code/logs/:rw"
       - "./admin_panel/templates:/code/admin_panel/templates:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
@@ -70,7 +70,7 @@ services:
       - *django-settings
       - "STATIC_ROOT=/var/www/ballsdex/static"
     volumes:
-      - "./config.yml:/code/config.yml:ro"
+      - "./config:/code/config:ro"
       - "./admin_panel/staticfiles:/code/admin_panel/staticfiles:ro"
       - static-files:/var/www/ballsdex/static:rw
     depends_on:

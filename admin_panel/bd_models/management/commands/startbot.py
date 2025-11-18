@@ -201,7 +201,9 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser: CommandParser):
-        parser.add_argument("--config-file", type=Path, help="Set the path to config.yml", default=Path("./config.yml"))
+        parser.add_argument(
+            "--config-file", type=Path, help="Set the path to config.yml", default=Path("./config/config.yml")
+        )
         parser.add_argument(
             "--reset-settings", action="store_true", help="Reset the config file with the latest default configuration"
         )

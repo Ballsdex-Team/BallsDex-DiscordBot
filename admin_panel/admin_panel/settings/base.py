@@ -12,15 +12,15 @@ import dj_database_url
 from ballsdex.settings import read_settings, settings
 
 try:
-    read_settings(Path("../config.yml"))
+    read_settings(Path("../config/config.yml"))
 except FileNotFoundError:
     try:
-        read_settings(Path("./config.yml"))
+        read_settings(Path("./config/config.yml"))
     except FileNotFoundError:
         from rich import print
 
         print(
-            "[yellow][bold]Could not find ../config.yml file.[/bold] "
+            "[yellow][bold]Could not find ../config/config.yml file.[/bold] "
             "Please run the bot once to generate this file.[/yellow]"
         )
 
