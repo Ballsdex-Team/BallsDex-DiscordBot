@@ -1,6 +1,6 @@
 INSTALLED_APPS += [
     'rest_framework',
-    'api',  # Ensure your app is included
+    'api',
 ]
 
 REST_FRAMEWORK = {
