@@ -612,3 +612,20 @@ class Block(models.Model):
     class Meta:
         managed = True
         db_table = "block"
+
+class APIKey(models.Model):
+    key = models.CharField(max_length=128, unique=True, help_text="API Key value")
+    name = models.CharField(max_length=64, help_text="Name of the API Key")
+    created_at = models.DateTimeField(auto_now_add=True, help_text="Creation date of the API Key")
+    revoked = models.BooleanField(default=False, help_text="Whether the API Key is revoked or not")
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, help_text="Owner of the API Key")
+
+    objects: Manager[Self] = Manager()
+
+    class Meta:
+        managed = True
+        db_table = "apikey"
+
+    def __str__(self) -> str:
+        status = "Revoked" if self.revoked else "Active"
+        return f"{self.name} ({status})"

@@ -182,6 +182,9 @@ dependencies = [
     { name = "django-admin-inline-paginator" },
     { name = "django-allow-cidr" },
     { name = "django-nonrelated-inlines" },
+    { name = "django-ratelimit" },
+    { name = "djangorestframework" },
+    { name = "djangorestframework-api-key" },
     { name = "pillow" },
     { name = "prometheus-client" },
     { name = "psycopg", extra = ["pool"] },
@@ -226,7 +229,10 @@ requires-dist = [
     { name = "django-allow-cidr", specifier = "==0.8.0" },
     { name = "django-debug-toolbar", marker = "extra == 'dev'", specifier = "==6.0.0" },
     { name = "django-nonrelated-inlines", specifier = "==0.2" },
+    { name = "django-ratelimit", specifier = "==4.1.0" },
     { name = "django-types", marker = "extra == 'dev'", git = "https://github.com/sbdchd/django-types.git?rev=dadf37d11b2ea5517b5d5bfc51d9f93c649c5546" },
+    { name = "djangorestframework", specifier = "==3.16.1" },
+    { name = "djangorestframework-api-key", specifier = "==3.1.0" },
     { name = "griffe-generics", marker = "extra == 'docs'", specifier = ">=1.0.13" },
     { name = "griffe-modernized-annotations", marker = "extra == 'docs'", specifier = ">=1.0.8" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6.1" },
@@ -541,11 +547,44 @@ wheels = [
 ]
 
 [[package]]
+name = "django-ratelimit"
+version = "4.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6f/8f/94038fe739b095aca3e4708ecc8a4e77f1fcfd87bed5d6baff43d4c80bc4/django-ratelimit-4.1.0.tar.gz", hash = "sha256:555943b283045b917ad59f196829530d63be2a39adb72788d985b90c81ba808b", size = 11551, upload-time = "2023-07-24T20:34:32.374Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fb/78/2c59b30cd8bc8068d02349acb6aeed5c4e05eb01cdf2107ccd76f2e81487/django_ratelimit-4.1.0-py2.py3-none-any.whl", hash = "sha256:d047a31cf94d83ef1465d7543ca66c6fc16695559b5f8d814d1b51df15110b92", size = 11608, upload-time = "2023-07-24T20:34:31.362Z" },
+]
+
+[[package]]
 name = "django-types"
 version = "0.22.0"
 source = { git = "https://github.com/sbdchd/django-types.git?rev=dadf37d11b2ea5517b5d5bfc51d9f93c649c5546#dadf37d11b2ea5517b5d5bfc51d9f93c649c5546" }
 dependencies = [
     { name = "types-psycopg2" },
+]
+
+[[package]]
+name = "djangorestframework"
+version = "3.16.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8a/95/5376fe618646fde6899b3cdc85fd959716bb67542e273a76a80d9f326f27/djangorestframework-3.16.1.tar.gz", hash = "sha256:166809528b1aced0a17dc66c24492af18049f2c9420dbd0be29422029cfc3ff7", size = 1089735, upload-time = "2025-08-06T17:50:53.251Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b0/ce/bf8b9d3f415be4ac5588545b5fcdbbb841977db1c1d923f7568eeabe1689/djangorestframework-3.16.1-py3-none-any.whl", hash = "sha256:33a59f47fb9c85ede792cbf88bde71893bcda0667bc573f784649521f1102cec", size = 1080442, upload-time = "2025-08-06T17:50:50.667Z" },
+]
+
+[[package]]
+name = "djangorestframework-api-key"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/95/d9/d187626f67eec3d8c7fb170009ffc323e70553dbac8832ca051f4c7e0a53/djangorestframework_api_key-3.1.0.tar.gz", hash = "sha256:7e9c88360933b3c46467d80645a50cf36697674c7856a737a1c674d570860ac9", size = 36922, upload-time = "2025-04-04T08:53:19.422Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/50/29fd576a9162ff3fcd0423ae5a30e7f9610a438329dd20081a60c758f100/djangorestframework_api_key-3.1.0-py3-none-any.whl", hash = "sha256:1b6ed7d89308cf872b29084cf68f9b7171f7efd2b8f84f480c09aa4232f910c1", size = 15664, upload-time = "2025-04-04T08:53:18.228Z" },
 ]
 
 [[package]]
