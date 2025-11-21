@@ -34,29 +34,29 @@ services:
     tty: true
     working_dir: /code/
     command: python3 -m ballsdex
-    develop:
-      watch:
-        - path: ./ballsdex/packages
-          target: /code/ballsdex/packages
-          initial_sync: true
-          action: sync
-          ignore:
-            - "**.pyc"
-        - path: ./ballsdex
-          target: /code/ballsdex
-          initial_sync: true
-          action: sync+restart
-          ignore:
-            - "**.pyc"
-            - "./ballsdex/packages"
-        - path: ./admin_panel
-          target: /code/admin_panel
-          initial_sync: true
-          action: sync+restart
-          ignore:
-            - "**.pyc"
-        - path: ./uv.lock
-          action: rebuild
+    # develop:
+    #   watch:
+    #     - path: ./ballsdex/packages
+    #       target: /code/ballsdex/packages
+    #       initial_sync: true
+    #       action: sync
+    #       ignore:
+    #         - "**.pyc"
+    #     - path: ./ballsdex
+    #       target: /code/ballsdex
+    #       initial_sync: true
+    #       action: sync+restart
+    #       ignore:
+    #         - "**.pyc"
+    #         - "./ballsdex/packages"
+    #     - path: ./admin_panel
+    #       target: /code/admin_panel
+    #       initial_sync: true
+    #       action: sync+restart
+    #       ignore:
+    #         - "**.pyc"
+    #     - path: ./uv.lock
+    #       action: rebuild
 
   admin-panel:
     image: ballsdex
