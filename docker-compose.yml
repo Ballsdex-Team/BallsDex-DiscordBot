@@ -34,6 +34,29 @@ services:
     tty: true
     working_dir: /code/
     command: python3 -m ballsdex
+    develop:
+      watch:
+        - path: ./ballsdex/packages
+          target: /code/ballsdex/packages
+          initial_sync: true
+          action: sync
+          ignore:
+            - "**.pyc"
+        - path: ./ballsdex
+          target: /code/ballsdex
+          initial_sync: true
+          action: sync+restart
+          ignore:
+            - "**.pyc"
+            - "./ballsdex/packages"
+        - path: ./admin_panel
+          target: /code/admin_panel
+          initial_sync: true
+          action: sync+restart
+          ignore:
+            - "**.pyc"
+        - path: ./uv.lock
+          action: rebuild
 
   admin-panel:
     image: ballsdex
@@ -98,7 +121,7 @@ services:
       - static-files:/var/www/ballsdex/static:ro
 
   postgres-db:
-    image: postgres
+    image: postgres:18.1-alpine3.22
     restart: always
     hostname: postgres
     shm_size: 1g
@@ -112,7 +135,7 @@ services:
     networks:
       - internal
     volumes:  # Persist the db data
-      - database-data:/var/lib/postgresql/data
+      - database-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ballsdex}"]
       interval: 5s
