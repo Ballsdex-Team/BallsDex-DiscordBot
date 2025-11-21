@@ -13,9 +13,9 @@ from discord.ext import commands
 from ballsdex import __version__ as ballsdex_version
 from ballsdex.core.utils.django import row_count_estimate
 from ballsdex.core.utils.formatting import pagify
-from ballsdex.settings import settings
 from bd_models.models import Ball
 from bd_models.models import balls as countryballs
+from settings.models import settings
 
 from .license import LicenseInfo
 
@@ -112,13 +112,13 @@ class Info(commands.Cog):
         owner_credits = "by the team" if bot_info.team else "by"
         dex_credits = (
             f"This instance is owned {owner_credits} {owner}.\nAn instance of [Ballsdex]"
-            f"({settings.github_link}) by El Laggron and maintained by the Ballsdex Team "
-            f"and community of [contributors]({settings.github_link}/graphs/contributors)."
+            f"({settings.repository}) by El Laggron and maintained by the Ballsdex Team "
+            f"and community of [contributors]({settings.repository}/graphs/contributors)."
         )
         embed.description = (
             f"{' '.join(str(x) for x in balls)}\n"
             f"{settings.about_description}\n"
-            f"*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\n"
+            f"*Running version **[{ballsdex_version}]({settings.repository}/releases)***\n"
             f"The bot has been online for **{formatted_uptime}**.\n\n"
             f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
             f"**{players_count:,}** players that caught "
@@ -128,7 +128,7 @@ class Info(commands.Cog):
             "Consider supporting El Laggron on "
             "[Patreon](https://patreon.com/retke) :heart:\n\n"
             f"[Discord server]({settings.discord_invite}) • [Invite me]({invite_link}) • "
-            f"[Source code and issues]({settings.github_link})\n"
+            f"[Source code and issues]({settings.repository})\n"
             f"[Terms of Service]({settings.terms_of_service}) • "
             f"[Privacy policy]({settings.privacy_policy})"
         )

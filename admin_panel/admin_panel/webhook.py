@@ -5,7 +5,7 @@ import aiohttp
 import discord
 from discord.utils import MISSING
 
-from ballsdex.settings import settings
+from settings.models import settings
 
 log = logging.getLogger(__name__)
 
@@ -26,11 +26,11 @@ async def notify_admins(message: str = MISSING, *, wait: bool = True, **kwargs) 
     Set `wait` to `False` to ignore the resulting messsage, or failures to send it.
     """
     log.info(f"Admin notification: {message}")
-    if not settings.webhook_url:
+    if not settings.webhook_logging:
         log.warning("Discord webhook URL not configured")
         return
     async with aiohttp.ClientSession() as session:
-        webhook = discord.Webhook.from_url(settings.webhook_url, session=session)
+        webhook = discord.Webhook.from_url(settings.webhook_logging, session=session)
         return await webhook.send(
             message,
             username="Ballsdex admin panel",

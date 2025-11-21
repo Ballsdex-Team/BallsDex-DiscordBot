@@ -16,8 +16,8 @@ from django.db.models import Model, Q
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
-from ballsdex.settings import settings
 from bd_models.models import Ball, BallInstance, Economy, Regime, Special
+from settings.models import settings
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet

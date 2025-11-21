@@ -19,8 +19,8 @@ from ballsdex.core.utils.menus import (
     dynamic_chunks,
     iter_to_async,
 )
-from ballsdex.settings import settings
 from bd_models.models import Ball, GuildConfig
+from settings.models import settings
 
 from .balls import balls as balls_group
 from .blacklist import blacklist as blacklist_group

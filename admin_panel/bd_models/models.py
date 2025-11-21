@@ -20,7 +20,7 @@ from django.utils.timezone import now
 
 from ballsdex.core.discord import View
 from ballsdex.core.image_generator.image_gen import draw_card
-from ballsdex.settings import settings
+from settings.models import settings
 
 from .enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy, TradeCooldownPolicy
 
@@ -284,8 +284,9 @@ class Ball(models.Model):
     class Meta:
         managed = True
         db_table = "ball"
-        verbose_name = settings.collectible_name
-        verbose_name_plural = settings.plural_collectible_name
+        # these are set at startup when settings are read
+        # verbose_name = settings.collectible_name
+        # verbose_name_plural = settings.plural_collectible_name
 
     @property
     def cached_regime(self) -> Regime:
@@ -355,7 +356,8 @@ class BallInstance(models.Model):
         managed = True
         db_table = "ballinstance"
         unique_together = (("player", "id"),)
-        verbose_name = f"{settings.collectible_name} instance"
+        # this is set at startup when settings are read
+        # verbose_name = f"{settings.collectible_name} instance"
         indexes = (
             models.Index(fields=("ball_id",)),
             models.Index(fields=("player_id",)),

@@ -8,13 +8,14 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord.ext import commands
 from discord.utils import format_dt
+from django.urls import reverse
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.logging import log_action
-from ballsdex.settings import settings
 from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
+from settings.models import settings
 
 from .flags import BallsCountFlags, GiveBallFlags, SpawnFlags
 
@@ -93,7 +94,7 @@ async def _spawn_bomb(
         task.cancel()
 
 
-@commands.hybrid_group(name=settings.players_group_cog_name)
+@commands.hybrid_group(name=settings.balls_slash_name)
 async def balls(ctx: commands.Context[BallsDexBot]):
     """
     Countryballs management
@@ -232,9 +233,7 @@ async def balls_info(ctx: commands.Context[BallsDexBot], countryball_id: str):
     catch_time = (
         (ball.catch_date - ball.spawned_time).total_seconds() if ball.catch_date and ball.spawned_time else "N/A"
     )
-    admin_url = (
-        f"[View online](<{settings.admin_url}/bd_models/ballinstance/{ball.pk}/change/>)" if settings.admin_url else ""
-    )
+    admin_url = f"[View online](<{reverse('admin:bd_models_ballinstance_change', args=(ball.pk,))}>)"
     await ctx.send(
         f"**{settings.collectible_name.title()} ID:** {ball.pk}\n"
         f"**Player:** {ball.player}\n"

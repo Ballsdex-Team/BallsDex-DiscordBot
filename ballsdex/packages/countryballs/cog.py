@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord.ext import commands
 
-from ballsdex.settings import settings
 from bd_models.models import GuildConfig
+from settings.models import settings
 
 from .countryball import BallSpawnView
 from .spawn import BaseSpawnManager

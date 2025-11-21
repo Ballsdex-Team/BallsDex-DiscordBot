@@ -14,9 +14,9 @@ from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.menus import Menu, ModelSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import BallEnabledTransform, BallInstanceTransform, SpecialEnabledTransform
-from ballsdex.settings import settings
 from bd_models.models import BallInstance, Player
 from bd_models.models import Trade as TradeModel
+from settings.models import settings
 
 from .bulk_selector import BulkSelector
 from .errors import TradeError

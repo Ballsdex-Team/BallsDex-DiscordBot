@@ -3,12 +3,13 @@ import datetime
 import discord
 from discord.ext import commands
 from discord.utils import format_dt
+from django.urls import reverse
 from django.utils.timezone import get_current_timezone
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
-from ballsdex.settings import settings
 from bd_models.models import BallInstance, GuildConfig, Player
+from settings.models import settings
 
 
 @commands.hybrid_group()
@@ -49,8 +50,7 @@ async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7
     url = None
     if config := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
         spawn_enabled = config.enabled and config.guild_id
-        if settings.admin_url:
-            url = f"{settings.admin_url}/bd_models/guildconfig/{config.pk}/change/"
+        url = reverse("admin:bd_models_guildconfig_change", args=(config.pk,))
     else:
         spawn_enabled = False
 
@@ -102,7 +102,7 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
     if not player:
         await ctx.send("The user you gave does not exist.", ephemeral=True)
         return
-    url = f"{settings.admin_url}/bd_models/player/{player.pk}/change/" if settings.admin_url else None
+    url = reverse("admin:bd_models_player_change", args=(player.pk,))
     total_user_balls = await BallInstance.objects.filter(
         catch_date__gte=datetime.datetime.now(tz=get_current_timezone()) - datetime.timedelta(days=days), player=player
     ).aall()

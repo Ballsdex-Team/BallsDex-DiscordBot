@@ -5,8 +5,8 @@ import sys
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
 from ballsdex.core.image_generator.image_gen import draw_card
-from ballsdex.settings import settings
 from bd_models.models import Ball, BallInstance, Special
+from settings.models import settings
 
 from ...utils import refresh_cache
 

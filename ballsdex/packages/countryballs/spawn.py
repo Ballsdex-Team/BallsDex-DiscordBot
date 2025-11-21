@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Literal
 import discord
 from discord.utils import format_dt
 
-from ballsdex.settings import settings
+from settings.models import settings
 
 if TYPE_CHECKING:
     from discord.ext.commands import Context
@@ -99,14 +99,14 @@ class SpawnCooldown:
 
     time: datetime
     # initialize partially started, to reduce the dead time after starting the bot
-    scaled_message_count: float = field(default_factory=lambda: settings.spawn_chance_range[0] // 2)
-    threshold: int = field(default_factory=lambda: random.randint(*settings.spawn_chance_range))
+    scaled_message_count: float = field(default_factory=lambda: settings.spawn_chance_min // 2)
+    threshold: int = field(default_factory=lambda: random.randint(settings.spawn_chance_min, settings.spawn_chance_max))
     lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
     message_cache: deque[CachedMessage] = field(default_factory=lambda: deque(maxlen=100))
 
     def reset(self, time: datetime):
         self.scaled_message_count = 1.0
-        self.threshold = random.randint(*settings.spawn_chance_range)
+        self.threshold = random.randint(settings.spawn_chance_min, settings.spawn_chance_max)
         try:
             self.lock.release()
         except RuntimeError:  # lock is not acquired

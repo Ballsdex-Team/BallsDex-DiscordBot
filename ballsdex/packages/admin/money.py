@@ -4,8 +4,8 @@ from discord.ext import commands
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.logging import log_action
-from ballsdex.settings import settings
 from bd_models.models import Player
+from settings.models import settings
 
 
 @commands.hybrid_group()

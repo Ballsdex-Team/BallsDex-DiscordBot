@@ -3,7 +3,7 @@ import logging
 import discord
 
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.settings import settings
+from settings.models import settings
 
 log = logging.getLogger("ballsdex.packages.admin.cog")
 

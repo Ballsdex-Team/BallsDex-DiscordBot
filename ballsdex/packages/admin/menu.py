@@ -2,9 +2,9 @@ import discord
 from discord.ui import ActionRow, Button, Container, Section, Separator, TextDisplay, Thumbnail
 from discord.utils import format_dt
 from django.db.models import QuerySet
+from django.urls import reverse
 
 from ballsdex.core.utils import menus
-from ballsdex.settings import settings
 from bd_models.models import BlacklistHistory, Player
 
 
@@ -35,12 +35,10 @@ class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Cont
                     accessory=Thumbnail(moderator.display_avatar.url),
                 )
             )
-        if settings.admin_url and (player := await Player.objects.aget_or_none(discord_id=self.user.id)):
+        if player := await Player.objects.aget_or_none(discord_id=self.user.id):
             container.add_item(
                 ActionRow(
-                    Button(
-                        url=f"{settings.admin_url}/bd_models/player/{player.pk}/change/", label="View history online"
-                    )
+                    Button(url=reverse("admin:bd_models_player_change", args=(player.pk,)), label="View history online")
                 )
             )
         container.add_item(

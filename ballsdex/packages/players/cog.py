@@ -10,10 +10,10 @@ from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
 from ballsdex.core.utils.menus import ItemFormatter, ListSource, Menu, dynamic_chunks
-from ballsdex.settings import settings
 from bd_models.enums import FriendPolicy
 from bd_models.models import BallInstance, Block, Friendship, Trade, balls
 from bd_models.models import Player as PlayerModel
+from settings.models import settings
 
 from .views import RelationContainer, SettingsContainer
 

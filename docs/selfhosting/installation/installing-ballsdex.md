@@ -108,143 +108,32 @@ From this point, every time you need to type commands for Ballsdex, **you must a
 ## 4. Installing the bot
 
 1. Run `docker compose build`. This will also take some time, wait for the build to complete.
-2. Run `docker compose up bot` to generate the default configuration file. Skip this step if you already have a `config.yml` file. The following text should appear:
-
-   ![image](https://user-images.githubusercontent.com/23153234/227784222-060decdf-87c0-46c8-a69c-1f339bf90d9e.png)
-
-The process should exit afterwards. If it doesn't, hit `Ctrl+C`.
+2. Run `docker compose run --rm admin-panel django-admin createsuperuser` to create an admin user
+   for the admin panel
+3. Run `docker compose up -d proxy` to boot up the admin panel
 
 ## 5. Configure the bot
 
-Open the new `config.yml` file with the editor of your choice. I recommend using [Visual Studio Code](https://code.visualstudio.com/) to get autocompletion and error highlighting. Once installed, you can run `code config.yml` to open VScode from your terminal (even in WSL).
+Open http://localhost:8000 in your browser, this will take you to the admin panel login page.
+Login using the credentials you have set before.
 
-!!! info
-    In YAML files, everything after a `#` is a comment. Those lines are here to document and help you understand the possible values.
+!!! tip
+    If you forgot your credentials, run
+    `docker compose run --rm admin-panel django-admin changepassword <username>`
 
-1. Go back to the Discord developer portal and click "Reset Token" to obtain a new one. Copy and paste it right after `discord-token: `. Make sure that there is a space between `discord-token:` and your token, otherwise it will not work.
+1. Go back to the Discord developer portal and click "Reset Token" to obtain a new one.
+   Copy and paste it in the "Discord token" section.
 
 !!! danger
-    **Do not share your token!** It is the password of your bot, and allows anyone full access to its account if shared. Be sure to keep it secure, and immediately reset if you think it leaked.
+    **Do not share your token!** It is the password of your bot, and allows anyone full access
+    to its account if shared. Be sure to keep it secure, and immediately reset if you think it leaked.
 
-1. The `about` section defines a few traits of the `/about` command. Feel free to change the `description` and the `discord-invite`.
+2. You can change "Collectible name" which will replace the word "countryball" in the bot. For instance if you set "rock", the bot will say "A wild rock spawned!" 
 
-2. You can change `collectible-name` which will replace the word `countryball` in the bot. For instance if you set "rock", the bot will say "A wild rock spawned!" 
+3. "Bot name" is used in various places like `/about` or `/balls completion`.
 
-3. `bot-name` is used in various places like `/about` or `/balls completion`.
-
-4. The `admin` section configures the `/admin` command. This command is only enabled in specific servers for specific roles.
-
-   1. `guild-ids` is for the servers where you want to enable the `/admin` command. Copy the IDs of the servers you want, and paste them
-
-   2. `root-role-ids` is for the roles IDs which will get **full** access to the `/admin` command, granting the ability to spawn or give balls and control blacklist.
-
-   3. `admin-role-ids` is for the role IDs which will get **partial** access to the `/admin` command. Their access will be limited to blacklist control and seeing shared servers.
-
-!!! abstract "General notice about IDs"
-    To obtain an ID, [enable developer mode](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-) and right click a server or a role, then select "Copy ID".
-    
-    If you have just one ID, put it like this (for instance guild IDs)
-    ```yaml
-    guild-ids:
-      - 1049118743101452329
-    ```
-    
-    If you have multiple IDs, they should be placed like this (for instance role IDs here):
-    ```yaml
-    root-role-ids:
-      - 1049119446372986921
-      - 1049119786988212296
-    ```
-
-There may be other configuration values added over time, look at the comment to understand what they do. If an option is unclear to you, you should leave it to its default value.
-
-<details>
-<summary>Here's the <code>config.yml</code> file from Ballsdex if you want to compare and troubleshoot eventual issues:</summary>
-
-```yaml
-# yaml-language-server: $schema=json-config-ref.json
-
-# paste the bot token after regenerating it here
-discord-token: INSERT_TOKEN_HERE
-
-# prefix for old-style text commands, mostly unused
-text-prefix: b.
-
-# define the elements given with the /about command
-about:
-
-  # define the beginning of the description of /about
-  # the other parts is automatically generated
-  description: >
-    Collect countryballs on Discord, exchange them and battle with friends!
-
-  # override this if you have a fork
-  github-link: https://github.com/laggron42/BallsDex-DiscordBot
-
-  # valid invite for a Discord server
-  discord-invite: https://discord.gg/ballsdex  # BallsDex official server
-
-  terms-of-service: https://gist.github.com/laggron42/52ae099c55c6ee1320a260b0a3ecac4e
-  privacy-policy: https://gist.github.com/laggron42/1eaa122013120cdfcc6d27f9485fe0bf
-
-# override the name "countryballs" in the bot
-collectible-name: countryball
-
-# override the name "BallsDex" in the bot
-bot-name: BallsDex
-
-# players group cog command name
-# this is /balls by default, but you can change it for /animals or /rocks for example
-players-group-cog-name: balls
-
-# enables the /admin command
-admin-command:
-
-  # all items here are list of IDs. example on how to write IDs in a list:
-  # guild-ids:
-  #   - 1049118743101452329
-  #   - 1078701108500897923
-
-  # list of guild IDs where /admin should be registered
-  guild-ids:
-    - 1049118743101452329
-
-  # list of role IDs having full access to /admin
-  root-role-ids:
-    - 1049119446372986921
-    - 1049119786988212296
-    - 1095015474846248970
-
-  # list of role IDs having partial access to /admin
-  admin-role-ids:
-    - 1073775485840003102
-    - 1073776116898218036
-
-packages:
-  - ballsdex.packages.admin
-  - ballsdex.packages.balls
-  - ballsdex.packages.config
-  - ballsdex.packages.countryballs
-  - ballsdex.packages.info
-  - ballsdex.packages.players
-  - ballsdex.packages.trade
-
-# prometheus metrics collection, leave disabled if you don't know what this is
-prometheus:
-  enabled: true
-  host: "0.0.0.0"
-  port: 15260
-
-
-# manage bot ownership
-owners:
-  # if enabled and the application is under a team, all team members will be considered as owners
-  team-members-are-owners: true
-
-  # a list of IDs that must be considered owners in addition to the application/team owner
-  co-owners:
-```
-</details>
+4. The "/about" section defines a few traits of the `/about` command. Feel free to change the description and set a Discord invite.
+   You must also write your terms of service and a privacy policy and place the link to them (can be a Google Docs).
 
 Now we should be ready for the next part.
 

@@ -4,8 +4,6 @@ import logging
 import logging.handlers
 import os
 import sys
-import time
-from pathlib import Path
 from signal import SIGTERM
 from typing import TypedDict, Unpack
 
@@ -16,33 +14,25 @@ from discord.ext.commands import when_mentioned_or
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from rich import print
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
-from yaml import YAMLError
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.logging import init_logger
-from ballsdex.settings import read_settings, settings, update_settings, write_default_settings
+from settings.models import load_settings, settings
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
 log = logging.getLogger("ballsdex")
 
 
 class CLIFlags(TypedDict):
-    config_file: Path
-    reset_settings: bool
     disable_rich: bool
+    gateway_url: str | None
+    shard_count: int | None
     disable_message_content: bool
     disable_time_check: bool
     skip_tree_sync: bool
     debug: bool
     dev: bool
-
-
-def reset_settings(path: Path):
-    write_default_settings(path)
-    print(f"[green]A new settings file has been written at [blue]{path}[/blue].[/green]")
-    print("[yellow]Configure the [bold]discord-token[/bold] value and restart the bot.[/yellow]")
-    sys.exit(0)
 
 
 def print_welcome():
@@ -174,7 +164,7 @@ async def init_sentry():
     if settings.sentry_dsn:
         sentry_sdk.init(
             dsn=settings.sentry_dsn,
-            environment=settings.sentry_environment,
+            environment=settings.sentry_env,
             release=bot_version,
             integrations=[AsyncioIntegration()],
         )  # TODO: Add breadcrumbs for clustering
@@ -201,13 +191,9 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser: CommandParser):
-        parser.add_argument(
-            "--config-file", type=Path, help="Set the path to config.yml", default=Path("./config/config.yml")
-        )
-        parser.add_argument(
-            "--reset-settings", action="store_true", help="Reset the config file with the latest default configuration"
-        )
         parser.add_argument("--disable-rich", action="store_true", help="Disable rich log format")
+        parser.add_argument("--gateway-url", type=str, help="Define a gateway proxy")
+        parser.add_argument("--shard-count", type=int, help="Enforce a specific number of shards to open")
         parser.add_argument(
             "--disable-message-content",
             action="store_true",
@@ -232,29 +218,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options: Unpack[CLIFlags]):
         bot = None
         server = None
-        if options["reset_settings"]:
-            print("[yellow]Resetting configuration file.[/yellow]")
-            reset_settings(options["config_file"])
 
-        if not options["config_file"].exists():
-            print("[yellow]The config file could not be found, generating a default one.[/yellow]")
-            reset_settings(options["config_file"])
-
-        update_settings(options["config_file"])
-
-        try:
-            read_settings(options["config_file"])
-        except YAMLError:
-            print("[red]Your YAML is invalid!\nError parsing config file, please check your config and try again[/red]")
-            time.sleep(1)
-            sys.exit(0)
-        except KeyError as missing_key:
-            print(
-                f"[red]Config file missing key {missing_key}!\nError parsing config file, please check "
-                "your config and try again[/red]"
+        load_settings()
+        if not settings.bot_token:
+            self.stderr.write(
+                self.style.ERROR(
+                    "You have not configured bot settings yet! Open the admin panel and write a settings entry."
+                )
             )
-            time.sleep(1)
-            sys.exit(0)
+            sys.exit(1)
 
         print_welcome()
         queue_listener: logging.handlers.QueueListener | None = None
@@ -275,9 +247,9 @@ class Command(BaseCommand):
                 log.error("Database URL not found!")
                 raise CommandError("You must provide a DB URL with the BALLSDEXBOT_DB_URL env var.")
 
-            if settings.gateway_url is not None:
-                log.info("Using custom gateway URL: %s", settings.gateway_url)
-                patch_gateway(settings.gateway_url)
+            if options["gateway_url"] is not None:
+                log.info("Using custom gateway URL: %s", options["gateway_url"])
+                patch_gateway(options["gateway_url"])
                 logging.getLogger("discord.gateway").addFilter(RemoveWSBehindMsg())
 
             prefix = settings.prefix
@@ -285,7 +257,8 @@ class Command(BaseCommand):
             bot = BallsDexBot(
                 command_prefix=when_mentioned_or(prefix),
                 dev=options["dev"],  # type: ignore
-                shard_count=settings.shard_count,
+                shard_count=options["shard_count"],
+                gateway_url=options["gateway_url"],
                 disable_message_content=options["disable_message_content"],
                 disable_time_check=options["disable_time_check"],
                 skip_tree_sync=options["skip_tree_sync"],

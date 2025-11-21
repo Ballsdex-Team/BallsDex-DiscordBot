@@ -14,8 +14,8 @@ from django.utils import timezone
 from ballsdex.core.discord import Modal, View
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.utils import can_mention
-from ballsdex.settings import settings
 from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls, specials
+from settings.models import PromptMessage, settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -51,7 +51,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         if self.view.caught:
-            slow_message = random.choice(settings.slow_messages).format(
+            slow_message = settings.get_random_message(PromptMessage.PromptType.SLOW).format(
                 user=interaction.user.mention,
                 collectible=settings.collectible_name,
                 ball=self.view.name,
@@ -68,7 +68,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             else:
                 wrong_name = self.name.value
 
-            wrong_message = random.choice(settings.wrong_messages).format(
+            wrong_message = settings.get_random_message(PromptMessage.PromptType.WRONG).format(
                 user=interaction.user.mention,
                 collectible=settings.collectible_name,
                 ball=self.view.name,
@@ -242,7 +242,7 @@ class BallSpawnView(View):
         try:
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
-                spawn_message = random.choice(settings.spawn_messages).format(
+                spawn_message = settings.get_random_message(PromptMessage.PromptType.SPAWN).format(
                     collectible=settings.collectible_name,
                     ball=self.name,
                     collectibles=settings.plural_collectible_name,
@@ -404,7 +404,7 @@ class BallSpawnView(View):
             text += f"This {settings.collectible_name} was dropped by <@{self.og_id}>\n"
 
         caught_message = (
-            random.choice(settings.caught_messages).format(
+            settings.get_random_message(PromptMessage.PromptType.CATCH).format(
                 user=mention,
                 collectible=settings.collectible_name,
                 ball=self.name,

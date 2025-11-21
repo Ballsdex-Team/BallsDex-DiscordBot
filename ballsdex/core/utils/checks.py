@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 type Context = commands.Context["BallsDexBot"]
 
 
-async def _get_user_for_check(ctx: Context) -> "bool | User":
+async def get_user_for_check(bot: "BallsDexBot", user: discord.abc.User) -> "bool | User":
     """
     Get a Django user ready and performs common permission checking.
 
@@ -47,14 +47,14 @@ async def _get_user_for_check(ctx: Context) -> "bool | User":
         - [`True`][] if the user should immediately be granted permissions (superuser or bot owner)
         - [`User`][django.contrib.auth.models.User] if the user was found but should be inspected further
     """
-    if await ctx.bot.is_owner(ctx.author):
+    if await bot.is_owner(user):
         return True
-    user = await get_django_user(ctx.author)
-    if not user or not user.is_active:
+    dj_user = await get_django_user(user)
+    if not dj_user or not dj_user.is_active:
         return False
-    if user.is_superuser:
+    if dj_user.is_superuser:
         return True
-    return user
+    return dj_user
 
 
 def _verify_existing_permissions(*perms: str):
@@ -96,7 +96,7 @@ def is_staff():
     """
 
     async def check(ctx: Context) -> bool:
-        user = await _get_user_for_check(ctx)
+        user = await get_user_for_check(ctx.bot, ctx.author)
         if user is True or user is False:
             return user
         return user.is_staff
@@ -110,7 +110,7 @@ def is_superuser():
     """
 
     async def check(ctx: Context) -> bool:
-        user = await _get_user_for_check(ctx)
+        user = await get_user_for_check(ctx.bot, ctx.author)
         if user is True or user is False:
             return user
         return user.is_superuser
@@ -125,7 +125,7 @@ def has_permissions(*perms: str):
     _verify_existing_permissions(*perms)
 
     async def check(ctx: Context) -> bool:
-        user = await _get_user_for_check(ctx)
+        user = await get_user_for_check(ctx.bot, ctx.author)
         if user is True or user is False:
             return user
         return await user.ahas_perms(perms)
@@ -140,7 +140,7 @@ def has_any_permissions(*perms: str):
     _verify_existing_permissions(*perms)
 
     async def check(ctx: Context) -> bool:
-        user = await _get_user_for_check(ctx)
+        user = await get_user_for_check(ctx.bot, ctx.author)
         if user is True or user is False:
             return user
         for perm in perms:

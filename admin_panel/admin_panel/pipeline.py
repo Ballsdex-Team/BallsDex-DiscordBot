@@ -7,7 +7,6 @@ from django.contrib import messages
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 
-from ballsdex.settings import settings
 from bd_models.models import (
     Ball,
     BallInstance,
@@ -24,6 +23,7 @@ from bd_models.models import (
     Trade,
     TradeObject,
 )
+from settings.models import settings
 
 from .webhook import notify_admins
 
@@ -162,34 +162,6 @@ async def configure_status(
                 return
             if settings.team_owners and info["team"] and uid in (x["user"]["id"] for x in info["team"]["members"]):
                 await assign_status(request, response, user, Status.TEAM_MEMBER)
-                return
-
-        # no admin guild configured, no roles, nothing to do
-        if not settings.admin_guild_ids or not (settings.admin_role_ids or settings.root_role_ids):
-            return
-
-        # check if the user owns roles configured as root/admin in config.yml
-        session.headers["Authorization"] = f"Bearer {response['access_token']}"
-        async with session.get("users/@me/guilds") as resp:
-            guilds = await resp.json()
-
-        for guild in guilds:
-            if int(guild["id"]) not in settings.admin_guild_ids:
-                continue
-            async with session.get(f"users/@me/guilds/{guild['id']}/member") as resp:
-                member = await resp.json()
-
-            # If we find the user with an "admin" role, we must keep iterating in case a "root"
-            # role is found later. If a "root" role is found, we can immediately stop and assign
-            is_staff = False
-            for role in member["roles"]:
-                if settings.root_role_ids and int(role) in settings.root_role_ids:
-                    await assign_status(request, response, user, Status.ADMIN)
-                    return
-                elif settings.admin_role_ids and int(role) in settings.admin_role_ids:
-                    is_staff = True
-            if is_staff:
-                await assign_status(request, response, user, Status.STAFF)
                 return
 
     # If we reached this point, the user has no administration role.

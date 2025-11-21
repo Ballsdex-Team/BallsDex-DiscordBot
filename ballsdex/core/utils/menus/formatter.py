@@ -4,8 +4,8 @@ import discord
 import discord.ui
 from django.db.models import QuerySet
 
-from ballsdex.settings import settings
 from bd_models.models import BallInstance
+from settings.models import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

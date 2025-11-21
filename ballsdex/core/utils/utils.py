@@ -2,15 +2,16 @@ from typing import TYPE_CHECKING, List, Union
 
 import discord
 
-from ballsdex.settings import settings
 from bd_models.enums import PrivacyPolicy
 from bd_models.models import Player
+
+from .checks import get_user_for_check
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 
-def is_staff(interaction: discord.Interaction["BallsDexBot"]) -> bool:
+async def is_staff(interaction: discord.Interaction["BallsDexBot"], *perms: str) -> bool:
     """
     Checks if an interacting user checks one of the following conditions:
 
@@ -21,22 +22,20 @@ def is_staff(interaction: discord.Interaction["BallsDexBot"]) -> bool:
     ----------
     interaction: Interaction[BallsDexBot]
         The interaction of the user to check.
+    perms: *str
+        Django permissions to verify. If empty, only staff status will be checked.
 
     Returns
     -------
     bool
         `True` if the user is a staff, `False` otherwise.
     """
-    if interaction.user.id in interaction.client.owner_ids:
-        return True
-    if settings.admin_channel_ids:
-        if interaction.channel_id not in settings.admin_channel_ids:
-            return False
-    if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
-        roles = settings.admin_role_ids + settings.root_role_ids
-        if any(role.id in roles for role in interaction.user.roles):  # type: ignore
-            return True
-    return False
+    user = await get_user_for_check(interaction.client, interaction.user)
+    if isinstance(user, bool):
+        return user
+    if not user.is_staff:
+        return False
+    return await user.ahas_perms(perms)
 
 
 async def inventory_privacy(

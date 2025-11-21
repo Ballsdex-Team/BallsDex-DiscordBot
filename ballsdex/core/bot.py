@@ -28,7 +28,6 @@ from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.help import HelpCommand
 from ballsdex.core.metrics import PrometheusServer
-from ballsdex.settings import settings
 from bd_models.models import (
     Ball,
     BlacklistedGuild,
@@ -41,6 +40,7 @@ from bd_models.models import (
     regimes,
     specials,
 )
+from settings.models import settings
 
 if TYPE_CHECKING:
     from discord.ext.commands.bot import PrefixType
@@ -58,7 +58,7 @@ class Translator(app_commands.Translator):
         text = (
             string.message.replace("countryballs", settings.plural_collectible_name)
             .replace("countryball", settings.collectible_name)
-            .replace("/balls", f"/{settings.players_group_cog_name}")
+            .replace("/balls", f"/{settings.balls_slash_name}")
             .replace("BallsDex", settings.bot_name)
         )
         if context.location in (TranslationContextLocation.command_name, TranslationContextLocation.group_name):
@@ -154,6 +154,7 @@ class BallsDexBot(commands.AutoShardedBot):
         disable_message_content: bool = False,
         disable_time_check: bool = False,
         skip_tree_sync: bool = False,
+        gateway_url: str | None = None,
         dev: bool = False,
         **options,
     ):
@@ -180,6 +181,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self.tree: CommandTree[Self]
         self.tree.disable_time_check = disable_time_check
         self.skip_tree_sync = skip_tree_sync
+        self.gateway_url = gateway_url
 
         self.dev = dev
         self.prometheus_server: PrometheusServer | None = None
@@ -250,7 +252,7 @@ class BallsDexBot(commands.AutoShardedBot):
 
     async def gateway_healthy(self) -> bool:
         """Check whether or not the gateway proxy is ready and healthy."""
-        if settings.gateway_url is None:
+        if self.gateway_url is None:
             raise RuntimeError("This is only available on the production bot instance.")
 
         try:
@@ -264,7 +266,7 @@ class BallsDexBot(commands.AutoShardedBot):
     async def setup_hook(self) -> None:
         await self.tree.set_translator(Translator())
         log.info("Starting up with %s shards...", self.shard_count)
-        if settings.gateway_url is None:
+        if self.gateway_url is None:
             return
 
         while True:

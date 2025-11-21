@@ -19,9 +19,9 @@ from ballsdex.core.utils.transformers import (
     TradeCommandType,
 )
 from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
-from ballsdex.settings import settings
 from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls
+from settings.models import settings
 
 from .countryballs_paginator import CountryballsDuplicateSource, CountryballsViewer
 
@@ -98,7 +98,7 @@ class DuplicateType(enum.StrEnum):
     specials = "specials"
 
 
-class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
+class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
     """
     View and manage your countryballs collection.
     """

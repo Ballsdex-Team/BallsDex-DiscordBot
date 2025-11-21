@@ -5,14 +5,15 @@ import discord
 from discord.ext import commands
 from discord.ui import ActionRow, Button, Select, TextDisplay
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.menus import Menu, ModelSource
-from ballsdex.settings import settings
 from bd_models.models import BallInstance, Trade
+from settings.models import settings
 
 if TYPE_CHECKING:
     import discord.types.interactions
@@ -60,8 +61,8 @@ async def _build_history_view(
     view = LayoutView()
     view.add_item(TextDisplay(f"## {title}"))
 
-    if settings.admin_url and admin_url_path:
-        view.add_item(ActionRow(Button(label="View online", url=f"{settings.admin_url}{admin_url_path}")))
+    if admin_url_path:
+        view.add_item(ActionRow(Button(label="View online", url=admin_url_path)))
 
     action = ActionRow()
     select = Select(placeholder="Choose a trade to display")
@@ -144,7 +145,10 @@ async def history_ball(ctx: commands.Context["BallsDexBot"], countryball_id: str
     queryset = queryset.filter(tradeobject__ballinstance_id=ball.pk)
 
     await _build_history_view(
-        ctx, queryset, f"Trade history for {ball.description(short=True)}", f"/bd_models/ballinstance/{ball.pk}/change/"
+        ctx,
+        queryset,
+        f"Trade history for {ball.description(short=True)}",
+        reverse("admin:bd_models_ballinstance_change", args=(ball.pk,)),
     )
 
 

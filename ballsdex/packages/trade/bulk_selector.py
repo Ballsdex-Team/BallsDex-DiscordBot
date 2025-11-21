@@ -5,8 +5,8 @@ from discord.ui import ActionRow, Button, Select, Separator, TextDisplay
 
 from ballsdex.core.discord import Container
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
-from ballsdex.settings import settings
 from bd_models.models import BallInstance
+from settings.models import settings
 
 from .errors import TradeError
 

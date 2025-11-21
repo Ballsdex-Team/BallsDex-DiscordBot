@@ -4,8 +4,8 @@ import discord
 from discord.ui import Button, button
 
 from ballsdex.core.discord import View
-from ballsdex.settings import settings
 from bd_models.models import GuildConfig
+from settings.models import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot

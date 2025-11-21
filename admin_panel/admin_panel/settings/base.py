@@ -9,20 +9,6 @@ from pathlib import Path
 
 import dj_database_url
 
-from ballsdex.settings import read_settings, settings
-
-try:
-    read_settings(Path("../config/config.yml"))
-except FileNotFoundError:
-    try:
-        read_settings(Path("./config/config.yml"))
-    except FileNotFoundError:
-        from rich import print
-
-        print(
-            "[yellow][bold]Could not find ../config/config.yml file.[/bold] "
-            "Please run the bot once to generate this file.[/yellow]"
-        )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -53,7 +39,8 @@ INSTALLED_APPS = [
     "admin_panel.apps.BallsdexAdminConfig",
     "bd_models",
     "preview",
-] + settings.django_apps
+    "settings",
+]
 
 MIDDLEWARE = [
     "allow_cidr.middleware.AllowCIDRMiddleware",
@@ -104,7 +91,7 @@ LOGGING = {
         },
         "uvicorn": {
             "()": "uvicorn.logging.ColourizedFormatter",
-            "format": "{levelprefix} ({name}) {msg}",
+            "format": "{levelprefix} ({name}) {message}",
             "style": "{",
         },
     },
@@ -182,14 +169,5 @@ SOCIAL_AUTH_PIPELINE = (
 )
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/"
 
-SOCIAL_AUTH_DISCORD_KEY = settings.client_id
-SOCIAL_AUTH_DISCORD_SECRET = settings.client_secret
-SOCIAL_AUTH_DISCORD_SCOPE = ["identify", "guilds", "guilds.members.read"]
-
-if settings.client_id and settings.client_secret:
-    AUTHENTICATION_BACKENDS = [
-        "social_core.backends.discord.DiscordOAuth2",
-        "django.contrib.auth.backends.ModelBackend",
-    ]
-else:
-    AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
+SOCIAL_AUTH_DISCORD_SCOPE = ["identify"]
+AUTHENTICATION_BACKENDS = ["social_core.backends.discord.DiscordOAuth2", "django.contrib.auth.backends.ModelBackend"]

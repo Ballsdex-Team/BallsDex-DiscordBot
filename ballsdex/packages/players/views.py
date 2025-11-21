@@ -10,7 +10,6 @@ from discord.ui import ActionRow, Button, Container, Label, Section, Select, Sep
 
 from ballsdex.core.discord import Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.settings import settings
 from bd_models.models import (
     Block,
     DonationPolicy,
@@ -21,6 +20,7 @@ from bd_models.models import (
     PrivacyPolicy,
     TradeCooldownPolicy,
 )
+from settings.models import settings
 
 from .utils import get_items_csv, get_trades_csv
 

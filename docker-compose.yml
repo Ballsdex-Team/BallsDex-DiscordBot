@@ -29,7 +29,6 @@ services:
     networks:
       - internal
     volumes:
-      - "./config:/code/config:rw"
       - "./logs/:/code/logs/:rw"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
@@ -52,7 +51,6 @@ services:
       postgres-db:
         condition: service_healthy
     volumes:
-      - "./config:/code/config:ro"
       - "./logs/:/code/logs/:rw"
       - "./admin_panel/templates:/code/admin_panel/templates:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
@@ -70,7 +68,6 @@ services:
       - *django-settings
       - "STATIC_ROOT=/var/www/ballsdex/static"
     volumes:
-      - "./config:/code/config:ro"
       - "./admin_panel/staticfiles:/code/admin_panel/staticfiles:ro"
       - static-files:/var/www/ballsdex/static:rw
     depends_on:
@@ -146,7 +143,7 @@ services:
       - HEALTHCHECK_PORT=3928
 
   # Uncomment to enable gateway proxy feature and
-  # add "gateway-url: ws://gateway_proxy:5421" to your config.yaml
+  # add "--gateway-url ws://gateway_proxy:5421" to your startup flags
   # Also change tag corresponding to your platform if not x86-64
   #
   # gateway-proxy:

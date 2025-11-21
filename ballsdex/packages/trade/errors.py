@@ -1,6 +1,6 @@
 import logging
 
-from ballsdex.settings import settings
+from settings.models import settings
 
 log = logging.getLogger("ballsdex.packages.trade")
 
