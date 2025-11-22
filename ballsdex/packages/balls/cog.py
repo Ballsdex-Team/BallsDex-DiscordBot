@@ -297,7 +297,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             nonlocal text
             text += f"### {title}\n"
             if not emoji_ids:
-                text += "Nothing yet."
+                text += "Nothing yet.\n"
                 return
             for emoji_id in emoji_ids:
                 emoji = self.bot.get_emoji(emoji_id)
