@@ -160,7 +160,7 @@ async def send_interactive(
     return ret
 
 
-START_CODE_BLOCK_RE = re.compile(r"^((```(py(thon)?)|sql)(?=\s)|(```))")
+START_CODE_BLOCK_RE = re.compile(r"^((```(py(thon)?|sql))(?=\s)|(```))")
 
 
 class Dev(commands.Cog):
