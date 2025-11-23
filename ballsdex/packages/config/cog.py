@@ -128,3 +128,33 @@ class Config(commands.GroupCog):
                     f"{settings.bot_name} is now enabled in this server, however there is no "
                     "spawning channel set. Please configure one with `/config channel`."
                 )
+
+    @app_commands.command()
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def status(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Check the server configuration status.
+        """
+        config = await GuildConfig.get_or_none(guild_id=interaction.guild_id)
+        if not config or not config.spawn_channel:
+            await interaction.response.send_message(
+                f"{settings.bot_name} is not configured in this server yet.\n"
+                "Please use `/config channel` to set a channel.",
+                ephemeral=False,
+            )
+        else:
+            channel = interaction.guild.get_channel(config.spawn_channel)
+            if channel:
+                await interaction.response.send_message(
+                    f"{settings.bot_name} is configured in this server.\n"
+                    f"Spawn channel: {channel.mention}\n"
+                    f"Status: {'Enabled' if config.enabled else 'Disabled'}",
+                    ephemeral=False,
+                )
+            else:
+                await interaction.response.send_message(
+                    f"{settings.bot_name} is configured, but the specified channel "
+                    "could not be found.\n"
+                    "Please use `/config channel` to set it again.",
+                    ephemeral=False,
+                )
