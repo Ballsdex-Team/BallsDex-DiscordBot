@@ -218,7 +218,7 @@ def read_settings(path: "Path"):
         settings.catch_button_label = catch.get("catch_button_label", "Catch me!")
 
     # avoids signaling needed migrations
-    if "makemigrations" in sys.argv:
+    if "makemigrations" in sys.argv or "migrate" in sys.argv:
         settings.collectible_name = "ball"
         settings.plural_collectible_name = "balls"
 
@@ -367,10 +367,14 @@ sentry:
     environment: "production"
 
 catch:
-  # Add any number of messages to each of these categories. The bot will select a random
-  # one each time.
-  # {user} is mention. {collectible} is collectible name. {ball} is ball name, and 
-  # {collectibles} is collectible plural.
+  # Add messages to each category, one is chosen at random each time.
+
+  # KEYWORDS:
+  # - {user} will mention the user.
+  # - {collectible} is the collectible name.
+  # - {collectibles} is the plural collectible name.
+  # - {ball} is the spawned collectible's name
+  # - {emoji} is the collectible's emoji.
 
   # the label shown on the catch button
   catch_button_label: "Catch me!"
@@ -520,10 +524,14 @@ sentry:
     if add_catch_messages:
         content += """
 catch:
-  # Add any number of messages to each of these categories. The bot will select a random
-  # one each time.
-  # {user} is mention. {collectible} is collectible name. {ball} is ball name, and
-  # {collectibles} is collectible plural.
+  # Add messages to each category, one is chosen at random each time.
+
+  # KEYWORDS:
+  # - {user} will mention the user.
+  # - {collectible} is the collectible name.
+  # - {collectibles} is the plural collectible name.
+  # - {ball} is the spawned collectible's name
+  # - {emoji} is the collectible's emoji.
 
   # the label shown on the catch button
   catch_button_label: "Catch me!"

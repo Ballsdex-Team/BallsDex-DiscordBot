@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, AsyncIterator, List, Set, cast
 import discord
 from discord.ui import Button, View, button
 from discord.utils import format_dt, utcnow
+from tortoise import transactions
 
 from ballsdex.core.models import BallInstance, Player, Trade, TradeCooldownPolicy, TradeObject
 from ballsdex.core.utils import menus
@@ -214,6 +215,12 @@ class ConfirmView(View):
         if not view.value:
             return
 
+        if self.trade.trader1.accepted and self.trade.trader2.accepted:
+            await interaction.followup.send(
+                "You can't cancel now; the trade has already gone through."
+            )
+            return
+
         await self.trade.user_cancel(self.trade._get_trader(interaction.user))
         await interaction.followup.send("Trade has been cancelled.", ephemeral=True)
 
@@ -268,7 +275,7 @@ class TradeMenu:
 
     async def update_message_loop(self):
         """
-        A loop task that updates each 5 second the menu with the new content.
+        A loop task that updates every 15 seconds with the new content.
         """
 
         assert self.task
@@ -356,6 +363,7 @@ class TradeMenu:
         trader.cancelled = True
         await self.cancel()
 
+    @transactions.atomic()
     async def perform_trade(self):
         valid_transferable_countryballs: list[BallInstance] = []
         self.current_view.stop()
@@ -376,6 +384,7 @@ class TradeMenu:
             )
 
         for countryball in self.trader2.proposal:
+            await countryball.refresh_from_db()
             if countryball.player.discord_id != self.trader2.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise InvalidTradeOperation()
