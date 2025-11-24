@@ -958,7 +958,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
         )
         if countryball:
-            emoji = self.bot.get_emoji(countryball.emoji_id)
-            if emoji:
-                embed.set_thumbnail(url=emoji.url)
-        await interaction.followup.send(embed=embed)
+            file_location = "./admin_panel/media/" + countryball.wild_card
+            file = discord.File(file_location, filename="countryball.png")
+            embed.set_thumbnail(url="attachment://countryball.png")
+            await interaction.followup.send(embed=embed, file=file)
+        else:
+            await interaction.followup.send(embed=embed)
