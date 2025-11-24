@@ -146,6 +146,16 @@
                     "items": {
                         "$ref": "#/$defs/discord-id"
                     }
+                },
+                "admin-channel-ids": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "description": "IDs of channels in which privacy settings can be bypassed. Empty means any channel is allowed.",
+                    "items": {
+                        "$ref": "#/$defs/discord-id"
+                    }
                 }
             },
             "required": [
@@ -350,12 +360,32 @@
                     }
                 }
             }
+        },
+        "extra-tortoise-models": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "description": "Extra Python paths to register for Tortoise models",
+            "items": {
+                "$ref": "#/$defs/python-path"
+            }
+        },
+        "extra-django-apps": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "description": "Extra Django apps to register",
+            "items": {
+                "$ref": "#/$defs/python-path"
+            }
         }
     },
     "$defs": {
         "python-path": {
             "type": "string",
-            "pattern": "^[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+$"
+            "pattern": "^[a-zA-Z_][\\.a-zA-Z0-9_]+$"
         },
         "discord-id": {
             "type": "integer",
