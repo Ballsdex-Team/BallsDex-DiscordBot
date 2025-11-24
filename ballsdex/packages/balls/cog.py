@@ -435,7 +435,6 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
-        await player.fetch_related("balls")
         query = player.balls.all()
         filter_msg = ""
         if filter:
