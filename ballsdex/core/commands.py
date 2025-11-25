@@ -115,12 +115,18 @@ class Core(commands.Cog):
         """
         Analyze the database. This refreshes the counts displayed by the `/about` command.
         """
+
         # pleading for this https://github.com/django/django/pull/18408
-        with connection.cursor() as cursor:
-            t1 = time.time()
-            cursor.execute("ANALYZE")
-            t2 = time.time()
-        await ctx.send(f"Analyzed database in {round((t2 - t1) * 1000)}ms.")
+        @sync_to_async
+        def wrapper():
+            with connection.cursor() as cursor:
+                t1 = time.time()
+                cursor.execute("ANALYZE")
+                t2 = time.time()
+            return t2 - t1
+
+        delta = await wrapper()
+        await ctx.send(f"Analyzed database in {round(delta * 1000)}ms.")
 
     @commands.command()
     @commands.is_owner()
