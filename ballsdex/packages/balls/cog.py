@@ -234,7 +234,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
-        self_caught: bool | None = None,
+        filter: FilteringChoices | None = None,
     ):
         """
         Show your current completion of the BallsDex.
@@ -245,8 +245,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user whose completion you want to view, if not yours.
         special: Special
             The special you want to see the completion of
-        self_caught: bool
-            Filter only for countryballs that the user themself caught/didn't catch (ie no trades)
+        filter: FilteringChoices
+            Filter the list by a specific filter.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -286,9 +286,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 for x, y in balls.items()
                 if y.enabled and (special.end_date is None or y.created_at < special.end_date)
             }
-
-        if self_caught is not None:
-            filters["trade_player_id__isnull"] = self_caught
+        if filter:
+            query = filter_balls(filter, BallInstance.filter(**filters))
+        else:
+            query = BallInstance.filter(**filters)
 
         if not bot_countryballs:
             await interaction.followup.send(
@@ -299,10 +300,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         owned_countryballs = set(
-            x[0]
-            for x in await BallInstance.filter(**filters)
-            .distinct()  # Do not query everything
-            .values_list("ball_id")
+            x[0] for x in await query.distinct().values_list("ball_id")  # Do not query everything
         )
 
         entries: list[tuple[str, str]] = []
@@ -356,11 +354,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
         special_str = f" ({special.name})" if special else ""
-        original_catcher_string = (
-            f" ({'not ' if self_caught is False else ''}self-caught)"
-            if self_caught is not None
-            else ""
-        )
+        original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
         source.embed.description = (
             f"{settings.bot_name}{original_catcher_string}{special_str} progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
@@ -399,7 +393,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
     async def last(
-        self, interaction: discord.Interaction["BallsDexBot"], user: discord.User | None = None
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User | None = None,
+        filter: FilteringChoices | None = None,
     ):
         """
         Display info of your or another users last caught countryball.
@@ -408,6 +405,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         ----------
         user: discord.Member
             The user you would like to see
+        filter: FilteringChoices
+            Filter the last caught countryball by a specific filter.
+            Only works if the user has caught at least one countryball.
         """
         user_obj = user if user else interaction.user
         await interaction.response.defer(thinking=True)
@@ -435,8 +435,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True,
             )
             return
-
-        countryball = await player.balls.all().order_by("-id").first().select_related("ball")
+        query = player.balls.all()
+        filter_msg = ""
+        if filter:
+            filter_msg = f" with the `{filter.value.replace('_', ' ')}` filter"
+            query = filter_balls(filter, query, interaction.guild_id)
+        countryball = await query.order_by("-id").first()
         if not countryball:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
@@ -448,7 +452,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         content, file, view = await countryball.prepare_for_message(interaction)
         if user is not None and user.id != interaction.user.id:
             content = (
-                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}.\n"
+                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}"
+                f"{filter_msg}.\n" + content
+            )
+        else:
+            content = (
+                f"You are viewing your last caught {settings.collectible_name}{filter_msg}.\n"
                 + content
             )
         await interaction.followup.send(content=content, file=file, view=view)
