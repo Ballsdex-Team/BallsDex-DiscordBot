@@ -766,7 +766,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             for item in results
         ]
 
-        source = DuplicateViewMenu(interaction, entries, type.value)
+        source = DuplicateViewMenu(interaction, entries, is_special)
         await source.start(content=f"View your duplicate {type.value}.")
 
     @app_commands.command()

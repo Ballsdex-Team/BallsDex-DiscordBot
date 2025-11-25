@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from typing import TYPE_CHECKING, AsyncIterator, List
 
 import discord
+from tortoise.expressions import RawSQL
+from tortoise.functions import Count
 
-from ballsdex.core.models import Ball, BallInstance, Special
+from ballsdex.core.models import Ball, BallInstance, Player, Special
 from ballsdex.core.utils import menus
 from ballsdex.core.utils.paginator import Pages
 from ballsdex.settings import settings
@@ -103,9 +104,9 @@ class DuplicateSource(menus.ListPageSource):
 
 
 class DuplicateViewMenu(Pages):
-    def __init__(self, interaction: discord.Interaction["BallsDexBot"], list, dupe_type: str):
+    def __init__(self, interaction: discord.Interaction["BallsDexBot"], list, is_special: bool):
         self.bot = interaction.client
-        self.dupe_type = dupe_type
+        self.is_special = is_special
         source = DuplicateSource(list)
         super().__init__(source, interaction=interaction)
         self.add_item(self.dupe_ball_menu)
@@ -123,52 +124,67 @@ class DuplicateViewMenu(Pages):
     @discord.ui.select()
     async def dupe_ball_menu(self, interaction: discord.Interaction, item: discord.ui.Select):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        type = None
-        if self.dupe_type == settings.plural_collectible_name:
-            balls = await BallInstance.filter(
-                ball__country=item.values[0], player__discord_id=interaction.user.id
-            ).prefetch_related("special")
-            type = "country"
+
+        player = await Player.get(discord_id=interaction.user.id)
+        balls_query = (
+            BallInstance.filter(player=player)
+            .annotate(
+                total=RawSQL("COUNT(*)"),
+                traded=RawSQL("SUM(CASE WHEN trade_player_id IS NULL THEN 0 ELSE 1 END)"),
+            )
+            .group_by("player_id")
+        )
+        countryball = None
+        if self.is_special:
+            special = await Special.get(name=item.values[0])
+            balls_query = balls_query.filter(special=special).annotate(specials=RawSQL("1"))
+            grouped_query = (
+                BallInstance.filter(player=player, special=special)
+                .prefetch_related("ball")
+                .annotate(count=Count("id"))
+                .group_by("ball__country", "ball__emoji_id")
+            )
         else:
-            balls = await BallInstance.filter(
-                special__name=item.values[0], player__discord_id=interaction.user.id
+            countryball = await Ball.get(country=item.values[0])
+            balls_query = balls_query.filter(ball=countryball).annotate(
+                specials=RawSQL("SUM(CASE WHEN special_id IS NULL THEN 0 ELSE 1 END)")
             )
-            type = "special"
-
-        total = len(balls)
-        total_traded = len([x for x in balls if x.trade_player])
-        total_caught_self = total - total_traded
-        if type == "country":
-            special_count = len([x for x in balls if x.special])
-            specials = defaultdict(int)
-            all_specials = await Special.filter(hidden=False)
-            special_emojis = {x.name: x.emoji for x in all_specials}
-            for ball in balls:
-                if ball.special:
-                    specials[ball.special] += 1
-
-            desc = (
-                f"**Total**: {total:,} ({total_caught_self:,} caught, "
-                f"{total_traded:,} received from trade)\n"
-                f"**Total Specials**: {special_count:,}\n\n"
+            grouped_query = (
+                BallInstance.filter(player=player, ball=countryball)
+                .exclude(special=None)
+                .annotate(count=Count("id"))
+                .group_by("special__name")
             )
-            if specials:
+
+        counts_list = await balls_query.values("player_id", "total", "traded", "specials")
+
+        if not counts_list:
+            await interaction.followup.send(
+                f"You don't have any {settings.plural_collectible_name} yet."
+            )
+            return
+        counts = counts_list[0]
+        all_specials = await Special.filter(hidden=False)
+        special_emojis = {x.name: x.emoji for x in all_specials}
+
+        desc = (
+            f"**Total**: {counts["total"]:,} ({counts["total"] - counts["traded"]:,} caught, "
+            f"{counts['traded']:,} received from trade)\n"
+        )
+        if self.is_special:
+            desc = f"**{settings.plural_collectible_name.title()}**: (Top 15)\n"
+            countries = await grouped_query.values("ball__country", "ball__emoji_id", "count")
+            for country in sorted(countries, key=lambda x: x["count"], reverse=True)[:15]:
+                emoji = self.bot.get_emoji(country["ball__emoji_id"])
+                desc += f"{emoji} {country["ball__country"]}: {country["count"]:,}\n"
+        else:
+            desc += f"**Total Specials**: {counts['specials']:,}\n"
+            specials = await grouped_query.values("special__name", "count")
+            if counts["specials"]:
                 desc += "**Specials**:\n"
-            for special, count in sorted(specials.items(), key=lambda x: x[1], reverse=True):
-                emoji = special_emojis.get(special.name, "")
-                desc += f"{emoji} {special.name}: {count:,}\n"
-        else:
-            desc = (
-                f"**Total**: {total:,} ({total_caught_self:,} caught, "
-                f"{total_traded:,} received from trade)\n\n"
-            )
-            countries = defaultdict(int)
-            for ball in balls:
-                countries[ball.countryball] += 1
-            desc = f"**{settings.plural_collectible_name}**: (Top 15)\n"
-            for country, count in sorted(countries.items(), key=lambda x: x[1], reverse=True)[:15]:
-                emoji = self.bot.get_emoji(country.emoji_id)
-                desc += f"{emoji} {country}: {count:,}\n"
+            for special in sorted(specials, key=lambda x: x["count"], reverse=True):
+                emoji = special_emojis.get(special["special__name"], "")
+                desc += f"{emoji} {special['special__name']}: {special["count"]:,}\n"
 
         embed = discord.Embed(
             title=f"{item.values[0]} Collection",
@@ -178,9 +194,8 @@ class DuplicateViewMenu(Pages):
         embed.set_author(
             name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
         )
-        if type == "country":
-            countryball = await Ball.get(country=item.values[0])
+        if countryball:
             emoji = self.bot.get_emoji(countryball.emoji_id)
             if emoji:
                 embed.set_thumbnail(url=emoji.url)
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed)
