@@ -3,18 +3,19 @@ import asyncio
 import contextlib
 import inspect
 import io
+import os
 import re
+import subprocess
 import textwrap
 import time
 import traceback
 from contextlib import redirect_stdout
 from copy import copy
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import aiohttp
 import discord
-import psycopg
 from discord.ext import commands
 from django.db import connection
 
@@ -375,51 +376,38 @@ class Dev(commands.Cog):
         """
         body = self.cleanup_code(content)
 
-        # To achieve a proper psql prompt, we want to use "COPY" and send the output, without processing it.
-        # However, we have two problems
-        # - Django ORM doesn't expose COPY methods, so we need to get the low-end psycopg cursor
-        # - The query must be made async, but Django still uses the synchronous API of psycopg
-        # For that reason, we will just instanciate our own async psycopg connection
-        #
-        # Sources:
-        # https://www.psycopg.org/psycopg3/docs/advanced/async.html#async
-        # https://www.psycopg.org/psycopg3/docs/basic/copy.html
-
-        # get the connection parameters from django
-        db_params: dict[str, Any] = connection.get_connection_params()
-        # remove django's custom objects
-        db_params.pop("cursor_factory", None)
-        db_params.pop("context", None)
-
-        t1 = time.time()
         try:
-            async with await psycopg.AsyncConnection.connect(**db_params) as conn:
-                async with conn.cursor() as cursor:
-                    try:
-                        async with cursor.copy(f"COPY ({body}) TO STDOUT HEADER") as copy:  # pyright: ignore[reportArgumentType]
-                            buffer = BytesIO()
-                            # it's important to iterate the query to avoid unfinished commands
-                            async for row in copy:
-                                buffer.write(row)
-                            buffer.seek(0)
-                    except psycopg.errors.FeatureNotSupported:
-                        # the command is not a SELECT and does not have a RETURNING instruction
-                        # in that case, we just execute the query and return the status (number of rows affected)
-                        await conn.rollback()  # required to avoid InFailedSqlTransaction error
-                        await cursor.execute(body)  # pyright: ignore[reportArgumentType]
-                        t2 = time.time()
-                        time_taken = format_duration(t2 - t1)
-                        await ctx.send(f"```sql\n{cursor.statusmessage}\n```\n-# Took {time_taken}")
-                        return
-            t2 = time.time()
-        except psycopg.errors.Error as e:
-            t2 = time.time()
-            await send_interactive(ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1)
-            raise e
-        time_taken = format_duration(t2 - t1)
-        # always send the result as a file to allow horizontal scrolling in Discord
-        # using a code block creates wrapping, which looks horrible on psql output
-        await ctx.send(f"-# Took {time_taken}", file=discord.File(buffer, filename="output.txt"))
+            params = connection.get_connection_params()
+            cmd = [
+                "psql",
+                "--file=-",
+                f"--dbname={params['dbname']}",
+                f"--host={params['host']}",
+                f"--port={params['port']}",
+                f"--username={params['user']}",
+                "--no-password",
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                env={**os.environ, "PGPASSWORD": params["password"]},
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            async with ctx.typing():
+                stdout, _ = await asyncio.wait_for(proc.communicate(f"\\timing on\n{body}".encode()), timeout=300)
+            stdout = stdout.removeprefix(b"Timing is on.\n")
+        except asyncio.TimeoutError:
+            await ctx.reply("Timed out waiting for response (5 mins).")
+        except FileNotFoundError:
+            await ctx.send("`psql` was not found on the host, unable to use this command.")
+        else:
+            # always send the result as a file to allow horizontal scrolling in Discord
+            # using a code block creates wrapping, which looks horrible on psql output
+            text = None
+            if proc.returncode != 0:
+                text = f"Exit code: {proc.returncode}"
+            await ctx.reply(text, file=discord.File(io.BytesIO(stdout), filename="output.txt"))
 
     @commands.command()
     @commands.is_owner()

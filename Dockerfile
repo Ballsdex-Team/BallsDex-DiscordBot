@@ -16,6 +16,7 @@ ENV PYTHONFAULTHANDLER=1 \
 # Pillow runtime dependencies
 # TODO: remove testing repository when alpine 3.22 is released (libraqm is only on edge for now)
 RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community libraqm-dev && \
+    apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main postgresql18-client && \
     apk add --no-cache tiff-dev jpeg-dev openjpeg-dev zlib-dev freetype-dev \
     lcms2-dev libwebp-dev tcl-dev tk-dev harfbuzz-dev fribidi-dev \
     libimagequant-dev libxcb-dev libpng-dev libavif-dev
