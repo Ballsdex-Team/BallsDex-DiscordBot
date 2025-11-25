@@ -4,6 +4,7 @@
 # That file will not be tracked by git
 
 import os
+import pathlib
 import sys
 from pathlib import Path
 
@@ -76,6 +77,11 @@ TEMPLATES = [
 WSGI_APPLICATION = "admin_panel.wsgi.application"
 
 # Logging
+log_dir = pathlib.Path("./logs")
+if pathlib.Path("./manage.py").exists():
+    log_dir = ".." / log_dir
+log_dir.mkdir(exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -89,23 +95,32 @@ LOGGING = {
             "format": "[{server_time}] {message}",
             "style": "{",
         },
-        "uvicorn": {
-            "()": "uvicorn.logging.ColourizedFormatter",
-            "format": "{levelprefix} ({name}) {message}",
-            "style": "{",
-        },
+        "rich": {"()": "discord.utils._ColourFormatter"},
+        "basic": {"format": "[{asctime}] {levelname} {name}: {message}", "datefmt": "%Y-%m-%d %H:%M:%S", "style": "{"},
     },
     "handlers": {
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "uvicorn"},
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "rich"},
+        "file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": log_dir / "ballsdex.log",
+            "maxBytes": 8**7,
+            "backupCount": 8,
+            "formatter": "basic",
+        },
         "django.server": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "django.server"},
+        "queue": {"class": "logging.handlers.QueueHandler", "handlers": ["console", "file"]},
     },
     "loggers": {
-        "root": {"handlers": ["console"], "level": "INFO"},
+        "root": {"handlers": ["queue"], "level": "INFO"},
+        "uvicorn": {"handlers": ["queue"], "level": "INFO"},
         "django.server": {"handlers": ["django.server"], "level": "INFO", "propagate": False},
+        "aiohttp": {"level": "WARNING"},
+        "discord": {"level": "INFO"},
     },
 }
+LOGGING_CONFIG = "admin_panel.logging.setup_logging"
 if "startbot" in sys.argv:
-    del LOGGING["loggers"]["root"]
     SILENCED_SYSTEM_CHECKS = ["staticfiles.W004"]
 
 # Database

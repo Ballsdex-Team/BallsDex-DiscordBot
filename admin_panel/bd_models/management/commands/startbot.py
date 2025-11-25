@@ -5,7 +5,7 @@ import logging.handlers
 import os
 import sys
 from signal import SIGTERM
-from typing import TypedDict, Unpack
+from typing import TypedDict, Unpack, cast
 
 import discord
 import sentry_sdk
@@ -17,7 +17,6 @@ from sentry_sdk.integrations.asyncio import AsyncioIntegration
 
 from ballsdex import __version__ as bot_version
 from ballsdex.core.bot import BallsDexBot
-from ballsdex.logging import init_logger
 from settings.models import load_settings, settings
 
 discord.voice_client.VoiceClient.warn_nacl = False  # disable PyNACL warning
@@ -229,14 +228,11 @@ class Command(BaseCommand):
             sys.exit(1)
 
         print_welcome()
-        queue_listener: logging.handlers.QueueListener | None = None
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
         try:
-            queue_listener = init_logger(options["disable_rich"], options["debug"])
-
             token = settings.bot_token
             if not token:
                 log.error("Token not found!")
@@ -288,8 +284,9 @@ class Command(BaseCommand):
             if bot is not None:
                 loop.run_until_complete(shutdown_handler(bot))
         finally:
-            if queue_listener:
-                queue_listener.stop()
+            if queue := cast(logging.handlers.QueueHandler | None, logging.getHandlerByName("queue")):
+                if queue.listener:
+                    queue.listener.stop()
             loop.run_until_complete(loop.shutdown_asyncgens())
             if server is not None:
                 loop.run_until_complete(server.stop())

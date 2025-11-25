@@ -27,11 +27,5 @@ DEBUG_TOOLBAR_PANELS = [
 ]
 
 # Set DEBUG logging level
-if "startbot" in sys.argv:
-    import logging
-
-    logging.getLogger().setLevel(logging.DEBUG)
-else:
-    LOGGING["loggers"]["root"]["level"] = "DEBUG"
-
+LOGGING["loggers"]["root"]["level"] = "DEBUG"
 LOGGING["loggers"]["django.db.backends"] = {"level": "DEBUG", "handlers": []}
