@@ -393,10 +393,7 @@ class BallInstance(models.Model):
                 # so this is a broken timedelta as well
                 catch_time = None
 
-        if catch_time:
-            catch_time_msg = f" in {catch_time.total_seconds():.3f}s"
-        else:
-            catch_time_msg = ""
+        catch_time_msg = f" in {catch_time.total_seconds():.3f}s" if catch_time else ""
 
         content = (
             f"ID: `#{self.pk:0X}`\n"
