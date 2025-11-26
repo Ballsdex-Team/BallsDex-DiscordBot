@@ -384,13 +384,9 @@ class BallInstance(models.Model):
         if self.catch_date and self.spawned_time:
             catch_time = self.catch_date - self.spawned_time
             assert isinstance(catch_time, timedelta)
-            if catch_time.total_seconds() < 0:
+            if 0 < catch_time.total_seconds() < 60 * 30:
                 # some balls have a broken timedelta because of tz stuff,
-                # so we will ignore them here
-                catch_time = None
-            elif catch_time.total_seconds() > 60 * 30:
-                # if it's greater than 30 minutes, the view would have expired,
-                # so this is a broken timedelta as well
+                # or if it's greater than 30 minutes, the view would have expired,
                 catch_time = None
 
         catch_time_msg = f" in {catch_time.total_seconds():.3f}s" if catch_time else ""
