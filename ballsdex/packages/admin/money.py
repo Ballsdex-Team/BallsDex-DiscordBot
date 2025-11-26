@@ -1,11 +1,14 @@
+import logging
+
 import discord
 from discord.ext import commands
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
-from ballsdex.core.utils.logging import log_action
 from bd_models.models import Player
 from settings.models import settings
+
+log = logging.getLogger(__name__)
 
 
 @commands.hybrid_group()
@@ -59,7 +62,7 @@ async def add(ctx: commands.Context[BallsDexBot], user: discord.User, amount: in
 
     await player.add_money(amount)
     await ctx.send(f"{amount:,} coins have been added to {user.mention}.", ephemeral=True)
-    await log_action(f"{ctx.author} ({ctx.author.id}) added {amount:,} coins to {user} ({user.id})", ctx.bot)
+    log.info(f"{ctx.author} ({ctx.author.id}) added {amount:,} coins to {user} ({user.id})", extra={"webhook": True})
 
 
 @money.command()
@@ -88,7 +91,9 @@ async def remove(ctx: commands.Context[BallsDexBot], user: discord.User, amount:
         return
     await player.remove_money(amount)
     await ctx.send(f"{amount:,} coins have been removed from {user.mention}.", ephemeral=True)
-    await log_action(f"{ctx.author} ({ctx.author.id}) removed {amount:,} coins from {user} ({user.id})", ctx.bot)
+    log.info(
+        f"{ctx.author} ({ctx.author.id}) removed {amount:,} coins from {user} ({user.id})", extra={"webhook": True}
+    )
 
 
 @money.command()
@@ -116,6 +121,7 @@ async def set(ctx: commands.Context[BallsDexBot], user: discord.User, amount: in
     player.money = amount
     await player.asave()
     await ctx.send(f"{user.mention} now has {amount:,} coins.", ephemeral=True)
-    await log_action(
-        f"{ctx.author} ({ctx.author.id}) set the balance of {user} ({user.id}) to {amount:,} coins", ctx.bot
+    log.info(
+        f"{ctx.author} ({ctx.author.id}) set the balance of {user} ({user.id}) to {amount:,} coins",
+        extra={"webhook": True},
     )

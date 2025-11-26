@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
-from asgiref.sync import async_to_sync
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
 from django.db.models import OuterRef, Subquery
@@ -11,8 +11,6 @@ from django.utils.html import format_html
 from django_admin_action_forms import action_with_form
 from django_admin_inline_paginator.admin import TabularInlinePaginated
 
-from admin_panel.webhook import notify_admins
-
 from ..forms import BlacklistActionForm, BlacklistedListFilter
 from ..models import BallInstance, BlacklistedID, BlacklistHistory, GuildConfig, Player
 from ..utils import BlacklistTabular
@@ -20,6 +18,8 @@ from ..utils import BlacklistTabular
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
     from django.http import HttpRequest
+
+log = logging.getLogger(__name__)
 
 
 class BallInstanceTabular(TabularInlinePaginated):
@@ -98,7 +98,8 @@ class PlayerAdmin(admin.ModelAdmin):
             f"Created blacklist for {queryset.count()} user{'s' if queryset.count() > 1 else ''}. "
             "This will be applied after reloading the bot's cache.",
         )
-        async_to_sync(notify_admins)(
+        log.info(
             f"{request.user} blacklisted players "
-            f"{', '.join([str(x.discord_id) for x in queryset])} for the reason: {data['reason']}."
+            f"{', '.join([str(x.discord_id) for x in queryset])} for the reason: {data['reason']}.",
+            extra={"webhook": True},
         )

@@ -13,7 +13,6 @@ from django.urls import reverse
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.logging import log_action
 from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from settings.models import settings
 
@@ -139,11 +138,11 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
             flags.atk_bonus,
             flags.hp_bonus,
         )
-        await log_action(
+        log.info(
             f"{ctx.author} spawned {settings.collectible_name}"
             f" {flags.countryball or 'random'} {flags.n} times in {flags.channel or ctx.channel}"
             + (f" ({', '.join(special_attrs)})." if special_attrs else "."),
-            ctx.bot,
+            extra={"webhook": True},
         )
         return
 
@@ -159,10 +158,10 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
 
     if result:
         await ctx.send(f"{settings.collectible_name.title()} spawned.", ephemeral=True)
-        await log_action(
+        log.info(
             f"{ctx.author} spawned {settings.collectible_name} {ball.name} "
             f"in {flags.channel or ctx.channel}" + (f" ({', '.join(special_attrs)})." if special_attrs else "."),
-            ctx.bot,
+            extra={"webhook": True},
         )
 
 
@@ -200,11 +199,11 @@ async def give(ctx: commands.Context[BallsDexBot], user: discord.User, *, flags:
         f"`{user}`.\nSpecial: `{flags.special.name if flags.special else None}` • ATK: "
         f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
     )
-    await log_action(
+    log.info(
         f"{ctx.author} gave {settings.collectible_name} "
         f"{flags.countryball.country} to {user}. (Special={flags.special.name if flags.special else None} "
         f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
-        ctx.bot,
+        extra={"webhook": True},
     )
 
 
@@ -250,7 +249,7 @@ async def balls_info(ctx: commands.Context[BallsDexBot], countryball_id: str):
         f"**Traded:** {ball.trade_player}\n{admin_url}",
         ephemeral=True,
     )
-    await log_action(f"{ctx.author} got info for {ball}({ball.pk}).", ctx.bot)
+    log.info(f"{ctx.author} got info for {ball}({ball.pk}).", extra={"webhook": True})
 
 
 @balls.command(name="delete")
@@ -280,11 +279,11 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str, 
         ball.deleted = True
         await ball.asave()
         await ctx.send(f"{settings.collectible_name.title()} {countryball_id} soft deleted.", ephemeral=True)
-        await log_action(f"{ctx.author} soft deleted {ball}({ball.pk}).", ctx.bot)
+        log.info(f"{ctx.author} soft deleted {ball}({ball.pk}).", extra={"webhook": True})
     else:
         await ball.adelete()
         await ctx.send(f"{settings.collectible_name.title()} {countryball_id} hard deleted.", ephemeral=True)
-        await log_action(f"{ctx.author} hard deleted {ball}({ball.pk}).", ctx.bot)
+        log.info(f"{ctx.author} hard deleted {ball}({ball.pk}).", extra={"webhook": True})
 
 
 @balls.command(name="transfer")
@@ -318,7 +317,7 @@ async def balls_transfer(ctx: commands.Context[BallsDexBot], countryball_id: str
     trade = await Trade.objects.acreate(player1=original_player, player2=player)
     await TradeObject.objects.acreate(trade=trade, ballinstance=ball, player=original_player)
     await ctx.send(f"Transfered {ball}({ball.pk}) from {original_player} to {user}.", ephemeral=True)
-    await log_action(f"{ctx.author} transferred {ball}({ball.pk}) from {original_player} to {user}.", ctx.bot)
+    log.info(f"{ctx.author} transferred {ball}({ball.pk}) from {original_player} to {user}.", extra={"webhook": True})
 
 
 @balls.command(name="reset")
@@ -378,8 +377,9 @@ async def balls_reset(
         else:
             count = await BallInstance.all_objects.filter(player=player).adelete()
     await ctx.send(f"{count} {settings.plural_collectible_name} from {user} have been deleted.", ephemeral=True)
-    await log_action(
-        f"{ctx.author} deleted {percentage or 100}% of {player}'s {settings.plural_collectible_name}.", ctx.bot
+    log.info(
+        f"{ctx.author} deleted {percentage or 100}% of {player}'s {settings.plural_collectible_name}.",
+        extra={"webhook": True},
     )
 
 

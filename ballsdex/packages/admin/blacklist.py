@@ -1,3 +1,5 @@
+import logging
+
 import discord
 from discord.ext import commands
 from discord.utils import format_dt
@@ -6,11 +8,12 @@ from django.urls import reverse
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
-from ballsdex.core.utils.logging import log_action
 from ballsdex.core.utils.menus import Menu, ModelSource
 from bd_models.models import BlacklistedGuild, BlacklistedID, BlacklistHistory, GuildConfig, Player
 
 from .menu import BlacklistHistoryFormatter
+
+log = logging.getLogger(__name__)
 
 
 @commands.hybrid_group()
@@ -49,7 +52,9 @@ async def blacklist_add(ctx: commands.Context[BallsDexBot], user: discord.User, 
     else:
         ctx.bot.blacklist.add(user.id)
         await ctx.send("User is now blacklisted.", ephemeral=True)
-        await log_action(f"{ctx.author} blacklisted {user} ({user.id}) for the following reason: {reason}.", ctx.bot)
+        log.info(
+            f"{ctx.author} blacklisted {user} ({user.id}) for the following reason: {reason}.", extra={"webhook": True}
+        )
 
 
 @blacklist.command(name="remove")
@@ -76,7 +81,9 @@ async def blacklist_remove(ctx: commands.Context[BallsDexBot], user: discord.Use
         )
         ctx.bot.blacklist.remove(user.id)
         await ctx.send("User is now removed from blacklist.", ephemeral=True)
-        await log_action(f"{ctx.author} removed blacklist for user {user} ({user.id}).\nReason: {reason}", ctx.bot)
+        log.info(
+            f"{ctx.author} removed blacklist for user {user} ({user.id}).\nReason: {reason}", extra={"webhook": True}
+        )
 
 
 @blacklist.command(name="info")
@@ -219,8 +226,9 @@ async def blacklist_add_guild(ctx: commands.Context[BallsDexBot], guild_id: str,
     else:
         ctx.bot.blacklist_guild.add(guild.id)
         await ctx.send("Guild is now blacklisted.", ephemeral=True)
-        await log_action(
-            f"{ctx.author} blacklisted the guild {guild}({guild.id}) for the following reason: {reason}.", ctx.bot
+        log.info(
+            f"{ctx.author} blacklisted the guild {guild}({guild.id}) for the following reason: {reason}.",
+            extra={"webhook": True},
         )
 
 
@@ -258,7 +266,9 @@ async def blacklist_remove_guild(ctx: commands.Context[BallsDexBot], guild_id: s
         )
         ctx.bot.blacklist_guild.remove(guild.id)
         await ctx.send("Guild is now removed from blacklist.", ephemeral=True)
-        await log_action(f"{ctx.author} removed blacklist for guild {guild} ({guild.id}).\nReason: {reason}", ctx.bot)
+        log.info(
+            f"{ctx.author} removed blacklist for guild {guild} ({guild.id}).\nReason: {reason}", extra={"webhook": True}
+        )
 
 
 @blacklistguild.command(name="info")

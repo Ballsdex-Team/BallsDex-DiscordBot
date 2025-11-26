@@ -1,15 +1,14 @@
+import logging
 from typing import TYPE_CHECKING
 
-from asgiref.sync import async_to_sync
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
+from django.db.models import Exists, OuterRef
 from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_action_forms import action_with_form
 from django_admin_inline_paginator.admin import InlinePaginated
 from nonrelated_inlines.admin import NonrelatedInlineMixin
-
-from admin_panel.webhook import notify_admins
 
 from ..forms import BlacklistActionForm, BlacklistedListFilter
 from ..models import BallInstance, BlacklistedGuild, BlacklistHistory, GuildConfig
@@ -18,6 +17,8 @@ from ..utils import BlacklistTabular
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
     from django.http import HttpRequest
+
+log = logging.getLogger(__name__)
 
 
 class BallInstanceGuildTabular(InlinePaginated, NonrelatedInlineMixin, admin.TabularInline):
@@ -68,9 +69,16 @@ class GuildAdmin(admin.ModelAdmin):
     inlines = (BlacklistTabular, BallInstanceGuildTabular)
     actions = ("blacklist_guilds",)
 
+    def get_queryset(self, request: "HttpRequest") -> "QuerySet[GuildConfig]":
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(blacklisted=Exists(BlacklistedGuild.objects.filter(discord_id=OuterRef("guild_id"))))
+        )
+
     @admin.display(description="Is blacklisted", boolean=True)
     def blacklisted(self, obj: GuildConfig):
-        return BlacklistedGuild.objects.filter(discord_id=obj.guild_id).exists()
+        return obj.blacklisted  # pyright: ignore[reportAttributeAccessIssue]
 
     @action_with_form(BlacklistActionForm, description="Blacklist the selected guilds")  # type: ignore
     def blacklist_guilds(self, request: "HttpRequest", queryset: "QuerySet[GuildConfig]", data: dict):
@@ -94,7 +102,8 @@ class GuildAdmin(admin.ModelAdmin):
             f"{'s' if queryset.count() > 1 else ''}. This will be applied after "
             "reloading the bot's cache.",
         )
-        async_to_sync(notify_admins)(
+        log.info(
             f"{request.user} blacklisted guilds "
-            f"{', '.join([str(x.guild_id) for x in queryset])} for the reason: {data['reason']}."
+            f"{', '.join([str(x.guild_id) for x in queryset])} for the reason: {data['reason']}.",
+            extra={"webhook": True},
         )

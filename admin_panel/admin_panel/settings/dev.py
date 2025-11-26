@@ -28,4 +28,3 @@ DEBUG_TOOLBAR_PANELS = [
 
 # Set DEBUG logging level
 LOGGING["loggers"]["root"]["level"] = "DEBUG"
-LOGGING["loggers"]["django.db.backends"] = {"level": "DEBUG", "handlers": []}

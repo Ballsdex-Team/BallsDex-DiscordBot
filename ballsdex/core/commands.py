@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import discord
 from asgiref.sync import sync_to_async
@@ -9,13 +9,16 @@ from discord.ext import commands
 from django.db import connection
 
 from ballsdex.core.dev import pagify, send_interactive
-from ballsdex.core.discord import View
+from ballsdex.core.discord import LayoutView, View
+from ballsdex.core.utils.menus import Menu, TextFormatter, TextSource
 from bd_models.models import Ball
 from settings.models import load_settings, settings
 
 log = logging.getLogger("ballsdex.core.commands")
 
 if TYPE_CHECKING:
+    from admin_panel.logging import DequeHandler
+
     from .bot import BallsDexBot
 
 
@@ -224,3 +227,21 @@ class Core(commands.Cog):
             )
         finally:
             task.cancel()
+
+    @commands.command()
+    @commands.is_owner()
+    async def logs(self, ctx: commands.Context):
+        """
+        Return the last 50 log entries.
+        """
+        handler = cast("DequeHandler | None", logging.getHandlerByName("buffer"))
+        assert handler is not None
+
+        text = "\n".join(handler.format(record) for record in handler.deque)
+        text_display = discord.ui.TextDisplay("")
+        view = LayoutView()
+        view.add_item(discord.ui.TextDisplay(f"Last {len(handler.deque)} log entries"))
+        view.add_item(text_display)
+        menu = Menu(self.bot, view, TextSource(text, prefix="```ansi\n", suffix="```"), TextFormatter(text_display))
+        await menu.init()
+        await ctx.send(view=view)

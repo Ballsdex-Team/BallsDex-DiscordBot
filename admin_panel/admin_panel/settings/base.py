@@ -3,6 +3,7 @@
 # You should copy the production.example.py file as "production.py" and place your settings there
 # That file will not be tracked by git
 
+import logging
 import os
 import pathlib
 import sys
@@ -88,6 +89,7 @@ LOGGING = {
     "filters": {
         "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
         "require_debug_true": {"()": "django.utils.log.RequireDebugTrue"},
+        "bot_only": {"()": "admin_panel.logging.RequireBot"},
     },
     "formatters": {
         "django.server": {
@@ -99,24 +101,35 @@ LOGGING = {
         "basic": {"format": "[{asctime}] {levelname} {name}: {message}", "datefmt": "%Y-%m-%d %H:%M:%S", "style": "{"},
     },
     "handlers": {
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "rich"},
+        "console": {"level": logging.DEBUG, "class": "logging.StreamHandler", "formatter": "rich"},
         "file": {
-            "level": "INFO",
+            "level": logging.INFO,
             "class": "logging.handlers.RotatingFileHandler",
             "filename": log_dir / "ballsdex.log",
             "maxBytes": 8**7,
             "backupCount": 8,
             "formatter": "basic",
         },
-        "django.server": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "django.server"},
-        "queue": {"class": "logging.handlers.QueueHandler", "handlers": ["console", "file"]},
+        "buffer": {
+            "level": logging.INFO,
+            "class": "admin_panel.logging.DequeHandler",
+            "filters": ["bot_only"],
+            "formatter": "rich",
+        },
+        "webhook": {"level": logging.INFO, "class": "admin_panel.logging.WebhookHandler"},
+        "django.server": {"level": logging.INFO, "class": "logging.StreamHandler", "formatter": "django.server"},
+        "queue": {"class": "logging.handlers.QueueHandler", "handlers": ["console", "file", "webhook"]},
     },
     "loggers": {
-        "root": {"handlers": ["queue"], "level": "INFO"},
-        "uvicorn": {"handlers": ["queue"], "level": "INFO"},
-        "django.server": {"handlers": ["django.server"], "level": "INFO", "propagate": False},
-        "aiohttp": {"level": "WARNING"},
-        "discord": {"level": "INFO"},
+        "root": {"handlers": ["queue", "buffer"], "level": logging.INFO},
+        "uvicorn": {"handlers": ["queue"], "level": logging.INFO},
+        "django.server": {"handlers": ["django.server"], "level": logging.INFO, "propagate": False},
+        "aiohttp": {"level": logging.WARNING},
+        "discord": {"level": logging.INFO},
+        "django.db.backends": {
+            "level": logging.DEBUG if os.environ.get("DATABASE_QUERY_LOG") else logging.INFO,
+            "handlers": [],
+        },
     },
 }
 LOGGING_CONFIG = "admin_panel.logging.setup_logging"

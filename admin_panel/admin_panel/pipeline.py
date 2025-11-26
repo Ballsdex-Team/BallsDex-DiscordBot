@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
@@ -25,8 +26,6 @@ from bd_models.models import (
 )
 from settings.models import settings
 
-from .webhook import notify_admins
-
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.db.models import Model
@@ -36,6 +35,8 @@ if TYPE_CHECKING:
 type perm_dict = dict["type[Model]", list[Literal["view", "add", "change", "delete"]] | Literal["*"]]
 
 DISCORD_API = "https://discord.com/api/v10/"
+
+log = logging.getLogger(__name__)
 
 
 class Status(Enum):
@@ -130,7 +131,7 @@ async def assign_status(request: "HttpRequest", response: dict, user: "User", st
 
     if notify:
         messages.success(request, message)
-        await notify_admins(
+        log.info(
             f"{response['global_name']} (`{response['username']}`, {response['id']}) has been "
             f"assigned the {status.name} status on the admin panel."
         )
@@ -168,8 +169,9 @@ async def configure_status(
     # A user object will have been created, but without is_staff, the admin panel will be blocked.
     # It could also be an ex-staff member logging in, which must be handled manually
     if user.is_staff or user.is_superuser:
-        await notify_admins(
+        log.info(
             f"{response['global_name']} (`{response['username']}`, {response['id']}) logged in to "
-            "the admin panel using Discord OAuth2, but no staff status has been found. "
-            f"{user.is_staff=} {user.is_superuser=}"
+            "the admin panel using Discord OAuth2, but no staff status has been found.\n"
+            f"{user.is_staff=} {user.is_superuser=}",
+            extra={"webhook": True},
         )
