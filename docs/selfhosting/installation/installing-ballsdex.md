@@ -109,13 +109,17 @@ From this point, every time you need to type commands for Ballsdex, **you must a
 
 1. Run `docker compose build`. This will also take some time, wait for the build to complete.
 2. Run `docker compose run --rm admin-panel django-admin createsuperuser` to create an admin user
-   for the admin panel
+   for the admin panel. The email does not actually matter.
+
+    !!! note
+        Your password will not show while typing, that's normal, just press enter when you're done.
+
 3. Run `docker compose up -d proxy` to boot up the admin panel
 
 ## 5. Configure the bot
 
-Open http://localhost:8000 in your browser, this will take you to the admin panel login page.
-Login using the credentials you have set before.
+Open <http://localhost:8000> in your browser, this will take you to the
+admin panel login page. Login using the credentials you have set before.
 
 !!! tip
     If you forgot your credentials, run
@@ -124,9 +128,9 @@ Login using the credentials you have set before.
 1. Go back to the Discord developer portal and click "Reset Token" to obtain a new one.
    Copy and paste it in the "Discord token" section.
 
-!!! danger
-    **Do not share your token!** It is the password of your bot, and allows anyone full access
-    to its account if shared. Be sure to keep it secure, and immediately reset if you think it leaked.
+    !!! danger
+        **Do not share your token!** It is the password of your bot, and allows anyone full access
+        to its account if shared. Be sure to keep it secure, and immediately reset if you think it leaked.
 
 2. You can change "Collectible name" which will replace the word "countryball" in the bot. For instance if you set "rock", the bot will say "A wild rock spawned!" 
 

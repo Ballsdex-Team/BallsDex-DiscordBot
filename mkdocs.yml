@@ -68,7 +68,6 @@ nav:
           - api/utils/django.md
           - api/utils/enums.md
           - api/utils/formatting.md
-          - api/utils/logging.md
           - api/utils/menus.md
           - api/utils/sorting.md
           - api/utils/transformers.md
@@ -132,4 +131,10 @@ markdown_extensions:
   - pymdownx.superfences
 
 extra_javascript:
+  - javascript/mathjax.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+watch:
+  - ./docs
+  - ./admin_panel
+  - ./ballsdex

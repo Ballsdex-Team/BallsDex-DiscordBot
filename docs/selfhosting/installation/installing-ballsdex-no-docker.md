@@ -31,10 +31,10 @@ Follow the instructions [here](https://docs.astral.sh/uv/getting-started/install
 to install uv on your system.
 
 !!! tip
-    Ballsdex requires Python 3.13 at least.
+    Ballsdex requires Python 3.14 at least.
 
     If you don't have it installed, `uv` will install it for you, but you can make the installation
-    lighter by installing Python 3.13 with your system's package manager.
+    lighter by installing Python 3.14 with your system's package manager.
 
 ### Create a Discord bot account
 
@@ -69,7 +69,7 @@ cd BallsDex-DiscordBot
     uv sync
     ```
     !!! info
-        If you don't have Python 3.13, it will also be downloaded for your virtual environment.
+        If you don't have Python 3.14, it will also be downloaded for your virtual environment.
 
 2.  Open the virtual environment where your dependencies are
 
@@ -104,27 +104,23 @@ cd BallsDex-DiscordBot
     python3 -m ballsdex --version
     ```
 
-5.  Create the default configuration file
-    ```bash
-    python3 -m ballsdex --reset-settings
-    ```
-
-6.  Open the `admin_panel` folder for the next steps
+5.  Open the `admin_panel` folder for the next steps
     ```bash
     cd admin_panel
     ```
-7.  Initialize the database
+6.  Initialize the database
     ```bash
     python3 manage.py migrate
     ```
 
-8.  Initialize the admin panel
+7.  Initialize the admin panel
     ```bash
     python3 manage.py collectstatic --no-input
     ```
-9.  Return to the previous directory for the next steps
+
+8.  Start the admin panel to configure the settings
     ```bash
-    cd ..
+    DJANGO_SETTINGS_MODULE="admin_panel.settings.dev" uvicorn admin_panel.asgi:application
     ```
 
 ## 5. Configure the bot
@@ -133,7 +129,8 @@ Follow [this section](installing-ballsdex.md#5-configure-the-bot) from the main 
 
 ## 6. Run the bot
 
-Then, run `python3 -m ballsdex` to start the bot! To shut it down, type Ctrl+C.
+Go back to the previous folder with `cd ..`, then, run `python3 -m ballsdex` to start the bot!
+To shut it down, type Ctrl+C.
 
 !!! tip
     There are multiple options available when running the bot, do `python3 -m ballsdex -h` to view them.
@@ -147,6 +144,7 @@ Then, run `python3 -m ballsdex` to start the bot! To shut it down, type Ctrl+C.
         ```bash
         source .venv/bin/activate
         export BALLSDEXBOT_DB_URL=postgres://username:password@localhost:5432/database_name
+        export DJANGO_SETTINGS_MODULE="admin_panel.settings.dev"
         ```
     
     === "Windows (PowerShell)"
@@ -154,6 +152,7 @@ Then, run `python3 -m ballsdex` to start the bot! To shut it down, type Ctrl+C.
         ```ps1
         . .\.venv\Scripts\activate.ps1
         $Env.BALLSDEXBOT_DB_URL = 'postgres://username:password@localhost:5432/database_name'
+        $Env.DJANGO_SETTINGS_MODULE = 'admin_panel.settings.dev'
         ```
 
 2.  Start the admin panel
@@ -161,6 +160,14 @@ Then, run `python3 -m ballsdex` to start the bot! To shut it down, type Ctrl+C.
     cd admin_panel && uvicorn admin_panel.asgi:application
     ```
 3.  Follow [this guide](../admin-panel/getting-started.md) afterwards
+
+!!! warning
+    This tutorial shows you how to run the dev configuration, which serves static files.
+    The default configuration does not handle static files and should be handled by you. Ballsdex
+    includes an nginx file showing you how you may configure static files on your own.
+
+    If you intend to expose this website online, it's super important that you come up with a
+    solution and don't keep the developer configuration
 
 ---
 
@@ -179,6 +186,7 @@ Before running any command, do these:
 
     # export the database env var
     export BALLSDEXBOT_DB_URL=postgres://username:password@localhost:5432/database_name
+    export DJANGO_SETTINGS_MODULE="admin_panel.settings.dev"
     ```
 
 === "Windows (PowerShell)"
@@ -192,6 +200,7 @@ Before running any command, do these:
 
     # export the database env var
     $Env.BALLSDEXBOT_DB_URL = 'postgres://username:password@localhost:5432/database_name'
+    $Env.DJANGO_SETTINGS_MODULE = 'admin_panel.settings.dev'
     ```
 
 Then

@@ -28,7 +28,7 @@ async def is_staff(interaction: discord.Interaction["BallsDexBot"], *perms: str)
     Returns
     -------
     bool
-        `True` if the user is a staff, `False` otherwise.
+        [`True`][] if the user is a staff, [`False`][] otherwise.
     """
     user = await get_user_for_check(interaction.client, interaction.user)
     if isinstance(user, bool):
@@ -62,7 +62,8 @@ async def inventory_privacy(
     Returns
     -------
     bool
-        `True` if the inventory can be viewed, else `False`. If this is `False`, you should exit the command.
+        [`True`][] if the inventory can be viewed, else [`False`][].
+        If this is [`False`][], you should exit the command.
     """
     privacy_policy = player.privacy_policy
     interacting_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)

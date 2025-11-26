@@ -1,12 +1,10 @@
-Ballsdex now uses Django to power its admin panel. It is a much more powerful, stable and efficient system than the old fastapi admin panel.
-
 ## Starting the panel
 
-If you are running Docker, the panel may already be running. Just do `docker compose up -d admin-panel` to start if it's not running.
+If you are running Docker, the panel may already be running. Just do `docker compose up -d proxy` to start if it's not running.
 
-Without docker, the command to start the admin panel is `cd admin_panel && poetry run python3 manage.py migrate && poetry run python3 manage.py collectstatic --no-input && poetry run uvicorn admin_panel.asgi:application`
+Without docker, the command to start the admin panel is `cd admin_panel && python3 manage.py migrate && python3 manage.py collectstatic --no-input && uvicorn admin_panel.asgi:application`
 
-The panel will then be accessible at [http://localhost:8000](http://localhost:8000)
+The panel will then be accessible at <http://localhost:8000>
 
 ## Configuring the panel
 
@@ -27,21 +25,24 @@ below and follow the prompts.
 === "Without Docker"
 
     ```bash
-    cd admin_panel && poetry run python3 manage.py createsuperuser
+    cd admin_panel && python3 manage.py createsuperuser
     ```
 
-Then you can login using the chosen credentials at http://localhost:8000. Additional accounts can be created from the admin panel.
+Then you can login using the chosen credentials at <http://localhost:8000>. Additional accounts can be created from the admin panel.
 
 ### Using Discord OAuth2 (login with Discord)
 
 This will only let the bot owner access the admin panel when logged in, no need to remember any password.
+You still need a classic account to configure this on the panel.
 
-1. Go to the [Discord developer portal](https://discord.com/developers) and click on your application
-2. Click the "OAuth" tab
-3. Copy the application ID and paste it in your `config.yml` file, next to `client-id: ` (don't forget to leave a space after the colon)
-4. Generate your application secret and paste it in the config file, next to `client-secret: `
-5. Add a new redirect URI: `http://localhost:8000/complete/discord/` (the trailing slash is important)
-6. Save the changes
+1. Open [the Bot's settings](http://localhost:8000/settings/settings/1/change/) in one tab
+2. Go to the [Discord developer portal](https://discord.com/developers) and click on your application
+3. Click the "OAuth" tab
+4. Copy the application ID and paste it in the "Client ID" field of the settings
+5. Generate your application secret and paste it in the "Client Secret" field of the settings
+6. Save the settings on the admin panel
+7. Add a new redirect URI: `http://localhost:8000/complete/discord/` (the trailing slash is important)
+8. Save the changes on the Discord panel
 
 !!! danger
     Keep your application secret hidden at all times, it must never be shared (like your bot token)! If you have suspicion this file was leaked, immediately reset it in your developer portal.
@@ -50,12 +51,12 @@ In addition, you can also create a webhook for notifications from the admin pane
 
 1. Go to a Discord text channel that's only viewable by you or other admins
 2. Open the settings, then the integrations menu, then create a Webhook
-3. Copy the URL, and paste it next to `webhook-url: ` in the config file
+3. Copy the URL, and paste it in the "Webhook" field of the admin panel settings
 
-You should now be good to go. Run `docker compose up -d admin-panel` to start the admin panel (**if it was already running, restart it**), and open http://localhost:8000/ in your browser. Click the "Login with Discord" button and follow the steps. If you are the bot owner, then you will have the superuser status automatically assigned.
+You should now be good to go. Run `docker compose up -d proxy` to start the admin panel (**if it was already running, restart it**), and open <http://localhost:8000/> in your browser. Click the "Login with Discord" button and follow the steps. If you are the bot owner, then you will have the superuser status automatically assigned.
 
 !!! success "Developer teams"
-    If the application is owned by a team, set `team-members-are-owners` to true in the config file, otherwise you won't get access.
+    If the application is owned by a team, tick "Team members are owners" in the settings, otherwise you won't get access.
 
 ## Using the panel
 

@@ -16,8 +16,8 @@ class ConfirmChoiceView(View):
 
     Parameters
     ----------
-    interaction: Interaction[BallsDexBot]
-        The original interaction.
+    ctx: Interaction[BallsDexBot] | commands.Context[BallsDexBot]
+        Either a context or interaction.
     user: discord.User | None
         The user you're interacting with. If `None`, then `interaction.user` is used.
     accept_message: str

@@ -41,7 +41,7 @@ class TradeCommandType(Enum):
 
 class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter):
     """
-    Base abstract class for autocompletion from on Tortoise models
+    Base abstract class for autocompletion from on Django models
 
     This also works with hybrid commands.
 
@@ -52,7 +52,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
     column: str
         Column of the model to use for matching text-based conversions. Defaults to "name".
     model: T
-        The Tortoise model associated to the class derivation
+        The Django model associated to the class derivation
     base: int
         The base in which database IDs are converted. Defaults to decimal (10).
 
@@ -86,14 +86,14 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
 
         Raises
         ------
-        ValidationError
+        commands.BadArgument
             Raised if the item does not pass validation with the message to be displayed
         """
         pass
 
     async def get_from_pk(self, value: int) -> T:
         """
-        Return a Tortoise model instance from a primary key.
+        Return a Django model instance from a primary key.
 
         Raises
         ------
@@ -104,11 +104,11 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
 
     async def get_from_text(self, value: str) -> T:
         """
-        Return a Tortoise model instance from the raw value entered.
+        Return a Django model instance from the raw value entered.
 
         Raises
         ------
-        KeyError | tortoise.exceptions.DoesNotExist
+        KeyError | django.db.models.Model.DoesNotExist
             Entry does not exist
         """
         return await self.get_queryset().aget(**{f"{self.column}__iexact": value})
@@ -219,7 +219,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
 
 class TTLModelTransformer[T: "Model"](ModelTransformer[T]):
     """
-    Base class for simple Tortoise model autocompletion with TTL cache.
+    Base class for simple Django model autocompletion with TTL cache.
 
     This is used in most cases except for BallInstance which requires special handling depending
     on the interaction passed.
