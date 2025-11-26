@@ -384,6 +384,8 @@ class BallInstance(models.Model):
             self.catch_date - self.spawned_time if self.catch_date and self.spawned_time else None
         )
         if catch_time and 0 < catch_time.total_seconds() < 60 * 30:
+            # some balls have a negative timedelta because of tz stuff,
+            # or if it's greater than 30 minutes, the view would have expired,
             catch_time = None
 
         catch_time_msg = f" in {catch_time.total_seconds():.3f}s" if catch_time else ""
