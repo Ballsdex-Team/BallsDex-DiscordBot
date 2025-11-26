@@ -379,9 +379,29 @@ class BallInstance(models.Model):
                 else f"user with ID {self.trade_player.discord_id}"
             )
             trade_content = f"Obtained by trade with {original_player_name}.\n"
+
+        catch_time: timedelta | None = None
+        if self.catch_date and self.spawned_time:
+            catch_time = self.catch_date - self.spawned_time
+            assert isinstance(catch_time, timedelta)
+            if catch_time.total_seconds() < 0:
+                # some balls have a broken timedelta because of tz stuff,
+                # so we will ignore them here
+                catch_time = None
+            elif catch_time.total_seconds() > 60 * 30:
+                # if it's greater than 30 minutes, the view would have expired,
+                # so this is a broken timedelta as well
+                catch_time = None
+
+        if catch_time:
+            catch_time_msg = f" in {catch_time.total_seconds():.3f}s"
+        else:
+            catch_time_msg = ""
+
         content = (
             f"ID: `#{self.pk:0X}`\n"
-            f"Caught on {format_dt(self.catch_date)} ({format_dt(self.catch_date, style='R')}).\n"
+            f"Caught on {format_dt(self.catch_date)}{catch_time_msg}"
+            f" ({format_dt(self.catch_date, style='R')}).\n"
             f"{trade_content}\n"
             f"ATK: {self.attack} ({self.attack_bonus:+d}%)\n"
             f"HP: {self.health} ({self.health_bonus:+d}%)"
