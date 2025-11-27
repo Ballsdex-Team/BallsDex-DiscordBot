@@ -29,11 +29,11 @@ services:
     networks:
       - internal
     volumes:
-      - "./logs/:/code/logs/:rw"
+      - "./logs/:/var/log/ballsdex/:rw"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
     working_dir: /code/
-    command: python3 -m ballsdex
+    command: python3 -m ballsdex --dev
     # develop:
     #   watch:
     #     - path: ./ballsdex/packages
@@ -74,7 +74,7 @@ services:
       postgres-db:
         condition: service_healthy
     volumes:
-      - "./logs/:/code/logs/:rw"
+      - "./logs/:/var/log/ballsdex/:rw"
       - "./admin_panel/templates:/code/admin_panel/templates:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true

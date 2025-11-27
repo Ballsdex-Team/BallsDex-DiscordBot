@@ -78,10 +78,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "admin_panel.wsgi.application"
 
 # Logging
-log_dir = pathlib.Path("./logs")
-if pathlib.Path("./manage.py").exists():
-    log_dir = ".." / log_dir
-log_dir.mkdir(exist_ok=True)
+if env_log_dir := os.environ.get("BALLSDEX_LOG_DIR"):
+    log_dir = pathlib.Path(env_log_dir)
+else:
+    log_dir = pathlib.Path("./logs")
+    if pathlib.Path("./manage.py").exists():
+        log_dir = ".." / log_dir
+    log_dir.mkdir(exist_ok=True)
 
 LOGGING = {
     "version": 1,

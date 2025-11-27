@@ -11,7 +11,8 @@ ENV PYTHONFAULTHANDLER=1 \
     PATH="/opt/venv/bin:$PATH" \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    VIRTUAL_ENV=/opt/venv
+    VIRTUAL_ENV=/opt/venv \
+    BALLSDEX_LOG_DIR=/var/log/ballsdex
 
 # Pillow runtime dependencies
 # TODO: remove testing repository when alpine 3.22 is released (libraqm is only on edge for now)
@@ -22,7 +23,9 @@ RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/c
     libimagequant-dev libxcb-dev libpng-dev libavif-dev
 
 ARG UID GID
-RUN addgroup -S ballsdex -g ${GID:-1000} && adduser -S ballsdex -G ballsdex -u ${UID:-1000}
+RUN addgroup -S ballsdex -g ${GID:-1000} && \
+    adduser -S ballsdex -G ballsdex -u ${UID:-1000} && \
+    mkdir -p -m 770 ${BALLSDEX_LOG_DIR} && chown ballsdex:ballsdex ${BALLSDEX_LOG_DIR}
 WORKDIR /code
 
 FROM base AS builder-base
