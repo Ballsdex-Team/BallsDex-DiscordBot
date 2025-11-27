@@ -42,6 +42,8 @@ class SettingsAdmin(admin.ModelAdmin):
                     "max_favorites",
                     "max_attack_bonus",
                     "max_health_bonus",
+                    "spawn_chance_min",
+                    "spawn_chance_max",
                     "show_rarity",
                 ),
                 "classes": ("collapse",),
