@@ -77,6 +77,9 @@ class GuildConfig(models.Model):
     silent = models.BooleanField(
         help_text="Whether the responses of guesses get sent as ephemeral or not", default=False
     )
+    admin_command_synced = models.BooleanField(
+        help_text="True if slash admin commands are present in this server", default=False, editable=False
+    )
 
     objects: Manager[Self] = Manager()
 

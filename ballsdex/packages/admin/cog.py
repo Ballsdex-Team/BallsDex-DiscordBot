@@ -59,6 +59,9 @@ class SyncView(LayoutView):
         if not interaction.client.tree.get_command("admin", guild=interaction.guild):
             interaction.client.tree.add_command(self.cog.admin.app_command, guild=interaction.guild)
         await interaction.client.tree.sync(guild=interaction.guild)
+        await GuildConfig.objects.aupdate_or_create(
+            guild_id=interaction.guild.id, defaults={"guild_id": interaction.guild.id, "admin_command_synced": True}
+        )
         self.sync.disabled = True
         self.remove.disabled = True
         self.text.content += (
@@ -75,6 +78,7 @@ class SyncView(LayoutView):
         await interaction.response.defer()
         interaction.client.tree.remove_command("admin", guild=interaction.guild)
         await interaction.client.tree.sync(guild=interaction.guild)
+        await GuildConfig.objects.filter(guild_id=interaction.guild.id).aupdate(admin_command_synced=True)
         self.sync.disabled = True
         self.remove.disabled = True
         self.text.content += (
@@ -111,6 +115,15 @@ class Admin(commands.Cog):
                 ephemeral=True,
             )
             interaction.extras["handled"] = True
+
+    async def cog_load(self):
+        guilds = [
+            discord.Object(guild_id)
+            async for guild_id in GuildConfig.objects.filter(admin_command_synced=True).values_list(
+                "guild_id", flat=True
+            )
+        ]
+        self.bot.tree.add_command(self.admin.app_command, guilds=guilds)
 
     @commands.hybrid_group()
     @app_commands.guilds()
@@ -153,6 +166,9 @@ class Admin(commands.Cog):
                     "Admin slash commands added.\nYou need admin permissions in this server to view them "
                     f"(this can be changed [here](discord://-/guilds/{ctx.guild.id}/settings/integrations)). You might "
                     "need to refresh your Discord client to view them."
+                )
+                await GuildConfig.objects.aupdate_or_create(
+                    guild_id=ctx.guild.id, defaults={"guild_id": ctx.guild.id, "admin_command_synced": True}
                 )
 
     @admin.command()
