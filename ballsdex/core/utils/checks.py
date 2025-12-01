@@ -12,7 +12,7 @@ See also
     - [List of built-in `discord.py` checks](https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#checks)
 """
 
-import os
+import logging
 from typing import TYPE_CHECKING
 
 import discord
@@ -29,6 +29,26 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 type Context = commands.Context["BallsDexBot"]
+
+log = logging.getLogger(__name__)
+
+# used to check during startup that the permissions passed to decorators actually exist
+registered_perms: set[str] = set()
+
+
+# check that all passed permissions actually exist, otherwise emit a warning
+# this has to be checked in a separate function because decorators are synchronous and cannot access the database
+async def check_perms():
+    for perm in registered_perms:
+        try:
+            app_label, codename = perm.split(".")
+        except ValueError:
+            log.warning(f"Permission name should be in the form app_label.permission_codename, not {perm}.")
+            continue
+
+        if not await Permission.objects.filter(codename=codename, content_type__app_label=app_label).aexists():
+            log.warning(f"Permission {perm} does not exist and will be ignored.")
+    registered_perms.clear()
 
 
 async def get_user_for_check(bot: "BallsDexBot", user: discord.abc.User) -> "bool | User":
@@ -55,39 +75,6 @@ async def get_user_for_check(bot: "BallsDexBot", user: discord.abc.User) -> "boo
     if dj_user.is_superuser:
         return True
     return dj_user
-
-
-def _verify_existing_permissions(*perms: str):
-    """
-    Startup check that the permissions actually exist, to avoid typos.
-
-    This is aimed to be used by decorators initializers, so this function is sync and runs in unsafe mode.
-
-    Parameters
-    ----------
-    *perms: str
-        A list of Django permissions
-
-    Raises
-    ------
-    ValueError
-        If one permission doesn't exist
-    """
-    if not perms:
-        raise ValueError("You need to specify at least one permission")
-    try:
-        # Django will complain for using sync functions, but there's no easy way to do this in an async context
-        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
-
-        for perm in perms:
-            app, codename = perm.split(".")
-            try:
-                Permission.objects.get(codename=codename, content_type__app_label=app)
-            except Permission.DoesNotExist as e:
-                raise ValueError(f"Permission {perm} does not exist!") from e
-    finally:
-        # we don't want that to stay
-        del os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"]
 
 
 def is_staff():
@@ -122,7 +109,7 @@ def has_permissions(*perms: str):
     """
     Checks that the user is registered on Django and has the required permissions.
     """
-    _verify_existing_permissions(*perms)
+    registered_perms.update(perms)
 
     async def check(ctx: Context) -> bool:
         user = await get_user_for_check(ctx.bot, ctx.author)
@@ -137,7 +124,7 @@ def has_any_permissions(*perms: str):
     """
     Checks that the user is registered on Django and has any of the required permissions.
     """
-    _verify_existing_permissions(*perms)
+    registered_perms.update(*perms)
 
     async def check(ctx: Context) -> bool:
         user = await get_user_for_check(ctx.bot, ctx.author)

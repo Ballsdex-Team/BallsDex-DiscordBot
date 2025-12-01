@@ -28,6 +28,7 @@ from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.help import HelpCommand
 from ballsdex.core.metrics import PrometheusServer
+from ballsdex.core.utils.checks import check_perms
 from bd_models.models import (
     Ball,
     BlacklistedGuild,
@@ -288,6 +289,8 @@ class BallsDexBot(commands.AutoShardedBot):
         guild: discord.abc.Snowflake | None = MISSING,
         guilds: Sequence[discord.abc.Snowflake] = MISSING,
     ) -> None:
+        # hook that will check before loading a cog that Django permission checks are valid
+        await check_perms()
         await super().add_cog(cog, override=override, guild=guild, guilds=guilds)
         if self.is_ready():
             await self.tree.load_command_mentions(cog=cog)
