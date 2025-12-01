@@ -138,7 +138,7 @@ docker compose down --volumes
 ## 4. Reconfigure the settings
 
 Ballsdex 3.0 does not use `config.yml` anymore for its configuration, instead it's all on the
-admin panel. However, the migration cannot be performed automatically for now.
+admin panel. You can still import your old settings.
 
 1.  If you do not have one, [create a local admin account](/selfhosting/admin-panel/getting-started/)
 2.  Start the admin panel
@@ -175,9 +175,14 @@ admin panel. However, the migration cannot be performed automatically for now.
 
             You will have to find a solution later to expose the static files yourself.
 
-3.  Open [the new settings page](http://localhost:8000/settings/settings/1/change/) and copy over
-    the values from `config.yml`
-4.  Save the settings
+3.  Open [the new settings page](http://localhost:8000/settings/settings/)
+4.  Tick the checkbox next to "Global bot settings"
+5.  In the "Action" drop-down, select "Import YAML settings" and click "Go"
+6.  Choose the `config.yml` file to upload, and continue
+7.  Verify that all the settings were imported as intended.
+
+!!! warning
+    This will override settings you have previously configured here.
 
 ---
 

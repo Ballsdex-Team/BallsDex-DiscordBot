@@ -225,6 +225,11 @@ class PromptMessage(models.Model):
     message = models.TextField(help_text="The message to send")
     category = models.PositiveSmallIntegerField(help_text="Message category", choices=PromptType)
 
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(fields=("message", "category"), name="message_category_unique_together"),
+        )
+
     def __str__(self) -> str:
         return ""
 
