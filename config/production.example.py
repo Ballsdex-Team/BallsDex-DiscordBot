@@ -1,7 +1,7 @@
 # Copy this file as "production.py" and set the environment variable
 # DJANGO_SETTINGS_MODULE=admin_panel.settings.production to enable serving over the internet
 
-from .production_base import *
+from admin_panel.settings.production_base import *  # noqa: F403
 
 # Generate a long random string here for your secret key. It is important to keep it secret,
 # leaking it could allow attackers to do privilege escalation.
@@ -20,7 +20,9 @@ ALLOWED_HOSTS = [
 # If you wonder how many pools you need, check this:
 # https://www.psycopg.org/psycopg3/docs/advanced/pool.html#what-s-the-right-size-for-the-pool
 # The following eval will show you the result of get_stats():
-# b.eval from django.db import connection; from asgiref.sync import sync_to_async; return await sync_to_async(lambda: connection.pool.get_stats())()
+# b.eval from django.db import connection
+# from asgiref.sync import sync_to_async
+# return await sync_to_async(lambda: connection.pool.get_stats())()
 
 
 # If you are handling TLS/HTTPS yourself, uncomment this line to enforce HTTPS connections

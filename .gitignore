@@ -33,6 +33,6 @@ media
 
 # settings
 config.yml
-config
+config/production.py
 docker-compose.override.yml
 admin_panel/admin_panel/settings/production.py

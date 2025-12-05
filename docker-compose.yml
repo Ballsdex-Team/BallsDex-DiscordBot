@@ -6,7 +6,7 @@ x-common-env-vars:
   - &postgres-url
     "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
   # if serving the admin panel online, copy the file "production.example.py" and replace with
-  # - DJANGO_SETTINGS_MODULE=admin_panel.settings.production
+  # - DJANGO_SETTINGS_MODULE=config.production
   - &django-settings
     "DJANGO_SETTINGS_MODULE=admin_panel.settings"
 
@@ -30,6 +30,7 @@ services:
       - internal
     volumes:
       - "./logs/:/var/log/ballsdex/:rw"
+      - "./config:/code/admin_panel/config:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
     working_dir: /code/
@@ -75,6 +76,7 @@ services:
         condition: service_healthy
     volumes:
       - "./logs/:/var/log/ballsdex/:rw"
+      - "./config:/code/admin_panel/config:ro"
       - "./admin_panel/templates:/code/admin_panel/templates:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
@@ -91,6 +93,7 @@ services:
       - *django-settings
       - "STATIC_ROOT=/var/www/ballsdex/static"
     volumes:
+      - "./config:/code/admin_panel/config:ro"
       - "./admin_panel/staticfiles:/code/admin_panel/staticfiles:ro"
       - static-files:/var/www/ballsdex/static:rw
     depends_on:
