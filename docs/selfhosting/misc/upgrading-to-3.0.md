@@ -6,13 +6,19 @@ This guide will help you upgrade from 2.X to Ballsdex 3.0.
     If you have modifications or custom packages, you must remove them before upgrading. Once
     you have upgraded, you can look for the updated version of your packages.
 
-## 1. Pre-requirements
+## 1. Pre-requirements and disclaimers
 
+- There must be no custom package. Remove any custom package you may have, and only after the bot
+  migration you may look into migrating them.
+- If you are relying on eval to run your bot, be aware that they will most likely break and
+  need to be rewritten.
 - The output of `git status` must show **no modified or untracked files**!
-  - If you have files listed there, copy the modifications and run `git reset --hard HEAD`
+    - If you have files listed there, copy the modifications and run `git reset --hard HEAD`
 - You must be running on the latest 2.X version
-  - Run a normal update and restart your bot once to ensure you're up-to-date.
+    - Run a normal update and restart your bot once to ensure you're up-to-date.
 - If you're running nginx locally, ditch your configuration. It's now included in Docker.
+- If you have a list of admins on the admin panel that you wish to preserve, be prepared to back
+  them up. The admins will be wiped and won't be recovered during the migration.
 - Turn off your bot now
 
     === "With Docker"
@@ -34,17 +40,60 @@ This guide will help you upgrade from 2.X to Ballsdex 3.0.
     ```bash
     docker compose up -d postgres-db --wait && \
         docker compose exec postgres-db pg_dump -U ballsdex ballsdex -f data-dump.sql && \
-        docker compose cp postgres-db:data-dump.sql .
+        docker compose cp postgres-db:data-dump.sql pre-migration-data-dump.sql
     ```
 
 === "Without Docker"
 
     ```bash
-    pg_dump -U ballsdex ballsdex -f data-dump.sql
+    pg_dump -U ballsdex ballsdex -f pre-migration-data-dump.sql
     ```
 
-Triple-check that there is a `data-dump.sql` file and that it's not empty!
+Triple-check that there is a `pre-migration-data-dump.sql` file and that it's not empty!
 You may also want to copy it to different locations just to be sure.
+
+## 3. Prepare your data for the migration
+
+For the migration to work successfully, we need to drop multiple tables related to Django
+authentication.
+
+!!! warning
+    **Past this point, you will lose all of your administrators configured on the admin panel.**
+
+    It most likely matters little for 95% of you, the admins can be re-created later in a few
+    seconds. However, if you have spent a long time adding a lot of admins with custom permissions,
+    you may want to write down those information.
+
+Run the following commands to wipe a selection of tables, then create a new backup.
+
+=== "With Docker"
+
+    ```bash
+    docker compose up -d postgres-db --wait && \
+        docker compose exec migration python3 manage.py migrate admin zero && \
+        docker compose exec migration python3 manage.py migrate auth zero && \
+        docker compose exec migration python3 manage.py migrate contenttypes zero && \
+        docker compose exec migration python3 manage.py migrate sessions zero && \
+        docker compose exec postgres-db pg_dump -U ballsdex ballsdex -f data-dump.sql && \
+        docker compose cp postgres-db:data-dump.sql final-data-dump.sql
+    ```
+
+=== "Without Docker"
+
+    ```bash
+    # activate your venv and export BALLSDEXBOT_DB_URL
+    cd admin_panel
+    python3 manage.py migrate admin zero
+    python3 manage.py migrate auth zero
+    python3 manage.py migrate contenttypes zero
+    python3 manage.py migrate sessions zero
+
+    pg_dump -U ballsdex ballsdex -f final-data-dump.sql
+    ```
+
+You now have two files: `pre-migration-data-dump.sql` and `final-data-dump.sql`
+- `pre-migration` must be used if you wish to roll back to 2.X, it's an unmodified backup
+- `final` must be used for the following steps. **Do not use it to roll back to 2.X, it won't work!**
 
 ### Wipe the database
 
@@ -54,7 +103,8 @@ This only applies to Docker users.
 of the database, which will be imported later from your backup.
 
 !!! warning
-    Are you 100% sure you have backed everything up? Check again now.
+    Are you 100% sure you have backed everything up?
+    Check again now that `pre-migration-data-dump.sql` exists.
 
 Run the following command to delete your database.
 
@@ -62,7 +112,7 @@ Run the following command to delete your database.
 docker compose down --volumes
 ```
 
-## 3. Perform the upgrade
+## 4. Perform the upgrade
 
 === "With Docker"
 
@@ -77,7 +127,7 @@ docker compose down --volumes
         ```
     3.  Import your database dump
         ```bash
-        cat data-dump.sql | docker compose exec -T postgres-db psql -U ballsdex ballsdex
+        cat final-data-dump.sql | docker compose exec -T postgres-db psql -U ballsdex ballsdex
         ```
     4.  Rebuild the bot
         ```bash
@@ -135,12 +185,13 @@ docker compose down --volumes
         cd admin_panel && python3 manage.py migrate
         ```
 
-## 4. Reconfigure the settings
+## 5. Reconfigure the settings
 
 Ballsdex 3.0 does not use `config.yml` anymore for its configuration, instead it's all on the
 admin panel. You can still import your old settings.
 
-1.  If you do not have one, [create a local admin account](/selfhosting/admin-panel/getting-started/)
+1.  [Create a local admin account](/selfhosting/admin-panel/getting-started/).
+    Remember that all admin accounts were lost in the process, you have to recreate one.
 2.  Start the admin panel
 
     === "With Docker"

@@ -1,5 +1,3 @@
-import discord
-from django.contrib.auth.models import User
 from django.db import connection
 
 
@@ -37,10 +35,3 @@ def row_count_estimate(table_name: str, *, analyze: bool = True) -> int:
             return row_count_estimate(table_name, analyze=False)  # prevent recursion error
 
     return result
-
-
-async def get_django_user(user: discord.abc.User) -> User | None:
-    try:
-        return await User.objects.aget(social_auth__uid=str(user.id), social_auth__provider="discord")
-    except User.DoesNotExist:
-        return None

@@ -16,6 +16,10 @@ def create_perms(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("bd_models", "0012_alter_ballinstance_locked_and_more")]
+    dependencies = [
+        ("bd_models", "0012_alter_ballinstance_locked_and_more"),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("auth", "0011_update_proxy_permissions"),
+    ]
 
     operations = [migrations.RunPython(create_perms, reverse_code=migrations.RunPython.noop)]

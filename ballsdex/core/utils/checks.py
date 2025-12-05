@@ -20,13 +20,13 @@ from discord import app_commands
 from discord.ext import commands
 from django.contrib.auth.models import Permission
 
-from .django import get_django_user
+from users.utils import get_user_model
 
 if TYPE_CHECKING:
     from discord.ext.commands._types import Check as CommandsCheck
-    from django.contrib.auth.models import User
 
     from ballsdex.core.bot import BallsDexBot
+    from users.models import User
 
 type Context = commands.Context["BallsDexBot"]
 
@@ -69,7 +69,7 @@ async def get_user_for_check(bot: "BallsDexBot", user: discord.abc.User) -> "boo
     """
     if await bot.is_owner(user):
         return True
-    dj_user = await get_django_user(user)
+    dj_user = await get_user_model().objects.filter(discord_id=user.id).aget()
     if not dj_user or not dj_user.is_active:
         return False
     if dj_user.is_superuser:

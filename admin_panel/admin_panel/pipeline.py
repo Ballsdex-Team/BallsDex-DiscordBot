@@ -3,27 +3,10 @@ from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
 import aiohttp
-from asgiref.sync import async_to_sync, sync_to_async
+from asgiref.sync import async_to_sync
 from django.contrib import messages
-from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import Group
 
-from bd_models.models import (
-    Ball,
-    BallInstance,
-    BlacklistedGuild,
-    BlacklistedID,
-    BlacklistHistory,
-    Block,
-    Economy,
-    Friendship,
-    GuildConfig,
-    Player,
-    Regime,
-    Special,
-    Trade,
-    TradeObject,
-)
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -47,22 +30,6 @@ class Status(Enum):
     OWNER = 4  # owns the application
 
 
-async def get_permissions(permissions: perm_dict) -> list[Permission]:
-    """
-    Returns the list of permissions objects from a dictionnary mapping models to permission codes.
-    """
-    result: list[Permission] = []
-    for model, perms in permissions.items():
-        content_type = await sync_to_async(ContentType.objects.get_for_model)(model)
-        if perms == "*":
-            perms = ["add", "change", "delete", "view"]
-        for perm in perms:
-            result.append(
-                await Permission.objects.aget(content_type=content_type, codename=f"{perm}_{model._meta.model_name}")
-            )
-    return result
-
-
 async def assign_status(request: "HttpRequest", response: dict, user: "User", status: Status):
     """
     Assign the correct attributes and groups to the user based on the given status.
@@ -73,45 +40,21 @@ async def assign_status(request: "HttpRequest", response: dict, user: "User", st
     user.is_staff = True
     if status == Status.STAFF:
         user.is_superuser = False
-        group, created = await Group.objects.aget_or_create(name="Staff")
-        if created:
-            perms: perm_dict = {
-                BallInstance: ["view"],
-                BlacklistedGuild: "*",
-                BlacklistedID: "*",
-                BlacklistHistory: ["view"],
-                Block: "*",
-                Friendship: "*",
-                GuildConfig: ["view", "change"],
-                Player: ["view", "change"],
-                Trade: ["view"],
-                TradeObject: ["view"],
-            }
-            await group.permissions.aadd(*await get_permissions(perms))
-        await user.groups.aadd(group)
+        try:
+            group = await Group.objects.aget(name="Staff")
+        except Group.DoesNotExist:
+            pass
+        else:
+            await user.groups.aadd(group)
         message = "You were assigned the Staff status because of your Discord roles."
     elif status == Status.ADMIN:
         user.is_superuser = False
-        group, created = await Group.objects.aget_or_create(name="Admin")
-        if created:
-            perms: perm_dict = {
-                Ball: "*",
-                Regime: "*",
-                Economy: "*",
-                Special: "*",
-                BallInstance: "*",
-                BlacklistedGuild: "*",
-                BlacklistedID: "*",
-                BlacklistHistory: ["view"],
-                Block: "*",
-                Friendship: "*",
-                GuildConfig: "*",
-                Player: "*",
-                Trade: ["view"],
-                TradeObject: ["view"],
-            }
-            await group.permissions.aadd(*await get_permissions(perms))
-        await user.groups.aadd(group)
+        try:
+            group = await Group.objects.aget(name="Admin")
+        except Group.DoesNotExist:
+            pass
+        else:
+            await user.groups.aadd(group)
         message = "You were assigned the Admin status because of your Discord roles."
     elif status == Status.TEAM_MEMBER:
         user.is_superuser = True
