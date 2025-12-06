@@ -19,7 +19,7 @@ below and follow the prompts.
 
     ```bash
     docker compose up -d admin-panel
-    docker compose exec admin-panel python3 manage.py createsuperuser
+    docker compose exec admin-panel django-admin createsuperuser
     ```
 
 === "Without Docker"
