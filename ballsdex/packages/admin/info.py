@@ -34,10 +34,10 @@ class PlayerInfoView(discord.ui.View):
         )
         embed = discord.Embed(title=f"Last {len(recent_balls)} catches for {self.username}")
         for ball in recent_balls:
-            catch_time = int((ball.catch_date - ball.spawned_time).total_seconds())
+            catch_time = (ball.catch_date - ball.spawned_time).total_seconds()
             embed.add_field(
                 name=ball.description(short=True),
-                value=f"{catch_time // 60}:{catch_time % 60:02} in {ball.server_id}",
+                value=f"{catch_time:.3f}s in {ball.server_id}",
                 inline=False,
             )
         await interaction.response.send_message(embed=embed, ephemeral=True)
