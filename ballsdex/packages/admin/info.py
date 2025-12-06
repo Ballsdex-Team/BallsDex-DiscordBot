@@ -27,7 +27,7 @@ class PlayerInfoView(discord.ui.View):
         # Display the last 10 catches of the user, and how long it took for each catch
         recent_balls = (
             await BallInstance.filter(
-                player=self.player,
+                player=self.player, spawned_time__isnull=False, trade_player=None
             )
             .order_by("-catch_date")
             .limit(10)
