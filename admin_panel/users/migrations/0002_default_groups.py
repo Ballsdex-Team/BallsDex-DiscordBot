@@ -27,7 +27,9 @@ def get_permissions(
             perms = ["add", "change", "delete", "view"]
         for perm in perms:
             result.append(
-                permission_model.objects.get(content_type=content_type, codename=f"{perm}_{model._meta.model_name}")
+                permission_model.objects.get_or_create(
+                    content_type=content_type, codename=f"{perm}_{model._meta.model_name}"
+                )[0]
             )
     return result
 
