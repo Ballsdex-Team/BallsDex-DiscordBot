@@ -922,6 +922,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         specials = (
             BallInstance.filter(player=player)
             .exclude(special=None)
+            .exclude(special__hidden=True)
             .annotate(count=Count("id"))
             .group_by("special__name")
         )

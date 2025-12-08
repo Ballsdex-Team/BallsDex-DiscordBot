@@ -152,6 +152,7 @@ class DuplicateViewMenu(Pages):
             grouped_query = (
                 BallInstance.filter(player=player, ball=countryball)
                 .exclude(special=None)
+                .exclude(special__hidden=True)
                 .annotate(count=Count("id"))
                 .group_by("special__name")
             )
