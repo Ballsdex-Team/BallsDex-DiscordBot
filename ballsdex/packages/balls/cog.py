@@ -133,6 +133,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        ephemeral: bool = False,
     ):
         """
         List your countryballs.
@@ -151,9 +152,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Filter the list by a specific special event.
         filter: FilteringChoices
             Filter the list by a specific filter.
+        ephemeral: bool
+            Whether or not to send the command ephemerally.
         """
         user_obj = user or interaction.user
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=ephemeral)
 
         try:
             player = await Player.get(discord_id=user_obj.id)
@@ -235,6 +238,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        ephemeral: bool = False,
     ):
         """
         Show your current completion of the BallsDex.
@@ -247,9 +251,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The special you want to see the completion of
         filter: FilteringChoices
             Filter the list by a specific filter.
+        ephemeral: bool
+            Whether or not to send the command ephemerally.
         """
         user_obj = user or interaction.user
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=ephemeral)
         extra_text = f"{special.name} " if special else ""
         if user is not None:
             try:
