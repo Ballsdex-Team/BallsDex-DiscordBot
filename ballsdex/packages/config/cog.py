@@ -71,6 +71,13 @@ class Config(commands.GroupCog):
 
         guild = interaction.guild
         assert guild
+        if guild.unavailable:
+            await interaction.response.send_message(
+                "The server is unavailable to the bot and will not work properly. "
+                "Kicking and readding the bot may fix this.",
+                ephemeral=True,
+            )
+            return
         readable_channels = len(
             [x for x in guild.text_channels if x.permissions_for(guild.me).read_messages]
         )
