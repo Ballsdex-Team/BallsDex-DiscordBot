@@ -912,6 +912,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         query = (
             BallInstance.filter(player=player)
+            .exclude(special__hidden=True)
             .annotate(
                 total=RawSQL("COUNT(*)"),
                 traded=RawSQL("SUM(CASE WHEN trade_player_id IS NULL THEN 0 ELSE 1 END)"),

@@ -148,7 +148,7 @@ class DuplicateViewMenu(Pages):
             countryball = await Ball.get(country=item.values[0])
             balls_query = balls_query.filter(ball=countryball).annotate(
                 specials=RawSQL("SUM(CASE WHEN special_id IS NULL THEN 0 ELSE 1 END)")
-            )
+            ).exclude(special__hidden=True)
             grouped_query = (
                 BallInstance.filter(player=player, ball=countryball)
                 .exclude(special=None)
