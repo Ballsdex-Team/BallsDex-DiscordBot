@@ -168,6 +168,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
             return
         if user is not None:
+            if user.id in self.bot.blacklist:
+                await interaction.followup.send(
+                    "You cannot view the inventory of a blacklisted user.", ephemeral=True
+                )
+                return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
@@ -258,6 +263,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 await interaction.followup.send(
                     f"{user_obj.name} doesn't have any "
                     f"{extra_text}{settings.plural_collectible_name} yet."
+                )
+                return
+            if user.id in self.bot.blacklist:
+                await interaction.followup.send(
+                    "You cannot view the inventory of a blacklisted user.", ephemeral=True
                 )
                 return
 
@@ -422,6 +432,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         if user is not None:
+            if user.id in self.bot.blacklist:
+                await interaction.followup.send(
+                    "You cannot view the inventory of a blacklisted user.", ephemeral=True
+                )
+                return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
@@ -797,6 +812,12 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         except DoesNotExist:
             await interaction.followup.send(
                 f"{user.display_name} doesn't have any {settings.plural_collectible_name} yet."
+            )
+            return
+        
+        if user.id in self.bot.blacklist:
+            await interaction.followup.send(
+                "You cannot view the inventory of a blacklisted user.", ephemeral=True
             )
             return
 
