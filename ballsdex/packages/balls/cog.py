@@ -434,7 +434,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if user is not None:
             if user.id in self.bot.blacklist:
                 await interaction.followup.send(
-                    f"You cannot view the last caught {settings.collectible_name} of a blacklisted user.", ephemeral=True
+                    (
+                        "You cannot view the last caught "
+                        f"{settings.collectible_name} of a blacklisted user."
+                    ),
+                    ephemeral=True,
                 )
                 return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
@@ -814,7 +818,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 f"{user.display_name} doesn't have any {settings.plural_collectible_name} yet."
             )
             return
-        
+
         if user.id in self.bot.blacklist:
             await interaction.followup.send(
                 "You cannot compare the inventory of a blacklisted user.", ephemeral=True
