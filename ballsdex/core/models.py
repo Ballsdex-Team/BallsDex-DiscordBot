@@ -379,9 +379,19 @@ class BallInstance(models.Model):
                 else f"user with ID {self.trade_player.discord_id}"
             )
             trade_content = f"Obtained by trade with {original_player_name}.\n"
+
+        catch_time: timedelta | None = (
+            self.catch_date - self.spawned_time
+            if (self.catch_date and self.spawned_time)
+            else None
+        )
+
+        catch_time_msg = f" in {catch_time.total_seconds():.3f}s" if catch_time else ""
+
         content = (
             f"ID: `#{self.pk:0X}`\n"
-            f"Caught on {format_dt(self.catch_date)} ({format_dt(self.catch_date, style='R')}).\n"
+            f"Caught on {format_dt(self.catch_date)}{catch_time_msg}"
+            f" ({format_dt(self.catch_date, style='R')}).\n"
             f"{trade_content}\n"
             f"ATK: {self.attack} ({self.attack_bonus:+d}%)\n"
             f"HP: {self.health} ({self.health_bonus:+d}%)"
