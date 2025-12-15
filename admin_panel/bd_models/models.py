@@ -293,11 +293,11 @@ class Ball(models.Model):
 
     @property
     def cached_regime(self) -> Regime:
-        return regimes.get(self.regime_id, self.regime)
+        return regimes.get(self.regime_id) or self.regime
 
     @property
     def cached_economy(self) -> Economy | None:
-        return economies.get(self.economy_id, self.economy) if self.economy_id else None
+        return economies.get(self.economy_id) or self.economy if self.economy_id else None
 
     def __str__(self) -> str:
         return self.country
