@@ -188,7 +188,6 @@ class BallsDexBot(commands.AutoShardedBot):
         self.prometheus_server: PrometheusServer | None = None
 
         self.tree.error(self.on_application_command_error)
-        self.add_check(owner_check)  # Only owners are able to use text commands
 
         self._shutdown = 0
         self.startup_time: datetime | None = None
