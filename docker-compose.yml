@@ -43,6 +43,12 @@ services:
           action: sync
           ignore:
             - "*.pyc"
+        - path: ./extra
+          target: /opt/venv/lib/python3.14/site-packages
+          initial_sync: true
+          action: sync
+          ignore:
+            - "*.pyc"
         - path: ./ballsdex
           target: /opt/venv/lib/python3.14/site-packages/ballsdex
           initial_sync: true
@@ -94,6 +100,12 @@ services:
             - "settings/**/*.py"
             - "templates/**/*"
             - "users/**/*.py"
+        - path: ./extra
+          target: /opt/venv/lib/python3.14/site-packages
+          initial_sync: true
+          action: sync
+          ignore:
+            - "*.pyc"
         - path: ./uv.lock
           action: rebuild
 
@@ -112,7 +124,16 @@ services:
       postgres-db:
         condition: service_healthy
     command: >
-      sh -c "django-admin migrate --no-input --fake-initial"
+      sh -c "python3 -m django migrate --no-input --fake-initial"
+
+    develop:
+      watch:
+        - path: ./extra
+          target: /opt/venv/lib/python3.14/site-packages
+          initial_sync: true
+          action: sync
+          ignore:
+            - "*.pyc"
 
   proxy:
     build:

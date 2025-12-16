@@ -13,6 +13,7 @@ ENV PYTHONFAULTHANDLER=1 \
     UV_LINK_MODE=copy \
     VIRTUAL_ENV=/opt/venv \
     BALLSDEX_LOG_DIR=/var/log/ballsdex \
+    BALLSDEXBOT_EXTRA_TOML=/code/admin_panel/config/extra.toml \
     STATIC_ROOT=/var/www/ballsdex/static \
     DJANGO_SETTINGS_MODULE=admin_panel.settings
 
@@ -40,13 +41,18 @@ COPY uv.lock pyproject.toml /code/
 RUN --mount=type=cache,target=/root/.cache/ \
     uv venv $VIRTUAL_ENV && \
     uv sync --locked --no-install-project --no-editable --active
-COPY . /code/
+COPY --parents admin_panel ballsdex LICENSE /code/
 RUN --mount=type=cache,target=/root/.cache/ \
     uv sync --locked --no-editable --active && \
     django-admin collectstatic --no-input
 
 FROM nginx:1.29.3-alpine3.22 AS proxy
 COPY --from=builder-base /var/www/ballsdex/static /var/www/ballsdex/static
+
+# this is running in a separate layer to allow bots with different extra packages to run on the same base layer
+COPY --parents bdextra.py config/extra.toml extra /code/
+RUN --mount=type=cache,target=/root/.cache/ \
+    if [ -f config/extra.toml ]; then uv pip install $(python3 bdextra.py config/extra.toml); fi
 
 FROM base AS production
 COPY --from=builder-base /opt/venv /opt/venv
