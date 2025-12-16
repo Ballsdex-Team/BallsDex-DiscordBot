@@ -69,8 +69,12 @@ async def get_user_for_check(bot: "BallsDexBot", user: discord.abc.User) -> "boo
     """
     if await bot.is_owner(user):
         return True
-    dj_user = await get_user_model().objects.filter(discord_id=user.id).aget()
-    if not dj_user or not dj_user.is_active:
+    user_model = get_user_model()
+    try:
+        dj_user = await user_model.objects.filter(discord_id=user.id).aget()
+    except user_model.DoesNotExist:
+        return False
+    if not dj_user.is_active:
         return False
     if dj_user.is_superuser:
         return True
