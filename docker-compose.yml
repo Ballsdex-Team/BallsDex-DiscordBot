@@ -103,7 +103,7 @@ services:
         - path: ./extra
           target: /opt/venv/lib/python3.14/site-packages
           initial_sync: true
-          action: sync
+          action: sync+restart
           ignore:
             - "*.pyc"
         - path: ./uv.lock
