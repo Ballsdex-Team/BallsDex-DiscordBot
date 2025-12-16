@@ -20,10 +20,13 @@ class Package(TypedDict, total=True):
     location: str
     path: str
     enabled: bool
+    editable: bool
 
 
 def list_pip_packages(packages: list[Package]):
-    print(" ".join(f"{x['location']}" for x in packages if x["enabled"] and x["location"]))
+    print(
+        " ".join(f"{'-e ' if x['editable'] else ''}{x['location']}" for x in packages if x["enabled"] and x["location"])
+    )
 
 
 def main(toml_file: str):

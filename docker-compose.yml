@@ -31,6 +31,7 @@ services:
     volumes:
       - "./logs/:/var/log/ballsdex/:rw"
       - "./config:/code/admin_panel/config:ro"
+      - "./extra:/code/extra:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
     command: python3 -m ballsdex --dev
@@ -39,12 +40,6 @@ services:
       watch:
         - path: ./ballsdex/packages
           target: /opt/venv/lib/python3.14/site-packages/ballsdex/packages
-          initial_sync: true
-          action: sync
-          ignore:
-            - "*.pyc"
-        - path: ./extra
-          target: /opt/venv/lib/python3.14/site-packages
           initial_sync: true
           action: sync
           ignore:
@@ -82,6 +77,7 @@ services:
     volumes:
       - "./logs/:/var/log/ballsdex/:rw"
       - "./config:/code/admin_panel/config:ro"
+      - "./extra:/code/extra:ro"
       - "./admin_panel/templates:/code/admin_panel/templates:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
@@ -100,12 +96,6 @@ services:
             - "settings/**/*.py"
             - "templates/**/*"
             - "users/**/*.py"
-        - path: ./extra
-          target: /opt/venv/lib/python3.14/site-packages
-          initial_sync: true
-          action: sync+restart
-          ignore:
-            - "*.pyc"
         - path: ./uv.lock
           action: rebuild
 
@@ -120,20 +110,12 @@ services:
       - "STATIC_ROOT=/var/www/ballsdex/static"
     volumes:
       - "./config:/code/admin_panel/config:ro"
+      - "./extra:/code/extra:rw"
     depends_on:
       postgres-db:
         condition: service_healthy
     command: >
       sh -c "python3 -m django migrate --no-input --fake-initial"
-
-    develop:
-      watch:
-        - path: ./extra
-          target: /opt/venv/lib/python3.14/site-packages
-          initial_sync: true
-          action: sync
-          ignore:
-            - "*.pyc"
 
   proxy:
     build:
