@@ -1,42 +1,100 @@
 from io import BytesIO
+from typing import Any
 
-from django.db.models import Q
+import psycopg
+from django.db import connection
+from django.db.models import F, Func, OuterRef, Q, Subquery, TextField, Value
+from django.db.models.functions import Upper
 
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 from settings.models import settings
+
+
+async def copy_to(body: str, *params: str) -> BytesIO:
+    # To get a fast export, we want to use "COPY TO" and send the output, without processing it.
+    # However, we have two problems
+    # - Django ORM doesn't expose COPY methods, so we need to get the low-end psycopg cursor
+    # - The query must be made async, but Django still uses the synchronous API of psycopg
+    # For that reason, we will just instanciate our own async psycopg connection
+    #
+    # Sources:
+    # https://www.psycopg.org/psycopg3/docs/advanced/async.html#async
+    # https://www.psycopg.org/psycopg3/docs/basic/copy.html
+
+    # get the connection parameters from django
+    db_params: dict[str, Any] = connection.get_connection_params()
+    # remove django's custom objects
+    db_params.pop("cursor_factory", None)
+    db_params.pop("context", None)
+
+    async with await psycopg.AsyncConnection.connect(**db_params) as conn:
+        async with conn.cursor() as cursor:
+            async with cursor.copy(f"COPY ({body}) TO STDOUT WITH (FORMAT csv, HEADER)", params) as copy:  # pyright: ignore[reportArgumentType]
+                buffer = BytesIO()
+                # it's important to iterate the query to avoid unfinished commands
+                async for row in copy:
+                    buffer.write(row)
+                buffer.seek(0)
+    return buffer
 
 
 async def get_items_csv(player: Player) -> BytesIO:
     """
     Get a CSV file with all items of the player.
     """
-    balls = BallInstance.objects.filter(player=player).prefetch_related("ball", "trade_player", "special")
-    txt = f"id,hex id,{settings.collectible_name},catch date,trade_player,special,attack,attack bonus,hp,hp_bonus\n"
-    async for ball in balls:
-        txt += (
-            f"{ball.id},{ball.id:0X},{ball.ball.country},{ball.catch_date},"  # type: ignore
-            f"{ball.trade_player.discord_id if ball.trade_player else 'None'},{ball.special},"
-            f"{ball.attack},{ball.attack_bonus},{ball.health},{ball.health_bonus}\n"
+    queryset = (
+        BallInstance.objects.with_stats()
+        .filter(player=player)
+        .annotate(
+            hex_id=Upper(Func(F("id"), function="to_hex")),
+            traded_with=F("trade_player__discord_id"),
+            special_card=F("special__name"),
+            **{settings.collectible_name: F("ball__country")},
         )
-    return BytesIO(txt.encode("utf-8"))
+        .only("id", "catch_date", "attack_bonus", "health_bonus")
+    )
+    query, params = queryset.query.sql_with_params()
+    print(queryset.query)
+    return await copy_to(query, *(str(x) for x in params))
 
 
 async def get_trades_csv(player: Player) -> BytesIO:
     """
     Get a CSV file with all trades of the player.
     """
-    trade_history = (
+    queryset = (
         Trade.objects.filter(Q(player1=player) | Q(player2=player))
         .order_by("date")
-        .prefetch_related("player1", "player2")
-    )
-    txt = "id,date,player1,player2,player1 received,player2 received\n"
-    async for trade in trade_history:
-        player1_items = TradeObject.objects.filter(trade=trade, player=trade.player1).prefetch_related("ballinstance")
-        player2_items = TradeObject.objects.filter(trade=trade, player=trade.player2).prefetch_related("ballinstance")
-        txt += (
-            f"{trade.pk},{trade.date},{trade.player1.discord_id},{trade.player2.discord_id},"
-            f"{','.join([str(i.ballinstance) async for i in player2_items])},"
-            f"{','.join([str(i.ballinstance) async for i in player1_items])}\n"
+        .annotate(
+            p1=F("player1__discord_id"),
+            p1_sent=Subquery(
+                TradeObject.objects.filter(trade_id=OuterRef("pk"), player_id=OuterRef("player1_id"))
+                .annotate(
+                    agg=Func(
+                        Upper(Func(F("id"), function="to_hex")),
+                        Value(";"),
+                        function="string_agg",
+                        output_field=TextField(),
+                    )
+                )
+                .values("agg")
+            ),
+            p2=F("player2__discord_id"),
+            p2_sent=Subquery(
+                TradeObject.objects.filter(trade_id=OuterRef("pk"), player_id=OuterRef("player2_id"))
+                .annotate(
+                    agg=Func(
+                        Upper(Func(F("id"), function="to_hex")),
+                        Value(";"),
+                        function="string_agg",
+                        output_field=TextField(),
+                    )
+                )
+                .values("agg")
+            ),
         )
-    return BytesIO(txt.encode("utf-8"))
+        .only("id", "date")
+    )
+    query, params = queryset.query.sql_with_params()
+    print(queryset.query)
+    return await copy_to(query, *(str(x) for x in params))

@@ -13,7 +13,8 @@ from discord.utils import format_dt
 from django.contrib import admin
 from django.core.cache import cache
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
+from django.db.models.functions import Cast
 from django.utils import timezone
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
@@ -204,19 +205,27 @@ class EnabledManager[T: models.Model](Manager[T]):
         return super().get_queryset().filter(enabled=True)
 
 
-class TradeableManager[T: models.Model](Manager[T]):
-    def get_queryset(self) -> models.QuerySet[T]:
-        return super().get_queryset().filter(tradeable=True)
-
-
 class SpecialEnabledManager(Manager["Special"]):
     def get_queryset(self) -> models.QuerySet[Special]:
         return super().get_queryset().filter(hidden=False)
 
 
-class BallInstanceManager[T: models.Model](Manager[T]):
+class BaseBallInstanceManager[T: models.Model](Manager[T]):
+    def with_stats(self):
+        return self.annotate(
+            attack=Cast(F("attack_bonus"), models.BigIntegerField()) * F("ball__attack"),
+            health=Cast(F("health_bonus"), models.BigIntegerField()) * F("ball__health"),
+        )
+
+
+class BallInstanceManager[T: models.Model](BaseBallInstanceManager[T]):
     def get_queryset(self) -> models.QuerySet[T]:
         return super().get_queryset().filter(deleted=False)
+
+
+class TradeableManager[T: models.Model](BallInstanceManager[T]):
+    def get_queryset(self) -> models.QuerySet[T]:
+        return super().get_queryset().filter(tradeable=True)
 
 
 class Special(models.Model):
@@ -353,9 +362,9 @@ class BallInstance(models.Model):
     spawned_time = models.DateTimeField(null=True)
     deleted = models.BooleanField(default=False, help_text="Whether this instance was deleted or not.")
 
-    objects: Manager[Self] = BallInstanceManager()
+    objects: BallInstanceManager[Self] = BallInstanceManager()
     tradeable_objects: TradeableManager[Self] = TradeableManager()
-    all_objects: Manager[Self] = Manager()
+    all_objects: BaseBallInstanceManager[Self] = BaseBallInstanceManager()
 
     class Meta:
         managed = True
