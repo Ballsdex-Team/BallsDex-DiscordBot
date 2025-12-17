@@ -110,21 +110,17 @@ services:
       - "STATIC_ROOT=/var/www/ballsdex/static"
     volumes:
       - "./config:/code/admin_panel/config:ro"
-      - "./admin_panel/staticfiles:/code/admin_panel/staticfiles:ro"
-      - static-files:/var/www/ballsdex/static:rw
     depends_on:
       postgres-db:
         condition: service_healthy
-    user: root
     working_dir: /code/admin_panel
     command: >
-      sh -c "
-      django-admin migrate --no-input --fake-initial &&
-      django-admin collectstatic --no-input
-      "
+      sh -c "django-admin migrate --no-input --fake-initial"
 
   proxy:
-    image: nginx:1.29.3-alpine3.22
+    build:
+      context: .
+      target: proxy
     restart: on-failure:3
     hostname: nginx
     depends_on:
@@ -137,7 +133,6 @@ services:
     volumes:
       - ./bd-nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./admin_panel/media:/var/www/ballsdex/media:ro
-      - static-files:/var/www/ballsdex/static:ro
 
   postgres-db:
     image: postgres:18.1-alpine3.22
@@ -199,8 +194,6 @@ services:
 
 volumes:
   database-data:
-  cache-data:
-  static-files:
 
 networks:
   internal:

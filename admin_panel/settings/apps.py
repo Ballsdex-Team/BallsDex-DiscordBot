@@ -13,7 +13,7 @@ class SettingsConfig(AppConfig):
     name = "settings"
 
     def ready(self):
-        if "makemigrations" in sys.argv or "migrate" in sys.argv:
+        if "makemigrations" in sys.argv or "migrate" in sys.argv or "collectstatic" in sys.argv:
             return
 
         from .models import load_settings

@@ -12,7 +12,9 @@ ENV PYTHONFAULTHANDLER=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     VIRTUAL_ENV=/opt/venv \
-    BALLSDEX_LOG_DIR=/var/log/ballsdex
+    BALLSDEX_LOG_DIR=/var/log/ballsdex \
+    STATIC_ROOT=/var/www/ballsdex/static \
+    DJANGO_SETTINGS_MODULE=admin_panel.settings
 
 # Pillow runtime dependencies
 # TODO: remove testing repository when alpine 3.22 is released (libraqm is only on edge for now)
@@ -40,7 +42,11 @@ RUN --mount=type=cache,target=/root/.cache/ \
     uv sync --locked --no-install-project --no-editable --active
 COPY . /code/
 RUN --mount=type=cache,target=/root/.cache/ \
-    uv sync --locked --no-editable --active
+    uv sync --locked --no-editable --active && \
+    django-admin collectstatic --no-input
+
+FROM nginx:1.29.3-alpine3.22 AS proxy
+COPY --from=builder-base /var/www/ballsdex/static /var/www/ballsdex/static
 
 FROM base AS production
 COPY --from=builder-base /opt/venv /opt/venv
