@@ -16,6 +16,12 @@ This guide will help you upgrade from 2.X to Ballsdex 3.0.
     - If you have files listed there, copy the modifications and run `git reset --hard HEAD`
 - You must be running on the latest 2.X version
     - Run a normal update and restart your bot once to ensure you're up-to-date.
+- For Docker users, you must have Docker Compose version 2.39.4 at least.
+  Run `docker compose version` to check, and upgrade if necessary.
+  
+    If you followed the initial install instructions on Ubuntu,
+    `sudo apt update && sudo apt upgrade` should be enough.
+
 - If you're running nginx locally, ditch your configuration. It's now included in Docker.
 - If you have a list of admins on the admin panel that you wish to preserve, be prepared to back
   them up. The admins will be wiped and won't be recovered during the migration.
