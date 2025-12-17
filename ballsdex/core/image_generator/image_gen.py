@@ -48,9 +48,7 @@ def get_credit_color(image: Image.Image, region: tuple) -> tuple:
     return (0, 0, 0, 255) if brightness > 100 else (255, 255, 255, 255)
 
 
-def draw_card(
-    ball_instance: "BallInstance", media_path: str = "./admin_panel/media/"
-) -> tuple[Image.Image, dict[str, Any]]:
+def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any]]:
     ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
     ball_credits = ball.credits
@@ -58,13 +56,13 @@ def draw_card(
     card_name = ball.cached_regime.name
     if special_image := ball_instance.special_card:
         card_name = getattr(ball_instance.specialcard, "name", card_name)
-        image = Image.open(media_path + special_image)
+        image = Image.open(special_image)
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             special_credits += f" • Special Author: {ball_instance.specialcard.credits}"
     else:
-        image = Image.open(media_path + ball.cached_regime.background.name)
+        image = Image.open(ball.cached_regime.background)
     image = image.convert("RGBA")
-    icon = Image.open(media_path + ball.cached_economy.icon.name).convert("RGBA") if ball.cached_economy else None
+    icon = Image.open(ball.cached_economy.icon).convert("RGBA") if ball.cached_economy else None
 
     draw = ImageDraw.Draw(image)
     draw.text((50, 20), ball.short_name or ball.country, font=title_font, stroke_width=2, stroke_fill=(0, 0, 0, 255))
@@ -131,7 +129,7 @@ def draw_card(
         stroke_fill=(255, 255, 255, 255),
     )
 
-    artwork = Image.open(media_path + ball.collection_card.name).convert("RGBA")
+    artwork = Image.open(ball.collection_card).convert("RGBA")
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
 
     if icon:

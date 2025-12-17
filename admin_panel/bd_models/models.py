@@ -25,6 +25,8 @@ from settings.models import settings
 from .enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy, TradeCooldownPolicy
 
 if TYPE_CHECKING:
+    from django.db.models.fields.files import ImageFieldFile
+
     from ballsdex.core.bot import BallsDexBot
 
 
@@ -403,9 +405,9 @@ class BallInstance(models.Model):
         return self.countryball.health + bonus
 
     @property
-    def special_card(self) -> str | None:
+    def special_card(self) -> "ImageFieldFile | None":
         if self.specialcard:
-            return self.specialcard.background.name or self.countryball.collection_card.name
+            return self.specialcard.background or self.countryball.collection_card
 
     @property
     def countryball(self) -> Ball:

@@ -53,7 +53,7 @@ class Command(BaseCommand):
         )
 
         instance = BallInstance(ball=ball, special=special)
-        image, kwargs = draw_card(instance, media_path="./media/")
+        image, kwargs = draw_card(instance)
 
         if sys.platform not in ("win32", "darwin") and not os.environ.get("DISPLAY"):
             self.stderr.write(

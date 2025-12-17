@@ -12,7 +12,7 @@ async def render_ballinstance(request: HttpRequest, ball_pk: int) -> HttpRespons
 
     ball = await Ball.objects.aget(pk=ball_pk)
     instance = BallInstance(ball=ball)
-    image, kwargs = draw_card(instance, media_path="./media/")
+    image, kwargs = draw_card(instance)
 
     response = HttpResponse(content_type="image/png")
     image.save(response, **kwargs)  # type: ignore
@@ -29,7 +29,7 @@ async def render_special(request: HttpRequest, special_pk: int) -> HttpResponse:
 
     special = await Special.objects.aget(pk=special_pk)
     instance = BallInstance(ball=ball, special=special)
-    image, kwargs = draw_card(instance, media_path="./media/")
+    image, kwargs = draw_card(instance)
 
     response = HttpResponse(content_type="image/png")
     image.save(response, **kwargs)  # type: ignore

@@ -33,7 +33,6 @@ services:
       - "./config:/code/admin_panel/config:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
-    working_dir: /code/
     command: python3 -m ballsdex --dev
 
     develop:
@@ -80,7 +79,6 @@ services:
       - "./admin_panel/templates:/code/admin_panel/templates:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
-    working_dir: /code/admin_panel
     command: "python3 -m uvicorn admin_panel.asgi:application --host 0.0.0.0"
 
     develop:
@@ -113,7 +111,6 @@ services:
     depends_on:
       postgres-db:
         condition: service_healthy
-    working_dir: /code/admin_panel
     command: >
       sh -c "django-admin migrate --no-input --fake-initial"
 
