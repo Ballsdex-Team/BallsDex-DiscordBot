@@ -433,29 +433,42 @@ Once your package is ready, you can choose to publish it!
     Visit [https://choosealicense.com/]() and put the contents of your license in a file named
     `LICENSE` at the root of your repository (`extra/my_cool_repo/LICENSE`).
 
-    !!! note
-        The contents of your LICENSE may be displayed via the `/about` command in the future.
-
 4.  Write a cool `README.md` describing your app.
 
 5.  Review the contents of your `pyproject.toml` and add some metadata. Don't forget to put the
     license.
 
-    ```toml hl_lines="6"
+    ```toml hl_lines="5-11 16 20-22"
     [project]
     name = "my_cool_repo"
     version = "1.0.0"
 
     description = "A very nice repository"
     license = "MIT"  # replace with your own license
+    license-files = ["LICENSE"]
     authors = [
         { name = "laggron42", email = "laggron42@ballsdex.com" },
     ]
     readme = "README.md"
+
+    dependencies = [
+        # you can require a specific version of ballsdex here
+        "ballsdex>=3.0.0",
+        # and extra dependencies if needed
+    ]
+
+    [project.urls]
+    # put your own links here
+    # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-project-urls
+    Homepage = "https://github.com/username/repo-name"
     ```
 
     Check out the [`pyproject.toml` documentation](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#writing-pyproject-toml)
     to read more about what you can put there.
+
+    !!! info
+        The `name`, `version`, `description`, `license-files`, `authors` and `project.urls` fields
+        will be displayed to all users via the core `/about` command.
 
 6.  Commit your code.
 
