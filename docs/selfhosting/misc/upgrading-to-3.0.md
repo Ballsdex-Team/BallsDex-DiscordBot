@@ -76,10 +76,10 @@ Run the following commands to wipe a selection of tables, then create a new back
 
     ```bash
     docker compose up -d postgres-db --wait && \
-        docker compose exec migration python3 manage.py migrate admin zero && \
-        docker compose exec migration python3 manage.py migrate auth zero && \
-        docker compose exec migration python3 manage.py migrate contenttypes zero && \
-        docker compose exec migration python3 manage.py migrate sessions zero && \
+        docker compose run --rm migration python3 manage.py migrate admin zero && \
+        docker compose run --rm migration python3 manage.py migrate auth zero && \
+        docker compose run --rm migration python3 manage.py migrate contenttypes zero && \
+        docker compose run --rm migration python3 manage.py migrate sessions zero && \
         docker compose exec postgres-db pg_dump -U ballsdex ballsdex -f data-dump.sql && \
         docker compose cp postgres-db:data-dump.sql final-data-dump.sql
     ```
