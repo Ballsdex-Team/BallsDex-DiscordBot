@@ -59,10 +59,10 @@ INSTALLED_APPS = [
     "settings",
 ]
 
-extra = discover_extra_packages()
-if conflict := set(INSTALLED_APPS).intersection(set(extra)):
+EXTRA_APPS = discover_extra_packages()
+if conflict := set(INSTALLED_APPS).intersection(set(EXTRA_APPS)):
     raise RuntimeError(f"Some extra apps are conflicting with core apps: {conflict}")
-INSTALLED_APPS.extend(extra)
+INSTALLED_APPS.extend(EXTRA_APPS)
 
 MIDDLEWARE = [
     "allow_cidr.middleware.AllowCIDRMiddleware",
