@@ -4,9 +4,11 @@ files: .*\.py$
 
 repos:
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.7.6
+    rev: 0.9.18
     hooks:
       - id: uv-lock
+        files: ""
+        language: system
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.10
     hooks:
