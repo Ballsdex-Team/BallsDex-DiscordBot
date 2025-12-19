@@ -41,7 +41,7 @@ COPY uv.lock pyproject.toml /code/
 RUN --mount=type=cache,target=/root/.cache/ \
     uv venv $VIRTUAL_ENV && \
     uv sync --locked --no-install-project --no-editable --active
-COPY --parents admin_panel ballsdex LICENSE /code/
+COPY --parents admin_panel ballsdex LICENSE README.md /code/
 RUN --mount=type=cache,target=/root/.cache/ \
     uv sync --locked --no-editable --active && \
     django-admin collectstatic --no-input
