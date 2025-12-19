@@ -176,19 +176,6 @@ class Settings(models.Model):
     def log_channel(self):
         return None
 
-    @property
-    @warnings.deprecated("Literal package list, a new package discovery solution is worked on")
-    def packages(self):
-        return (
-            "ballsdex.packages.admin",
-            "ballsdex.packages.balls",
-            "ballsdex.packages.guildconfig",
-            "ballsdex.packages.countryballs",
-            "ballsdex.packages.info",
-            "ballsdex.packages.players",
-            "ballsdex.packages.trade",
-        )
-
     def clean(self) -> None:
         if Settings.objects.exclude(pk=self.pk).exists():
             raise ValidationError("You can only have one instance of settings.")

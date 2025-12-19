@@ -8,5 +8,6 @@
     "python.languageServer": "Pylance",
     "python.analysis.languageServerMode": "full",
     "python.analysis.diagnosticsSource": "Pyright",
+    "python.defaultInterpreterPath": ".venv/bin/python",
     "ruff.importStrategy": "fromEnvironment",
 }

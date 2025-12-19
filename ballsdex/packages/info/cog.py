@@ -17,7 +17,7 @@ from bd_models.models import Ball
 from bd_models.models import balls as countryballs
 from settings.models import settings
 
-from .license import LicenseInfo
+from .license import LicenseInfo, extra_apps_dist
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -140,7 +140,10 @@ class Info(commands.Cog):
             python = "πthon"
         embed.set_footer(text=f"{python} {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}")
 
-        await interaction.response.send_message(embed=embed, view=LicenseInfo())
+        view = LicenseInfo()
+        if not extra_apps_dist:
+            view.remove_item(view.children[-1])
+        await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command()
     async def help(self, interaction: discord.Interaction["BallsDexBot"]):

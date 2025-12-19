@@ -7,9 +7,23 @@ import logging
 import os
 import pathlib
 import sys
+import tomllib
 from pathlib import Path
 
 import dj_database_url
+
+
+def discover_extra_packages() -> list[str]:
+    file = os.environ.get("BALLSDEXBOT_EXTRA_TOML")
+    if not file:
+        return []
+    try:
+        with open(file, "rb") as f:
+            contents = tomllib.load(f)
+    except FileNotFoundError:
+        return []
+    packages: list = contents.get("ballsdex", {}).get("packages", [])
+    return [x["path"] for x in packages if x["enabled"]]
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,6 +58,11 @@ INSTALLED_APPS = [
     "preview",
     "settings",
 ]
+
+EXTRA_APPS = discover_extra_packages()
+if conflict := set(INSTALLED_APPS).intersection(set(EXTRA_APPS)):
+    raise RuntimeError(f"Some extra apps are conflicting with core apps: {conflict}")
+INSTALLED_APPS.extend(EXTRA_APPS)
 
 MIDDLEWARE = [
     "allow_cidr.middleware.AllowCIDRMiddleware",
