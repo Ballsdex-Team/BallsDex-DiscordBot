@@ -1,5 +1,6 @@
 import enum
 import logging
+from collections import Counter
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -695,6 +696,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User,
         special: SpecialEnabledTransform | None = None,
+        duplicates: bool = False,
     ):
         """
         Compare your countryballs with another user.
@@ -705,6 +707,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The user you want to compare with
         special: Special
             Filter the results of the comparison to a special event.
+        duplicates: bool
+            Whether to compare duplicates.
         """
         await interaction.response.defer(thinking=True)
         if interaction.user == user:
@@ -716,6 +720,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         except Player.DoesNotExist:
             await interaction.followup.send(
                 f"{user.display_name} doesn't have any {settings.plural_collectible_name} yet."
+            )
+            return
+
+        if user.id in self.bot.blacklist and not is_staff(interaction):
+            await interaction.followup.send(
+                "You cannot compare the inventory of a blacklisted user.", ephemeral=True
             )
             return
 
@@ -735,12 +745,16 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         blocked = await player.is_blocked(player1)
         if blocked and not is_staff(interaction):
-            await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
+            await interaction.followup.send(
+                "You cannot compare with a user that has you blocked.", ephemeral=True
+            )
             return
 
         blocked = await player.is_blocked(player2)
         if blocked and not is_staff(interaction):
-            await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
+            await interaction.followup.send(
+                "You cannot compare with a user that has you blocked.", ephemeral=True
+            )
             return
         queryset = BallInstance.objects.filter(ball__enabled=True).distinct()
         if special:
@@ -751,22 +765,20 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         user2_balls = cast(
             list[int], [x async for x in queryset.filter(player=player2).values_list("ball_id", flat=True)]
         )
-        both = set(user1_balls) & set(user2_balls)
-        user1_only = set(user1_balls) - set(user2_balls)
-        user2_only = set(user2_balls) - set(user1_balls)
-        neither = set(bot_countryballs.keys()) - both - user1_only - user2_only
 
         special_str = f" ({special.name})" if special else ""
+        comparison_type = "Duplicates Comparison" if duplicates else "Comparison"
         text = (
-            f"## Comparison of {interaction.user.display_name} and {user.display_name}'s "
+            f"## {comparison_type} of {interaction.user.display_name} and {user.display_name}'s "
             f"{settings.plural_collectible_name}{special_str}\n"
         )
 
         def fill_fields(title: str, ids: set[int]):
-            if not ids:
-                return
             nonlocal text
             text += f"### {title}\n"
+            if not ids:
+                text += "None\n"
+                return
 
             for ball_id in ids:
                 emoji = self.bot.get_emoji(bot_countryballs[ball_id])
@@ -775,10 +787,22 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 text += f"{emoji} "
             text += "\n"
 
-        fill_fields("Both have", both)
-        fill_fields(f"{interaction.user.display_name} has", user1_only)
-        fill_fields(f"{user.display_name} has", user2_only)
-        fill_fields("Neither have", neither)
+        all_ball_ids = set(bot_countryballs.keys())
+        if duplicates:
+            u1_c, u2_c = Counter(user1_balls), Counter(user2_balls)
+            u1_d, u2_d = {b for b, c in u1_c.items() if c > 1}, {b for b, c in u2_c.items() if c > 1}
+
+            fill_fields("Both have duplicates", u1_d & u2_d)
+            fill_fields(f"Only {interaction.user.display_name} has duplicates", u1_d - u2_d)
+            fill_fields(f"Only {user.display_name} has duplicates", u2_d - u1_d)
+            fill_fields("Neither have duplicates", all_ball_ids - u1_d - u2_d)
+        else:
+            u1_s, u2_s = set(user1_balls), set(user2_balls)
+
+            fill_fields("Both have", u1_s & u2_s)
+            fill_fields(f"Only {interaction.user.display_name} has", u1_s - u2_s)
+            fill_fields(f"Only {user.display_name} has", u2_s - u1_s)
+            fill_fields("Neither have", all_ball_ids - u1_s - u2_s)
 
         view = LayoutView()
         display = TextDisplay("")
