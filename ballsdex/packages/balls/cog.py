@@ -724,9 +724,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             return
 
         if user.id in self.bot.blacklist and not is_staff(interaction):
-            await interaction.followup.send(
-                "You cannot compare the inventory of a blacklisted user.", ephemeral=True
-            )
+            await interaction.followup.send("You cannot compare the inventory of a blacklisted user.", ephemeral=True)
             return
 
         if await inventory_privacy(self.bot, interaction, player, user) is False:
@@ -745,16 +743,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         blocked = await player.is_blocked(player1)
         if blocked and not is_staff(interaction):
-            await interaction.followup.send(
-                "You cannot compare with a user that has you blocked.", ephemeral=True
-            )
+            await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
             return
 
         blocked = await player.is_blocked(player2)
         if blocked and not is_staff(interaction):
-            await interaction.followup.send(
-                "You cannot compare with a user that has you blocked.", ephemeral=True
-            )
+            await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
             return
         queryset = BallInstance.objects.filter(ball__enabled=True).distinct()
         if special:
