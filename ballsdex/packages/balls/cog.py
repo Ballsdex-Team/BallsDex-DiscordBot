@@ -168,7 +168,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
             return
         if user is not None:
-            if user.id in self.bot.blacklist:
+            if user.id in self.bot.blacklist and not is_staff(interaction):
                 await interaction.followup.send(
                     "You cannot view the inventory of a blacklisted user.", ephemeral=True
                 )
@@ -265,7 +265,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                     f"{extra_text}{settings.plural_collectible_name} yet."
                 )
                 return
-            if user.id in self.bot.blacklist:
+            if user.id in self.bot.blacklist and not is_staff(interaction):
                 await interaction.followup.send(
                     "You cannot view the completion of a blacklisted user.", ephemeral=True
                 )
@@ -432,7 +432,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         if user is not None:
-            if user.id in self.bot.blacklist:
+            if user.id in self.bot.blacklist and not is_staff(interaction):
                 await interaction.followup.send(
                     (
                         "You cannot view the last caught "
@@ -819,7 +819,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             )
             return
 
-        if user.id in self.bot.blacklist:
+        if user.id in self.bot.blacklist and not is_staff(interaction):
             await interaction.followup.send(
                 "You cannot compare the inventory of a blacklisted user.", ephemeral=True
             )
