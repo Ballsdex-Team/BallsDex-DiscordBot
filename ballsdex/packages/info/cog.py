@@ -14,7 +14,7 @@ from discord.app_commands.translator import (
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
-from ballsdex.core.models import Ball
+from ballsdex.core.models import Ball, Player, BallInstance
 from ballsdex.core.models import balls as countryballs
 from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.tortoise import row_count_estimate
@@ -74,8 +74,9 @@ class Info(commands.Cog):
             balls = []
 
         balls_count = len([x for x in countryballs.values() if x.enabled])
-        players_count = await row_count_estimate("player")
-        balls_instances_count = await row_count_estimate("ballinstance")
+        # Use exact counts to avoid stale Postgres estimates on small tables
+        players_count = await Player.all().count()
+        balls_instances_count = await BallInstance.all().count()
 
         days, hours, minutes, seconds = 0, 0, 0, 0
         if self.bot.startup_time is not None:

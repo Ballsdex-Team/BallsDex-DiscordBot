@@ -218,6 +218,8 @@ class BallInstance(models.Model):
     )
     health_bonus = fields.IntField(default=0)
     attack_bonus = fields.IntField(default=0)
+    defense_bonus = fields.IntField(default=0)
+    shiny = fields.BooleanField(default=False)
     trade_player: fields.ForeignKeyRelation[Player] | None = fields.ForeignKeyField(
         "models.Player", null=True, default=None, on_delete=fields.SET_NULL
     )
@@ -421,6 +423,7 @@ class Player(models.Model):
     discord_id = fields.BigIntField(
         description="Discord user ID", unique=True, validators=[DiscordSnowflakeValidator()]
     )
+    coins = fields.IntField(description="Player currency balance", default=0)
     donation_policy = fields.IntEnumField(
         DonationPolicy,
         description="How you want to handle donations",
@@ -445,6 +448,11 @@ class Player(models.Model):
 
     def __str__(self) -> str:
         return str(self.discord_id)
+
+    async def adjust_coins(self, delta: int) -> None:
+        """Adjust coin balance ensuring it never drops below zero."""
+        self.coins = max(0, self.coins + delta)
+        await self.save(update_fields=["coins"])
 
     async def is_friend(self, other_player: "Player") -> bool:
         return await Friendship.filter(

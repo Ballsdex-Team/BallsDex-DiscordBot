@@ -54,8 +54,15 @@ class CountryBall:
             source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
             return "".join(random.choices(source, k=15))
 
+        def resolve_image_path(p: str) -> str:
+            # Stored values can be absolute like "/admin_panel/media/xxx.webp"
+            # or bare filenames like "xxx.webp". Normalize to container path.
+            if p.startswith('/'):
+                return '.' + p
+            return './admin_panel/media/' + p
+
         extension = self.model.wild_card.split(".")[-1]
-        file_location = "./admin_panel/media/" + self.model.wild_card
+        file_location = resolve_image_path(self.model.wild_card)
         file_name = f"nt_{generate_random_name()}.{extension}"
         try:
             permissions = channel.permissions_for(channel.guild.me)

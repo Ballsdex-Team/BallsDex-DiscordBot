@@ -10,6 +10,7 @@ from ballsdex.core.models import (
 )
 from ballsdex.core.utils.transformers import BallEnabledTransform
 from tortoise.exceptions import DoesNotExist
+from tortoise.expressions import Q
 
 RARITY_REQUIREMENTS = [
     (0.0020, 200),
@@ -172,8 +173,8 @@ class Collector(commands.GroupCog, group_name="claim"):
                 break
 
         shiny_count = await BallInstance.filter(
-            ball=countryball, player=player, shiny=True
-        ).count()
+            ball=countryball, player=player
+        ).filter(Q(shiny=True) | Q(special__name="Shiny")).count()
 
         if shiny_count < required_shinies:
             await interaction.response.send_message(

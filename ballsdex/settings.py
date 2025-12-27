@@ -1,4 +1,5 @@
 import logging
+import os
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -124,7 +125,9 @@ settings = Settings()
 def read_settings(path: "Path"):
     content = yaml.load(path.read_text(), yaml.Loader)
 
-    settings.bot_token = content["discord-token"]
+    # Prefer environment variable over config file to avoid storing secrets
+    env_token = os.environ.get("DISCORD_TOKEN") or os.environ.get("BALLSDEXBOT_DISCORD_TOKEN")
+    settings.bot_token = env_token or content.get("discord-token", "")
     settings.gateway_url = content.get("gateway-url")
     settings.shard_count = content.get("shard-count")
     settings.prefix = str(content.get("text-prefix") or "b.")
@@ -167,6 +170,7 @@ def read_settings(path: "Path"):
         "ballsdex.packages.info",
         "ballsdex.packages.players",
         "ballsdex.packages.trade",
+        "ballsdex.packages.shop"
     ]
 
     settings.spawn_manager = content.get(

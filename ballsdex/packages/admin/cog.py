@@ -13,6 +13,7 @@ from ballsdex.settings import settings
 from .balls import Balls as BallsGroup
 from .blacklist import Blacklist as BlacklistGroup
 from .blacklist import BlacklistGuild as BlacklistGuildGroup
+from .coins import Coins as CoinsGroup
 from .history import History as HistoryGroup
 from .info import Info as InfoGroup
 from .logs import Logs as LogsGroup
@@ -38,6 +39,7 @@ class Admin(commands.GroupCog):
         )
         self.__cog_app_commands_group__.add_command(BlacklistGroup())
         self.__cog_app_commands_group__.add_command(BlacklistGuildGroup())
+        self.__cog_app_commands_group__.add_command(CoinsGroup())
         self.__cog_app_commands_group__.add_command(HistoryGroup())
         self.__cog_app_commands_group__.add_command(LogsGroup())
         self.__cog_app_commands_group__.add_command(InfoGroup())

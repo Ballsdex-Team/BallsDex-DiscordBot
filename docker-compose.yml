@@ -13,6 +13,8 @@ services:
     image: ballsdex
     build: .
     environment:
+      # Provide the bot token via environment to avoid committing secrets
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
       - *postgres-url
     depends_on:
       - postgres-db

@@ -3,7 +3,7 @@ import textwrap
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageStat
 
 if TYPE_CHECKING:
     from ballsdex.core.models import BallInstance
@@ -30,7 +30,7 @@ credits_color_cache = {}
 
 def get_credit_color(image: Image.Image, region: tuple) -> tuple:
     image = image.crop(region)
-    brightness = sum(image.convert("L").getdata()) / image.width / image.height
+    brightness = ImageStat.Stat(image.convert("L")).mean[0]
     return (0, 0, 0, 255) if brightness > 100 else (255, 255, 255, 255)
 
 
@@ -39,19 +39,43 @@ def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/me
     ball_health = (237, 115, 101, 255)
     ball_credits = ball.credits
     card_name = ball.cached_regime.name
+    project_root = Path(__file__).resolve().parents[3]
+
+    def resolve_path(p: str) -> Path:
+        # Paths coming from DB can be either media-relative or repo-absolute like 
+        # "/ballsdex/core/image_generator/src/shiny.png". Map absolute-like paths
+        # to the project root, otherwise resolve under the media directory.
+        if p.startswith("/"):
+            return project_root / p.lstrip("/")
+        return Path(media_path) / p
     if special_image := ball_instance.special_card:
         card_name = getattr(ball_instance.specialcard, "name", card_name)
-        image = Image.open(media_path + special_image)
+        try:
+            image = Image.open(resolve_path(special_image))
+        except FileNotFoundError:
+            # Use the ball's collection card first for specials, then fallback
+            try:
+                image = Image.open(resolve_path(ball.collection_card))
+            except FileNotFoundError:
+                try:
+                    image = Image.open(resolve_path(ball.cached_regime.background))
+                except FileNotFoundError:
+                    image = Image.new("RGBA", (WIDTH, HEIGHT), (64, 64, 64, 255))
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             ball_credits += f" • {ball_instance.specialcard.credits}"
     else:
-        image = Image.open(media_path + ball.cached_regime.background)
+        try:
+            image = Image.open(resolve_path(ball.cached_regime.background))
+        except FileNotFoundError:
+            image = Image.new("RGBA", (WIDTH, HEIGHT), (64, 64, 64, 255))
     image = image.convert("RGBA")
-    icon = (
-        Image.open(media_path + ball.cached_economy.icon).convert("RGBA")
-        if ball.cached_economy
-        else None
-    )
+    if ball.cached_economy:
+        try:
+            icon = Image.open(resolve_path(ball.cached_economy.icon)).convert("RGBA")
+        except FileNotFoundError:
+            icon = None
+    else:
+        icon = None
 
     draw = ImageDraw.Draw(image)
     draw.text(
@@ -113,13 +137,17 @@ def draw_card(ball_instance: "BallInstance", media_path: str = "./admin_panel/me
         stroke_fill=(255, 255, 255, 255),
     )
 
-    artwork = Image.open(media_path + ball.collection_card).convert("RGBA")
-    image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
+    try:
+        artwork = Image.open(resolve_path(ball.collection_card)).convert("RGBA")
+        image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
+    except FileNotFoundError:
+        artwork = None
 
     if icon:
         icon = ImageOps.fit(icon, (192, 192))
         image.paste(icon, (1200, 30), mask=icon)
         icon.close()
-    artwork.close()
+    if artwork:
+        artwork.close()
 
     return image

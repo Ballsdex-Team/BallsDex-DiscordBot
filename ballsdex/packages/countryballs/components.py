@@ -67,7 +67,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         if self.name.value.lower().strip() in possible_names:
             self.ball.caught = True
-            ball, has_caught_before = await self.catch_ball(
+            ball, has_caught_before, coins_earned = await self.catch_ball(
                 interaction.client, cast(discord.Member, interaction.user)
             )
 
@@ -79,10 +79,15 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                     f"This is a **new {settings.collectible_name}** "
                     "that has been added to your completion!"
                 )
-            await interaction.followup.send(
+            # Build message with an extra blank line, then the coin line
+            message = (
                 f"{interaction.user.mention} You caught **{self.ball.name}!** "
-                f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n"
-                f"{special}",
+                f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n"
+                f"{special}"
+            )
+            message += f"\nYou also received {coins_earned} coin(s)!"
+            await interaction.followup.send(
+                message,
                 allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
             )
             self.button.disabled = True
@@ -96,7 +101,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
     async def catch_ball(
         self, bot: "BallsDexBot", user: discord.Member
-    ) -> tuple[BallInstance, bool]:
+    ) -> tuple[BallInstance, bool, int]:
         player, created = await Player.get_or_create(discord_id=user.id)
 
         # stat may vary by +/- 20% of base stat
@@ -130,6 +135,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             special = random.choices(population=population + [None], weights=weights, k=1)[0]
 
         is_new = not await BallInstance.filter(player=player, ball=self.ball.model).exists()
+        # mark shiny if the selected special is the Shiny event
+        is_shiny = bool(special and getattr(special, "name", "") == "Shiny")
         ball = await BallInstance.create(
             ball=self.ball.model,
             player=player,
@@ -138,7 +145,10 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             health_bonus=bonus_health,
             server_id=user.guild.id,
             spawned_time=self.ball.time,
+            shiny=is_shiny,
         )
+        coins_earned = random.randint(1, 10)
+        await player.adjust_coins(coins_earned)
         if user.id in bot.catch_log:
             log.info(
                 f"{user} caught {settings.collectible_name}" f" {self.ball.model}, {special=}",
@@ -155,7 +165,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 guild_size=10 ** math.ceil(math.log(max(user.guild.member_count - 1, 1), 10)),
                 spawn_algo=self.ball.algo,
             ).inc()
-        return ball, is_new
+        return ball, is_new, coins_earned
 
 
 class CatchView(View):

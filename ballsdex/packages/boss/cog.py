@@ -4,6 +4,7 @@ import string
 import logging
 import re
 import asyncio
+import os
 
 from discord import app_commands
 from discord.ext import commands
@@ -198,22 +199,39 @@ class Boss(commands.GroupCog):
             source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
             return "".join(random.choices(source, k=15))
 
+        def resolve_image_path(p: str) -> str:
+            # Stored paths can be like '/admin_panel/media/foo.webp' or just 'foo.webp'
+            if p.startswith('/'):
+                return '.' + p
+            return './admin_panel/media/' + p
+
+        collection_path = resolve_image_path(ball.collection_card)
+        wild_path = resolve_image_path(ball.wild_card)
+
+        if not os.path.isfile(collection_path):
+            await interaction.response.send_message(
+                "Boss image asset is missing on the server.", ephemeral=True
+            )
+            return
+        if not os.path.isfile(wild_path):
+            await interaction.response.send_message(
+                "Boss wild image asset is missing on the server.", ephemeral=True
+            )
+            return
+
         extension = ball.collection_card.split(".")[-1]
-        file_location = "." + ball.collection_card
         file_name = f"nt_{generate_random_name()}.{extension}"
         await interaction.response.send_message(
             f"# The boss battle has begun!\n-# HP: {self.bossHP}\nPlayers have 10 minutes to join!",
-            file=discord.File(file_location, filename=file_name),
+            file=discord.File(collection_path, filename=file_name),
             view=BossView(self)
         )
-        if ball:
-            self.boss_enabled = True
-            self.bossball = ball
+        self.boss_enabled = True
+        self.bossball = ball
 
-            extension = ball.wild_card.split(".")[-1]
-            file_location = "." + ball.wild_card
-            file_name = f"nt_{generate_random_name()}.{extension}"
-            self.bosswild = discord.File(file_location, filename=file_name)
+        wild_ext = ball.wild_card.split(".")[-1]
+        wild_file_name = f"nt_{generate_random_name()}.{wild_ext}"
+        self.bosswild = discord.File(wild_path, filename=wild_file_name)
 
         # Start the join timer
         await self.start_join_timer(interaction)
@@ -444,9 +462,17 @@ class Boss(commands.GroupCog):
             source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
             return "".join(random.choices(source, k=15))
         
+        def resolve_image_path(p: str) -> str:
+            if p.startswith('/'):
+                return '.' + p
+            return './admin_panel/media/' + p
+
         extension = self.bossball.wild_card.split(".")[-1]
-        file_location = "." + self.bossball.wild_card
+        file_location = resolve_image_path(self.bossball.wild_card)
         file_name = f"nt_{generate_random_name()}.{extension}"
+        if not os.path.isfile(file_location):
+            await boss_channel.send("Boss wild image asset is missing on the server.")
+            return
         await boss_channel.send(
             (f"Round {self.round}\n# {self.bossball.country} is preparing to attack!"), file=discord.File(file_location, filename=file_name)
         )
@@ -474,9 +500,16 @@ class Boss(commands.GroupCog):
         def generate_random_name():
             source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
             return "".join(random.choices(source, k=15))
+        def resolve_image_path(p: str) -> str:
+            if p.startswith('/'):
+                return '.' + p
+            return './admin_panel/media/' + p
         extension = self.bossball.wild_card.split(".")[-1]
-        file_location = "." + self.bossball.wild_card
+        file_location = resolve_image_path(self.bossball.wild_card)
         file_name = f"nt_{generate_random_name()}.{extension}"
+        if not os.path.isfile(file_location):
+            await boss_channel.send("Boss wild image asset is missing on the server.")
+            return
         await boss_channel.send(
             (f"Round {self.round}\n# {self.bossball.country} is preparing to defend!"), file=discord.File(file_location, filename=file_name)
         )
