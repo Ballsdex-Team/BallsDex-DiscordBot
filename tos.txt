@@ -1,0 +1,22 @@
+this bot uses the ballsdex source code made by el laggron as a base for the bot.
+this bot is owned and managed by I'm TS and KingRaph.
+
+if you collect any Kr Dexes in the bot you automatically agree to the terms of services and privacy policies.
+KR Dex is provided to you under a limited, non-exclusive, and revocable license to use within Discord servers.
+you must follow discords guidelines in order to use KR Dex.
+you may not exchange Kr Dexes for anything other than Kr Dexes.
+you may not use KR Dex to engage in any illegal activities or cyber bullying.
+
+KR Dex allows users to collect football players by guessing their names in the chat. The bot measures activity to determine when to spawn players.
+The bot may experience downtime, bugs, or other issues that could disrupt its functionality. We are not responsible for any loss of data, player collections, or other issues resulting from these disruptions.
+The bot reads messages to detect activity and trigger player spawns. It does not store message content beyond what is necessary for game functionality.
+We do not store or share personal data. All data related to your interactions with the bot is temporary and only used to enhance your gameplay experience.
+
+By using the bot, you grant us the right to use any content you submit (e.g., guesses, player collections) as part of the game without compensation.
+We reserve the right to terminate or restrict your access to KR Dex at any time, with or without notice, for any reason, including but not limited to violation of these terms.
+KR Dex is provided “as is” without any warranties of any kind. We disclaim all warranties, express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
+If you catch anyone breaking any of these rules you MUST contact KR Dex staff support and report it with enough information immediately.
+you must have more than 5 brain cells to use KR Dex
+
+
+please just use common sense and don't do dumb stuff :)

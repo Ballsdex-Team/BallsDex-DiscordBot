@@ -116,9 +116,8 @@ class Info(commands.Cog):
             owner = bot_info.owner
         owner_credits = "by the team" if bot_info.team else "by"
         dex_credits = (
-            f"This instance is owned {owner_credits} {owner}.\nAn instance of [Ballsdex]"
-            f"({settings.github_link}) by El Laggron and maintained by the Ballsdex Team "
-            f"and community of [contributors]({settings.github_link}/graphs/contributors)."
+            f"This bot is owned by kingraph & I'm TS.\n"
+            f"this bot uses the ballsdex source code as a base for the bot but the bot is maintained by the owners"
         )
         embed.description = (
             f"{' '.join(str(x) for x in balls)}\n"

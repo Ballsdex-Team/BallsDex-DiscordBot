@@ -1,6 +1,8 @@
 import enum
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, Optional
+import random
+from datetime import timedelta
 
 import discord
 from discord import app_commands
@@ -17,7 +19,7 @@ from ballsdex.core.models import (
     Special,
     Trade,
     TradeObject,
-    balls,
+    Ball,
 )
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.paginator import FieldPageSource, Pages
@@ -37,6 +39,35 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
+class KRAllPaginator(discord.ui.View):
+    def __init__(self, pages, user, current_page=0):
+        super().__init__(timeout=120)
+        self.pages = pages
+        self.user = user
+        self.current_page = current_page
+
+    async def update_view(self, interaction: discord.Interaction):
+        embed = self.pages[self.current_page]
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="◀", style=discord.ButtonStyle.grey)
+    async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user != self.user:
+            return await interaction.response.send_message("This menu is not for you!", ephemeral=True)
+        self.current_page = (self.current_page - 1) % len(self.pages)
+        await self.update_view(interaction)
+
+    @discord.ui.button(label="▶", style=discord.ButtonStyle.grey)
+    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user != self.user:
+            return await interaction.response.send_message("This menu is not for you!", ephemeral=True)
+        self.current_page = (self.current_page + 1) % len(self.pages)
+        await self.update_view(interaction)
+
+    async def on_timeout(self):
+        # Optional: Disable buttons when timed out
+        for item in self.children:
+            item.disabled = True
 
 class DonationRequest(View):
     def __init__(
@@ -285,7 +316,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 return
         # Filter disabled balls, they do not count towards progression
         # Only ID and emoji is interesting for us
-        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
+        bot_countryballs = {x: y.emoji_id for x, y in Balls.items() if y.enabled}
 
         # Set of ball IDs owned by the player
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
@@ -293,7 +324,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             filters["special"] = special
             bot_countryballs = {
                 x: y.emoji_id
-                for x, y in balls.items()
+                for x, y in Balls.items()
                 if y.enabled and (special.end_date is None or y.created_at < special.end_date)
             }
         if filter:
@@ -828,11 +859,11 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if await inventory_privacy(self.bot, interaction, player, user) is False:
             return
 
-        bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
+        bot_countryballs = {x: y.emoji_id for x, y in Balls.items() if y.enabled}
         if special:
             bot_countryballs = {
                 x: y.emoji_id
-                for x, y in balls.items()
+                for x, y in Balls.items()
                 if y.enabled and (special.end_date is None or y.created_at < special.end_date)
             }
 
@@ -1002,3 +1033,170 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             await interaction.followup.send(embed=embed, file=file)
         else:
             await interaction.followup.send(embed=embed)
+
+    @app_commands.command(name="all", description="List all Krdexes in the bot.")
+    @app_commands.choices(unob_mode=[
+        app_commands.Choice(name="Only Obtainables", value="obtainable"),
+        app_commands.Choice(name="Only Unobtainables", value="unobtainable"),
+        app_commands.Choice(name="All", value="all"),
+    ])
+    async def kr_all(
+        self,
+        interaction: discord.Interaction, 
+        unob_mode: Optional[str] = "obtainable", 
+        has_keyword: Optional[str] = None
+    ):
+        # Start the DB query
+        query = Ball.all()
+
+        # Filtering logic
+        if unob_mode == "obtainable":
+            query = query.filter(enabled=True)
+        elif unob_mode == "unobtainable":
+            query = query.filter(enabled=False)
+
+        if has_keyword:
+            query = query.filter(country__icontains=has_keyword)
+
+        # Sorting by rarity (lowest value = rarest first)
+        dexes = await query.order_by("rarity")
+
+        if not dexes:
+            await interaction.response.send_message("No Krdexes found matching those criteria!", ephemeral=True)
+            return
+
+        # Format into lines: "Name - Rarity"
+        lines = [f"{dex.country} - {dex.rarity}" for dex in dexes]
+    
+        # Split into chunks of 25 for pagination
+        per_page = 25
+        pages_content = [lines[i:i + per_page] for i in range(0, len(lines), per_page)]
+    
+        embeds = []
+        for i, page_lines in enumerate(pages_content):
+            embed = discord.Embed(
+                title="Kr Dex List",
+                description="\n".join(page_lines),
+                color=discord.Color.blue()
+            )
+            embed.set_footer(text=f"Page {i+1}/{len(pages_content)} • Total: {len(dexes)}")
+            embeds.append(embed)
+
+        view = KRAllPaginator(embeds, interaction.user)
+        await interaction.response.send_message(embed=embeds[0], view=view)
+
+# --- DAILY PACK ---
+    @app_commands.command(name="daily", description="Claim your daily KrDex pack")
+    async def daily_pack(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        
+        # PERSISTENT COOLDOWN LOGIC
+        import time
+        current_time = int(time.time())
+        # Check 'extra_data' for the last claim timestamp
+        last_claim = player.extra_data.get("last_daily_claim", 0)
+        
+        if current_time - last_claim < 86400:
+            remaining = 86400 - (current_time - last_claim)
+            time_str = str(timedelta(seconds=remaining))
+            return await interaction.followup.send(
+                f"Slow down! You can claim your daily again in `{time_str}`.", 
+                ephemeral=True
+            )
+
+        # PACK LOGIC
+        balls = await Ball.filter(enabled=True)
+        if not balls:
+            return await interaction.followup.send("No KrDexes available!")
+
+        weights = [1 / ball.rarity for ball in balls]
+        selected_ball = random.choices(balls, weights=weights, k=1)[0]
+
+        # Update Database Timestamp
+        player.extra_data["last_daily_claim"] = current_time
+        await player.save()
+        
+        await self._give_ball(interaction, selected_ball, player)
+
+    # --- WEEKLY PACK ---
+    @app_commands.command(name="weekly", description="Claim your weekly rare KrDex pack")
+    async def weekly_pack(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        
+        # PERSISTENT COOLDOWN LOGIC
+        import time
+        current_time = int(time.time())
+        last_claim = player.extra_data.get("last_weekly_claim", 0)
+        
+        if current_time - last_claim < 604800:
+            remaining = 604800 - (current_time - last_claim)
+            time_str = str(timedelta(seconds=remaining))
+            return await interaction.followup.send(
+                f"Slow down! You can claim your weekly again in `{time_str}`.", 
+                ephemeral=True
+            )
+
+        # RARITY LOGIC
+        rand = random.random()
+        if rand <= 0.01: # 1% chance for 0.08 rarity or lower
+            ball_pool = await Ball.filter(enabled=True, rarity__lte=0.08)
+        elif rand <= 0.08: # 7% chance for 0.3 rarity or lower
+            ball_pool = await Ball.filter(enabled=True, rarity__lte=0.3)
+        else: # Standard rare (1.0 or lower)
+            ball_pool = await Ball.filter(enabled=True, rarity__lte=1.0)
+
+        if not ball_pool:
+            ball_pool = await Ball.filter(enabled=True, rarity__lte=1.0)
+
+        selected_ball = random.choice(ball_pool)
+
+        # Update Database Timestamp
+        player.extra_data["last_weekly_claim"] = current_time
+        await player.save()
+
+        await self._give_ball(interaction, selected_ball, player)
+
+    # --- SHARED HELPER METHOD ---
+    async def _give_ball(self, interaction: discord.Interaction, ball: Ball, player: Player):
+        # Generate stats
+        atk = random.randint(-settings.max_attack_bonus, settings.max_attack_bonus)
+        hp = random.randint(-settings.max_health_bonus, settings.max_health_bonus)
+        
+        # Check if new completion
+        exists = await BallInstance.filter(player=player, ball=ball).exists()
+        
+        # Create instance
+        instance = await BallInstance.create(
+            player=player,
+            ball=ball,
+            attack_bonus=atk,
+            health_bonus=hp,
+        )
+
+        atk_str = f"+{atk}%" if atk >= 0 else f"{atk}%"
+        hp_str = f"+{hp}%" if hp >= 0 else f"{hp}%"
+        
+        msg = f"{interaction.user.mention} You packed **{ball.country} !** ``(#{instance.id:X}, {atk_str}/{hp_str})``"
+        
+        if not exists:
+            msg += "\n\nThis is a new KrDex that has been added to your completion!"
+            
+        await interaction.followup.send(msg)
+
+    @daily_pack.error
+    @weekly_pack.error
+    async def pack_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        # This checks if the error is a cooldown
+        if isinstance(error, app_commands.CommandOnCooldown):
+            if not interaction.response.is_done():
+                seconds = error.retry_after
+                time_left = str(timedelta(seconds=int(seconds)))
+                await interaction.response.send_message(
+                    f"Slow down! You can use this again in `{time_left}`.", 
+                    ephemeral=True
+                )
+            return # This stops the error from propagating further if possible

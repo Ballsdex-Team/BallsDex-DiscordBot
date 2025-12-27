@@ -1,0 +1,18 @@
+Welcome to the KR Dex discord bot !
+this bot is owned, managed, devoloped, updated by KingRaph and I'm TS.
+This privacy policy outlines how we collect, use, and protect your information while using our Discord bot. By using KR Dex, you agree to the practices described in this policy.
+
+1. Information we collect
+we may collect data related to your interactions with the bot in order to improve the bot for everyone.
+
+2. message monitoring
+The bot monitors messages in real-time to detect activity within a server. This information is solely used to trigger the spawning of football players based on user engagement levels, and does not include the content of the messages themselves.
+User interactions, such as guesses and player collections, are tracked to manage game progression and provide users with their current status in the game.
+
+3. data storage
+We do not store any message content or user data permanently. All information related to game activity is stored temporarily and is discarded once it's no longer needed for the gameplay experience.
+We are committed to ensuring that your information is secure. However, as with any online service, we cannot guarantee absolute security. We recommend that users take appropriate precautions to protect their own data.
+
+We do not share, sell, or lease your personal information to third parties. All data collected by KR Dex is used solely for the purposes outlined in this privacy policy.
+We may update this privacy policy from time to time. We will notify users of any significant changes by updating the policy’s effective date and providing notice through Discord or other appropriate channels.
+to participate in the game or have your messages monitored by the bot, you can choose to mute or remove the bot from your server.
