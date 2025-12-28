@@ -61,18 +61,20 @@ nav:
           - selfhosting/misc/rarity-mechanism.md
           - selfhosting/misc/backup-and-transfers.md
           - selfhosting/misc/migrating-windows-wsl.md
-  - API Reference:
-      - api/bot.md
-      - api/models.md
-      - Utils:
-          - api/utils/buttons.md
-          - api/utils/django.md
-          - api/utils/enums.md
-          - api/utils/formatting.md
-          - api/utils/menus.md
-          - api/utils/sorting.md
-          - api/utils/transformers.md
-          - api/utils/utils.md
+  - Developing:
+    - dev/custom-package.md
+    - API Reference:
+        - dev/api/bot.md
+        - dev/api/models.md
+        - Utils:
+            - dev/api/utils/buttons.md
+            - dev/api/utils/django.md
+            - dev/api/utils/enums.md
+            - dev/api/utils/formatting.md
+            - dev/api/utils/menus.md
+            - dev/api/utils/sorting.md
+            - dev/api/utils/transformers.md
+            - dev/api/utils/utils.md
 
 plugins:
   - search

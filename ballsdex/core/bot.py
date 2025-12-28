@@ -19,6 +19,7 @@ from discord.app_commands.translator import TranslationContextLocation, Translat
 from discord.enums import Locale
 from discord.ext import commands
 from discord.utils import MISSING
+from django.apps import apps
 from prometheus_client import Histogram
 from rich import box, print
 from rich.console import Console
@@ -48,6 +49,16 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
+
+DEFAULT_PACKAGES = (
+    ("admin", "ballsdex.packages.admin"),
+    ("balls", "ballsdex.packages.balls"),
+    ("guildconfig", "ballsdex.packages.guildconfig"),
+    ("countryballs", "ballsdex.packages.countryballs"),
+    ("info", "ballsdex.packages.info"),
+    ("players", "ballsdex.packages.players"),
+    ("trade", "ballsdex.packages.trade"),
+)
 
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
@@ -332,11 +343,14 @@ class BallsDexBot(commands.AutoShardedBot):
             await self.add_cog(Dev())
 
         loaded_packages = []
-        for package in settings.packages:
-            package_name = package.replace("ballsdex.packages.", "")
+        packages = list(DEFAULT_PACKAGES)
+        for app in apps.get_app_configs():
+            if dpy_package := getattr(app, "dpy_package", None):
+                packages.append((app.label, dpy_package))
 
+        for package_name, path in packages:
             try:
-                await self.load_extension(package)
+                await self.load_extension(path)
             except Exception:
                 log.error(f"Failed to load package {package_name}", exc_info=True)
             else:
