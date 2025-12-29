@@ -343,6 +343,11 @@ class TradingUser(Container):
         self.buttons.add_item(self.cancel_button)
         self.add_item(self.buttons)
 
+        if not self.view.active:
+            for item in self.walk_children():
+                if hasattr(item, "disabled"):
+                    item.disabled = True  # type: ignore
+
     # ==== API functions ====
 
     async def add_to_proposal(self, queryset: "QuerySet[BallInstance]"):
@@ -431,6 +436,15 @@ class TradingUser(Container):
         if not self.proposal:
             self.proposal_list.content = "Nothing proposed"
             return
+        if (
+            (not self.view.trader1.proposal and not self.view.trader1.money)
+            and (not self.view.trader2.proposal and not self.view.trader2.money)
+            and self.view.confirmation_phase
+        ):
+            await self.view.cleanup()
+            self.view.add_item(
+                TextDisplay("Both of you have locked without proposing anything, the trade is cancelled.")
+            )
 
         # replace the select menu with immutable text
         text = ""
