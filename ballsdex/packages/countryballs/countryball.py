@@ -32,12 +32,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         super().__init__()
         self.view = view
 
-    async def on_error(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        error: Exception,
-        /,  # noqa: W504
-    ) -> None:
+    async def on_error(self, interaction: discord.Interaction["BallsDexBot"], error: Exception) -> None:
         if isinstance(error, discord.NotFound) and error.code == 10062:
             return
         log.exception("An error occured in countryball catching prompt", exc_info=error)
@@ -322,6 +317,7 @@ class BallSpawnView(View):
             raise RuntimeError("This ball was already caught!")
         self.caught = True
         self.catch_button.disabled = True
+        caught_time = timezone.now()
         player = player or (await Player.objects.aget_or_create(discord_id=user.id))[0]
         is_new = not await BallInstance.objects.filter(player=player, ball=self.model).aexists()
 
@@ -364,6 +360,7 @@ class BallSpawnView(View):
             health_bonus=bonus_health,
             server_id=guild.id if guild else None,
             spawned_time=self.message.created_at,
+            catch_date=caught_time,
         )
 
         # logging and stats

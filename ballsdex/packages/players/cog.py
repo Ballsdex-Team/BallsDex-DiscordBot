@@ -49,7 +49,7 @@ class Player(commands.GroupCog):
         container = SettingsContainer()
         container.configure(interaction, player)
         layout.add_item(container)
-        await interaction.response.send_message(view=layout)
+        await interaction.response.send_message(view=layout, ephemeral=True)
 
     @friend.command(name="add")
     async def friend_add(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):

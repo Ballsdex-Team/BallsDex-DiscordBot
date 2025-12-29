@@ -54,7 +54,6 @@ async def get_items_csv(player: Player) -> BytesIO:
         .only("id", "catch_date", "attack_bonus", "health_bonus")
     )
     query, params = queryset.query.sql_with_params()
-    print(queryset.query)
     return await copy_to(query, *(str(x) for x in params))
 
 
@@ -96,5 +95,4 @@ async def get_trades_csv(player: Player) -> BytesIO:
         .only("id", "date")
     )
     query, params = queryset.query.sql_with_params()
-    print(queryset.query)
     return await copy_to(query, *(str(x) for x in params))

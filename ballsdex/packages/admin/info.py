@@ -12,6 +12,27 @@ from bd_models.models import BallInstance, GuildConfig, Player
 from settings.models import settings
 
 
+class PlayerInfoView(discord.ui.View):
+    def __init__(self, player: Player, username: str):
+        super().__init__()
+        self.player = player
+        self.username = username
+
+    @discord.ui.button(label="Recent Catches", style=discord.ButtonStyle.primary)
+    async def recently_caught(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Display the last 10 catches of the user, and how long it took for each catch
+        recent_balls = BallInstance.objects.filter(
+            player=self.player, spawned_time__isnull=False, trade_player=None
+        ).order_by("-catch_date")[:10]
+        embed = discord.Embed(title=f"Last {len(recent_balls)} catches for {self.username}")
+        async for ball in recent_balls:
+            catch_time = (ball.catch_date - ball.spawned_time).total_seconds()  # type: ignore
+            embed.add_field(
+                name=ball.description(short=True), value=f"{catch_time:.3f}s in {ball.server_id}", inline=False
+            )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
 @commands.hybrid_group()
 async def info(ctx: commands.Context[BallsDexBot]):
     """
@@ -141,4 +162,4 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
         value=len(set([x.server_id for x in total_user_balls])),
     )
     embed.set_thumbnail(url=user.display_avatar)  # type: ignore
-    await ctx.send(embed=embed, ephemeral=True)
+    await ctx.send(embed=embed, ephemeral=True, view=PlayerInfoView(player, user.name))

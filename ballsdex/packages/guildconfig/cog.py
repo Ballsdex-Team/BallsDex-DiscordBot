@@ -66,6 +66,13 @@ class Config(commands.GroupCog):
 
         guild = interaction.guild
         assert guild
+        if guild.unavailable:
+            await interaction.response.send_message(
+                "The server is unavailable to the bot and will not work properly. "
+                "Kicking and readding the bot may fix this.",
+                ephemeral=True,
+            )
+            return
         readable_channels = len([x for x in guild.text_channels if x.permissions_for(guild.me).read_messages])
         if readable_channels / len(guild.text_channels) < 0.75:
             embed.add_field(
@@ -116,7 +123,44 @@ class Config(commands.GroupCog):
                         "The spawning channel specified in the configuration is not available.", ephemeral=True
                     )
             else:
+                config_cmd = self.channel.extras.get("mention", "`/config channel`")
                 await interaction.response.send_message(
                     f"{settings.bot_name} is now enabled in this server, however there is no "
-                    "spawning channel set. Please configure one with `/config channel`."
+                    f"spawning channel set. Please configure one with {config_cmd}."
+                )
+
+    @app_commands.command()
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def status(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Check the server configuration status.
+        """
+        config = await GuildConfig.objects.aget_or_none(guild_id=interaction.guild_id)
+        config_cmd = self.channel.extras.get("mention", "`/config channel`")
+        if not config or not config.spawn_channel:
+            await interaction.response.send_message(
+                f"{settings.bot_name} is not configured in this server yet.\nPlease use {config_cmd} to set a channel.",
+                ephemeral=False,
+            )
+        else:
+            assert interaction.guild
+            if interaction.guild.unavailable:
+                await interaction.response.send_message(
+                    "Your server is unavailable to the bot. Readding it may fix this."
+                )
+                return
+            channel = interaction.guild.get_channel(config.spawn_channel)
+            if channel:
+                await interaction.response.send_message(
+                    f"{settings.bot_name} is configured in this server.\n"
+                    f"Spawn channel: {channel.mention}\n"
+                    f"Status: {'Enabled' if config.enabled else 'Disabled'}",
+                    ephemeral=False,
+                )
+            else:
+                await interaction.response.send_message(
+                    f"{settings.bot_name} is configured, but the specified channel "
+                    "could not be found.\n"
+                    f"Please use {config_cmd} to set it again.",
+                    ephemeral=False,
                 )

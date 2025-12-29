@@ -1,13 +1,12 @@
 import enum
 import logging
-from collections import Counter
 from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, Container, LayoutView, TextDisplay, button
-from django.db.models import Count, F, Q
+from django.db.models import Count, Exists, F, OuterRef, Q
 
 from ballsdex.core.discord import View
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -150,14 +149,18 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                     f"{user_obj.name} doesn't have any {settings.plural_collectible_name} yet."
                 )
             return
+        staff = await is_staff(interaction)
         if user is not None:
+            if user.id in self.bot.blacklist and not staff:
+                await interaction.followup.send("You cannot view the inventory of a blacklisted user.", ephemeral=True)
+                return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
         interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
-        if blocked and not await is_staff(interaction):
+        if blocked and not staff:
             await interaction.followup.send("You cannot view the list of a user that has you blocked.", ephemeral=True)
             return
 
@@ -215,7 +218,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
-        self_caught: bool | None = None,
+        filter: FilteringChoices | None = None,
     ):
         """
         Show your current completion of the BallsDex.
@@ -226,8 +229,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The user whose completion you want to view, if not yours.
         special: Special
             The special you want to see the completion of
-        self_caught: bool
-            Filter only for countryballs that the user themself caught/didn't catch (ie no trades)
+        filter: FilteringChoices
+            Filter the list by a specific filter.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -240,11 +243,15 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                     f"{user_obj.name} doesn't have any {extra_text}{settings.plural_collectible_name} yet."
                 )
                 return
+            staff = await is_staff(interaction)
+            if user.id in self.bot.blacklist and not staff:
+                await interaction.followup.send("You cannot view the completion of a blacklisted user.", ephemeral=True)
+                return
 
             interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
             blocked = await player.is_blocked(interaction_player)
-            if blocked and not await is_staff(interaction):
+            if blocked and not staff:
                 await interaction.followup.send(
                     "You cannot view the completion of a user that has blocked you.", ephemeral=True
                 )
@@ -266,8 +273,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 if y.enabled and (special.end_date is None or y.created_at is None or y.created_at < special.end_date)
             }
 
-        if self_caught is not None:
-            filters["trade_player_id__isnull"] = self_caught
+        if filter:
+            query = filter_balls(filter, BallInstance.objects.filter(**filters))
+        else:
+            query = BallInstance.objects.filter(**filters)
 
         if not bot_countryballs:
             await interaction.followup.send(
@@ -279,16 +288,14 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         owned_countryballs = set(
             [
                 x[0]
-                async for x in BallInstance.objects.filter(**filters)
+                async for x in query.filter(**filters)
                 .distinct()  # Do not query everything
                 .values_list("ball_id")
             ]
         )
 
         special_str = f" ({special.name})" if special else ""
-        original_catcher_string = (
-            f" ({'not ' if self_caught is False else ''}self-caught)" if self_caught is not None else ""
-        )
+        original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
         text = (
             f"## {settings.bot_name}{original_catcher_string}{special_str} progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**\n"
@@ -351,7 +358,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
-    async def last(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User | None = None):
+    async def last(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User | None = None,
+        filter: FilteringChoices | None = None,
+    ):
         """
         Display info of your or another users last caught countryball.
 
@@ -359,6 +371,9 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         ----------
         user: discord.Member
             The user you would like to see
+        filter: FilteringChoices
+            Filter the last caught countryball by a specific filter.
+            Only works if the user has caught at least one countryball.
         """
         user_obj = user if user else interaction.user
         await interaction.response.defer(thinking=True)
@@ -371,21 +386,33 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             )
             return
 
+        staff = await is_staff(interaction)
         if user is not None:
+            if user.id in self.bot.blacklist and not staff:
+                await interaction.followup.send(
+                    (f"You cannot view the last caught {settings.collectible_name} of a blacklisted user."),
+                    ephemeral=True,
+                )
+                return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
         interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
-        if blocked and not await is_staff(interaction):
+        if blocked and not staff:
             await interaction.followup.send(
                 f"You cannot view the last caught {settings.collectible_name} of a user that has blocked you.",
                 ephemeral=True,
             )
             return
 
-        countryball = await player.balls.select_related("ball", "trade_player").all().order_by("-id").afirst()
+        query = player.balls.select_related("ball", "trade_player").all()
+        filter_msg = ""
+        if filter:
+            filter_msg = f" with the `{filter.value.replace('_', ' ')}` filter"
+            query = filter_balls(filter, query, interaction.guild_id)
+        countryball = await query.order_by("-id").afirst()
         if not countryball:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
@@ -395,7 +422,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         content, file, view = await countryball.prepare_for_message(interaction)
         if user is not None and user.id != interaction.user.id:
-            content = f"You are viewing {user.display_name}'s last caught {settings.collectible_name}.\n" + content
+            content = (
+                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}{filter_msg}.\n{content}"
+            )
+        else:
+            content = f"You are viewing your last caught {settings.collectible_name}{filter_msg}.\n" + content
         await interaction.followup.send(content=content, file=file, view=view)
         file.close()
 
@@ -685,7 +716,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             async for item in query
         ]
 
-        view = CountryballsDuplicateSource()
+        view = CountryballsDuplicateSource(is_special)
         view.header.content = f"View your duplicate {type.value}."
         menu = Menu(self.bot, view, ChunkedListSource(entries), SelectFormatter(view.callback))
         await menu.init()
@@ -725,7 +756,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             )
             return
 
-        if user.id in self.bot.blacklist and not await is_staff(interaction):
+        staff = await is_staff(interaction)
+        if user.id in self.bot.blacklist and not staff:
             await interaction.followup.send("You cannot compare the inventory of a blacklisted user.", ephemeral=True)
             return
 
@@ -743,7 +775,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
 
-        staff = await is_staff(interaction)
         blocked = await player.is_blocked(player1)
         if blocked and not staff:
             await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
@@ -754,6 +785,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
             return
         queryset = BallInstance.objects.filter(ball__enabled=True).distinct()
+        if duplicates:
+            queryset = queryset.values("ball_id").annotate(counts=Count("ball_id")).filter(counts__gt=1)
         if special:
             queryset = queryset.filter(special=special)
         user1_balls = cast(
@@ -772,7 +805,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         def fill_fields(title: str, ids: set[int]):
             nonlocal text
-            text += f"### {title}\n"
+            text += f"### {title}{' duplicates' if duplicates else ''}\n"
             if not ids:
                 text += "None\n"
                 return
@@ -785,21 +818,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             text += "\n"
 
         all_ball_ids = set(bot_countryballs.keys())
-        if duplicates:
-            u1_c, u2_c = Counter(user1_balls), Counter(user2_balls)
-            u1_d, u2_d = {b for b, c in u1_c.items() if c > 1}, {b for b, c in u2_c.items() if c > 1}
-
-            fill_fields("Both have duplicates", u1_d & u2_d)
-            fill_fields(f"Only {interaction.user.display_name} has duplicates", u1_d - u2_d)
-            fill_fields(f"Only {user.display_name} has duplicates", u2_d - u1_d)
-            fill_fields("Neither have duplicates", all_ball_ids - u1_d - u2_d)
-        else:
-            u1_s, u2_s = set(user1_balls), set(user2_balls)
-
-            fill_fields("Both have", u1_s & u2_s)
-            fill_fields(f"Only {interaction.user.display_name} has", u1_s - u2_s)
-            fill_fields(f"Only {user.display_name} has", u2_s - u1_s)
-            fill_fields("Neither have", all_ball_ids - u1_s - u2_s)
+        u1_s, u2_s = set(user1_balls), set(user2_balls)
+        fill_fields("Both have", u1_s & u2_s)
+        fill_fields(f"Only {interaction.user.display_name} has", u1_s - u2_s)
+        fill_fields(f"Only {user.display_name} has", u2_s - u1_s)
+        fill_fields("Neither have", all_ball_ids - u1_s - u2_s)
 
         view = LayoutView()
         container = Container()
@@ -836,12 +859,17 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             .annotate(
                 total=Count("id"),
                 traded=Count("id", filter=Q(trade_player_id__isnull=False)),
-                specials=Count("id", filter=Q(special_id__isnull=False)),
+                specials=Count(
+                    "id",
+                    filter=Q(special_id__isnull=False)
+                    & ~Exists(Special.objects.filter(hidden=True, id=OuterRef("special_id"))),
+                ),
             )
         )
         specials = (
             BallInstance.objects.filter(player=player)
             .exclude(special=None)
+            .exclude(special__hidden=True)
             .values("special__name")
             .annotate(count=Count("special__name"))
             .order_by("-count")
@@ -881,7 +909,9 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         )
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         if countryball:
-            emoji = self.bot.get_emoji(countryball.emoji_id)
-            if emoji:
-                embed.set_thumbnail(url=emoji.url)
-        await interaction.followup.send(embed=embed)
+            file_location = countryball.wild_card.path
+            file = discord.File(file_location, filename="countryball.png")
+            embed.set_thumbnail(url="attachment://countryball.png")
+            await interaction.followup.send(embed=embed, file=file)
+        else:
+            await interaction.followup.send(embed=embed)

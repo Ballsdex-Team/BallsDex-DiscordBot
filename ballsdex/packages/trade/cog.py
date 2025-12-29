@@ -297,10 +297,14 @@ class Trade(commands.GroupCog):
                 ephemeral=True,
             )
             return
-        query = BallInstance.objects.filter(
-            Q(locked=None) | Q(locked__lt=timezone.now() - timedelta(seconds=60)),
-            player__discord_id=interaction.user.id,
-        ).exclude(tradeable=False, ball__tradeable=False)
+        query = (
+            BallInstance.objects.filter(
+                Q(locked=None) | Q(locked__lt=timezone.now() - timedelta(seconds=60)),
+                player__discord_id=interaction.user.id,
+            )
+            .exclude(tradeable=False)
+            .exclude(ball__tradeable=False)
+        )
         if countryball:
             query = query.filter(ball=countryball)
         if special:
