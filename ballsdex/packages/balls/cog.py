@@ -723,7 +723,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             )
             return
 
-        if user.id in self.bot.blacklist and not is_staff(interaction):
+        if user.id in self.bot.blacklist and not await is_staff(interaction):
             await interaction.followup.send("You cannot compare the inventory of a blacklisted user.", ephemeral=True)
             return
 
