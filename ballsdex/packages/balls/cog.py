@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button, LayoutView, TextDisplay, button
+from discord.ui import Button, Container, LayoutView, TextDisplay, button
 from django.db.models import Count, F, Q
 
 from ballsdex.core.discord import View
@@ -316,8 +316,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             text += f"### :tada: No missing {settings.plural_collectible_name}, congratulations! :tada:"
 
         view = LayoutView()
+        container = Container()
         display = TextDisplay("")
-        view.add_item(display)
+        container.add_item(display)
+        view.add_item(container)
         menu = Menu(self.bot, view, TextSource(text, delims=["\n###", " "]), TextFormatter(display))
         await menu.init()
         await interaction.followup.send(view=view)
@@ -800,8 +802,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             fill_fields("Neither have", all_ball_ids - u1_s - u2_s)
 
         view = LayoutView()
+        container = Container()
         display = TextDisplay("")
-        view.add_item(display)
+        container.add_item(display)
+        view.add_item(container)
         menu = Menu(self.bot, view, TextSource(text, delims=["\n###", " "]), TextFormatter(display))
         await menu.init()
         await interaction.followup.send(view=view)
