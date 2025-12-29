@@ -157,7 +157,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
-        if blocked and not is_staff(interaction):
+        if blocked and not await is_staff(interaction):
             await interaction.followup.send("You cannot view the list of a user that has you blocked.", ephemeral=True)
             return
 
@@ -244,7 +244,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
             blocked = await player.is_blocked(interaction_player)
-            if blocked and not is_staff(interaction):
+            if blocked and not await is_staff(interaction):
                 await interaction.followup.send(
                     "You cannot view the completion of a user that has blocked you.", ephemeral=True
                 )
@@ -376,7 +376,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
-        if blocked and not is_staff(interaction):
+        if blocked and not await is_staff(interaction):
             await interaction.followup.send(
                 f"You cannot view the last caught {settings.collectible_name} of a user that has blocked you.",
                 ephemeral=True,
@@ -741,13 +741,14 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
 
+        staff = await is_staff(interaction)
         blocked = await player.is_blocked(player1)
-        if blocked and not is_staff(interaction):
+        if blocked and not staff:
             await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
             return
 
         blocked = await player.is_blocked(player2)
-        if blocked and not is_staff(interaction):
+        if blocked and not staff:
             await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
             return
         queryset = BallInstance.objects.filter(ball__enabled=True).distinct()

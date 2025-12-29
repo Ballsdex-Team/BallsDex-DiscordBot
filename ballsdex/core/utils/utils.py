@@ -69,7 +69,7 @@ async def inventory_privacy(
     interacting_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
     if interaction.user.id == player.discord_id:
         return True
-    if is_staff(interaction):
+    if await is_staff(interaction):
         return True
     if privacy_policy == PrivacyPolicy.DENY:
         await interaction.followup.send("This user has set their inventory to private.", ephemeral=True)
