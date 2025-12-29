@@ -216,6 +216,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
         self_caught: bool | None = None,
+        duplicates: bool = False,
     ):
         """
         Show your current completion of the BallsDex.
@@ -228,6 +229,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The special you want to see the completion of
         self_caught: bool
             Filter only for countryballs that the user themself caught/didn't catch (ie no trades)
+        duplicates: bool
+            Show the completion of duplicates (having at least 2 of each countryball)
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -276,21 +279,33 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             )
             return
 
-        owned_countryballs = set(
-            [
-                x[0]
-                async for x in BallInstance.objects.filter(**filters)
-                .distinct()  # Do not query everything
-                .values_list("ball_id")
-            ]
-        )
+        if duplicates:
+            owned_countryballs = set(
+                [
+                    x["ball_id"]
+                    async for x in BallInstance.objects.filter(**filters)
+                    .values("ball_id")
+                    .annotate(count=Count("id"))
+                    .filter(count__gt=1)
+                ]
+            )
+        else:
+            owned_countryballs = set(
+                [
+                    x[0]
+                    async for x in BallInstance.objects.filter(**filters)
+                    .distinct()  # Do not query everything
+                    .values_list("ball_id")
+                ]
+            )
 
         special_str = f" ({special.name})" if special else ""
         original_catcher_string = (
             f" ({'not ' if self_caught is False else ''}self-caught)" if self_caught is not None else ""
         )
+        duplicate_str = " duplicate" if duplicates else ""
         text = (
-            f"## {settings.bot_name}{original_catcher_string}{special_str} progression: "
+            f"## {settings.bot_name}{original_catcher_string}{special_str}{duplicate_str} progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**\n"
         )
 
@@ -308,12 +323,23 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             text += "\n"
 
         # Getting the list of emoji IDs from the IDs of the owned countryballs
-        fill_fields(f"Owned {settings.plural_collectible_name}", set(bot_countryballs[x] for x in owned_countryballs))
+        if duplicates:
+            fill_fields(
+                f"Have duplicates of {settings.plural_collectible_name}",
+                set(bot_countryballs[x] for x in owned_countryballs),
+            )
+        else:
+            fill_fields(
+                f"Owned {settings.plural_collectible_name}", set(bot_countryballs[x] for x in owned_countryballs)
+            )
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
-            fill_fields(f"Missing {settings.plural_collectible_name}", missing)
+            if duplicates:
+                fill_fields(f"Missing duplicates of {settings.plural_collectible_name}", missing)
+            else:
+                fill_fields(f"Missing {settings.plural_collectible_name}", missing)
         else:
-            text += f"### :tada: No missing {settings.plural_collectible_name}, congratulations! :tada:"
+            text += f"### :tada: No missing {settings.plural_collectible_name}{duplicate_str}, congratulations! :tada:"
 
         view = LayoutView()
         display = TextDisplay("")
