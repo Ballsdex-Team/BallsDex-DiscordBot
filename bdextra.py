@@ -13,19 +13,23 @@ if sys.version_info.major < 3 or sys.version_info.minor < 11:
     sys.exit(1)
 
 import tomllib
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 
-class Package(TypedDict, total=True):
+class Package(TypedDict, total=True, closed=True):
     location: str
     path: str
     enabled: bool
-    editable: bool
+    editable: NotRequired[bool]
 
 
 def list_pip_packages(packages: list[Package]):
     print(
-        " ".join(f"{'-e ' if x['editable'] else ''}{x['location']}" for x in packages if x["enabled"] and x["location"])
+        " ".join(
+            f"{'-e ' if x.get('editable', False) else ''}{x['location']}"
+            for x in packages
+            if x["enabled"] and x["location"]
+        )
     )
 
 
