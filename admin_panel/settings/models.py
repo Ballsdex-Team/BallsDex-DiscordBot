@@ -35,6 +35,35 @@ class Settings(models.Model):
         validators=(RegexValidator(SLASH_COMMAND_RE, message="Invalid slash command name."),),
     )
 
+    # currency stuff
+    currency_name = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Name of your currency. Warning: currency is disabled until you set this value. "
+        "The core bot does not yet come with user-facing commands to manage currency.",
+    )
+    currency_plural_name = models.CharField(
+        max_length=32, null=True, blank=True, default=None, help_text="Plural name of your currency."
+    )
+    currency_symbol = models.CharField(
+        max_length=4, null=True, blank=True, default=None, help_text="A symbol for your currency."
+    )
+    currency_symbol_before = models.BooleanField(
+        default=False, help_text="If enabled, your currency symbol will be placed before the amount."
+    )
+
+    @cached_property
+    def currency_plural(self) -> str:
+        if not self.currency_name:
+            return "currencies"
+        return self.currency_plural_name or self.currency_name + "s"
+
+    @cached_property
+    def currency_enabled(self) -> bool:
+        return bool(self.currency_name)
+
     # further customization
     favorited_collectible_emoji = models.CharField(
         help_text="Emoji for the favorited collectibles",
