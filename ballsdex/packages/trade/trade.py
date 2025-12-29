@@ -13,15 +13,17 @@ from typing import TYPE_CHECKING, cast
 
 import discord
 from asgiref.sync import sync_to_async
-from discord.ui import ActionRow, Button, Item, Section, Select, Separator, TextDisplay, Thumbnail
+from discord.ui import ActionRow, Button, Item, Section, Select, Separator, TextDisplay, TextInput, Thumbnail
 from discord.utils import format_dt
 from django.db import transaction
 from django.utils import timezone
 
-from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView
+from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView, Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
 from bd_models.models import BallInstance, Player, Trade, TradeObject
+from settings.models import settings
+from settings.utils import format_currency
 
 from .errors import (
     AlreadyLockedError,
@@ -47,6 +49,39 @@ type Interaction = discord.Interaction[BallsDexBot]
 log = logging.getLogger(__name__)
 
 TRADE_TIMEOUT = 60 * 30
+
+
+class SetMoneyModal(Modal, title="Set money offering"):
+    proposal = TextInput(label=f"How much {settings.currency_name} to propose?", style=discord.TextStyle.short)
+
+    def __init__(self, trading_user: TradingUser):
+        super().__init__()
+        self.trading_user = trading_user
+
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if not interaction.user.id == self.trading_user.user.id:
+            await interaction.response.send_message(
+                "You are not allowed to do this, edit your own trade.", ephemeral=True
+            )
+            return False
+        return await super().interaction_check(interaction)
+
+    async def on_submit(self, interaction: Interaction):
+        if self.trading_user.locked:
+            await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
+            return
+        try:
+            proposal_amount = int(self.proposal.value.strip())
+        except ValueError:
+            await interaction.response.send_message("This number could not be parsed.", ephemeral=True)
+            return
+        await self.trading_user.player.arefresh_from_db(fields=["money"])
+        if not self.trading_user.player.can_afford(proposal_amount):
+            await interaction.response.send_message("You cannot afford that amount.", ephemeral=True)
+            return
+        await interaction.response.defer()
+        self.trading_user.money = proposal_amount
+        await self.trading_user.view.edit_message(interaction)
 
 
 class TradingUser(Container):
@@ -83,6 +118,7 @@ class TradingUser(Container):
         self.player = player
         self.user = user
         self.proposal: set[int] = set()
+        self.money = 0
         self.locked: bool = False
         self.cancelled: bool = False
         self.confirmed: bool = False
@@ -115,6 +151,11 @@ class TradingUser(Container):
 
     proposal_list = TextDisplay("")
     buttons = ActionRow()
+
+    async def set_currency(self, interaction: Interaction):
+        modal = SetMoneyModal(self)
+        await interaction.response.send_modal(modal)
+        await modal.wait()
 
     @buttons.button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
     async def lock_button(self, interaction: Interaction, button: Button):
@@ -267,6 +308,14 @@ class TradingUser(Container):
             self.locked or self.trade.cancelled
         )
         self.cancel_button.disabled = self.trade.cancelled
+
+        if settings.currency_enabled:
+            button = Button(label="Change", style=discord.ButtonStyle.primary)
+            button.callback = self.set_currency
+            currency_section = Section(
+                TextDisplay(f"{settings.currency_name} proposed: {format_currency(self.money)}"), accessory=button
+            )
+            self.add_item(currency_section)
 
         if not self.locked:
             self.select_menu.options.clear()  # pyright: ignore[reportAttributeAccessIssue]
@@ -575,6 +624,12 @@ class TradeInstance(LayoutView):
         balls: list[BallInstance] = []
         trade = Trade.objects.create(player1=self.trader1.player, player2=self.trader2.player)
 
+        def money_check(trader: TradingUser) -> Player:
+            player = Player.objects.select_for_update(nowait=True).get(id=trader.player.pk)
+            if not player.can_afford(trader.money):
+                raise IntegrityError()
+            return player
+
         def queryset_for_update(trader: TradingUser):
             return trader.get_queryset().select_for_update(nowait=True, of=("self",)).only("player__discord_id")
 
@@ -599,6 +654,14 @@ class TradeInstance(LayoutView):
             countryball.locked = None
             balls.append(countryball)
             trade_objects.append(TradeObject(trade=trade, ballinstance=countryball, player=self.trader2.player))
+
+        if self.trader1.money or self.trader2.money:
+            player1 = money_check(self.trader1)
+            player2 = money_check(self.trader2)
+            player1.money += self.trader2.money - self.trader1.money
+            player2.money += self.trader1.money - self.trader2.money
+            player1.save(update_fields=("money",))
+            player2.save(update_fields=("money",))
 
         BallInstance.objects.bulk_update(balls, fields=("player", "trade_player", "favorite", "locked"))
         TradeObject.objects.bulk_create(trade_objects)
