@@ -243,7 +243,7 @@ class TTLModelTransformer[T: "Model"](ModelTransformer[T]):
         """
         Query values to fill `items` with.
         """
-        return [x async for x in self.model.objects.all()]
+        return [x async for x in self.get_queryset()]
 
     async def maybe_refresh(self):
         t = time.time()
