@@ -10,6 +10,7 @@ from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.menus import Menu, ModelSource
 from bd_models.models import BlacklistedGuild, BlacklistedID, BlacklistHistory, GuildConfig, Player
+from settings.models import settings
 
 from .menu import BlacklistHistoryFormatter
 
@@ -108,7 +109,10 @@ async def blacklist_info(ctx: commands.Context[BallsDexBot], user: discord.User)
         else:
             moderator_msg = "Moderator: Unknown"
         if player := await Player.objects.aget_or_none(discord_id=user.id):
-            admin_url = f"\n[View history online](<{reverse('admin:bd_models_player_change', args=(player.pk,))}>)"
+            admin_url = (
+                f"\n[View history online](<{settings.site_base_url}"
+                f"{reverse('admin:bd_models_player_change', args=(player.pk,))}>)"
+            )
         else:
             admin_url = ""
         if blacklisted.date:
@@ -126,7 +130,10 @@ async def blacklist_info(ctx: commands.Context[BallsDexBot], user: discord.User)
             else:
                 moderator_msg = "Moderator: Unknown"
             if player := await Player.objects.aget_or_none(discord_id=user.id):
-                admin_url = f"\n[View history online](<{reverse('admin:bd_models_player_change', args=(player.pk,))}>)"
+                admin_url = (
+                    f"\n[View history online](<{settings.site_base_url}"
+                    f"{reverse('admin:bd_models_player_change', args=(player.pk,))}>)"
+                )
             else:
                 admin_url = ""
             if blacklisted.date:
@@ -272,6 +279,7 @@ async def blacklist_remove_guild(ctx: commands.Context[BallsDexBot], guild_id: s
 
 
 @blacklistguild.command(name="info")
+@checks.has_permissions("bd_models.view_blacklistedid")
 async def blacklist_info_guild(ctx: commands.Context[BallsDexBot], guild_id: str):
     """
     Check if a guild is blacklisted and show the corresponding reason.
@@ -303,7 +311,10 @@ async def blacklist_info_guild(ctx: commands.Context[BallsDexBot], guild_id: str
         else:
             moderator_msg = "Moderator: Unknown"
         if gconf := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
-            admin_url = f"\n[View history online](<{reverse('admin:bd_models_guildconfig_change', args=(gconf.pk,))}>)"
+            admin_url = (
+                f"\n[View history online](<{settings.site_base_url}"
+                f"{reverse('admin:bd_models_guildconfig_change', args=(gconf.pk,))}>)"
+            )
         else:
             admin_url = ""
         if blacklisted.date:

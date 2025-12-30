@@ -8,6 +8,7 @@ from django.urls import reverse
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.menus import Formatter, Menu, TextFormatter, TextSource
 from bd_models.models import BallInstance, Player, Trade
+from settings.models import settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -49,7 +50,10 @@ class HistoryView(LayoutView):
         if self.admin_view:
             self.add_item(
                 ActionRow(
-                    Button(label="View online", url=reverse("admin:bd_models_trade_change", args=(self.trade.pk,)))
+                    Button(
+                        label="View online",
+                        url=f"{settings.site_base_url}{reverse('admin:bd_models_trade_change', args=(self.trade.pk,))}",
+                    )
                 )
             )
 
@@ -68,7 +72,10 @@ class HistoryView(LayoutView):
         async for ball in BallInstance.objects.filter(tradeobject__trade=self.trade, tradeobject__player=player):
             description = ball.description(include_emoji=True, bot=self.bot, is_trade=True)
             if self.admin_view:
-                description = f"[{description}]({reverse('admin:bd_models_ballinstance_change', args=(ball.pk,))})"
+                description = (
+                    f"[{description}]"
+                    f"({settings.site_base_url}{reverse('admin:bd_models_ballinstance_change', args=(ball.pk,))})"
+                )
             text += f"- {description}\n"
 
         item = TextDisplay("")

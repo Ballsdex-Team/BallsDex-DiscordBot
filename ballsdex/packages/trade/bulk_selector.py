@@ -55,7 +55,7 @@ class BulkSelector(Container):
         menu = Menu(self.bot, self.view, TextSource(text, page_length=3800), TextFormatter(self.balls))
         await menu.init(position=3, container=self)
 
-    header = TextDisplay(f"## Trade bulk selection\nYour selected {settings.plural_collectible_name} are show below.")
+    header = TextDisplay(f"## Trade bulk selection\nYour selected {settings.plural_collectible_name} are shown below.")
     sep1 = Separator()
     balls = TextDisplay("Nothing selected yet")
     balls_count = TextDisplay(f"-# 0 {settings.plural_collectible_name} selected")
@@ -119,12 +119,12 @@ class BulkSelector(Container):
             await interaction.response.send_message(e.error_message, ephemeral=True)
         else:
             assert self.view
+            await interaction.response.defer()
             self.view.stop()
             for children in self.view.walk_children():
                 if hasattr(children, "disabled"):
                     children.disabled = True  # type: ignore
             await interaction.edit_original_response(view=self.view)
-            await interaction.response.defer()
             await trade.edit_message(None)
             await interaction.followup.send(
                 f"{len(self.formatter.defaulted)} {settings.plural_collectible_name} added.", ephemeral=True

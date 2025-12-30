@@ -71,7 +71,7 @@ async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7
     url = None
     if config := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
         spawn_enabled = config.enabled and config.guild_id
-        url = reverse("admin:bd_models_guildconfig_change", args=(config.pk,))
+        url = f"{settings.site_base_url}{reverse('admin:bd_models_guildconfig_change', args=(config.pk,))}"
     else:
         spawn_enabled = False
 
@@ -123,7 +123,7 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
     if not player:
         await ctx.send("The user you gave does not exist.", ephemeral=True)
         return
-    url = reverse("admin:bd_models_player_change", args=(player.pk,))
+    url = f"{settings.site_base_url}{reverse('admin:bd_models_player_change', args=(player.pk,))}"
     total_user_balls = await BallInstance.objects.filter(
         catch_date__gte=datetime.datetime.now(tz=get_current_timezone()) - datetime.timedelta(days=days), player=player
     ).aall()

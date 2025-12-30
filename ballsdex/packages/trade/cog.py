@@ -216,22 +216,27 @@ class Trade(commands.GroupCog):
             return
 
         queryset = TradeModel.objects.order_by(sort_value).prefetch_related("player1", "player2")
+        p2 = None
+        try:
+            p1 = await Player.objects.only("id").aget(discord_id=user.id)
+            if trade_user:
+                p2 = await Player.objects.only("id").aget(discord_id=user.id)
+        except Player.DoesNotExist:
+            await interaction.response.send_message("One of the players does not exist.", ephemeral=True)
+            return
         if trade_user:
-            queryset = queryset.filter(
-                (Q(player1__discord_id=user.id, player2__discord_id=trade_user.id))
-                | (Q(player1__discord_id=trade_user.id, player2__discord_id=user.id))
-            )
+            queryset = queryset.filter((Q(player1=p1, player2=p2)) | (Q(player1=p2, player2=p1)))
         else:
-            queryset = queryset.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
+            queryset = queryset.filter(Q(player1=p1) | Q(player2=p1))
 
         if days is not None and days > 0:
             start_date = timezone.now() - timedelta(days=days)
             queryset = queryset.filter(date__ge=start_date)
 
         if countryball:
-            queryset = queryset.filter(Q(tradeobjects__ballinstance__ball=countryball)).distinct()
+            queryset = queryset.filter(Q(tradeobject__ballinstance__ball=countryball)).distinct()
         if special:
-            queryset = queryset.filter(Q(tradeobjects__ballinstance__special=special)).distinct()
+            queryset = queryset.filter(Q(tradeobject__ballinstance__special=special)).distinct()
 
         if not await queryset.aexists():
             await interaction.followup.send("No history found.", ephemeral=True)
@@ -287,7 +292,7 @@ class Trade(commands.GroupCog):
         await interaction.response.defer(thinking=True, ephemeral=True)
         result = await self.get_trade(interaction.user)
         if result is None:
-            await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
+            await interaction.followup.send("You do not have any active trade.", ephemeral=True)
             return
         _, trader = result
         if trader.locked:

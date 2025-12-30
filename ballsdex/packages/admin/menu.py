@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from ballsdex.core.utils import menus
 from bd_models.models import BlacklistHistory, Player
+from settings.models import settings
 
 
 class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Container]):
@@ -38,7 +39,10 @@ class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Cont
         if player := await Player.objects.aget_or_none(discord_id=self.user.id):
             container.add_item(
                 ActionRow(
-                    Button(url=reverse("admin:bd_models_player_change", args=(player.pk,)), label="View history online")
+                    Button(
+                        url=f"{settings.site_base_url}{reverse('admin:bd_models_player_change', args=(player.pk,))}",
+                        label="View history online",
+                    )
                 )
             )
         container.add_item(

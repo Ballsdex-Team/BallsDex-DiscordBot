@@ -62,7 +62,7 @@ async def _build_history_view(
     view.add_item(TextDisplay(f"## {title}"))
 
     if admin_url_path:
-        view.add_item(ActionRow(Button(label="View online", url=admin_url_path)))
+        view.add_item(ActionRow(Button(label="View online", url=f"{settings.site_base_url}{admin_url_path}")))
 
     action = ActionRow()
     select = Select(placeholder="Choose a trade to display")

@@ -34,6 +34,9 @@ class Settings(models.Model):
         default="balls",
         validators=(RegexValidator(SLASH_COMMAND_RE, message="Invalid slash command name."),),
     )
+    site_base_url = models.URLField(
+        default="http://localhost:8000", help_text="Base URL of this website, accessible with admin commands."
+    )
 
     # currency stuff
     currency_name = models.CharField(

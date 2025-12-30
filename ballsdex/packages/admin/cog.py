@@ -288,6 +288,7 @@ class Admin(commands.Cog):
         await spawn_manager.admin_explain(ctx, guild)
 
     @admin.command()
+    @checks.is_staff()
     async def guilds(self, ctx: commands.Context["BallsDexBot"], user: discord.User):
         """
         Shows the guilds shared with the specified user. Provide either user or user_id.

@@ -27,6 +27,10 @@ class CLIFlags(TypedDict):
     disable_rich: bool
     gateway_url: str | None
     shard_count: int | None
+    shard_ids: list[int] | None
+    cluster_name: str | None
+    cluster_id: int | None
+    cluster_count: int | None
     disable_message_content: bool
     disable_time_check: bool
     skip_tree_sync: bool
@@ -52,6 +56,7 @@ def patch_gateway(proxy_url: str):
     proxy_url : str
         The URL of the gateway proxy to use.
     """
+    import zlib
 
     class ProductionHTTPClient(discord.http.HTTPClient):  # type: ignore
         async def get_gateway(self, **_):
@@ -76,6 +81,27 @@ def patch_gateway(proxy_url: str):
 
         async def send(self, data, /):
             await self.socket.send_str(data)
+
+    class _ZlibDecompressionContext:
+        __slots__ = ("context", "buffer")
+
+        COMPRESSION_TYPE: str = "zlib-stream"
+
+        def __init__(self) -> None:
+            self.buffer: bytearray = bytearray()
+            self.context = zlib.decompressobj()
+
+        def decompress(self, data: bytes, /) -> str | None:
+            self.buffer.extend(data)
+
+            # Check whether ending is Z_SYNC_FLUSH
+            if len(data) < 4 or data[-4:] != b"\x00\x00\xff\xff":
+                return
+
+            msg = self.context.decompress(self.buffer)
+            self.buffer = bytearray()
+
+            return msg.decode("utf-8")
 
     class ProductionReconnectWebSocket(Exception):
         def __init__(self, shard_id: int | None, *, resume: bool = False):
@@ -103,6 +129,7 @@ def patch_gateway(proxy_url: str):
     discord.gateway.ReconnectWebSocket.__init__ = (  # type: ignore
         ProductionReconnectWebSocket.__init__
     )
+    discord.utils._ActiveDecompressionContext = _ZlibDecompressionContext
     BallsDexBot.is_ws_ratelimited = is_ws_ratelimited
     BallsDexBot.before_identify_hook = before_identify_hook
 
@@ -194,6 +221,12 @@ class Command(BaseCommand):
         parser.add_argument("--gateway-url", type=str, help="Define a gateway proxy")
         parser.add_argument("--shard-count", type=int, help="Enforce a specific number of shards to open")
         parser.add_argument(
+            "--shard-ids", type=int, nargs="+", help="Enforce list of shard IDs to connect to, delimited by space"
+        )
+        parser.add_argument("--cluster-name", type=str, help="Name of this cluster")
+        parser.add_argument("--cluster-id", type=int, help="ID of this cluster")
+        parser.add_argument("--cluster-count", type=int, help="Total number of clusters")
+        parser.add_argument(
             "--disable-message-content",
             action="store_true",
             help="Disable usage of message content intent through the bot",
@@ -243,6 +276,21 @@ class Command(BaseCommand):
                 log.error("Database URL not found!")
                 raise CommandError("You must provide a DB URL with the BALLSDEXBOT_DB_URL env var.")
 
+            clustering_args = [
+                bool(x)
+                for x in (
+                    options["shard_ids"],
+                    options["cluster_id"],
+                    options["cluster_name"],
+                    options["cluster_count"],
+                )
+            ]
+            if any(clustering_args) and not all(clustering_args):
+                raise CommandError(
+                    "If you are running in clustering mode, you must provide all flags: "
+                    "--shard-ids --cluster-id --cluster-name --cluster-count"
+                )
+
             if options["gateway_url"] is not None:
                 log.info("Using custom gateway URL: %s", options["gateway_url"])
                 patch_gateway(options["gateway_url"])
@@ -254,6 +302,10 @@ class Command(BaseCommand):
                 command_prefix=when_mentioned_or(prefix),
                 dev=options["dev"],  # type: ignore
                 shard_count=options["shard_count"],
+                shard_ids=options["shard_ids"],
+                cluster_id=options["cluster_id"],
+                cluster_name=options["cluster_name"],
+                cluster_count=options["cluster_count"],
                 gateway_url=options["gateway_url"],
                 disable_message_content=options["disable_message_content"],
                 disable_time_check=options["disable_time_check"],

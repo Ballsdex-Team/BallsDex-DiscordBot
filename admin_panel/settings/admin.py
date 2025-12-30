@@ -38,7 +38,13 @@ class SettingsAdmin(admin.ModelAdmin):
             "Bot personalization",
             {
                 "description": "Important fields you should customize to make this bot your own",
-                "fields": ("collectible_name", "plural_collectible_name", "bot_name", "balls_slash_name"),
+                "fields": (
+                    "collectible_name",
+                    "plural_collectible_name",
+                    "bot_name",
+                    "balls_slash_name",
+                    "site_base_url",
+                ),
             },
         ),
         (
@@ -120,7 +126,7 @@ class SettingsAdmin(admin.ModelAdmin):
         owners: dict
         if owners := content.get("owners", {}):
             s.team_owners = owners.get("team-members-are-owners", False)
-            s.coowners = ";".join(str(x) for x in owners.get("co-owners", []))
+            s.coowners = ";".join(str(x) for x in owners.get("co-owners") or [])
 
         s.collectible_name = content.get("collectible-name") or s.collectible_name
         s.plural_collectible_name = content.get("plural-collectible-name") or s.plural_collectible_name
@@ -132,7 +138,7 @@ class SettingsAdmin(admin.ModelAdmin):
         s.max_health_bonus = content.get("max-health-bonus") or s.max_health_bonus
         s.show_rarity = content.get("show-rarity", False)
         s.admin_channel_ids = (
-            ";".join(str(x) for x in content.get("admin-command", {}).get("admin-channels-ids", []))
+            ";".join(str(x) for x in content.get("admin-command", {}).get("admin-channels-ids") or [])
             or s.admin_channel_ids
         )
 

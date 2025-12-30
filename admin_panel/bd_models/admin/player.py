@@ -7,7 +7,7 @@ from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
 from django.db.models import OuterRef, Subquery
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django_admin_action_forms import action_with_form
 from django_admin_inline_paginator.admin import TabularInlinePaginated
 
@@ -58,7 +58,7 @@ class BallInstanceTabular(TabularInlinePaginated):
             (quote(obj.guild_config_id),),  # type: ignore
         )
         # Display a link to the admin page.
-        return format_html(f'<a href="{admin_url}">{obj.server_id}</a>')
+        return mark_safe(f'<a href="{admin_url}">{obj.server_id}</a>')
 
 
 @admin.register(Player)
