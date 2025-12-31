@@ -220,7 +220,7 @@ class Trade(commands.GroupCog):
         try:
             p1 = await Player.objects.only("id").aget(discord_id=user.id)
             if trade_user:
-                p2 = await Player.objects.only("id").aget(discord_id=user.id)
+                p2 = await Player.objects.only("id").aget(discord_id=trade_user.id)
         except Player.DoesNotExist:
             await interaction.response.send_message("One of the players does not exist.", ephemeral=True)
             return
