@@ -235,7 +235,7 @@ class Trade(commands.GroupCog):
 
         if countryball and special:
             queryset = queryset.filter(
-            Q(tradeobject__ballinstance__ball=countryball) & Q(tradeobject__ballinstance__special=special)
+                Q(tradeobject__ballinstance__ball=countryball) & Q(tradeobject__ballinstance__special=special)
             ).distinct()
         elif countryball:
             queryset = queryset.filter(Q(tradeobject__ballinstance__ball=countryball)).distinct()
