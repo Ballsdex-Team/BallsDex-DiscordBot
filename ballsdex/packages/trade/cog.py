@@ -233,9 +233,13 @@ class Trade(commands.GroupCog):
             start_date = timezone.now() - timedelta(days=days)
             queryset = queryset.filter(date__ge=start_date)
 
-        if countryball:
+        if countryball and special:
+            queryset = queryset.filter(
+            Q(tradeobject__ballinstance__ball=countryball) & Q(tradeobject__ballinstance__special=special)
+            ).distinct()
+        elif countryball:
             queryset = queryset.filter(Q(tradeobject__ballinstance__ball=countryball)).distinct()
-        if special:
+        elif special:
             queryset = queryset.filter(Q(tradeobject__ballinstance__special=special)).distinct()
 
         if not await queryset.aexists():
