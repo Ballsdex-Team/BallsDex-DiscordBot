@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import discord
 from discord.ui import ActionRow, Button, Container, Section, Select, Separator, TextDisplay, Thumbnail
+from discord.utils import format_dt
 from django.db.models import Count, F, Q, QuerySet
 from django.urls import reverse
 
@@ -29,7 +30,7 @@ class TradeListFormatter(Formatter[QuerySet[Trade], Select]):
             p2_items=Count("tradeobject", filter=Q(tradeobject__player=F("player2"))),
         ):
             self.item.add_option(
-                label=f"Trade #{trade.pk:0X}",
+                label=f"Trade #{trade.pk:0X} - {format_dt(trade.date, 's')}",
                 description=f"{trade.player1.discord_id} ({trade.p1_items} items) • "  # pyright: ignore[reportAttributeAccessIssue]
                 f"{trade.player1.discord_id} ({trade.p2_items} items)",  # pyright: ignore[reportAttributeAccessIssue]
                 value=trade.pk,
@@ -44,7 +45,7 @@ class HistoryView(LayoutView):
         self.admin_view = admin_view
 
     async def initialize(self, player1: Player, user1: discord.abc.User, player2: Player, user2: discord.abc.User):
-        self.add_item(TextDisplay(f"## Trade #{self.trade.pk:0X} history"))
+        self.add_item(TextDisplay(f"## Trade #{self.trade.pk:0X} history\n\nDate: {format_dt(self.trade.date, 'F')}"))
         self.add_item(await self.generate_container(player1, user1))
         self.add_item(await self.generate_container(player2, user2))
         if self.admin_view:
