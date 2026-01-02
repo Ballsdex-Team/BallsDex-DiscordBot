@@ -104,6 +104,9 @@ class Admin(commands.Cog):
         self.admin.add_command(logs_group)
         self.admin.add_command(money_group)
 
+    async def cog_check(self, ctx: commands.Context["BallsDexBot"]) -> bool:
+        return await checks.is_staff().predicate(ctx)
+
     async def cog_app_command_error(
         self, interaction: discord.Interaction["BallsDexBot"], error: app_commands.AppCommandError
     ):
@@ -288,7 +291,6 @@ class Admin(commands.Cog):
         await spawn_manager.admin_explain(ctx, guild)
 
     @admin.command()
-    @checks.is_staff()
     async def guilds(self, ctx: commands.Context["BallsDexBot"], user: discord.User):
         """
         Shows the guilds shared with the specified user. Provide either user or user_id.

@@ -21,6 +21,7 @@ async def money(ctx: commands.Context[BallsDexBot]):
 
 
 @money.command()
+@checks.has_permissions("bd_models.view_player")
 async def balance(ctx: commands.Context[BallsDexBot], user: discord.User):
     """
     Show the balance of the user provided

@@ -87,6 +87,7 @@ def _build_base_queryset(sort_oldest: bool, days: int | None) -> "QuerySet[Trade
 
 
 @history.command(name="user")
+@checks.has_permissions("bd_models.view_trade", "bd_models.view_tradeobject")
 async def history_user(ctx: commands.Context["BallsDexBot"], user: discord.User, *, flags: UserTradeHistoryFlags):
     """
     Show your trade history.
@@ -120,6 +121,7 @@ async def history_user(ctx: commands.Context["BallsDexBot"], user: discord.User,
 
 
 @history.command(name="countryball")
+@checks.has_permissions("bd_models.view_trade", "bd_models.view_tradeobject")
 async def history_ball(ctx: commands.Context["BallsDexBot"], countryball_id: str, *, flags: TradeHistoryFlags):
     """
     Show the trade history of a countryball.
@@ -153,6 +155,7 @@ async def history_ball(ctx: commands.Context["BallsDexBot"], countryball_id: str
 
 
 @history.command(name="trade")
+@checks.has_permissions("bd_models.view_trade", "bd_models.view_tradeobject")
 async def trade_info(ctx: commands.Context["BallsDexBot"], trade_id: str):
     """
     Show the contents of a certain trade.

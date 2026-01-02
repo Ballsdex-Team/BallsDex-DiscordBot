@@ -15,6 +15,7 @@ async def logs(ctx: commands.Context[BallsDexBot]):
 
 
 @logs.command(name="catchlogs")
+@checks.has_permissions("admincmd.logs")
 async def logs_add(ctx: commands.Context[BallsDexBot], user: discord.User):
     """
     Add or remove a user from catch logs.
@@ -33,6 +34,7 @@ async def logs_add(ctx: commands.Context[BallsDexBot], user: discord.User):
 
 
 @logs.command(name="commandlogs")
+@checks.has_permissions("admincmd.logs")
 async def commandlogs_add(ctx: commands.Context[BallsDexBot], user: discord.User):
     """
     Add or remove a user from command logs.
