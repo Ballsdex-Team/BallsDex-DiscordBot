@@ -32,5 +32,5 @@ ALLOWED_HOSTS = [
 # SECURE_SSL_REDIRECT = True
 
 
-# You can read more about Django's security options by running "python3 manage.py check --deploy"
+# You can read more about Django's security options by running "python3 -m django check --deploy"
 # or here: https://docs.djangoproject.com/en/5.1/ref/middleware/#module-django.middleware.security
