@@ -1,6 +1,6 @@
 [project]
 name = "ballsdex"
-version = "3.0.0rc5"
+version = "3.0.0"
 description = "Customizable Discord bot to collect and trade countryballs."
 authors = [
     { name = 'Auguste "laggron42" Charpentier', email = "laggron42@ballsdex.com" },
