@@ -123,11 +123,14 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
         bot = interaction.client
         if not bot.is_ready():
             if interaction.type != discord.InteractionType.autocomplete:
-                await interaction.response.send_message(
-                    "The bot is currently starting, please wait for a few minutes... "
-                    f"({round((len(bot.shards) / bot.shard_count) * 100)}%)",
-                    ephemeral=True,
-                )
+                try:
+                    await interaction.response.send_message(
+                        "The bot is currently starting, please wait for a few minutes... "
+                        f"({round((len(bot.shards) / bot.shard_count) * 100)}%)",
+                        ephemeral=True,
+                    )
+                except discord.NotFound:
+                    pass
             return False  # wait for all shards to be connected
         return await bot.blacklist_check(interaction)
 
@@ -503,8 +506,13 @@ class BallsDexBot(commands.AutoShardedBot):
             if not self.is_ready():
                 log.warning("Command not found, but the bot hasn't started yet.")
                 return
+            if interaction.type == discord.InteractionType.autocomplete:
+                return
             send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
-            await send("Commands desynchronized, contact support to fix this.")
+            try:
+                await send("Commands desynchronized, contact support to fix this.")
+            except discord.NotFound:
+                pass
             log.error(error.args[0])
             return
 
