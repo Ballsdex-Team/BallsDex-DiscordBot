@@ -35,5 +35,7 @@ media
 
 # settings
 config.yml
+config.yaml
+.env
 docker-compose.override.yml
 admin_panel/admin_panel/settings/production.py
