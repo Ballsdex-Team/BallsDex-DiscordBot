@@ -322,7 +322,7 @@ class Admin(commands.Cog):
             else:
                 spawn_enabled = False
 
-            text = f"## {guild.name}\n"
+            text = f"## {guild.name} - `{guild.id}`\n"
 
             # highlight suspicious server names
             if any(x in guild.name.lower() for x in ("farm", "grind", "spam")):
