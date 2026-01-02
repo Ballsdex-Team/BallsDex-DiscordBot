@@ -168,8 +168,8 @@ It is recommended that you ask users to reset their password as soon as they log
 
 If you need to create a new superuser account without accessing the admin panel (for instance, the first admin account), you can use the following command and follow the prompts.
 
-- With docker: `docker compose exec admin-panel django-admin createsuperuser`
-- Without docker: `cd admin_panel && poetry run python3 manage.py createsuperuser`
+- With docker: `docker compose exec admin-panel python3 -m django createsuperuser`
+- Without docker: `DJANGO_SETTINGS_MODULE=admin_panel.settings python3 -m django createsuperuser`
 
 #### Disabling password authentication
 

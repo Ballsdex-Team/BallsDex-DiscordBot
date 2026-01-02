@@ -108,7 +108,7 @@ From this point, every time you need to type commands for Ballsdex, **you must a
 ## 4. Installing the bot
 
 1. Run `docker compose build`. This will also take some time, wait for the build to complete.
-2. Run `docker compose run --rm admin-panel django-admin createsuperuser` to create an admin user
+2. Run `docker compose run --rm admin-panel python3 -m django createsuperuser` to create an admin user
    for the admin panel. The email does not actually matter.
 
     !!! note
@@ -123,7 +123,7 @@ admin panel login page. Login using the credentials you have set before.
 
 !!! tip
     If you forgot your credentials, run
-    `docker compose run --rm admin-panel django-admin changepassword <username>`
+    `docker compose run --rm admin-panel python3 -m django changepassword <username>`
 
 1. Go back to the Discord developer portal and click "Reset Token" to obtain a new one.
    Copy and paste it in the "Discord token" section.

@@ -188,7 +188,7 @@ docker compose down --volumes
 
     6.  Run the migrations
         ```bash
-        cd admin_panel && python3 manage.py migrate
+        cd admin_panel && python3 -m django migrate
         ```
 
 ## 5. Reconfigure the settings

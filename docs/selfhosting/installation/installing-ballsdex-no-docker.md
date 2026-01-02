@@ -110,15 +110,10 @@ cd BallsDex-DiscordBot
     ```
 6.  Initialize the database
     ```bash
-    python3 manage.py migrate
+    python3 -m django migrate
     ```
 
-7.  Initialize the admin panel
-    ```bash
-    python3 manage.py collectstatic --no-input
-    ```
-
-8.  Start the admin panel to configure the settings
+7.  Start the admin panel to configure the settings
     ```bash
     DJANGO_SETTINGS_MODULE="admin_panel.settings.dev" uvicorn admin_panel.asgi:application
     ```
@@ -230,10 +225,6 @@ Then
     ```
 4.  Update the database schemas
     ```bash
-    python3 manage.py migrate
+    python3 -m django migrate
     ```
-5.  Update the admin panel static files
-    ```bash
-    python3 manage.py collectstatic --no-input
-    ```
-7.  Restart the bot and admin panel
+5.  Restart the bot and admin panel

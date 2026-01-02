@@ -2,7 +2,7 @@
 
 If you are running Docker, the panel may already be running. Just do `docker compose up -d proxy` to start if it's not running.
 
-Without docker, the command to start the admin panel is `cd admin_panel && python3 manage.py migrate && python3 manage.py collectstatic --no-input && uvicorn admin_panel.asgi:application`
+Without docker, the command to start the admin panel is `DJANGO_SETTINGS_MODULE=admin_panel.settings python3 -m django migrate && uvicorn admin_panel.asgi:application`
 
 The panel will then be accessible at <http://localhost:8000>
 
@@ -19,13 +19,13 @@ below and follow the prompts.
 
     ```bash
     docker compose up -d admin-panel
-    docker compose exec admin-panel django-admin createsuperuser
+    docker compose exec admin-panel python3 -m django createsuperuser
     ```
 
 === "Without Docker"
 
     ```bash
-    cd admin_panel && python3 manage.py createsuperuser
+    DJANGO_SETTINGS_MODULE=admin_panel.settings python3 -m django createsuperuser
     ```
 
 Then you can login using the chosen credentials at <http://localhost:8000>. Additional accounts can be created from the admin panel.

@@ -109,14 +109,14 @@ folder that makes development easier.
 
     === "With Docker"
         ```sh
-        docker compose run --rm migration django-admin startapp my_cool_app /code/extra/my_cool_repo/my_cool_app
+        docker compose run --rm migration python3 -m django startapp my_cool_app /code/extra/my_cool_repo/my_cool_app
         ```
 
     === "Without Docker"
         ```sh
         export DJANGO_SETTINGS_MODULE="admin_panel.settings.dev"
         cd extra/my_cool_repo
-        django-admin startapp my_cool_app
+        python3 -m django startapp my_cool_app
         ```
 
     This will create a new folder `my_cool_app` with the following files:
@@ -288,13 +288,13 @@ define how to populate the database the first time your app is loaded or updated
 === "With Docker"
 
     ```sh
-    docker compose run --rm migration django-admin makemigrations my_cool_app
+    docker compose run --rm migration python3 -m django makemigrations my_cool_app
     ```
 
 === "Without Docker"
 
     ```sh
-    django-admin makemigrations my_cool_app
+    python3 -m django makemigrations my_cool_app
     ```
 
 This should generate the following, along with a new file in
