@@ -157,7 +157,7 @@ services:
       retries: 5
 
   postgres-backup:
-    image: prodrigestivill/postgres-backup-local
+    image: prodrigestivill/postgres-backup-local:18-alpine-d257e5d
     restart: always
     # Uncomment to have the backup files owned by your local user instead of root
     # user: username
