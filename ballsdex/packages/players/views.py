@@ -260,5 +260,5 @@ class RelationContainer(Container):
             return b
 
         async for x in qs:
-            other = x.player2 if x.player1 == player else x.player2
+            other = x.player2 if x.player1 == player else x.player1
             yield Section(TextDisplay(f"<@{other.discord_id}>"), accessory=get_button(x))
