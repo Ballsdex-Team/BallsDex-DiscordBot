@@ -437,9 +437,9 @@ class BallsDexBot(commands.AutoShardedBot):
                 await context.send("One of the arguments provided cannot be parsed.", ephemeral=True)
                 log.debug("Failed running converter", exc_info=exception)
 
-            case commands.CheckFailure():
+            case commands.CheckFailure() | app_commands.CheckFailure():
                 match exception:
-                    case commands.BotMissingPermissions():
+                    case commands.BotMissingPermissions() | app_commands.BotMissingPermissions():
                         missing_perms = ", ".join(exception.missing_permissions)
                         await context.send(
                             f"The bot is missing the permissions: `{missing_perms}`."
@@ -447,7 +447,7 @@ class BallsDexBot(commands.AutoShardedBot):
                             ephemeral=True,
                         )
 
-                    case commands.MissingPermissions():
+                    case commands.MissingPermissions() | app_commands.MissingPermissions():
                         missing_perms = ", ".join(exception.missing_permissions)
                         await context.send(
                             f"You are missing the following permissions: `{missing_perms}`."
