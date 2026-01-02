@@ -80,50 +80,67 @@ def draw_card(
         stroke_fill=(0, 0, 0, 255),
     )
 
-    cap_name = textwrap.wrap(f"Ability: {ball.capacity_name}", width=26)
-
-    for i, line in enumerate(cap_name):
-        draw.text(
-            (100, 1050 + 100 * i),
-            line,
-            font=capacity_name_font,
-            fill=(230, 230, 230, 255),
-            stroke_width=2,
-            stroke_fill=(0, 0, 0, 255),
-        )
-
-    capacity_description_lines = (
-        wrapped_line
-        for newline in ball.capacity_description.splitlines()
-        for wrapped_line in textwrap.wrap(newline, 32)
+    # Draw FIFA stats section instead of ability
+    fifa_stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 80)
+    stats_label_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 50)
+    
+    # Show rating prominently
+    draw.text(
+        (100, 1050),
+        f"RATING: {ball.rating}",
+        font=capacity_name_font,
+        fill=(252, 194, 76, 255),
+        stroke_width=2,
+        stroke_fill=(0, 0, 0, 255),
     )
-
-    for i, line in enumerate(capacity_description_lines):
+    
+    # FIFA stats in 2 rows of 3
+    stats_data = [
+        ("PAC", ball.pace, (100, 1180)),
+        ("SHO", ball.shooting, (500, 1180)),
+        ("PAS", ball.passing, (900, 1180)),
+        ("DRI", ball.dribbling, (100, 1320)),
+        ("DEF", ball.defending, (500, 1320)),
+        ("PHY", ball.physical, (900, 1320)),
+    ]
+    
+    for label, value, pos in stats_data:
+        # Color based on stat value
+        if value >= 85:
+            color = (76, 217, 100, 255)  # Green for high
+        elif value >= 70:
+            color = (252, 194, 76, 255)  # Yellow for medium
+        else:
+            color = (237, 115, 101, 255)  # Red for low
+        
         draw.text(
-            (60, 1100 + 100 * len(cap_name) + 80 * i),
-            line,
-            font=capacity_description_font,
+            pos,
+            f"{label}: {value}",
+            font=fifa_stats_font,
+            fill=color,
             stroke_width=1,
             stroke_fill=(0, 0, 0, 255),
         )
-
-    draw.text(
-        (320, 1670),
-        str(ball_instance.health),
-        font=stats_font,
-        fill=ball_health,
-        stroke_width=1,
-        stroke_fill=(0, 0, 0, 255),
-    )
-    draw.text(
-        (1120, 1670),
-        str(ball_instance.attack),
-        font=stats_font,
-        fill=(252, 194, 76, 255),
-        stroke_width=1,
-        stroke_fill=(0, 0, 0, 255),
-        anchor="ra",
-    )
+    
+    # Position and Club info
+    if ball.position:
+        draw.text(
+            (100, 1480),
+            f"Position: {ball.position}",
+            font=stats_label_font,
+            fill=(230, 230, 230, 255),
+            stroke_width=1,
+            stroke_fill=(0, 0, 0, 255),
+        )
+    if ball.club:
+        draw.text(
+            (600, 1480),
+            f"Club: {ball.club}",
+            font=stats_label_font,
+            fill=(230, 230, 230, 255),
+            stroke_width=1,
+            stroke_fill=(0, 0, 0, 255),
+        )
     if settings.show_rarity:
         draw.text(
             (1200, 50),

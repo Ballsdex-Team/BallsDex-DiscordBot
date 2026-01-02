@@ -231,6 +231,43 @@ class Ball(models.Model):
     created_at = models.DateTimeField(blank=True, null=True, auto_now_add=True, editable=False)
     translations = models.TextField(blank=True, null=True)
 
+    # Football player specific fields
+    position = models.CharField(
+        max_length=3,
+        blank=True,
+        null=True,
+        help_text="Player position: GK, DEF, MID, or FWD",
+    )
+    club = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text="Current club of the player",
+    )
+    nationality = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text="Nationality of the player",
+    )
+    rating = models.IntegerField(
+        default=50,
+        help_text="Player rating from 1-99",
+    )
+    rarity_tier = models.CharField(
+        max_length=16,
+        default="common",
+        help_text="Rarity tier: common, rare, epic, or legendary",
+    )
+
+    # FIFA-style stats (1-99)
+    pace = models.IntegerField(default=50, help_text="PAC - Player pace/speed")
+    shooting = models.IntegerField(default=50, help_text="SHO - Shooting ability")
+    passing = models.IntegerField(default=50, help_text="PAS - Passing ability")
+    dribbling = models.IntegerField(default=50, help_text="DRI - Dribbling skills")
+    defending = models.IntegerField(default=50, help_text="DEF - Defending ability")
+    physical = models.IntegerField(default=50, help_text="PHY - Physical strength")
+
     def __str__(self) -> str:
         return self.country
 
@@ -422,3 +459,32 @@ class Block(models.Model):
     class Meta:
         managed = True
         db_table = "block"
+
+
+# Rarity tier colors for embeds
+RARITY_COLORS = {
+    "common": 0x95A5A6,     # Gray
+    "rare": 0x3498DB,       # Blue
+    "epic": 0x9B59B6,       # Purple
+    "legendary": 0xFFD700,  # Gold
+}
+
+
+class UserPacks(models.Model):
+    """Stores pack inventory for each user."""
+    player = models.OneToOneField(
+        Player, on_delete=models.CASCADE, related_name="packs"
+    )
+    player_id: int
+    common_packs = models.IntegerField(default=0, help_text="Number of common packs")
+    rare_packs = models.IntegerField(default=0, help_text="Number of rare packs")
+    epic_packs = models.IntegerField(default=0, help_text="Number of epic packs")
+
+    def __str__(self) -> str:
+        return f"Packs for {self.player}"
+
+    class Meta:
+        managed = True
+        db_table = "userpacks"
+        verbose_name = "User Packs"
+        verbose_name_plural = "User Packs"

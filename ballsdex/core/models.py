@@ -184,6 +184,43 @@ class Ball(models.Model):
     capacity_logic = fields.JSONField(description="Effect of this capacity", default={})
     created_at = fields.DatetimeField(auto_now_add=True, null=True)
 
+    # Football player specific fields
+    position = fields.CharField(
+        max_length=3,
+        null=True,
+        default=None,
+        description="Player position: GK, DEF, MID, or FWD",
+    )
+    club = fields.CharField(
+        max_length=64,
+        null=True,
+        default=None,
+        description="Current club of the player",
+    )
+    nationality = fields.CharField(
+        max_length=64,
+        null=True,
+        default=None,
+        description="Nationality of the player",
+    )
+    rating = fields.IntField(
+        default=50,
+        description="Player rating from 1-99",
+    )
+    rarity_tier = fields.CharField(
+        max_length=16,
+        default="common",
+        description="Rarity tier: common, rare, epic, or legendary",
+    )
+
+    # FIFA-style stats (1-99)
+    pace = fields.IntField(default=50, description="PAC - Player pace/speed")
+    shooting = fields.IntField(default=50, description="SHO - Shooting ability")
+    passing = fields.IntField(default=50, description="PAS - Passing ability")
+    dribbling = fields.IntField(default=50, description="DRI - Dribbling skills")
+    defending = fields.IntField(default=50, description="DEF - Defending ability")
+    physical = fields.IntField(default=50, description="PHY - Physical strength")
+
     instances: fields.BackwardFKRelation[BallInstance]
 
     def __str__(self) -> str:
@@ -393,8 +430,9 @@ class BallInstance(models.Model):
             f"Caught on {format_dt(self.catch_date)}{catch_time_msg}"
             f" ({format_dt(self.catch_date, style='R')}).\n"
             f"{trade_content}\n"
-            f"ATK: {self.attack} ({self.attack_bonus:+d}%)\n"
-            f"HP: {self.health} ({self.health_bonus:+d}%)"
+            f"⚽ **{self.countryball.country}** | Rating: {self.countryball.rating}\n"
+            f"PAC: {self.countryball.pace} | SHO: {self.countryball.shooting} | PAS: {self.countryball.passing}\n"
+            f"DRI: {self.countryball.dribbling} | DEF: {self.countryball.defending} | PHY: {self.countryball.physical}"
         )
 
         # draw image
@@ -609,3 +647,31 @@ class Block(models.Model):
 
     def __str__(self) -> str:
         return str(self.pk)
+
+
+# Rarity tier colors for embeds
+RARITY_COLORS = {
+    "common": 0x95A5A6,     # Gray
+    "rare": 0x3498DB,       # Blue
+    "epic": 0x9B59B6,       # Purple
+    "legendary": 0xFFD700,  # Gold
+}
+
+
+class UserPacks(models.Model):
+    """Stores pack inventory for each user."""
+    player: fields.ForeignKeyRelation[Player] = fields.ForeignKeyField(
+        "models.Player", related_name="packs", unique=True
+    )
+    common_packs = fields.IntField(default=0, description="Number of common packs")
+    rare_packs = fields.IntField(default=0, description="Number of rare packs")
+    epic_packs = fields.IntField(default=0, description="Number of epic packs")
+
+    def __str__(self) -> str:
+        return f"Packs for {self.player}"
+
+    @classmethod
+    async def get_or_create_for_player(cls, player: Player) -> "UserPacks":
+        """Get or create a UserPacks record for a player."""
+        packs, _ = await cls.get_or_create(player=player)
+        return packs
