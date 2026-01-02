@@ -126,7 +126,7 @@ class Admin(commands.Cog):
         self.bot.tree.add_command(self.admin.app_command, guilds=guilds)
 
     @commands.hybrid_group()
-    @app_commands.guilds()
+    @app_commands.guilds(0)
     @app_commands.default_permissions(administrator=True)
     @commands.has_permissions(administrator=True)
     @checks.is_staff()
