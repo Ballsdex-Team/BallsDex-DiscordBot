@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Generator
 
 import discord
 from discord.ui import ActionRow, Button, Select, Separator, TextDisplay
@@ -18,6 +18,14 @@ if TYPE_CHECKING:
     from .cog import Trade
 
 type Interaction = discord.Interaction["BallsDexBot"]
+
+
+def extract_select_related(fields: dict[str, dict] | bool, prefix: str = "") -> Generator[str, Any, None]:
+    if type(fields) is bool:
+        return
+    for key, value in fields.items():
+        yield f"{prefix}{key}"
+        yield from extract_select_related(value, f"{prefix}{key}__")
 
 
 class BulkSelector(Container):
@@ -45,11 +53,11 @@ class BulkSelector(Container):
             return
         text = ""
         # reuse the ordering given in the original queryset
-        self.queryset
         async for ball in (
             BallInstance.objects.filter(id__in=self.formatter.defaulted)
             .annotate(**self.queryset.query.annotations)
             .order_by(*self.queryset.query.order_by)
+            .select_related(*extract_select_related(self.queryset.query.select_related))
         ):
             text += f"- {ball.description(include_emoji=True, bot=self.bot)}\n"
         menu = Menu(self.bot, self.view, TextSource(text, page_length=3800), TextFormatter(self.balls))
