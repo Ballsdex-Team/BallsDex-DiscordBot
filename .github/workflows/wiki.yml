@@ -2,9 +2,7 @@ name: wiki
 on:
   push:
     branches:
-      - master
-      - 3.0-dev
-      - 3.0/docs
+      - v3
 permissions:
   contents: write
 jobs:
