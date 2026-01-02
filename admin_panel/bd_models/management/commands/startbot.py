@@ -134,6 +134,27 @@ def patch_gateway(proxy_url: str):
     BallsDexBot.before_identify_hook = before_identify_hook
 
 
+def patch_loggers_cluster(cluster_id: int):
+    # in clustering mode, we want to include the cluster ID in the log entries
+    # for that, we patch the logging formatters on the fly
+    for rich_handler in ("console", "buffer"):
+        handler = logging.getHandlerByName(rich_handler)
+        if not handler:
+            continue
+        formatter = cast(discord.utils._ColourFormatter, handler.formatter)
+        for format in formatter.FORMATS.values():
+            format._style._fmt = format._style._fmt.replace(
+                "%(asctime)s\x1b[0m", f"%(asctime)s \x1b[37;1m#{cluster_id}\x1b[0m"
+            )
+    for basic_handler in ("file",):
+        handler = logging.getHandlerByName(basic_handler)
+        if not handler:
+            continue
+        formatter = cast(logging.Formatter, handler.formatter)
+        # using %-style formatting to preserve the brackets
+        formatter._style._fmt = "[{asctime}] #%d {levelname} {name}: {message}" % cluster_id
+
+
 async def shutdown_handler(bot: BallsDexBot, signal_type: str | None = None):
     if signal_type:
         log.info(f"Received {signal_type}, stopping the bot...")
@@ -286,10 +307,13 @@ class Command(BaseCommand):
                 )
             ]
             if any(clustering_args) and not all(clustering_args):
-                raise CommandError(
-                    "If you are running in clustering mode, you must provide all flags: "
-                    "--shard-ids --cluster-id --cluster-name --cluster-count"
-                )
+                pass
+                # raise CommandError(
+                #    "If you are running in clustering mode, you must provide all flags: "
+                #    "--shard-ids --cluster-id --cluster-name --cluster-count"
+                # )
+            if options["cluster_id"]:
+                patch_loggers_cluster(options["cluster_id"])
 
             if options["gateway_url"] is not None:
                 log.info("Using custom gateway URL: %s", options["gateway_url"])
