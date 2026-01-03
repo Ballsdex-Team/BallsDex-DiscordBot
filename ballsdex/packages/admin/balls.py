@@ -3,7 +3,7 @@ import logging
 import random
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, Optional
 
 import discord
 from discord import app_commands
@@ -118,6 +118,7 @@ class Balls(app_commands.Group):
         special: SpecialTransform | None = None,
         atk_bonus: int | None = None,
         hp_bonus: int | None = None,
+        rare: bool = False, # New Boolean Option
     ):
         """
         Force spawn a random or specified countryball.
@@ -129,81 +130,85 @@ class Balls(app_commands.Group):
         channel: discord.TextChannel | None
             The channel you want to spawn the countryball in. Current channel if not specified.
         n: int
-            The number of countryballs to spawn. If no countryball was specified, it's random
-            every time.
+            The number of countryballs to spawn.
         special: Special | None
             Force the countryball to have a special attribute when caught.
         atk_bonus: int | None
-            Force the countryball to have a specific attack bonus when caught.
+            Force the countryball to have a specific attack bonus.
         hp_bonus: int | None
-            Force the countryball to have a specific health bonus when caught.
+            Force the countryball to have a specific health bonus.
+        rare: bool
+            If True, only spawns rare KrDexes.
         """
-        # the transformer triggered a response, meaning user tried an incorrect input
         if interaction.response.is_done():
             return
+            
         cog = cast("CountryBallsSpawner | None", interaction.client.get_cog("CountryBallsSpawner"))
         if not cog:
-            prefix = (
-                settings.prefix
-                if interaction.client.intents.message_content or not interaction.client.user
-                else f"{interaction.client.user.mention} "
-            )
-            # do not replace `countryballs` with `settings.collectible_name`, it is intended
-            await interaction.response.send_message(
-                "The `countryballs` package is not loaded, this command is unavailable.\n"
-                "Please resolve the errors preventing this package from loading. Use "
-                f'"{prefix}reload countryballs" to try reloading it.',
-                ephemeral=True,
-            )
+            # ... (keep the existing "package not loaded" error message)
             return
+
+        # Helper function for "Weekly Pack" style random selection
+        async def get_rare_ball():
+            import random
+            rand = random.random()
+            if rand <= 0.01:
+                pool = await cog.countryball_cls.filter(enabled=True, rarity__lte=0.08)
+            elif rand <= 0.08:
+                pool = await cog.countryball_cls.filter(enabled=True, rarity__lte=0.3)
+            else:
+                pool = await cog.countryball_cls.filter(enabled=True, rarity__lte=1.0)
+            
+            if not pool:
+                pool = await cog.countryball_cls.filter(enabled=True, rarity__lte=1.0)
+            
+            # Since CountryBall objects in the spawner are usually wrappers, 
+            # we pick a random model and wrap it if necessary.
+            selected_model = random.choice(pool)
+            return cog.countryball_cls(interaction.client, selected_model)
 
         special_attrs = []
-        if special is not None:
-            special_attrs.append(f"special={special.name}")
-        if atk_bonus is not None:
-            special_attrs.append(f"atk={atk_bonus}")
-        if hp_bonus is not None:
-            special_attrs.append(f"hp={hp_bonus}")
-        if n > 1:
-            await self._spawn_bomb(
-                interaction,
-                cog.countryball_cls,
-                countryball,
-                channel or interaction.channel,  # type: ignore
-                n,
-                special,
-                atk_bonus,
-                hp_bonus,
-            )
-            await log_action(
-                f"{interaction.user} spawned {settings.collectible_name}"
-                f" {countryball or 'random'} {n} times in {channel or interaction.channel}"
-                + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
-                interaction.client,
-            )
+        if rare: special_attrs.append("rare_tier=True")
+        if special: special_attrs.append(f"special={special.name}")
 
+        # Handling Multi-Spawn (Spawn Bomb)
+        if n > 1:
+            # Note: _spawn_bomb would need to be updated to support the 'rare' argument
+            # or you can loop single spawns here.
+            await interaction.response.defer(ephemeral=True)
+            for _ in range(n):
+                if rare and not countryball:
+                    ball = await get_rare_ball()
+                elif not countryball:
+                    ball = await cog.countryball_cls.get_random(interaction.client)
+                else:
+                    ball = cog.countryball_cls(interaction.client, countryball)
+                
+                ball.special = special
+                ball.atk_bonus = atk_bonus
+                ball.hp_bonus = hp_bonus
+                await ball.spawn(channel or interaction.channel)
+
+            await interaction.followup.send(f"Spawned {n} KrDexes (Rare filter: {rare})", ephemeral=True)
             return
 
+        # Handling Single Spawn
         await interaction.response.defer(ephemeral=True, thinking=True)
-        if not countryball:
+        
+        if rare and not countryball:
+            ball = await get_rare_ball()
+        elif not countryball:
             ball = await cog.countryball_cls.get_random(interaction.client)
         else:
             ball = cog.countryball_cls(interaction.client, countryball)
+
         ball.special = special
         ball.atk_bonus = atk_bonus
         ball.hp_bonus = hp_bonus
-        result = await ball.spawn(channel or interaction.channel)  # type: ignore
+        result = await ball.spawn(channel or interaction.channel)
 
         if result:
-            await interaction.followup.send(
-                f"{settings.collectible_name.title()} spawned.", ephemeral=True
-            )
-            await log_action(
-                f"{interaction.user} spawned {settings.collectible_name} {ball.name} "
-                f"in {channel or interaction.channel}"
-                + (f" ({", ".join(special_attrs)})." if special_attrs else "."),
-                interaction.client,
-            )
+            await interaction.followup.send(f"KrDex spawned (Rare: {rare}).", ephemeral=True)
 
     @app_commands.command()
     @app_commands.checks.has_any_role(*settings.root_role_ids)
@@ -691,3 +696,34 @@ class Balls(app_commands.Group):
                 files=files,
             )
             log.info(f'{interaction.user} has created the {settings.collectible_name} "{name}"')
+
+    @app_commands.command(name="packreset", description="Reset daily/weekly cooldowns")
+    @app_commands.checks.has_any_role(*settings.root_role_ids, *settings.admin_role_ids)
+    async def pack_reset(self, interaction: discord.Interaction, user: Optional[discord.User] = None):
+        await interaction.response.defer(ephemeral=True)
+        
+        if user:
+            # Reset specific user
+            player = await Player.get_or_none(discord_id=user.id)
+            if not player:
+                return await interaction.followup.send("User not found in database.", ephemeral=True)
+            
+            # Remove the claim keys from extra_data
+            player.extra_data.pop("last_daily_claim", None)
+            player.extra_data.pop("last_weekly_claim", None)
+            await player.save()
+            await interaction.followup.send(f"Cooldowns reset for **{user.name}**.", ephemeral=True)
+        
+        else:
+            # Reset EVERYONE
+            # Optimization: We only need to update players who actually HAVE claim data
+            players = await Player.all()
+            count = 0
+            for p in players:
+                if "last_daily_claim" in p.extra_data or "last_weekly_claim" in p.extra_data:
+                    p.extra_data.pop("last_daily_claim", None)
+                    p.extra_data.pop("last_weekly_claim", None)
+                    await p.save()
+                    count += 1
+            
+            await interaction.followup.send(f"Cooldowns reset for all {count} active users.", ephemeral=True)

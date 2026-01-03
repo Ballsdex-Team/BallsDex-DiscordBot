@@ -873,7 +873,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         blocked = await player.is_blocked(player1)
         if blocked and not is_staff(interaction):
             await interaction.followup.send(
-                "You cannot compare with a user that has you blocked.", ephemeral=True
+                "You cannot compare with a user that has you Blocked.", ephemeral=True
             )
             return
 
@@ -1091,11 +1091,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer()
         
         player, _ = await Player.get_or_create(discord_id=interaction.user.id)
-        
-        # PERSISTENT COOLDOWN LOGIC
         import time
         current_time = int(time.time())
-        # Check 'extra_data' for the last claim timestamp
         last_claim = player.extra_data.get("last_daily_claim", 0)
         
         if current_time - last_claim < 86400:
@@ -1106,15 +1103,14 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True
             )
 
-        # PACK LOGIC
-        balls = await Ball.filter(enabled=True)
+        # Updated Filter: rarity__gt=0.99 excludes anything 0.99 or rarer
+        balls = await Ball.filter(enabled=True, rarity__gt=0.99)
         if not balls:
-            return await interaction.followup.send("No KrDexes available!")
+            return await interaction.followup.send("No common KrDexes available!")
 
         weights = [1 / ball.rarity for ball in balls]
         selected_ball = random.choices(balls, weights=weights, k=1)[0]
 
-        # Update Database Timestamp
         player.extra_data["last_daily_claim"] = current_time
         await player.save()
         

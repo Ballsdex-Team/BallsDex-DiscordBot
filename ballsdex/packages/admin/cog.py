@@ -1,12 +1,12 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, Optional
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button
 
-from ballsdex.core.models import Ball, GuildConfig
+from ballsdex.core.models import Ball, GuildConfig, Player
 from ballsdex.core.utils.paginator import FieldPageSource, Pages, TextPageSource
 from ballsdex.settings import settings
 
