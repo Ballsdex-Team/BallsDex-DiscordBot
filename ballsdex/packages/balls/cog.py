@@ -327,7 +327,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         display = TextDisplay("")
         container.add_item(display)
         view.add_item(container)
-        menu = Menu(self.bot, view, TextSource(text, delims=["\n###", " "]), TextFormatter(display))
+        menu = Menu(self.bot, view, TextSource(text, delims=[" \n###", " "]), TextFormatter(display))
         await menu.init()
         await interaction.followup.send(view=view)
 
