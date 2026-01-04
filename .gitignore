@@ -12,7 +12,8 @@ build
 
 # log files
 *.log*
-logs
+logs/*
+!logs/.gitkeep
 
 # Virtual environment
 venv
