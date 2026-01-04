@@ -209,6 +209,13 @@ admin panel. You can still import your old settings.
         !!! note
             Don't start the admin panel with `admin-panel` service anymore, use `proxy` instead.
 
+            !!! warning
+                Because this note was misunderstood, you have to use the `proxy` service **only**
+                if you want to start the panel.
+
+                If you are told in the docs to use the `admin-panel` service, don't replace it with
+                `proxy` just because of this note, use the command as-is *please*.
+
     === "Without Docker"
 
         After having activated your venv and exported the env vars
