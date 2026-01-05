@@ -57,6 +57,7 @@ nav:
           - selfhosting/admin-panel/getting-started.md
           - selfhosting/admin-panel/exposing-to-internet.md
       - Misc:
+          - selfhosting/misc/admin-commands.md
           - selfhosting/misc/upgrading-to-3.0.md
           - selfhosting/misc/rarity-mechanism.md
           - selfhosting/misc/backup-and-transfers.md
@@ -132,6 +133,7 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.details
 
 extra_javascript:
   - javascript/mathjax.js
