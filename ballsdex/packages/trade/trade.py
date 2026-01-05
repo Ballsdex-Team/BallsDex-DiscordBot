@@ -150,103 +150,12 @@ class TradingUser(Container):
     # ==== Container items ====
 
     proposal_list = TextDisplay("")
-    buttons = ActionRow()
+    select_row = ActionRow()
 
     async def set_currency(self, interaction: Interaction):
         modal = SetMoneyModal(self)
         await interaction.response.send_modal(modal)
         await modal.wait()
-
-    @buttons.button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
-    async def lock_button(self, interaction: Interaction, button: Button):
-        if not interaction.user.id == self.user.id:
-            await interaction.response.send_message(
-                "You are not allowed to do this, edit your own trade.", ephemeral=True
-            )
-            return
-        if self.locked:
-            await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
-            return
-
-        await interaction.response.defer()
-        try:
-            await self.lock()
-        except TradeError as e:
-            await interaction.followup.send(e.error_message, ephemeral=True)
-        else:
-            await self.view.edit_message(interaction)
-
-    @buttons.button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
-    async def clear_button(self, interaction: Interaction, button: Button):
-        if not interaction.user.id == self.user.id:
-            await interaction.response.send_message(
-                "You are not allowed to do this, edit your own trade.", ephemeral=True
-            )
-            return
-        if self.locked:
-            await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
-            return
-        view = ConfirmChoiceView(interaction, accept_message="Clearing your proposal...")
-        await interaction.response.send_message(
-            "Are you sure you want to clear your proposal?", view=view, ephemeral=True
-        )
-        await view.wait()
-        if not view.value:
-            return
-
-        try:
-            await self.clear()
-        except TradeError as e:
-            await interaction.followup.send(e.error_message, ephemeral=True)
-        else:
-            await self.view.edit_message(interaction)
-
-    @buttons.button(
-        label="Cancel trade",
-        emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
-        style=discord.ButtonStyle.danger,
-    )
-    async def cancel_button(self, interaction: Interaction, button: Button):
-        if not interaction.user.id == self.user.id:
-            await interaction.response.send_message(
-                "You are not allowed to do this, click your own button.", ephemeral=True
-            )
-            return
-        view = ConfirmChoiceView(
-            interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
-        )
-        await interaction.response.send_message(
-            "Are you sure you want to cancel this trade?", view=view, ephemeral=True
-        )
-        await view.wait()
-        if not view.value:
-            return
-
-        try:
-            await self.cancel()
-        except TradeError as e:
-            await interaction.followup.send(e.error_message, ephemeral=True)
-        else:
-            await self.view.edit_message(None)
-
-    @buttons.button(
-        label="Confirm", emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}", style=discord.ButtonStyle.success
-    )
-    async def confirm_button(self, interaction: Interaction, button: Button):
-        if not interaction.user.id == self.user.id:
-            await interaction.response.send_message(
-                "You are not allowed to do this, click your own button.", ephemeral=True
-            )
-            return
-        await interaction.response.defer()
-        try:
-            await self.confirm()
-        except TradeError as e:
-            await interaction.followup.send(e.error_message, ephemeral=True)
-        else:
-            await self.view.edit_message(interaction)
-
-    select_row = ActionRow()
 
     @select_row.select(placeholder="Click to remove an item", min_values=1)
     async def select_menu(self, interaction: Interaction, select: Select):
@@ -304,10 +213,7 @@ class TradingUser(Container):
         self.add_item(Separator())
 
         # update disabled states
-        self.lock_button.disabled = self.clear_button.disabled = self.select_menu.disabled = (
-            self.locked or self.trade.cancelled
-        )
-        self.cancel_button.disabled = self.trade.cancelled
+        self.select_menu.disabled = self.locked or self.trade.cancelled
 
         if settings.currency_enabled:
             button = Button(label="Change", style=discord.ButtonStyle.primary)
@@ -333,15 +239,6 @@ class TradingUser(Container):
             self.add_item(self.proposal_list)
             if self.proposal:
                 await self.menu.init(container=self)
-
-        self.buttons.clear_items()
-        if self.view.confirmation_phase:
-            self.buttons.add_item(self.confirm_button)
-        else:
-            self.buttons.add_item(self.lock_button)
-            self.buttons.add_item(self.clear_button)
-        self.buttons.add_item(self.cancel_button)
-        self.add_item(self.buttons)
 
         if not self.view.active:
             for item in self.walk_children():
@@ -546,6 +443,87 @@ class TradeInstance(LayoutView):
         if self.active:
             await self._cleanup()
 
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user.id not in (self.trader1.user.id, self.trader2.user.id):
+            await interaction.response.send_message("You are not part of this trade!", ephemeral=True)
+            return False
+        return True
+
+    buttons = ActionRow()
+
+    @buttons.button(label="Lock proposal", emoji="\N{LOCK}", style=discord.ButtonStyle.primary)
+    async def lock_button(self, interaction: Interaction, button: Button):
+        trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
+        if trader.locked:
+            await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
+            return
+
+        await interaction.response.defer()
+        try:
+            await trader.lock()
+        except TradeError as e:
+            await interaction.followup.send(e.error_message, ephemeral=True)
+        else:
+            await self.edit_message(interaction)
+
+    @buttons.button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
+    async def clear_button(self, interaction: Interaction, button: Button):
+        trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
+        if trader.locked:
+            await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
+            return
+        view = ConfirmChoiceView(interaction, accept_message="Clearing your proposal...")
+        await interaction.response.send_message(
+            "Are you sure you want to clear your proposal?", view=view, ephemeral=True
+        )
+        await view.wait()
+        if not view.value:
+            return
+
+        try:
+            await trader.clear()
+        except TradeError as e:
+            await interaction.followup.send(e.error_message, ephemeral=True)
+        else:
+            await self.edit_message(interaction)
+
+    @buttons.button(
+        label="Cancel trade",
+        emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
+        style=discord.ButtonStyle.danger,
+    )
+    async def cancel_button(self, interaction: Interaction, button: Button):
+        trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
+        view = ConfirmChoiceView(
+            interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
+        )
+        await interaction.response.send_message(
+            "Are you sure you want to cancel this trade?", view=view, ephemeral=True
+        )
+        await view.wait()
+        if not view.value:
+            return
+
+        try:
+            await trader.cancel()
+        except TradeError as e:
+            await interaction.followup.send(e.error_message, ephemeral=True)
+        else:
+            await self.edit_message(None)
+
+    @buttons.button(
+        label="Confirm", emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}", style=discord.ButtonStyle.success
+    )
+    async def confirm_button(self, interaction: Interaction, button: Button):
+        trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
+        await interaction.response.defer()
+        try:
+            await trader.confirm()
+        except TradeError as e:
+            await interaction.followup.send(e.error_message, ephemeral=True)
+        else:
+            await self.edit_message(interaction)
+
     @classmethod
     def configure(
         cls, cog: "TradeCog", trader1: tuple[Player, discord.abc.User], trader2: tuple[Player, discord.abc.User]
@@ -553,9 +531,12 @@ class TradeInstance(LayoutView):
         trade = cls(cog)
         trade.trader1 = TradingUser(trade, *trader1)
         trade.trader2 = TradingUser(trade, *trader2)
+        trade.clear_items()
         trade.add_item(TextDisplay(f"Hey {trader2[1].mention}, {trader1[1].mention} is proposing a trade!"))
         trade.add_item(trade.trader1)
         trade.add_item(trade.trader2)
+        trade.buttons.remove_item(trade.confirm_button)
+        trade.add_item(trade.buttons)
         timeout = datetime.now() + timedelta(seconds=TRADE_TIMEOUT)
         trade.add_item(TextDisplay(f"-# This trade will timeout {format_dt(timeout, style='R')}."))
         return trade
@@ -600,6 +581,19 @@ class TradeInstance(LayoutView):
         --> HTTP call for R3 is made
         In this example, request R2 has been discarded since we have received another edit request before R1 finished.
         """
+
+        async def refresh():
+            await self.trader1.refresh_container()
+            await self.trader2.refresh_container()
+
+            self.buttons.clear_items()
+            if self.confirmation_phase:
+                self.buttons.add_item(self.confirm_button)
+            else:
+                self.buttons.add_item(self.lock_button)
+                self.buttons.add_item(self.clear_button)
+            self.buttons.add_item(self.cancel_button)
+
         if interaction is not None:
             self.next_edit_interaction = interaction
         if self.edit_lock.locked():
@@ -609,16 +603,14 @@ class TradeInstance(LayoutView):
                 # this is a situation where we need to edit the message but without an interaction that owns it
                 # (when using slash commands instead of buttons), so we fall back on a different endpoint
                 await asyncio.sleep(0.5)
-                await self.trader1.refresh_container()
-                await self.trader2.refresh_container()
+                await refresh()
                 await self.message.edit(view=self)
                 return
             while self.next_edit_interaction is not None:
                 inter = self.next_edit_interaction
                 self.next_edit_interaction = None
                 await asyncio.sleep(0.5)
-                await self.trader1.refresh_container()
-                await self.trader2.refresh_container()
+                await refresh()
                 if self.is_finished():  # trade completed or timed out
                     for children in self.walk_children():
                         if hasattr(children, "disabled"):
@@ -694,6 +686,9 @@ class TradeInstance(LayoutView):
     async def _cleanup(self):
         self.stop()
         await BallInstance.objects.filter(id__in=self.trader1.proposal | self.trader2.proposal).aupdate(locked=None)
+        for item in self.walk_children():
+            if hasattr(item, "disabled"):
+                item.disabled = True  # type: ignore
 
     async def cleanup(self):
         self.timeout_task.cancel()
