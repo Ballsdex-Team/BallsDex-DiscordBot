@@ -14,7 +14,12 @@ from django.utils import timezone
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.menus import Menu, ModelSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
-from ballsdex.core.utils.transformers import BallEnabledTransform, BallInstanceTransform, SpecialEnabledTransform
+from ballsdex.core.utils.transformers import (
+    BallEnabledTransform,
+    BallInstanceTransform,
+    SpecialEnabledTransform,
+    TradeCommandType,
+)
 from bd_models.models import BallInstance, Player
 from bd_models.models import Trade as TradeModel
 from settings.models import settings
@@ -143,7 +148,7 @@ class Trade(commands.GroupCog):
         else:
             await interaction.followup.send("The trade has started.", ephemeral=True)
 
-    @app_commands.command()
+    @app_commands.command(extras={"trade": TradeCommandType.PICK})
     async def add(self, interaction: Interaction, countryball: BallInstanceTransform):
         """
         Add a countryball to your trade proposal. You must have a trade open.
@@ -168,7 +173,7 @@ class Trade(commands.GroupCog):
                 f"{countryball.description(is_trade=True, include_emoji=True, bot=self.bot)} added.", ephemeral=True
             )
 
-    @app_commands.command()
+    @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
     async def remove(self, interaction: Interaction, countryball: BallInstanceTransform):
         """
         Remove a countryball from your trade proposal. You must have a trade open.
