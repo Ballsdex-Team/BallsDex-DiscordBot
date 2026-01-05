@@ -1095,6 +1095,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         current_time = int(time.time())
         last_claim = player.extra_data.get("last_daily_claim", 0)
         
+        # 24-hour cooldown check
         if current_time - last_claim < 86400:
             remaining = 86400 - (current_time - last_claim)
             time_str = str(timedelta(seconds=remaining))
@@ -1103,17 +1104,39 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 ephemeral=True
             )
 
-        # Updated Filter: rarity__gt=0.99 excludes anything 0.99 or rarer
-        balls = await Ball.filter(enabled=True, rarity__gt=0.99)
-        if not balls:
-            return await interaction.followup.send("No common KrDexes available!")
+        # --- NEW RARITY TIER LOGIC ---
+        rand = random.random() # Generates a number between 0.0 and 1.0
+        
+        if rand <= 0.01: 
+            # 1% chance: 0.3 or rarer (rarity <= 0.3)
+            ball_pool = await Ball.filter(enabled=True, rarity__lte=0.3)
+            tier_name = "LEGENDARY"
+        elif rand <= 0.06: 
+            # 5% chance: 1.0 or rarer (0.01 + 0.05 = 0.06)
+            ball_pool = await Ball.filter(enabled=True, rarity__lte=1.0)
+            tier_name = "RARE"
+        elif rand <= 0.16: 
+            # 10% chance: 5.0 or rarer (0.06 + 0.10 = 0.16)
+            ball_pool = await Ball.filter(enabled=True, rarity__lte=5.0)
+            tier_name = "UNCOMMON"
+        else: 
+            # Rest: Commoner than 5.0 (rarity > 5.0)
+            ball_pool = await Ball.filter(enabled=True, rarity__gt=5.0)
+            tier_name = "COMMON"
 
-        weights = [1 / ball.rarity for ball in balls]
-        selected_ball = random.choices(balls, weights=weights, k=1)[0]
+        # Safety fallback if a pool is empty
+        if not ball_pool:
+            ball_pool = await Ball.filter(enabled=True, rarity__gt=5.0)
 
+        # Selection logic (Inverse rarity weighting makes rarer things in that pool harder to get)
+        weights = [1 / ball.rarity for ball in ball_pool]
+        selected_ball = random.choices(ball_pool, weights=weights, k=1)[0]
+
+        # Save progress
         player.extra_data["last_daily_claim"] = current_time
         await player.save()
         
+        # Give ball and mention tier in a custom way if you like
         await self._give_ball(interaction, selected_ball, player)
 
     # --- WEEKLY PACK ---
