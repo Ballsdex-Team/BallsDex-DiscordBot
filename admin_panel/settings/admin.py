@@ -111,6 +111,10 @@ class SettingsAdmin(admin.ModelAdmin):
     def has_add_permission(self, request: "HttpRequest") -> bool:
         return super().has_add_permission(request) and Settings.objects.first() is None
 
+    # and disallow deleting the singleton
+    def has_delete_permission(self, request: "HttpRequest", obj: Settings | None = None) -> bool:
+        return False
+
     @action_with_form(YAMLImportForm, description="Import YAML settings")
     def import_yaml(self, request: "HttpRequest", queryset: "QuerySet[Settings]", data: dict):
         if queryset.count() != 1:
