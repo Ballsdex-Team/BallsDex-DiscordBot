@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections import defaultdict
 from datetime import timedelta
 from typing import TYPE_CHECKING, Literal, cast
 
@@ -33,6 +34,7 @@ type Interaction = discord.Interaction["BallsDexBot"]
 log = logging.getLogger(__name__)
 
 
+@app_commands.guild_only()
 class Trade(commands.GroupCog):
     # used by admin cog at runtime
     history_view_cls = HistoryView
@@ -41,7 +43,7 @@ class Trade(commands.GroupCog):
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
         self.lockdown: str | None = None
-        self.trades: dict[int, TradeInstance] = {}
+        self.trades: dict[int, dict[int, TradeInstance]] = defaultdict(dict)
         self.user_cache: LRUCache[int, discord.User] = LRUCache(maxsize=2000)
 
     async def fetch_user(self, discord_id: int) -> discord.User:
@@ -51,13 +53,17 @@ class Trade(commands.GroupCog):
         self.user_cache[user.id] = user
         return user
 
-    async def get_trade(self, user: discord.Member | discord.User) -> None | tuple[TradeInstance, TradingUser]:
-        trade = self.trades.get(user.id)
+    async def get_trade(
+        self, interaction: Interaction, user: discord.User | discord.Member | None = None
+    ) -> None | tuple[TradeInstance, TradingUser]:
+        assert interaction.channel
+        user = user or interaction.user
+        trade = self.trades.get(interaction.channel.id, {}).get(user.id)
         if not trade:
             return None
         if not trade.active:
-            del self.trades[trade.trader1.user.id]
-            del self.trades[trade.trader2.user.id]
+            del self.trades[interaction.channel.id][trade.trader1.user.id]
+            del self.trades[interaction.channel.id][trade.trader2.user.id]
             await trade.cleanup()
             return None
         trader = trade.trader1 if trade.trader1.user == user else trade.trader2
@@ -66,12 +72,15 @@ class Trade(commands.GroupCog):
     async def cancel_all_trades(self, reason: str):
         log.info(f"Locking down trades globally. {reason=}")
         self.lockdown = reason
-        tasks = set(self.trades.values())
+        tasks: set[TradeInstance] = set()
+        for x in self.trades.values():
+            tasks.update(x.values())
         results = await asyncio.gather(*(x.admin_cancel(reason) for x in tasks), return_exceptions=True)
         for result in filter(lambda m: m is not None, results):
             log.error("Failed to admin cancel trade", exc_info=result)
 
     @app_commands.command()
+    @app_commands.checks.bot_has_permissions(send_messages=True)
     async def start(self, interaction: Interaction, user: discord.User):
         """
         Start trading with someone.
@@ -81,6 +90,7 @@ class Trade(commands.GroupCog):
         user: discord.User
             The user you want to trade with.
         """
+        assert interaction.channel
         if self.lockdown is not None:
             await interaction.response.send_message(
                 f"Trading has been globally disabled by the admins for the following reason: {self.lockdown}",
@@ -109,21 +119,29 @@ class Trade(commands.GroupCog):
                 "You cannot begin a trade with a user that has blocked you.", ephemeral=True
             )
             return
-        if await self.get_trade(interaction.user) is not None:
+        if await self.get_trade(interaction) is not None:
             await interaction.response.send_message("You already have an active trade.", ephemeral=True)
             return
-        if await self.get_trade(user) is not None:
+        if await self.get_trade(interaction, user) is not None:
             await interaction.response.send_message(f"{user.mention} already has an active trade.", ephemeral=True)
             return
 
         await interaction.response.defer(ephemeral=True)
         trade = TradeInstance.configure(self, (player1, interaction.user), (player2, user))
-        self.trades[interaction.user.id] = trade
-        self.trades[user.id] = trade
-        await trade.trader1.refresh_container()
-        await trade.trader2.refresh_container()
-        trade.message = await interaction.channel.send(view=trade)  # type: ignore
-        await interaction.followup.send("The trade has started.", ephemeral=True)
+        self.trades[interaction.channel.id][interaction.user.id] = trade
+        self.trades[interaction.channel.id][user.id] = trade
+        try:
+            await trade.trader1.refresh_container()
+            await trade.trader2.refresh_container()
+            trade.message = await interaction.channel.send(view=trade)  # type: ignore
+        except Exception:
+            # unregister the trade if something failed to avoid the 30 min timeout
+            del self.trades[interaction.channel.id][interaction.user.id]
+            del self.trades[interaction.channel.id][user.id]
+            await trade.cleanup()
+            raise
+        else:
+            await interaction.followup.send("The trade has started.", ephemeral=True)
 
     @app_commands.command()
     async def add(self, interaction: Interaction, countryball: BallInstanceTransform):
@@ -135,7 +153,7 @@ class Trade(commands.GroupCog):
         countryball: BallInstance
             The countryball you are adding to your trade.
         """
-        result = await self.get_trade(interaction.user)
+        result = await self.get_trade(interaction)
         if result is None:
             await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
             return
@@ -160,7 +178,7 @@ class Trade(commands.GroupCog):
         countryball: BallInstance
             The countryball you are removing from your trade.
         """
-        result = await self.get_trade(interaction.user)
+        result = await self.get_trade(interaction)
         if result is None:
             await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
             return
@@ -294,7 +312,7 @@ class Trade(commands.GroupCog):
             Filter the results to a specific filter
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
-        result = await self.get_trade(interaction.user)
+        result = await self.get_trade(interaction)
         if result is None:
             await interaction.followup.send("You do not have any active trade.", ephemeral=True)
             return
