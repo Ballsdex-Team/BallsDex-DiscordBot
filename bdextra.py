@@ -16,7 +16,7 @@ import tomllib
 from typing import NotRequired, TypedDict
 
 
-class Package(TypedDict, total=True, closed=True):
+class Package(TypedDict, total=True):
     location: str
     path: str
     enabled: bool
