@@ -81,7 +81,7 @@ We're slowly getting there! Now we just need to configure the last few bits on B
 
 In production, we need different settings for Django. An example `production.py` file is provided, which we will copy and fill. Open a shell and type the following commands:
 
-1. `cd admin_panel/admin_panel/settings`
+1. `cd config`
 2. `cp production.example.py production.py`
 3. Generate a random string of characters with `pwgen -n 64 1` and copy that
 4. `nano production.py` (or your preferred editor)
@@ -103,7 +103,7 @@ This `production.py` file should remain secret and never be pushed. It will be i
 
 To make use of that `production.py` file, you need to tell Django via the `DJANGO_SETTINGS_MODULE` environment variable.
 
-You will find in `docker-compose.yml` there is already a commented environment variable, simply uncomment that line. If you're not using docker compose, simply run `export DJANGO_SETTINGS_MODULE=admin_panel.settings.production` before running the server.
+You will find in `docker-compose.yml` there is already a commented environment variable, simply uncomment that line. If you're not using docker compose, simply run `export DJANGO_SETTINGS_MODULE=config.production` before running the server.
 
 ----
 

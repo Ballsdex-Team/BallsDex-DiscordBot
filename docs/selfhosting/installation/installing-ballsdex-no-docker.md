@@ -124,11 +124,11 @@ Follow [this section](installing-ballsdex.md#5-configure-the-bot) from the main 
 
 ## 6. Run the bot
 
-Go back to the previous folder with `cd ..`, then, run `python3 -m ballsdex` to start the bot!
+Run `python3 -m django startbot` to start the bot!
 To shut it down, type Ctrl+C.
 
 !!! tip
-    There are multiple options available when running the bot, do `python3 -m ballsdex -h` to view them.
+    There are multiple options available when running the bot, do `python3 -m django startbot -h` to view them.
 
 ### Running the admin panel
 
@@ -179,6 +179,9 @@ Before running any command, do these:
     # activate the virtual environment
     source .venv/bin/activate
 
+    # open the django directory
+    cd admin_panel
+
     # export the database env var
     export BALLSDEXBOT_DB_URL=postgres://username:password@localhost:5432/database_name
     export DJANGO_SETTINGS_MODULE="admin_panel.settings.dev"
@@ -202,11 +205,11 @@ Then
 
 - Start the bot:
   ```bash
-  python3 -m ballsdex
+  python3 -m django startbot
   ```
 - Start the admin panel:
   ```bash
-  cd admin_panel && uvicorn admin_panel.asgi:application
+  uvicorn admin_panel.asgi:application
   ```
 
 ## Updating the bot
