@@ -45,8 +45,14 @@ class BulkSelector(Container):
         self.menu = Menu(bot, self.view, self.source, self.formatter)
         await self.menu.init(position=7, container=self)
 
+        self.display_menu: Menu | None = None
+
     async def update_display(self):
         assert self.view
+
+        if self.display_menu and self.display_menu.source.get_max_pages() > 1:
+            self.remove_item(self.display_menu.controls)
+
         self.balls_count.content = f"-# {len(self.formatter.defaulted)} {settings.plural_collectible_name} selected"
         if not self.formatter.defaulted:
             self.balls.content = "Nothing selected yet"
@@ -60,8 +66,8 @@ class BulkSelector(Container):
             .select_related(*extract_select_related(self.queryset.query.select_related))
         ):
             text += f"- {ball.description(include_emoji=True, bot=self.bot)}\n"
-        menu = Menu(self.bot, self.view, TextSource(text, page_length=3800), TextFormatter(self.balls))
-        await menu.init(position=3, container=self)
+        self.display_menu = Menu(self.bot, self.view, TextSource(text, page_length=3800), TextFormatter(self.balls))
+        await self.display_menu.init(position=3, container=self)
 
     header = TextDisplay(f"## Trade bulk selection\nYour selected {settings.plural_collectible_name} are shown below.")
     sep1 = Separator()
@@ -113,7 +119,7 @@ class BulkSelector(Container):
             await interaction.response.send_message("Nothing was selected!", ephemeral=True)
             return
 
-        result = await self.cog.get_trade(interaction.user)
+        result = await self.cog.get_trade(interaction)
         if result is None:
             await interaction.response.send_message(
                 "Your trade was not found, it may have ended before you finished your bulk trade.", ephemeral=True
