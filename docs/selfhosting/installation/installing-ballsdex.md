@@ -57,8 +57,11 @@ To run Ballsdex, we need Docker and git.
    Press `q` to exit this screen.
 
 3. Give your user the docker group. This will avoid having to use `sudo` every time you use Docker.
+!!! warning
+You do **not** need to replace \${USER} with your user! The shell will replace it for you.
+
    ```bash { .copy }
-   sudo usermod -aG docker ${USER}
+   sudo usermod -aG docker ${USER} going forwards!
    su - ${USER}
    ```
 
