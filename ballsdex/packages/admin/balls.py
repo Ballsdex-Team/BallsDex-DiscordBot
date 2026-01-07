@@ -195,13 +195,13 @@ async def give(ctx: commands.Context[BallsDexBot], user: discord.User, *, flags:
         special=flags.special,
     )
     await ctx.send(
-        f"`{flags.countryball.country}` (`{flags.countryball.pk:0X}`) "
+        f"`{flags.countryball.country}` (`{instance.pk:0X}`) "
         f"{settings.collectible_name} was successfully given to "
         f"`{user}`.\nSpecial: `{flags.special.name if flags.special else None}` • ATK: "
         f"`{instance.attack_bonus:+d}` • HP:`{instance.health_bonus:+d}` "
     )
     log.info(
-        f"{ctx.author} gave {settings.collectible_name} {flags.countryball.country} (`{flags.countryball.pk:0X}`) "
+        f"{ctx.author} gave {settings.collectible_name} {flags.countryball.country} (`{instance.pk:0X}`) "
         f"to {user}. (Special={flags.special.name if flags.special else None} "
         f"ATK={instance.attack_bonus:+d} HP={instance.health_bonus:+d}).",
         extra={"webhook": True},
