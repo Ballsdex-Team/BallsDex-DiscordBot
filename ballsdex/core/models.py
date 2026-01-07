@@ -666,6 +666,12 @@ class UserPacks(models.Model):
     common_packs = fields.IntField(default=0, description="Number of common packs")
     rare_packs = fields.IntField(default=0, description="Number of rare packs")
     epic_packs = fields.IntField(default=0, description="Number of epic packs")
+    last_daily_claim = fields.DatetimeField(
+        null=True, default=None, description="Last time the user claimed their daily pack"
+    )
+    last_weekly_claim = fields.DatetimeField(
+        null=True, default=None, description="Last time the user claimed their weekly pack"
+    )
 
     def __str__(self) -> str:
         return f"Packs for {self.player}"
@@ -675,3 +681,4 @@ class UserPacks(models.Model):
         """Get or create a UserPacks record for a player."""
         packs, _ = await cls.get_or_create(player=player)
         return packs
+

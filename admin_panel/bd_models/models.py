@@ -479,6 +479,12 @@ class UserPacks(models.Model):
     common_packs = models.IntegerField(default=0, help_text="Number of common packs")
     rare_packs = models.IntegerField(default=0, help_text="Number of rare packs")
     epic_packs = models.IntegerField(default=0, help_text="Number of epic packs")
+    last_daily_claim = models.DateTimeField(
+        blank=True, null=True, help_text="Last time the user claimed their daily pack"
+    )
+    last_weekly_claim = models.DateTimeField(
+        blank=True, null=True, help_text="Last time the user claimed their weekly pack"
+    )
 
     def __str__(self) -> str:
         return f"Packs for {self.player}"
@@ -488,3 +494,4 @@ class UserPacks(models.Model):
         db_table = "userpacks"
         verbose_name = "User Packs"
         verbose_name_plural = "User Packs"
+
