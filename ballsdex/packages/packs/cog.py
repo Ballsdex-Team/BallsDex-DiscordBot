@@ -9,6 +9,7 @@ This module implements a pack opening system where users can:
 
 import logging
 import random
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, Tuple
 
 import discord
@@ -320,3 +321,127 @@ class Packs(commands.Cog):
             f"{interaction.user} opened a {pack_name} pack and received "
             f"{len(players)} players"
         )
+
+    @app_commands.command(name="daily")
+    async def daily_pack(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Claim your free daily pack! (Resets every 24 hours)
+        """
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        user_packs = await UserPacks.get_or_create_for_player(player)
+
+        # Get current time (timezone-aware)
+        now = datetime.now()
+        cooldown = timedelta(hours=24)
+
+        # Check if user is on cooldown
+        if user_packs.last_daily_claim is not None:
+            # Make both datetimes naive for comparison
+            last_claim = user_packs.last_daily_claim
+            if hasattr(last_claim, 'tzinfo') and last_claim.tzinfo is not None:
+                last_claim = last_claim.replace(tzinfo=None)
+            
+            time_since_claim = now - last_claim
+            if time_since_claim < cooldown:
+                remaining = cooldown - time_since_claim
+                hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+                minutes, _ = divmod(remainder, 60)
+                
+                await interaction.response.send_message(
+                    f"⏰ You've already claimed your daily pack!\n"
+                    f"Come back in **{hours}h {minutes}m**.",
+                    ephemeral=True,
+                )
+                return
+
+        # Roll for random pack type
+        pack_weights = {"common": 60, "rare": 30, "epic": 10}
+        pack_types = list(pack_weights.keys())
+        weights = list(pack_weights.values())
+        pack_type = random.choices(pack_types, weights=weights, k=1)[0]
+        
+        # Grant the random pack
+        pack_field = f"{pack_type}_packs"
+        current_count = getattr(user_packs, pack_field)
+        setattr(user_packs, pack_field, current_count + 1)
+        user_packs.last_daily_claim = now
+        await user_packs.save()
+
+        pack_emojis = {"common": "⚪", "rare": "💙", "epic": "💜"}
+        embed = discord.Embed(
+            title="🎁 Daily Pack Claimed!",
+            description=f"You received **1x {pack_type.title()} Pack**!\n\nUse `/open {pack_type}` to open it.",
+            color=RARITY_COLORS[pack_type],
+        )
+        embed.add_field(
+            name=f"{pack_emojis[pack_type]} Your {pack_type.title()} Packs",
+            value=str(getattr(user_packs, pack_field)),
+            inline=True,
+        )
+        embed.set_footer(text="Come back tomorrow for another free pack!")
+
+        await interaction.response.send_message(embed=embed)
+        log.info(f"{interaction.user} claimed their daily pack ({pack_type})")
+
+    @app_commands.command(name="weekly")
+    async def weekly_pack(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Claim your free weekly pack! (Resets every 7 days)
+        """
+        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        user_packs = await UserPacks.get_or_create_for_player(player)
+
+        # Get current time
+        now = datetime.now()
+        cooldown = timedelta(days=7)
+
+        # Check if user is on cooldown
+        if user_packs.last_weekly_claim is not None:
+            # Make both datetimes naive for comparison
+            last_claim = user_packs.last_weekly_claim
+            if hasattr(last_claim, 'tzinfo') and last_claim.tzinfo is not None:
+                last_claim = last_claim.replace(tzinfo=None)
+            
+            time_since_claim = now - last_claim
+            if time_since_claim < cooldown:
+                remaining = cooldown - time_since_claim
+                days = remaining.days
+                hours, remainder = divmod(int(remaining.seconds), 3600)
+                minutes, _ = divmod(remainder, 60)
+                
+                await interaction.response.send_message(
+                    f"⏰ You've already claimed your weekly pack!\n"
+                    f"Come back in **{days}d {hours}h {minutes}m**.",
+                    ephemeral=True,
+                )
+                return
+
+        # Roll for random pack type (better odds than daily!)
+        pack_weights = {"common": 30, "rare": 45, "epic": 25}
+        pack_types = list(pack_weights.keys())
+        weights = list(pack_weights.values())
+        pack_type = random.choices(pack_types, weights=weights, k=1)[0]
+        
+        # Grant the random pack
+        pack_field = f"{pack_type}_packs"
+        current_count = getattr(user_packs, pack_field)
+        setattr(user_packs, pack_field, current_count + 1)
+        user_packs.last_weekly_claim = now
+        await user_packs.save()
+
+        pack_emojis = {"common": "⚪", "rare": "💙", "epic": "💜"}
+        embed = discord.Embed(
+            title="🎁 Weekly Pack Claimed!",
+            description=f"You received **1x {pack_type.title()} Pack**!\n\nUse `/open {pack_type}` to open it.",
+            color=RARITY_COLORS[pack_type],
+        )
+        embed.add_field(
+            name=f"{pack_emojis[pack_type]} Your {pack_type.title()} Packs",
+            value=str(getattr(user_packs, pack_field)),
+            inline=True,
+        )
+        embed.set_footer(text="Come back next week for another free pack!")
+
+        await interaction.response.send_message(embed=embed)
+        log.info(f"{interaction.user} claimed their weekly pack ({pack_type})")
+
