@@ -219,6 +219,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        duplicates: bool = False,
     ):
         """
         Show your current completion of the BallsDex.
@@ -231,6 +232,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The special you want to see the completion of
         filter: FilteringChoices
             Filter the list by a specific filter.
+        duplicates: bool
+            Show the completion of duplicates.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -285,19 +288,30 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             )
             return
 
-        owned_countryballs = set(
-            [
-                x[0]
-                async for x in query.filter(**filters)
-                .distinct()  # Do not query everything
-                .values_list("ball_id")
-            ]
-        )
+        if duplicates:
+            owned_countryballs = set(
+                [
+                    x["ball_id"]
+                    async for x in query.values("ball_id")
+                    .annotate(count=Count("ball_id"))
+                    .filter(count__gt=1)
+                ]
+            )
+        else:
+            owned_countryballs = set(
+                [
+                    x[0]
+                    async for x in query.filter(**filters)
+                    .distinct()  # Do not query everything
+                    .values_list("ball_id")
+                ]
+            )
 
         special_str = f" ({special.name})" if special else ""
         original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
+        duplicates_str = " duplicates" if duplicates else ""
         text = (
-            f"## {settings.bot_name}{original_catcher_string}{special_str} progression: "
+            f"## {settings.bot_name}{original_catcher_string}{special_str}{duplicates_str} progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**\n"
         )
 
