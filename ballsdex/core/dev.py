@@ -241,7 +241,7 @@ async def build_eval_response(
         ctx.bot,
         view,
         TextSource(formatted_content, prefix=f"```{code_prefix}\n", suffix="\n```"),
-        TextFormatter(text_display)
+        TextFormatter(text_display),
     )
     await menu.init()
 
