@@ -116,6 +116,7 @@ class Player(models.Model):
         help_text="To bypass or not the trade cooldown",
         default=TradeCooldownPolicy.COOLDOWN,
     )
+    accepted_tos = models.BooleanField(default=False)
     extra_data = models.JSONField(blank=True, default=dict)
 
     objects: Manager[Self] = Manager()
