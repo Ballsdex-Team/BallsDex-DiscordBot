@@ -19,7 +19,8 @@ import discord
 from discord.ext import commands
 from django.db import connection
 
-from ballsdex.core.utils.formatting import pagify
+from ballsdex.core.discord import LayoutView
+from ballsdex.core.utils.menus import Menu, TextFormatter, TextSource
 from bd_models import models
 from bd_models.enums import DonationPolicy, FriendPolicy, MentionPolicy, PrivacyPolicy
 from bd_models.models import (
@@ -52,6 +53,10 @@ https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/core/utils
 https://github.com/Rapptz/RoboDanny/blob/master/cogs/repl.py
 """
 
+ANSI_RED = "\x1b[31m"
+ANSI_BOLD = "\x1b[1m"
+ANSI_RESET = "\x1b[0m"
+
 
 def format_duration(time_taken: float) -> str:
     return f"{round(time_taken * 1000)}ms" if time_taken < 1 else f"{round(time_taken, 3)}s"
@@ -66,6 +71,28 @@ def text_to_file(
 ) -> discord.File:
     file = BytesIO(text.encode(encoding))
     return discord.File(file, filename, spoiler=spoiler)
+
+
+def format_exception(text: str) -> str:
+    """
+    Formats the last line of an exception.
+
+    Parameters
+    ----------
+    text: str
+        The text you want to format.
+
+    Returns
+    -------
+    str
+        The formatted text.
+    """
+    lines = text.splitlines()
+
+    if lines:
+        lines[-1] = f"{ANSI_RED}{ANSI_BOLD}{lines[-1]}{ANSI_RESET}"
+
+    return "\n".join(lines)
 
 
 async def send_interactive(
@@ -141,7 +168,7 @@ async def send_interactive(
                 prompt_text.format(count=n_remaining, command_1="`more`", command_2="`file`")
             )
             try:
-                resp = await ctx.bot.wait_for("message", check=predicate, timeout=15)
+                resp = await ctx.bot.wait_for("message", check=predicate, timeout=timeout)
             except asyncio.TimeoutError:
                 with contextlib.suppress(discord.HTTPException):
                     await query.delete()
@@ -159,6 +186,69 @@ async def send_interactive(
                     ret.append(await ctx.channel.send(file=text_to_file("".join(messages))))
                     break
     return ret
+
+
+class FileRow(discord.ui.ActionRow):
+    """
+    File row displayed in eval responses that uploads the specified content as a file.
+
+    Parameters
+    ----------
+    content: str
+        The content that will be exported as a file.
+    """
+
+    def __init__(self, content: str):
+        super().__init__()
+        self.content = content
+
+    @discord.ui.button(label="File")
+    async def file_button(self, interaction: discord.Interaction["BallsDexBot"], _):
+        await interaction.response.send_message(file=text_to_file(self.content))
+
+
+async def build_eval_response(
+    ctx: commands.Context["BallsDexBot"], content: str, *, time_taken: float, error: bool = False
+) -> LayoutView:
+    """
+    Creates a view with a paginator menu and a button to send the specified content as a file.
+
+    Parameters
+    ----------
+    content: str
+        The content that will be displayed.
+    time_taken: float
+        The amount of time taken in milliseconds for the code to execute.
+    error: bool
+        Whether ansi formatting will be enabled.
+
+    Returns
+    -------
+    LayoutView
+        The created view.
+    """
+    code_prefix = "ansi" if error else "py"
+    formatted_content = format_exception(content) if error else content
+
+    text_display = discord.ui.TextDisplay("")
+
+    view = LayoutView()
+    view.add_item(text_display)
+    view.add_item(discord.ui.TextDisplay(f"-# Took {format_duration(time_taken)}"))
+    view.restrict_author(ctx.author.id)
+
+    menu = Menu(
+        ctx.bot,
+        view,
+        TextSource(formatted_content, prefix=f"```{code_prefix}\n", suffix="\n```"),
+        TextFormatter(text_display)
+    )
+    await menu.init()
+
+    if menu.source.get_max_pages() > 1:
+        menu.view.add_item(FileRow(content))
+
+    return view
 
 
 START_CODE_BLOCK_RE = re.compile(r"^((```(py(thon)?|sql))(?=\s)|(```))")
@@ -197,19 +287,15 @@ class Dev(commands.Cog):
         return content.strip("` \n")
 
     @classmethod
-    def get_syntax_error(cls, e):
+    def get_syntax_error(cls, e) -> str:
         """Format a syntax error to send to the user.
 
         Returns a string representation of the error formatted as a codeblock.
         """
         if e.text is None:
-            return cls.get_pages("{0.__class__.__name__}: {0}".format(e))
-        return cls.get_pages("{0.text}\n{1:>{0.offset}}\n{2}: {0}".format(e, "^", type(e).__name__))
+            return "{0.__class__.__name__}: {0}".format(e)
 
-    @staticmethod
-    def get_pages(msg: str):
-        """Pagify the given message for output to the user."""
-        return pagify(msg, delims=["\n", " "], priority=True, shorten_by=25)
+        return "{0.text}\n{1:>{0.offset}}\n{2}: {0}".format(e, "^", type(e).__name__)
 
     @staticmethod
     def sanitize_output(ctx: commands.Context, input_: str) -> str:
@@ -292,11 +378,15 @@ class Dev(commands.Cog):
             result = await self.maybe_await(eval(compiled, env))
         except SyntaxError as e:
             t2 = time.time()
-            await send_interactive(ctx, self.get_syntax_error(e), time_taken=t2 - t1)
+            view = await build_eval_response(ctx, self.get_syntax_error(e), time_taken=t2 - t1, error=True)
+            await ctx.send(view=view)
             return
         except Exception as e:
             t2 = time.time()
-            await send_interactive(ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1)
+            view = await build_eval_response(
+                ctx, "{}: {!s}".format(type(e).__name__, e), time_taken=t2 - t1, error=True
+            )
+            await ctx.send(view=view)
             return
         t2 = time.time()
 
@@ -304,7 +394,9 @@ class Dev(commands.Cog):
         result = self.sanitize_output(ctx, str(result))
 
         await ctx.message.add_reaction("✅")
-        await send_interactive(ctx, self.get_pages(result), time_taken=t2 - t1)
+
+        view = await build_eval_response(ctx, result, time_taken=t2 - t1)
+        await ctx.send(view=view)
 
     @commands.command(name="eval")
     @commands.is_owner()
@@ -340,20 +432,27 @@ class Dev(commands.Cog):
             exec(compiled, env)
         except SyntaxError as e:
             t2 = time.time()
-            return await send_interactive(ctx, self.get_syntax_error(e), time_taken=t2 - t1)
+            view = await build_eval_response(ctx, self.get_syntax_error(e), time_taken=t2 - t1, error=True)
+            await ctx.send(view=view)
+            return
         except Exception as e:
             t2 = time.time()
-            await send_interactive(ctx, self.get_pages("{}: {!s}".format(type(e).__name__, e)), time_taken=t2 - t1)
+            view = await build_eval_response(
+                ctx, "{}: {!s}".format(type(e).__name__, e), time_taken=t2 - t1, error=True
+            )
+            await ctx.send(view=view)
             return
 
         func = env["func"]
         result = None
+        errored = False
         try:
             with redirect_stdout(stdout):
                 result = await func()
         except Exception:
             t2 = time.time()
             printed = "{}{}".format(stdout.getvalue(), traceback.format_exc())
+            errored = True
         else:
             t2 = time.time()
             printed = stdout.getvalue()
@@ -366,7 +465,8 @@ class Dev(commands.Cog):
             msg = printed
         msg = self.sanitize_output(ctx, msg)
 
-        await send_interactive(ctx, self.get_pages(msg), time_taken=t2 - t1)
+        view = await build_eval_response(ctx, msg, time_taken=t2 - t1, error=errored)
+        await ctx.send(view=view)
 
     @commands.command()
     @commands.is_owner()
