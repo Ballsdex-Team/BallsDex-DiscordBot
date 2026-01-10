@@ -209,7 +209,7 @@ class FileRow(discord.ui.ActionRow):
 
 async def build_eval_response(
     ctx: commands.Context["BallsDexBot"], content: str, *, time_taken: float, error: bool = False
-) -> LayoutView:
+) -> LayoutView | None:
     """
     Creates a view with a paginator menu and a button to send the specified content as a file.
 
@@ -224,9 +224,12 @@ async def build_eval_response(
 
     Returns
     -------
-    LayoutView
+    LayoutView | None
         The created view.
     """
+    if content == "":
+        return
+
     code_prefix = "ansi" if error else "py"
     formatted_content = format_exception(content) if error else content
 
@@ -378,15 +381,23 @@ class Dev(commands.Cog):
             result = await self.maybe_await(eval(compiled, env))
         except SyntaxError as e:
             t2 = time.time()
+
             view = await build_eval_response(ctx, self.get_syntax_error(e), time_taken=t2 - t1, error=True)
-            await ctx.send(view=view)
+
+            if view:
+                await ctx.send(view=view)
+
             return
         except Exception as e:
             t2 = time.time()
+
             view = await build_eval_response(
                 ctx, "{}: {!s}".format(type(e).__name__, e), time_taken=t2 - t1, error=True
             )
-            await ctx.send(view=view)
+
+            if view:
+                await ctx.send(view=view)
+
             return
         t2 = time.time()
 
@@ -396,7 +407,9 @@ class Dev(commands.Cog):
         await ctx.message.add_reaction("✅")
 
         view = await build_eval_response(ctx, result, time_taken=t2 - t1)
-        await ctx.send(view=view)
+
+        if view:
+            await ctx.send(view=view)
 
     @commands.command(name="eval")
     @commands.is_owner()
@@ -432,15 +445,23 @@ class Dev(commands.Cog):
             exec(compiled, env)
         except SyntaxError as e:
             t2 = time.time()
+
             view = await build_eval_response(ctx, self.get_syntax_error(e), time_taken=t2 - t1, error=True)
-            await ctx.send(view=view)
+
+            if view:
+                await ctx.send(view=view)
+
             return
         except Exception as e:
             t2 = time.time()
+
             view = await build_eval_response(
                 ctx, "{}: {!s}".format(type(e).__name__, e), time_taken=t2 - t1, error=True
             )
-            await ctx.send(view=view)
+
+            if view:
+                await ctx.send(view=view)
+
             return
 
         func = env["func"]
@@ -466,7 +487,9 @@ class Dev(commands.Cog):
         msg = self.sanitize_output(ctx, msg)
 
         view = await build_eval_response(ctx, msg, time_taken=t2 - t1, error=errored)
-        await ctx.send(view=view)
+
+        if view:
+            await ctx.send(view=view)
 
     @commands.command()
     @commands.is_owner()
