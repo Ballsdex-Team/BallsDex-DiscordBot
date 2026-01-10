@@ -215,7 +215,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
-        self_caught: bool | None = None,
+        filter: FilteringChoices | None = None,
         duplicates: bool = False,
     ):
         """
@@ -227,8 +227,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The user whose completion you want to view, if not yours.
         special: Special
             The special you want to see the completion of
-        self_caught: bool
-            Filter only for countryballs that the user themself caught/didn't catch (ie no trades)
+        filter: FilteringChoices
+            Filter the list by a specific filter.
         duplicates: bool
             Show the completion of duplicates (having at least 2 of each countryball)
         """
@@ -269,8 +269,9 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 if y.enabled and (special.end_date is None or y.created_at is None or y.created_at < special.end_date)
             }
 
-        if self_caught is not None:
-            filters["trade_player_id__isnull"] = self_caught
+        queryset = BallInstance.objects.filter(**filters)
+        if filter:
+            queryset = filter_balls(filter, queryset, interaction.guild_id)
 
         if not bot_countryballs:
             await interaction.followup.send(
@@ -283,7 +284,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             owned_countryballs = set(
                 [
                     x["ball_id"]
-                    async for x in BallInstance.objects.filter(**filters)
+                    async for x in queryset
                     .values("ball_id")
                     .annotate(count=Count("id"))
                     .filter(count__gt=1)
@@ -293,16 +294,14 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             owned_countryballs = set(
                 [
                     x[0]
-                    async for x in BallInstance.objects.filter(**filters)
+                    async for x in queryset
                     .distinct()  # Do not query everything
                     .values_list("ball_id")
                 ]
             )
 
         special_str = f" ({special.name})" if special else ""
-        original_catcher_string = (
-            f" ({'not ' if self_caught is False else ''}self-caught)" if self_caught is not None else ""
-        )
+        original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
         duplicate_str = " duplicate" if duplicates else ""
         text = (
             f"## {settings.bot_name}{original_catcher_string}{special_str}{duplicate_str} progression: "
