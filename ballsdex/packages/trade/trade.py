@@ -181,8 +181,7 @@ class TradingUser(Container):
         self.clear_items()
 
         section = Section(
-            TextDisplay(f"## {self.user.display_name}'s proposal"),
-            accessory=Thumbnail(self.user.display_avatar.url),
+            TextDisplay(f"## {self.user.display_name}'s proposal"), accessory=Thumbnail(self.user.display_avatar.url)
         )
         if self.view.cancelled:
             if self.cancelled:
@@ -210,9 +209,7 @@ class TradingUser(Container):
             del_cmd = self.cog.remove.extras.get("mention", "`/trade remove`")
             section.add_item(TextDisplay(f"You can edit your proposal with {add_cmd} and {del_cmd}."))
 
-        section.add_item(
-            TextDisplay(f"-# {len(self.proposal)} {settings.plural_collectible_name} selected")
-        )
+        section.add_item(TextDisplay(f"-# {len(self.proposal)} {settings.plural_collectible_name} selected"))
         self.add_item(section)
         self.add_item(Separator())
 
