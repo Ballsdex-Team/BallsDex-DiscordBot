@@ -292,9 +292,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             owned_countryballs = set(
                 [
                     x["ball_id"]
-                    async for x in query.values("ball_id")
-                    .annotate(count=Count("ball_id"))
-                    .filter(count__gt=1)
+                    async for x in query.values("ball_id").annotate(count=Count("ball_id")).filter(count__gt=1)
                 ]
             )
         else:
