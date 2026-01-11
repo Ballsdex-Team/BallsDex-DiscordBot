@@ -419,8 +419,6 @@ class TradeInstance(LayoutView):
         self.trader1: TradingUser
         self.trader2: TradingUser
         self.message: discord.Message
-        self.status_display: TextDisplay
-        self.timeout_dt: datetime
 
         self.confirmation_lock = asyncio.Lock()
         self.edit_lock = asyncio.Lock()
@@ -540,11 +538,8 @@ class TradeInstance(LayoutView):
         trade.add_item(trade.trader2)
         trade.buttons.remove_item(trade.confirm_button)
         trade.add_item(trade.buttons)
-        trade.timeout_dt = datetime.now() + timedelta(seconds=TRADE_TIMEOUT)
-        trade.status_display = TextDisplay(
-            f"-# Total balls: 0 • This trade will timeout {format_dt(trade.timeout_dt, style='R')}."
-        )
-        trade.add_item(trade.status_display)
+        timeout = datetime.now() + timedelta(seconds=TRADE_TIMEOUT)
+        trade.add_item(TextDisplay(f"-# This trade will timeout {format_dt(timeout, style='R')}."))
         return trade
 
     @property
@@ -599,11 +594,6 @@ class TradeInstance(LayoutView):
                 self.buttons.add_item(self.lock_button)
                 self.buttons.add_item(self.clear_button)
             self.buttons.add_item(self.cancel_button)
-
-            total_balls = len(self.trader1.proposal) + len(self.trader2.proposal)
-            self.status_display.content = (
-                f"-# Total balls: {total_balls} • This trade will timeout {format_dt(self.timeout_dt, style='R')}."
-            )
 
         if interaction is not None:
             self.next_edit_interaction = interaction
