@@ -28,7 +28,7 @@ Any bugs, suggestions or issues can be raised by creating an issue on this repo.
 ## Documentation
 
 You can learn how to setup Ballsdex and use all of its tools on the
-[wiki](wiki.ballsdex.com)!
+[wiki](https://wiki.ballsdex.com)!
 More sections are added progressively.
 
 ## Supporting
