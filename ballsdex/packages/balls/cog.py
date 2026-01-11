@@ -289,21 +289,16 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             return
 
         if duplicates:
-            owned_countryballs = set(
-                [
-                    x["ball_id"]
-                    async for x in query.values("ball_id").annotate(count=Count("ball_id")).filter(count__gt=1)
-                ]
-            )
-        else:
-            owned_countryballs = set(
-                [
-                    x[0]
-                    async for x in query.filter(**filters)
-                    .distinct()  # Do not query everything
-                    .values_list("ball_id")
-                ]
-            )
+            query = query.values("ball_id").annotate(count=Count("ball_id")).filter(count__gt=1)
+
+        owned_countryballs = set(
+            [
+                x[0]
+                async for x in query.filter(**filters)
+                .distinct()  # Do not query everything
+                .values_list("ball_id")
+            ]
+        )
 
         special_str = f" ({special.name})" if special else ""
         original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
