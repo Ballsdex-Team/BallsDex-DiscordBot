@@ -30,25 +30,27 @@ def sort_balls[QS: QuerySet[BallInstance]](sort: SortingChoices, queryset: QS) -
         The same queryset modified to apply the ordering. Await it to obtain the result.
     """
     if sort == SortingChoices.duplicates:
-        return queryset.annotate(count=RawSQL("COUNT(*) OVER (PARTITION BY ball_id)", ())).order_by("-count")
+        return queryset.annotate(count=RawSQL("COUNT(*) OVER (PARTITION BY ball_id)", ())).order_by(
+            "-count", "ball_id", "-id"
+        )
     elif sort == SortingChoices.stats_bonus:
-        return queryset.annotate(stats_bonus=F("health_bonus") + F("attack_bonus")).order_by("-stats_bonus")
+        return queryset.annotate(stats_bonus=F("health_bonus") + F("attack_bonus")).order_by("-stats_bonus", "-id")
     elif sort == SortingChoices.health or sort == SortingChoices.attack:
         # Use the sorting name as the annotation key to avoid issues when this function
         # is called multiple times. Using the same annotation name twice will error.
         return queryset.annotate(
             **{f"{sort.value}_sort": F(f"{sort.value}_bonus") + F(f"ball__{sort.value}")}
-        ).order_by(f"-{sort.value}_sort")
+        ).order_by(f"-{sort.value}_sort", "-id")
     elif sort == SortingChoices.total_stats:
         return (
             queryset.select_related("ball")
             .annotate(stats=RawSQL("ball.health + ball.attack :: BIGINT", ()))
-            .order_by("-stats")
+            .order_by("-stats", "-id")
         )
     elif sort == SortingChoices.rarity:
-        return queryset.order_by(sort.value, "ball__country")
+        return queryset.order_by(sort.value, "ball__country", "-id")
     else:
-        return queryset.order_by(sort.value)
+        return queryset.order_by(sort.value, "-id")
 
 
 def filter_balls(
