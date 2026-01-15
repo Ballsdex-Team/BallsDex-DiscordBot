@@ -146,7 +146,17 @@ class BallSpawnView(View):
     @button(style=discord.ButtonStyle.primary, label="Catch me!")
     async def catch_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         if self.caught:
-            await interaction.response.send_message("I was caught already!", ephemeral=True)
+            player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+            slow_message = settings.get_random_message(PromptMessage.PromptType.SLOW).format(
+                user=interaction.user.mention,
+                collectible=settings.collectible_name,
+                ball=self.name,
+                collectibles=settings.plural_collectible_name,
+                emoji=interaction.client.get_emoji(self.model.emoji_id),
+            )
+            await interaction.response.send_message(
+                slow_message, ephemeral=True, allowed_mentions=await can_mention([player])
+            )
         else:
             await interaction.response.send_modal(CountryballNamePrompt(self))
 
