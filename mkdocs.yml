@@ -4,7 +4,7 @@ site_name: Ballsdex Discord bot
 site_url: https://wiki.ballsdex.com
 repo_url: https://github.com/Ballsdex-Team/BallsDex-DiscordBot
 
-copyright: Copyright &copy; 2022 - 2025 Auguste "El Laggron" Charpentier
+copyright: Copyright &copy; 2022 - 2026 Auguste "El Laggron" Charpentier
 
 theme:
   name: material
