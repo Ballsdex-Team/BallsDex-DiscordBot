@@ -8,15 +8,18 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord.ext import commands
 from discord.utils import format_dt
+from django.db.models import Count
 from django.urls import reverse
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
+from ballsdex.core.utils.menus import ChunkedListSource, ItemFormatter, Menu
 from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from settings.models import settings
 
-from .flags import BallsCountFlags, GiveBallFlags, SpawnFlags
+from .flags import BallsCollectionFlags, BallsCountFlags, GiveBallFlags, SpawnFlags
 
 if TYPE_CHECKING:
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
@@ -412,3 +415,67 @@ async def balls_count(ctx: commands.Context[BallsDexBot], *, flags: BallsCountFl
         await ctx.send(
             f"There {verb} {balls} {special_str}{country}{settings.collectible_name}{plural}.", ephemeral=True
         )
+
+
+@balls.command(name="collection")
+@checks.has_permissions("bd_models.view_ballinstance")
+async def balls_collection(ctx: commands.Context[BallsDexBot], *, flags: BallsCollectionFlags):
+    """
+    Show the collection of a specific countryball or the application.
+    """
+    filters = {}
+
+    if flags.countryball:
+        filters["ball__country"] = flags.countryball
+
+    queryset = (
+        BallInstance.objects.filter(**filters)
+        .values("special_id", "trade_player_id")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+    )
+
+    counts = {"total": 0, "traded": 0, "specials": 0}
+    entries = []
+
+    async for row in queryset:
+        counts["total"] += row["count"]
+
+        if row["trade_player_id"] is not None:
+            counts["traded"] += row["count"]
+
+        if row["special_id"] is None:
+            continue
+
+        special = await Special.objects.filter(id=row["special_id"]).values("name", "emoji").afirst()
+
+        if special is None:
+            continue
+
+        entries.append(discord.ui.TextDisplay(f"{special['emoji']} **{special['name']}**: {row['count']:,}"))
+
+        counts["specials"] += row["count"]
+
+    header_text = f"Collection of {flags.countryball}" if flags.countryball else "Total Collection"
+
+    view = LayoutView()
+    view.restrict_author(ctx.author.id)
+    container = discord.ui.Container(
+        discord.ui.TextDisplay(f"## {header_text}"),
+        discord.ui.Separator(),
+        discord.ui.TextDisplay(
+            f"**Total**: {counts['total']:,}\n"
+            f"**Non-specials**: {counts['total'] - counts['specials']:,}\n"
+            f"**Specials**: {counts['specials']:,}\n"
+            f"**Self-caught**: {(counts['total'] - counts['traded']):,}\n"
+            f"**Traded**: {counts['traded']:,}"
+        ),
+        discord.ui.Separator(),
+        discord.ui.TextDisplay("### Specials"),
+    )
+    view.add_item(container)
+
+    menu = Menu(ctx.bot, view, ChunkedListSource(entries, 15), ItemFormatter(container, position=4))
+
+    await menu.init()
+    await ctx.send(view=view, ephemeral=True)
