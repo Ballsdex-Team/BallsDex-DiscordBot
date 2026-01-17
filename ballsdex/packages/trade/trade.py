@@ -200,7 +200,7 @@ class TradingUser(Container):
             section.add_item(
                 TextDisplay(
                     "You have locked your proposal. "
-                    "Wait for the other player to lock his proposal before finishing the trade."
+                    "Wait for the other player to lock their proposal before finishing the trade."
                 )
             )
         else:
