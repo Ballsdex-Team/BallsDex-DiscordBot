@@ -55,7 +55,7 @@ class CountryballsDuplicateSource(LayoutView):
                 .prefetch_related("ball")
                 .values("ball__country")
                 .annotate(count=Count("ball__country"))
-                .order_by("-count")
+                .order_by("-count", "ball__country")
             )
         else:
             countryball = await Ball.objects.aget(id=select.values[0])
@@ -73,7 +73,7 @@ class CountryballsDuplicateSource(LayoutView):
                 .exclude(special__hidden=True)
                 .values("special__name")
                 .annotate(count=Count("special__name"))
-                .order_by("-count")
+                .order_by("-count", "special__name")
             )
 
         counts = await balls_query.values("total", "traded", "specials").aget()

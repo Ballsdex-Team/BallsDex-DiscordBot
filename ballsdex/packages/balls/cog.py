@@ -174,7 +174,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if sort:
             query = sort_balls(sort, query)
         else:
-            query = query.order_by("-favorite")
+            query = query.order_by("-favorite", "-id")
 
         if not await query.aexists():
             ball_txt = countryball.country if countryball else ""
@@ -694,7 +694,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         query = (
             queryset.values(annotations["value_id"].name)
             .annotate(**annotations, count=Count("value_id"))
-            .order_by("-count")
+            .order_by("-count", "name")
         )
 
         if apply_limit and limit is not None:
