@@ -35,6 +35,7 @@ from bd_models.models import (
     BlacklistedGuild,
     BlacklistedID,
     Economy,
+    Player,
     Regime,
     Special,
     balls,
@@ -58,6 +59,21 @@ DEFAULT_PACKAGES = (
     ("info", "ballsdex.packages.info"),
     ("players", "ballsdex.packages.players"),
     ("trade", "ballsdex.packages.trade"),
+)
+
+TOS_EMBED = discord.Embed(
+    title=f"{settings.bot_name} Agreement",
+    description=(
+        f"To use {settings.bot_name} commands, you must "
+        f"read and accept the [Terms of Service]({settings.terms_of_service}).\n\n"
+        "As a summary, these are the rules of the bot:\n"
+        f"- No farming (spamming or creating servers for {settings.plural_collectible_name})\n"
+        f"- Selling or exchanging {settings.plural_collectible_name} "
+        "against money or other goods is forbidden\n"
+        "- Do not attempt to abuse the bot's internals\n"
+        "**Not respecting these rules will lead to a blacklist**"
+    ),
+    color=discord.Color.green(),
 )
 
 
@@ -107,6 +123,75 @@ async def on_request_end(
     http_counter.labels(route_key, params.response.status).observe(time)
 
 
+class AcceptTOSView(discord.ui.View):
+    """
+    Button prompting the user to accept the terms of service.
+    """
+
+    def __init__(self, interaction: discord.Interaction["BallsDexBot"], player: Player):
+        super().__init__()
+        self.player = player
+        self.interaction = interaction
+
+        self.add_item(
+            discord.ui.Button(style=discord.ButtonStyle.link, label="Terms of Service", url=settings.terms_of_service)
+        )
+        self.add_item(
+            discord.ui.Button(style=discord.ButtonStyle.link, label="Privacy Policy", url=settings.privacy_policy)
+        )
+
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"]) -> bool:
+        if self.player.accepted_tos:
+            await interaction.response.send_message("You already accepted the terms of service.", ephemeral=True)
+            return False
+
+        if interaction.user.id != self.player.discord_id:
+            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
+            return False
+
+        return True
+
+    @discord.ui.button(
+        label="Accept", style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
+    )
+    async def accept_button(self, interaction: discord.Interaction["BallsDexBot"], button: discord.ui.Button):
+        self.player.accepted_tos = True
+        await self.player.asave(update_fields=("accepted_tos",))
+
+        self.stop()
+
+        message = await self.interaction.original_response()
+
+        if message:
+            button.disabled = True
+
+            try:
+                await message.edit(view=self)
+            except discord.HTTPException:
+                pass
+
+        await interaction.response.send_message(
+            "You have agreed to the terms of service and may now use commands.", ephemeral=True
+        )
+
+    async def on_timeout(self) -> None:
+        message = await self.interaction.original_response()
+
+        if message is None:
+            return
+
+        for item in self.children:
+            if not isinstance(item, discord.ui.Button):
+                continue
+
+            item.disabled = True
+
+        try:
+            await message.edit(view=self)
+        except discord.HTTPException:
+            pass
+
+
 class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
     disable_time_check: bool = False
 
@@ -132,7 +217,19 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
                 except discord.NotFound:
                     pass
             return False  # wait for all shards to be connected
-        return await bot.blacklist_check(interaction)
+
+        if not await bot.blacklist_check(interaction):
+            return False
+
+        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+
+        if not player.accepted_tos:
+            await interaction.response.send_message(
+                embed=TOS_EMBED, view=AcceptTOSView(interaction, player), ephemeral=True
+            )
+            return False
+
+        return True
 
     async def load_command_mentions(
         self, app_commands: list[app_commands.AppCommand] | None = None, *, cog: commands.Cog | None = None
