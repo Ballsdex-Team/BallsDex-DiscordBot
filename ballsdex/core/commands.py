@@ -8,8 +8,9 @@ from asgiref.sync import sync_to_async
 from discord.ext import commands
 from django.db import connection
 
-from ballsdex.core.dev import pagify, send_interactive
+from ballsdex.core.dev import send_interactive
 from ballsdex.core.discord import LayoutView, View
+from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.menus import Menu, TextFormatter, TextSource
 from bd_models.models import Ball
 from settings.models import load_settings, settings
