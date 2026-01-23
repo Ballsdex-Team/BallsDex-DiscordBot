@@ -1,6 +1,5 @@
-There are 4 places where data unique to your bot is stored:
+There are 3 places where data unique to your bot is stored:
 
-- `config.yml` contains your basic settings
 - `admin_panel/media` contains all the assets you have uploaded through the admin panel
 - All data is stored in a PostgreSQL database
 - Automatic backups of the database are available in `pgbackups`
@@ -11,7 +10,6 @@ This is if you want to proceed to a complete backup of everything, or transfer y
 
 First, make sure your bot is fully turned off. Do `docker compose down` if you're running Docker.
 
-- The `config.yml` can simply be copied. Be careful not to share it as it contains your bot token!
 - Same for `admin_panel/media`, you can create a zip archive with all its contents
 - You can also transfer `pgbackups` if you wish to preserve backups too.
 

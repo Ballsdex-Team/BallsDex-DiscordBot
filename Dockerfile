@@ -44,7 +44,7 @@ RUN --mount=type=cache,target=/root/.cache/ \
 COPY --parents admin_panel ballsdex LICENSE README.md /code/
 RUN --mount=type=cache,target=/root/.cache/ \
     uv sync --locked --no-editable --active --reinstall-package ballsdex && \
-    django-admin collectstatic --no-input
+    cd admin_panel && django-admin collectstatic --no-input
 
 # this is running in a separate layer to allow bots with different extra packages to run on the same base layer
 COPY --parents bdextra.py config/extra.toml extra /code/
