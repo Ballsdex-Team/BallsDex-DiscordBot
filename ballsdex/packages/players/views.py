@@ -253,7 +253,8 @@ class RelationContainer(Container):
                 await interaction.response.defer(ephemeral=True)
                 view = ConfirmChoiceView(interaction)
                 await interaction.followup.send(
-                    f"Are you sure you want to remove this {'friend' if isinstance(relationship, Friendship) else 'block'}?",
+                    "Are you sure you want to remove this "
+                    f"{'friend' if isinstance(relationship, Friendship) else 'block'}?",
                     view=view,
                     ephemeral=True,
                 )
