@@ -49,7 +49,7 @@ def get_credit_color(image: Image.Image, region: tuple) -> tuple:
 
 
 def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any]]:
-    ball = ball_instance.countryball
+    ball = ball_instance.logo
     ball_health = (237, 115, 101, 255)
     ball_credits = ball.credits
     special_credits = ""
