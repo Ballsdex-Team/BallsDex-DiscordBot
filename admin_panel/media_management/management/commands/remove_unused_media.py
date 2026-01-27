@@ -1,7 +1,8 @@
 from pathlib import Path
 
-import media_management.management.commands._media_manager as media_manager
 from django.core.management.base import BaseCommand, CommandError
+
+import media_management.management.commands._media_manager as media_manager
 
 DEFAULT_MEDIA_PATH: str = "./media/"
 
@@ -11,9 +12,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--media-path",
-            help=f"The path to the media folder."
-            f"If not provided, {DEFAULT_MEDIA_PATH} is used.",
+            "--media-path", help=f"The path to the media folder.If not provided, {DEFAULT_MEDIA_PATH} is used."
         )
         parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm deletion")
 
@@ -38,9 +37,7 @@ class Command(BaseCommand):
                 unused_files.append(file)
 
         if unused_files:
-            self.stdout.write(
-                f"Unused files: \n - {'\n - '.join(file.name for file in unused_files)}"
-            )
+            self.stdout.write(f"Unused files: \n - {'\n - '.join(file.name for file in unused_files)}")
         else:
             self.stdout.write("No unused files!")
             return

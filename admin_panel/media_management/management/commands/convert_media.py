@@ -2,9 +2,10 @@ import shutil
 import subprocess
 from pathlib import Path
 
-import media_management.management.commands._media_manager as media_manager
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+
+import media_management.management.commands._media_manager as media_manager
 
 DEFAULT_MEDIA_PATH: str = "./media/"
 DEFAULT_TARGET_FORMAT = "webp"
@@ -16,15 +17,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--media-path",
-            help=f"The path to the media folder."
-            f"If not provided, {DEFAULT_MEDIA_PATH} is used.",
+            "--media-path", help=f"The path to the media folder.If not provided, {DEFAULT_MEDIA_PATH} is used."
         )
         parser.add_argument(
             "--target-format",
             "-t",
-            help="The target file format (no dot)."
-            f"If not provided, {DEFAULT_TARGET_FORMAT} is used.",
+            help=f"The target file format (no dot).If not provided, {DEFAULT_TARGET_FORMAT} is used.",
         )
 
         parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm conversion")
@@ -73,10 +71,7 @@ class Command(BaseCommand):
             if file.suffix not in CONVERTABLE_FORMATS:
                 self.stdout.write(
                     self.style.WARNING(
-                        (
-                            f"Skipping converting {file.name} since it does "
-                            "not appear to be an image format"
-                        )
+                        (f"Skipping converting {file.name} since it does not appear to be an image format")
                     )
                 )
 
@@ -94,8 +89,7 @@ class Command(BaseCommand):
             return
 
         if not options["yes"] and not media_manager.boolean_input(
-            f"Convert {len(to_convert)} files? This will not erase existing files.",
-            default=True,
+            f"Convert {len(to_convert)} files? This will not erase existing files.", default=True
         ):
             self.stdout.write(self.style.ERROR("Conversion cancelled."))
             return
