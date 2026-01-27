@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from bd_models.models import Ball, Economy, Regime, Special
 from django.db import models
+
+from bd_models.models import Ball, Economy, Regime, Special
 
 
 def all_media() -> list[tuple[models.Model, Path, str]]:
