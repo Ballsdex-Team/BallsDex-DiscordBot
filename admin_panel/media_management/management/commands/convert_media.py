@@ -22,7 +22,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--target-format",
             "-t",
-            help=f"The target file format (no dot).If not provided, {DEFAULT_TARGET_FORMAT} is used.",
+            help=f"The target file format (no dot). If not provided, {DEFAULT_TARGET_FORMAT} is used.",
         )
 
         parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm conversion")
