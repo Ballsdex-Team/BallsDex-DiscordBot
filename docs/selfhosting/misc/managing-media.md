@@ -18,7 +18,7 @@ You can run this command to convert your media to a new format. By default, it w
 ### Removing unused media
 You can run this command to remove media that your bot no longer uses (ie if you change the spawn image to something else)
 
-!!! Warning
+!!! warning
     Read the output of media to remove carefully! If you are using custom packages, or have assets in the media folder that are not reflected in the DB, they could be irreversibly lost!
 
 === "With Docker"
