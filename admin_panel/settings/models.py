@@ -177,31 +177,39 @@ class Settings(models.Model):
     prompts: models.QuerySet[PromptMessage]
 
     @cached_property
-    def catch_messages(self):
-        return [x.message for x in self.prompts.all() if x.category == PromptMessage.PromptType.CATCH]
+    def catch_messages(self) -> dict[str, float]:
+        return {x.message: x.rarity for x in self.prompts.all() if x.category == PromptMessage.PromptType.CATCH}
 
     @cached_property
-    def wrong_messages(self):
-        return [x.message for x in self.prompts.all() if x.category == PromptMessage.PromptType.WRONG]
+    def wrong_messages(self) -> dict[str, float]:
+        return {x.message: x.rarity for x in self.prompts.all() if x.category == PromptMessage.PromptType.WRONG}
 
     @cached_property
-    def spawn_messages(self):
-        return [x.message for x in self.prompts.all() if x.category == PromptMessage.PromptType.SPAWN]
+    def spawn_messages(self) -> dict[str, float]:
+        return {x.message: x.rarity for x in self.prompts.all() if x.category == PromptMessage.PromptType.SPAWN}
 
     @cached_property
-    def slow_messages(self):
-        return [x.message for x in self.prompts.all() if x.category == PromptMessage.PromptType.SLOW]
+    def slow_messages(self) -> dict[str, float]:
+        return {x.message: x.rarity for x in self.prompts.all() if x.category == PromptMessage.PromptType.SLOW}
 
     def get_random_message(self, category: PromptMessage.PromptType):
         match category:
             case PromptMessage.PromptType.CATCH:
-                return random.choice(self.catch_messages)
+                return random.choices(
+                    population=list(self.catch_messages.keys()), weights=list(self.catch_messages.values()), k=1
+                )[0]
             case PromptMessage.PromptType.WRONG:
-                return random.choice(self.wrong_messages)
+                return random.choices(
+                    population=list(self.wrong_messages.keys()), weights=list(self.wrong_messages.values()), k=1
+                )[0]
             case PromptMessage.PromptType.SPAWN:
-                return random.choice(self.spawn_messages)
+                return random.choices(
+                    population=list(self.spawn_messages.keys()), weights=list(self.spawn_messages.values()), k=1
+                )[0]
             case PromptMessage.PromptType.SLOW:
-                return random.choice(self.slow_messages)
+                return random.choices(
+                    population=list(self.slow_messages.keys()), weights=list(self.slow_messages.values()), k=1
+                )[0]
 
     @property
     @warnings.deprecated("This setting returns nothing, Webhook notifications must be used instead")
@@ -243,6 +251,7 @@ class PromptMessage(models.Model):
     settings = models.ForeignKey(Settings, on_delete=models.CASCADE, related_name="prompts")
     message = models.TextField(help_text="The message to send")
     category = models.PositiveSmallIntegerField(help_text="Message category", choices=PromptType)
+    rarity = models.FloatField(default=1.0, help_text="Weight of message.")
 
     class Meta:
         constraints = (
