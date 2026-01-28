@@ -345,6 +345,7 @@ class Trade(commands.GroupCog):
             query = sort_balls(sort, query)
         if filter:
             query = filter_balls(filter, query, interaction.guild_id)
+        query = query.order_by("-id")  # enforce a unique ordering to prevent mismatch during pagination
         if not await query.aexists():
             await interaction.followup.send(f"No {settings.plural_collectible_name} found.", ephemeral=True)
             return

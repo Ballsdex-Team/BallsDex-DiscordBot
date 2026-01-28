@@ -175,6 +175,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             query = sort_balls(sort, query)
         else:
             query = query.order_by("-favorite")
+        query = query.order_by("-id")  # enforce a unique ordering to prevent mismatch during pagination
 
         if not await query.aexists():
             ball_txt = countryball.country if countryball else ""
