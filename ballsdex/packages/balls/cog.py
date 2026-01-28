@@ -277,7 +277,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             }
 
         if filter:
-            query = filter_balls(filter, BallInstance.objects.filter(**filters))
+            query = filter_balls(filter, BallInstance.objects.filter(**filters), interaction.guild_id)
         else:
             query = BallInstance.objects.filter(**filters)
 
