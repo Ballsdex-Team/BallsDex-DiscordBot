@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
+impersonations: dict[int, discord.Member] = {}
 
 DEFAULT_PACKAGES = (
     ("admin", "ballsdex.packages.admin"),
@@ -132,6 +133,10 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
                 except discord.NotFound:
                     pass
             return False  # wait for all shards to be connected
+
+        if impersonated := impersonations.get(interaction.user.id, None):
+            interaction.user = impersonated
+            interaction._permissions = impersonated._permissions or 0
         return await bot.blacklist_check(interaction)
 
     async def load_command_mentions(

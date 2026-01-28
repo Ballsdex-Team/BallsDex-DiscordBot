@@ -7,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import ActionRow, Button, Container, Section, TextDisplay
 
+from ballsdex.core.bot import impersonations
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -374,3 +375,31 @@ class Admin(commands.Cog):
         )
         await pages.init()
         await ctx.send(view=view, ephemeral=True)
+
+    @admin.command()
+    @checks.is_superuser()
+    async def impersonate(self, ctx: commands.Context["BallsDexBot"], user: discord.Member | None = None):
+        """
+        Impersonate a user on your next slash commands.
+
+        Run this command without parameters to clear impersonation.
+
+        Parameters
+        ----------
+        user: discord.Member
+            The user to impersonate
+        """
+        if user is None:
+            if ctx.author.id not in impersonations:
+                await ctx.send_help(ctx.command)
+                return
+            del impersonations[ctx.author.id]
+            await ctx.send("You are not impersonating anymore.")
+        else:
+            impersonations[ctx.author.id] = user
+            await ctx.send(
+                f"Your next commands will be run as if {user.display_name} ran it.\n"
+                "Avoid running the commands in a different server, this can lead to weird issues.\n"
+                f"To clear impersonation, run `{ctx.prefix}admin impersonate` again.",
+                ephemeral=True,
+            )
