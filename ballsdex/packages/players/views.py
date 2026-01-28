@@ -250,7 +250,17 @@ class RelationContainer(Container):
                 # should be handled by the view's interaction_check, but just in case
                 assert interaction.user.id == player.discord_id
 
-                await interaction.response.defer()
+                await interaction.response.defer(ephemeral=True)
+                view = ConfirmChoiceView(interaction)
+                await interaction.followup.send(
+                    "Are you sure you want to remove this "
+                    f"{'friend' if isinstance(relationship, Friendship) else 'block'}?",
+                    view=view,
+                    ephemeral=True,
+                )
+                await view.wait()
+                if view.value is not True:
+                    return
                 await relationship.adelete()
                 b.disabled = True
                 b.parent.children[0].content += "-# Removed"  # type: ignore
