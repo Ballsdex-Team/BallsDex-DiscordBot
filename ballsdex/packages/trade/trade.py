@@ -209,6 +209,7 @@ class TradingUser(Container):
             del_cmd = self.cog.remove.extras.get("mention", "`/trade remove`")
             section.add_item(TextDisplay(f"You can edit your proposal with {add_cmd} and {del_cmd}."))
 
+        section.add_item(TextDisplay(f"-# {len(self.proposal)} {settings.plural_collectible_name} selected"))
         self.add_item(section)
         self.add_item(Separator())
 
