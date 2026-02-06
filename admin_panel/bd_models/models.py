@@ -213,8 +213,22 @@ class SpecialEnabledManager(Manager["Special"]):
 class BaseBallInstanceManager[T: models.Model](Manager[T]):
     def with_stats(self):
         return self.annotate(
-            attack=Cast(F("attack_bonus"), models.BigIntegerField()) * F("ball__attack"),
-            health=Cast(F("health_bonus"), models.BigIntegerField()) * F("ball__health"),
+            attack=Cast(
+                models.ExpressionWrapper(
+                    F("ball__attack")
+                    * (models.Value(1.0) + Cast(F("attack_bonus"), models.FloatField()) / models.Value(100.0)),
+                    output_field=models.FloatField(),
+                ),
+                models.BigIntegerField(),
+            ),
+            health=Cast(
+                models.ExpressionWrapper(
+                    F("ball__health")
+                    * (models.Value(1.0) + Cast(F("health_bonus"), models.FloatField()) / models.Value(100.0)),
+                    output_field=models.FloatField(),
+                ),
+                models.BigIntegerField(),
+            ),
         )
 
 
