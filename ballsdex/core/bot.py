@@ -134,7 +134,10 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
                     pass
             return False  # wait for all shards to be connected
 
-        if impersonated := impersonations.get(interaction.user.id, None):
+        if str(interaction.command) == "admin impersonate":
+            # if the user is trying to stop impersonating, don't impersonate
+            pass
+        elif impersonated := impersonations.get(interaction.user.id, None):
             interaction.user = impersonated
             interaction._permissions = impersonated._permissions or 0
         return await bot.blacklist_check(interaction)
