@@ -336,6 +336,7 @@ class Trade(commands.GroupCog):
             )
             .exclude(tradeable=False)
             .exclude(ball__tradeable=False)
+            .exclude(special__tradeable=False)
         )
         if countryball:
             query = query.filter(ball=countryball)
