@@ -365,7 +365,7 @@ class TradingUser(Container):
             raise AlreadyLockedError()
         if self.view.cancelled:
             raise CancelledError()
-        await self.get_queryset().aupdate(locked=False)
+        await self.get_queryset().aupdate(locked=None)
         self.proposal.clear()
 
     async def cancel(self):
@@ -486,7 +486,7 @@ class TradeInstance(LayoutView):
         except TradeError as e:
             await interaction.followup.send(e.error_message, ephemeral=True)
         else:
-            await self.edit_message(interaction)
+            await self.edit_message(None)
 
     @buttons.button(
         label="Cancel trade",
