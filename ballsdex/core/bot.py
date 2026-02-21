@@ -134,7 +134,9 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
                     pass
             return False  # wait for all shards to be connected
 
-        if str(interaction.command) == "admin impersonate":
+        data = interaction.data or {}
+        subcmd = (data.get("options") or [{}])[0].get("name")
+        if data.get("name") == "admin" and subcmd == "impersonate":
             # if the user is trying to stop impersonating, don't impersonate
             pass
         elif impersonated := impersonations.get(interaction.user.id, None):
