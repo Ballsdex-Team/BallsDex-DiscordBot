@@ -366,7 +366,7 @@ class Trade(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
         result = await self.get_trade(interaction)
         if result is None:
-            await interaction.followup.send(f"You do not have any active trade.")
+            await interaction.followup.send("You do not have any active trade.")
             return
         trade, trader = result
         if trade.trader1.confirmed and trade.trader2.confirmed:
@@ -375,9 +375,7 @@ class Trade(commands.GroupCog):
         view = ConfirmChoiceView(
             interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
         )
-        await interaction.followup.send(
-            f"Are you sure you want to cancel this trade?", view=view, ephemeral=True
-        )
+        await interaction.followup.send("Are you sure you want to cancel this trade?", view=view, ephemeral=True)
         await view.wait()
         if not view.value:
             return
