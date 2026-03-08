@@ -379,7 +379,7 @@ class Trade(commands.GroupCog):
         await view.wait()
         if not view.value:
             return
-        
+
         try:
             await trader.cancel()
         except TradeError as e:
