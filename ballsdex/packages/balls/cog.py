@@ -15,6 +15,8 @@ from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
+    EconomyTransform,
+    RegimeTransform,
     SpecialEnabledTransform,
     TradeCommandType,
 )
@@ -220,6 +222,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        regime: RegimeTransform | None = None,
+        economy: EconomyTransform | None = None,
         duplicates: bool = False,
     ):
         """
@@ -233,12 +237,20 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The special you want to see the completion of
         filter: FilteringChoices
             Filter the list by a specific filter.
+        regime: Regime
+            The regime you want to see the completion of
+        economy: Economy
+            The economy you want to see the completion of
         duplicates: bool
             Show the completion of duplicates.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
         extra_text = f"{special.name} " if special else ""
+        if regime:
+            extra_text += f"{regime.name} "
+        if economy:
+            extra_text += f"{economy.name} "
         if user is not None:
             try:
                 player = await Player.objects.aget(discord_id=user_obj.id)
@@ -277,6 +289,14 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 if y.enabled and (special.end_date is None or y.created_at is None or y.created_at < special.end_date)
             }
 
+        if regime:
+            filters["ball__regime"] = regime
+            bot_countryballs = {x: y for x, y in bot_countryballs.items() if balls[x].regime_id == regime.pk}
+
+        if economy:
+            filters["ball__economy"] = economy
+            bot_countryballs = {x: y for x, y in bot_countryballs.items() if balls[x].economy_id == economy.pk}
+
         if filter:
             query = filter_balls(filter, BallInstance.objects.filter(**filters), interaction.guild_id)
         else:
@@ -302,11 +322,15 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         )
 
         special_str = f" ({special.name})" if special else ""
+        regime_str = f" ({regime.name})" if regime else ""
+        economy_str = f" ({economy.name})" if economy else ""
         original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
         duplicates_str = " duplicates" if duplicates else ""
+        progression = round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)
         text = (
-            f"## {settings.bot_name}{original_catcher_string}{special_str}{duplicates_str} progression: "
-            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**\n"
+            f"## {settings.bot_name}{original_catcher_string}"
+            f"{special_str}{regime_str}{economy_str}{duplicates_str} progression: "
+            f"**{progression}%**\n"
         )
 
         def fill_fields(title: str, emoji_ids: set[int]):
