@@ -21,6 +21,7 @@ from django.utils import timezone
 from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView, Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
+from bd_models.enums import TradeCooldownPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 from settings.models import settings
 from settings.utils import format_currency
@@ -518,6 +519,12 @@ class TradeInstance(LayoutView):
     async def confirm_button(self, interaction: Interaction, button: Button):
         trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
         await interaction.response.defer()
+        both_bypass = (
+            self.trader1.player.trade_cooldown_policy == TradeCooldownPolicy.BYPASS
+            and self.trader2.player.trade_cooldown_policy == TradeCooldownPolicy.BYPASS
+        )
+        if not both_bypass:
+            await asyncio.sleep(10)
         try:
             await trader.confirm()
         except TradeError as e:
