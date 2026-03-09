@@ -530,8 +530,7 @@ class TradeInstance(LayoutView):
             remaining = 10 - elapsed
             if remaining > 0:
                 await interaction.response.send_message(
-                    f"Please wait {remaining:.0f} more second(s) before confirming.",
-                    ephemeral=True,
+                    f"Please wait {remaining:.0f} more second(s) before confirming.", ephemeral=True
                 )
                 return
         await interaction.response.defer()
