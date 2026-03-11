@@ -4,21 +4,15 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("bd_models", "0008_alter_ball_options_alter_ballinstance_options_and_more"),
-    ]
+    dependencies = [("bd_models", "0008_alter_ball_options_alter_ballinstance_options_and_more")]
 
     operations = [
         migrations.AddField(
             model_name="ballinstance",
             name="deleted",
-            field=models.BooleanField(
-                default=False, help_text="Whether this instance was deleted or not."
-            ),
+            field=models.BooleanField(default=False, help_text="Whether this instance was deleted or not."),
         ),
         migrations.AddIndex(
-            model_name="ballinstance",
-            index=models.Index(fields=["deleted"], name="ballinstanc_deleted_fc87fc_idx"),
+            model_name="ballinstance", index=models.Index(fields=["deleted"], name="ballinstanc_deleted_fc87fc_idx")
         ),
     ]

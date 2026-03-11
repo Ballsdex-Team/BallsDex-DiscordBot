@@ -8,7 +8,7 @@ from django.db.models import Prefetch, Q
 from ..models import BallInstance, Player, Trade, TradeObject
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
     from django.http import HttpRequest, HttpResponse
 
 DUAL_ID_RE = re.compile(r"^[0-9]{17,20} [0-9]{17,20}$")
@@ -52,12 +52,7 @@ class TradeAdmin(admin.ModelAdmin):
             except Player.DoesNotExist:
                 messages.error(request, f"Second player ({id2}) does not exist")
                 return queryset.none(), False
-            return (
-                queryset.filter(
-                    Q(player1=player1, player2=player2) | Q(player2=player1, player1=player2)
-                ),
-                False,
-            )
+            return (queryset.filter(Q(player1=player1, player2=player2) | Q(player2=player1, player1=player2)), False)
         try:
             return queryset.filter(id=int(search_term, 16)), False
         except ValueError:
@@ -95,11 +90,7 @@ class TradeAdmin(admin.ModelAdmin):
 
     # This adds extra context to the template, needed for the display of TradeObject models
     def change_view(
-        self,
-        request: "HttpRequest",
-        object_id: str,
-        form_url: str = "",
-        extra_context: dict[str, Any] | None = None,
+        self, request: "HttpRequest", object_id: str, form_url: str = "", extra_context: dict[str, Any] | None = None
     ) -> "HttpResponse":
         obj = self.get_object(request, object_id)
 

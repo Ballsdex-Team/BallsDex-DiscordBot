@@ -5,22 +5,12 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button, View, button
-from tortoise.exceptions import DoesNotExist
-from tortoise.expressions import RawSQL
-from tortoise.functions import Count
+from discord.ui import Button, Container, LayoutView, TextDisplay, button
+from django.db.models import Count, Exists, F, OuterRef, Q
 
-from ballsdex.core.models import (
-    BallInstance,
-    DonationPolicy,
-    Player,
-    Special,
-    Trade,
-    TradeObject,
-    balls,
-)
+from ballsdex.core.discord import View
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from ballsdex.core.utils.paginator import FieldPageSource, Pages
+from ballsdex.core.utils.menus import ChunkedListSource, Menu, SelectFormatter, TextFormatter, TextSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
@@ -29,8 +19,11 @@ from ballsdex.core.utils.transformers import (
     TradeCommandType,
 )
 from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
-from ballsdex.packages.balls.countryballs_paginator import CountryballsViewer, DuplicateViewMenu
-from ballsdex.settings import settings
+from bd_models.enums import DonationPolicy
+from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls
+from settings.models import settings
+
+from .countryballs_paginator import CountryballsDuplicateSource, CountryballsViewer
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -54,9 +47,7 @@ class DonationRequest(View):
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         if interaction.user.id != self.new_player.discord_id:
-            await interaction.response.send_message(
-                "You are not allowed to interact with this menu.", ephemeral=True
-            )
+            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
             return False
         return True
 
@@ -64,16 +55,12 @@ class DonationRequest(View):
         for item in self.children:
             item.disabled = True  # type: ignore
         try:
-            await self.original_interaction.followup.edit_message(
-                "@original", view=self  # type: ignore
-            )
+            await self.original_interaction.edit_original_response(view=self)
         except discord.NotFound:
             pass
         await self.countryball.unlock()
 
-    @button(
-        style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}"
-    )
+    @button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
     async def accept(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         self.stop()
         for item in self.children:
@@ -81,9 +68,9 @@ class DonationRequest(View):
         self.countryball.favorite = False
         self.countryball.trade_player = self.countryball.player
         self.countryball.player = self.new_player
-        await self.countryball.save()
-        trade = await Trade.create(player1=self.countryball.trade_player, player2=self.new_player)
-        await TradeObject.create(
+        await self.countryball.asave()
+        trade = await Trade.objects.acreate(player1=self.countryball.trade_player, player2=self.new_player)
+        await TradeObject.objects.acreate(
             trade=trade, ballinstance=self.countryball, player=self.countryball.trade_player
         )
         await interaction.response.edit_message(
@@ -93,10 +80,7 @@ class DonationRequest(View):
         )
         await self.countryball.unlock()
 
-    @button(
-        style=discord.ButtonStyle.danger,
-        emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}",
-    )
+    @button(style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}")
     async def deny(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         self.stop()
         for item in self.children:
@@ -114,7 +98,7 @@ class DuplicateType(enum.StrEnum):
     specials = "specials"
 
 
-class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
+class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
     """
     View and manage your countryballs collection.
     """
@@ -156,36 +140,31 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         await interaction.response.defer(thinking=True)
 
         try:
-            player = await Player.get(discord_id=user_obj.id)
-        except DoesNotExist:
+            player = await Player.objects.aget(discord_id=user_obj.id)
+        except Player.DoesNotExist:
             if user_obj == interaction.user:
-                await interaction.followup.send(
-                    f"You don't have any {settings.plural_collectible_name} yet."
-                )
+                await interaction.followup.send(f"You don't have any {settings.plural_collectible_name} yet.")
             else:
                 await interaction.followup.send(
                     f"{user_obj.name} doesn't have any {settings.plural_collectible_name} yet."
                 )
             return
+        staff = await is_staff(interaction)
         if user is not None:
-            if user.id in self.bot.blacklist and not is_staff(interaction):
-                await interaction.followup.send(
-                    "You cannot view the inventory of a blacklisted user.", ephemeral=True
-                )
+            if user.id in self.bot.blacklist and not staff:
+                await interaction.followup.send("You cannot view the inventory of a blacklisted user.", ephemeral=True)
                 return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
-        interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
-        if blocked and not is_staff(interaction):
-            await interaction.followup.send(
-                "You cannot view the list of a user that has you blocked.", ephemeral=True
-            )
+        if blocked and not staff:
+            await interaction.followup.send("You cannot view the list of a user that has you blocked.", ephemeral=True)
             return
 
-        query = BallInstance.filter(player=player).prefetch_related("ball", "special")
+        query = BallInstance.objects.filter(player=player).prefetch_related("trade_player")
         if filter:
             query = filter_balls(filter, query, interaction.guild_id)
         if countryball:
@@ -196,9 +175,9 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             query = sort_balls(sort, query)
         else:
             query = query.order_by("-favorite")
-        countryballs = cast(list[int], await query.values_list("id", flat=True))
+        query.query.add_ordering("-id")  # enforce a unique ordering to prevent mismatch during pagination
 
-        if len(countryballs) < 1:
+        if not await query.aexists():
             ball_txt = countryball.country if countryball else ""
             special_txt = special if special else ""
 
@@ -217,20 +196,21 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any {combined} "
-                    f"{settings.plural_collectible_name} yet."
+                    f"{user_obj.name} doesn't have any {combined} {settings.plural_collectible_name} yet."
                 )
             return
         if reverse:
-            countryballs.reverse()
+            query = query.reverse()
 
-        paginator = CountryballsViewer(interaction, countryballs)
-        if user_obj == interaction.user:
-            await paginator.start()
+        view = CountryballsViewer()
+        view.restrict_author(interaction.user.id)
+        menu = Menu.countryballs(self.bot, view, view.selected, query)
+        await menu.init()
+        if user_obj != interaction.user:
+            view.header.content = f"Viewing {user_obj.name}'s {settings.plural_collectible_name}"
         else:
-            await paginator.start(
-                content=f"Viewing {user_obj.name}'s {settings.plural_collectible_name}"
-            )
+            view.header.content = f"Viewing your {settings.plural_collectible_name}"
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
@@ -240,6 +220,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        duplicates: bool = False,
     ):
         """
         Show your current completion of the BallsDex.
@@ -252,32 +233,31 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The special you want to see the completion of
         filter: FilteringChoices
             Filter the list by a specific filter.
+        duplicates: bool
+            Show the completion of duplicates.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
         extra_text = f"{special.name} " if special else ""
         if user is not None:
             try:
-                player = await Player.get(discord_id=user_obj.id)
-            except DoesNotExist:
+                player = await Player.objects.aget(discord_id=user_obj.id)
+            except Player.DoesNotExist:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any "
-                    f"{extra_text}{settings.plural_collectible_name} yet."
+                    f"{user_obj.name} doesn't have any {extra_text}{settings.plural_collectible_name} yet."
                 )
                 return
-            if user.id in self.bot.blacklist and not is_staff(interaction):
-                await interaction.followup.send(
-                    "You cannot view the completion of a blacklisted user.", ephemeral=True
-                )
+            staff = await is_staff(interaction)
+            if user.id in self.bot.blacklist and not staff:
+                await interaction.followup.send("You cannot view the completion of a blacklisted user.", ephemeral=True)
                 return
 
-            interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+            interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
             blocked = await player.is_blocked(interaction_player)
-            if blocked and not is_staff(interaction):
+            if blocked and not staff:
                 await interaction.followup.send(
-                    "You cannot view the completion of a user that has blocked you.",
-                    ephemeral=True,
+                    "You cannot view the completion of a user that has blocked you.", ephemeral=True
                 )
                 return
 
@@ -294,86 +274,70 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
-                if y.enabled and (special.end_date is None or y.created_at < special.end_date)
+                if y.enabled and (special.end_date is None or y.created_at is None or y.created_at < special.end_date)
             }
+
         if filter:
-            query = filter_balls(filter, BallInstance.filter(**filters))
+            query = filter_balls(filter, BallInstance.objects.filter(**filters), interaction.guild_id)
         else:
-            query = BallInstance.filter(**filters)
+            query = BallInstance.objects.filter(**filters)
 
         if not bot_countryballs:
             await interaction.followup.send(
-                f"There are no {extra_text}{settings.plural_collectible_name}"
-                " registered on this bot yet.",
+                f"There are no {extra_text}{settings.plural_collectible_name} registered on this bot yet.",
                 ephemeral=True,
             )
             return
 
+        if duplicates:
+            query = query.values("ball_id").annotate(count=Count("ball_id")).filter(count__gt=1)
+
         owned_countryballs = set(
-            x[0] for x in await query.distinct().values_list("ball_id")  # Do not query everything
+            [
+                x[0]
+                async for x in query.filter(**filters)
+                .distinct()  # Do not query everything
+                .values_list("ball_id")
+            ]
         )
 
-        entries: list[tuple[str, str]] = []
+        special_str = f" ({special.name})" if special else ""
+        original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
+        duplicates_str = " duplicates" if duplicates else ""
+        text = (
+            f"## {settings.bot_name}{original_catcher_string}{special_str}{duplicates_str} progression: "
+            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**\n"
+        )
 
         def fill_fields(title: str, emoji_ids: set[int]):
-            # check if we need to add "(continued)" to the field name
-            first_field_added = False
-            buffer = ""
-
+            nonlocal text
+            text += f"### {title}\n"
+            if not emoji_ids:
+                text += "Nothing yet.\n"
+                return
             for emoji_id in emoji_ids:
                 emoji = self.bot.get_emoji(emoji_id)
                 if not emoji:
                     continue
+                text += f"{emoji} "
+            text += "\n"
 
-                text = f"{emoji} "
-                if len(buffer) + len(text) > 1024:
-                    # hitting embed limits, adding an intermediate field
-                    if first_field_added:
-                        entries.append(("\u200b", buffer))
-                    else:
-                        entries.append((f"__**{title}**__", buffer))
-                        first_field_added = True
-                    buffer = ""
-                buffer += text
-
-            if buffer:  # add what's remaining
-                if first_field_added:
-                    entries.append(("\u200b", buffer))
-                else:
-                    entries.append((f"__**{title}**__", buffer))
-
-        if owned_countryballs:
-            # Getting the list of emoji IDs from the IDs of the owned countryballs
-            fill_fields(
-                f"Owned {settings.plural_collectible_name}",
-                set(bot_countryballs[x] for x in owned_countryballs),
-            )
-        else:
-            entries.append((f"__**Owned {settings.plural_collectible_name}**__", "Nothing yet."))
+        # Getting the list of emoji IDs from the IDs of the owned countryballs
+        fill_fields(f"Owned {settings.plural_collectible_name}", set(bot_countryballs[x] for x in owned_countryballs))
 
         if missing := set(y for x, y in bot_countryballs.items() if x not in owned_countryballs):
             fill_fields(f"Missing {settings.plural_collectible_name}", missing)
         else:
-            entries.append(
-                (
-                    f"__**:tada: No missing {settings.plural_collectible_name}, "
-                    "congratulations! :tada:**__",
-                    "\u200b",
-                )
-            )  # force empty field value
+            text += f"### :tada: No missing {settings.plural_collectible_name}, congratulations! :tada:"
 
-        source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
-        special_str = f" ({special.name})" if special else ""
-        original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
-        source.embed.description = (
-            f"{settings.bot_name}{original_catcher_string}{special_str} progression: "
-            f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
-        )
-        source.embed.colour = discord.Colour.blurple()
-        source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
-
-        pages = Pages(source=source, interaction=interaction, compact=True)
-        await pages.start()
+        view = LayoutView()
+        container = Container()
+        display = TextDisplay("")
+        container.add_item(display)
+        view.add_item(container)
+        menu = Menu(self.bot, view, TextSource(text, delims=[" \n###", " "]), TextFormatter(display))
+        await menu.init()
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
@@ -422,63 +386,55 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         user_obj = user if user else interaction.user
         await interaction.response.defer(thinking=True)
         try:
-            player = await Player.get(discord_id=user_obj.id)
-        except DoesNotExist:
+            player = await Player.objects.aget(discord_id=user_obj.id)
+        except Player.DoesNotExist:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"{msg} not have any {settings.plural_collectible_name} yet.",
-                ephemeral=True,
+                f"{msg} not have any {settings.plural_collectible_name} yet.", ephemeral=True
             )
             return
 
+        staff = await is_staff(interaction)
         if user is not None:
-            if user.id in self.bot.blacklist and not is_staff(interaction):
+            if user.id in self.bot.blacklist and not staff:
                 await interaction.followup.send(
-                    (
-                        "You cannot view the last caught "
-                        f"{settings.collectible_name} of a blacklisted user."
-                    ),
+                    (f"You cannot view the last caught {settings.collectible_name} of a blacklisted user."),
                     ephemeral=True,
                 )
                 return
             if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
                 return
 
-        interaction_player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
         blocked = await player.is_blocked(interaction_player)
-        if blocked and not is_staff(interaction):
+        if blocked and not staff:
             await interaction.followup.send(
-                f"You cannot view the last caught {settings.collectible_name} "
-                "of a user that has blocked you.",
+                f"You cannot view the last caught {settings.collectible_name} of a user that has blocked you.",
                 ephemeral=True,
             )
             return
-        query = player.balls.all()
+
+        query = player.balls.select_related("ball", "trade_player").all()
         filter_msg = ""
         if filter:
             filter_msg = f" with the `{filter.value.replace('_', ' ')}` filter"
             query = filter_balls(filter, query, interaction.guild_id)
-        countryball = await query.order_by("-id").first()
+        countryball = await query.order_by("-id").afirst()
         if not countryball:
             msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
             await interaction.followup.send(
-                f"{msg} not have any {settings.plural_collectible_name} yet.",
-                ephemeral=True,
+                f"{msg} not have any {settings.plural_collectible_name} yet.", ephemeral=True
             )
             return
 
         content, file, view = await countryball.prepare_for_message(interaction)
         if user is not None and user.id != interaction.user.id:
             content = (
-                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}"
-                f"{filter_msg}.\n" + content
+                f"You are viewing {user.display_name}'s last caught {settings.collectible_name}{filter_msg}.\n{content}"
             )
         else:
-            content = (
-                f"You are viewing your last caught {settings.collectible_name}{filter_msg}.\n"
-                + content
-            )
+            content = f"You are viewing your last caught {settings.collectible_name}{filter_msg}.\n" + content
         await interaction.followup.send(content=content, file=file, view=view)
         file.close()
 
@@ -510,27 +466,24 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         if not countryball.favorite:
             try:
-                player = await Player.get(discord_id=interaction.user.id).prefetch_related("balls")
-            except DoesNotExist:
+                player = await Player.objects.aget(discord_id=interaction.user.id)
+            except Player.DoesNotExist:
                 await interaction.response.send_message(
                     f"You don't have any {settings.plural_collectible_name} yet.", ephemeral=True
                 )
                 return
 
             grammar = (
-                f"{settings.collectible_name}"
-                if settings.max_favorites == 1
-                else f"{settings.plural_collectible_name}"
+                f"{settings.collectible_name}" if settings.max_favorites == 1 else f"{settings.plural_collectible_name}"
             )
-            if await player.balls.filter(favorite=True).count() >= settings.max_favorites:
+            if await player.balls.filter(favorite=True).acount() >= settings.max_favorites:
                 await interaction.response.send_message(
-                    f"You cannot set more than {settings.max_favorites} favorite {grammar}.",
-                    ephemeral=True,
+                    f"You cannot set more than {settings.max_favorites} favorite {grammar}.", ephemeral=True
                 )
                 return
 
             countryball.favorite = True  # type: ignore
-            await countryball.save()
+            await countryball.asave()
             emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
                 f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
@@ -540,7 +493,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         else:
             countryball.favorite = False  # type: ignore
-            await countryball.save()
+            await countryball.asave()
             emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
                 f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
@@ -580,8 +533,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if await countryball.is_locked():
             await interaction.response.send_message(
-                f"This {settings.collectible_name} is currently locked for a trade. "
-                "Please try again later.",
+                f"This {settings.collectible_name} is currently locked for a trade. Please try again later.",
                 ephemeral=True,
             )
             return
@@ -593,8 +545,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
                 cancel_message="This request has been cancelled.",
             )
             await interaction.response.send_message(
-                f"This {settings.collectible_name} is a favorite, "
-                "are you sure you want to donate it?",
+                f"This {settings.collectible_name} is a favorite, are you sure you want to donate it?",
                 view=view,
                 ephemeral=True,
             )
@@ -605,7 +556,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         else:
             await interaction.response.defer()
         await countryball.lock_for_trade()
-        new_player, _ = await Player.get_or_create(discord_id=user.id)
+        new_player, _ = await Player.objects.aget_or_create(discord_id=user.id)
         old_player = countryball.player
 
         if new_player == old_player:
@@ -616,8 +567,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
         if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
             await interaction.followup.send(
-                "This player does not accept donations. You can use trades instead.",
-                ephemeral=True,
+                "This player does not accept donations. You can use trades instead.", ephemeral=True
             )
             await countryball.unlock()
             return
@@ -626,22 +576,17 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         if new_player.donation_policy == DonationPolicy.FRIENDS_ONLY:
             if not friendship:
                 await interaction.followup.send(
-                    "This player only accepts donations from friends, use trades instead.",
-                    ephemeral=True,
+                    "This player only accepts donations from friends, use trades instead.", ephemeral=True
                 )
                 await countryball.unlock()
                 return
         blocked = await new_player.is_blocked(old_player)
         if blocked:
-            await interaction.followup.send(
-                "You cannot interact with a user that has blocked you.", ephemeral=True
-            )
+            await interaction.followup.send("You cannot interact with a user that has blocked you.", ephemeral=True)
             await countryball.unlock()
             return
         if new_player.discord_id in self.bot.blacklist:
-            await interaction.followup.send(
-                "You cannot donate to a blacklisted user.", ephemeral=True
-            )
+            await interaction.followup.send("You cannot donate to a blacklisted user.", ephemeral=True)
             await countryball.unlock()
             return
         elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
@@ -657,10 +602,10 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         countryball.player = new_player
         countryball.trade_player = old_player
         countryball.favorite = False
-        await countryball.save()
+        await countryball.asave()
 
-        trade = await Trade.create(player1=old_player, player2=new_player)
-        await TradeObject.create(trade=trade, ballinstance=countryball, player=old_player)
+        trade = await Trade.objects.acreate(player1=old_player, player2=new_player)
+        await TradeObject.objects.acreate(trade=trade, ballinstance=countryball, player=old_player)
 
         cb_txt = (
             countryball.description(short=True, include_emoji=True, bot=self.bot, is_trade=True)
@@ -714,24 +659,20 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        balls = await BallInstance.filter(**filters).count()
+        balls = await BallInstance.objects.filter(**filters).acount()
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
         guild = f" caught in {interaction.guild.name}" if current_server else ""
 
         await interaction.followup.send(
-            f"You have {balls:,} {special_str}"
-            f"{country}{settings.collectible_name}{plural}{guild}."
+            f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural}{guild}."
         )
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
     async def duplicate(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        type: DuplicateType,
-        limit: int | None = None,
+        self, interaction: discord.Interaction["BallsDexBot"], type: DuplicateType, limit: int | None = None
     ):
         """
         Shows your most duplicated countryballs or specials.
@@ -745,48 +686,49 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
 
-        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         is_special = type == DuplicateType.specials
-        queryset = BallInstance.filter(player=player)
+        queryset = BallInstance.objects.filter(player=player)
 
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
-            annotations = {"name": "special__name", "emoji": "special__emoji"}
+            annotations = {"name": F("special__name"), "emoji": F("special__emoji"), "value_id": F("special_id")}
             apply_limit = False
         else:
             queryset = queryset.filter(ball__tradeable=True)
-            annotations = {"name": "ball__country", "emoji": "ball__emoji_id"}
+            annotations = {"name": F("ball__country"), "emoji": F("ball__emoji_id"), "value_id": F("ball_id")}
             apply_limit = True
 
         query = (
-            queryset.annotate(count=Count("id")).group_by(*annotations.values()).order_by("-count")
+            queryset.values(annotations["value_id"].name)
+            .annotate(**annotations, count=Count("value_id"))
+            .order_by("-count")
         )
 
         if apply_limit and limit is not None:
-            query = query.limit(limit)
+            query = query[:limit]
 
-        query = query.values(*annotations.values(), "count")
-        results = await query
-
-        if not results:
+        if not await query.aexists():
             await interaction.followup.send(
                 f"You don't have any {type.value} duplicates in your inventory.", ephemeral=True
             )
             return
 
         entries = [
-            {
-                "name": item[annotations["name"]],
-                "emoji": (
-                    self.bot.get_emoji(item[annotations["emoji"]]) or item[annotations["emoji"]]
-                ),
-                "count": item["count"],
-            }
-            for item in results
+            discord.SelectOption(
+                label=item["name"],
+                emoji=self.bot.get_emoji(item["emoji"]) or item["emoji"],
+                description=f"Count: {item['count']}",
+                value=item["value_id"],
+            )
+            async for item in query
         ]
 
-        source = DuplicateViewMenu(interaction, entries, is_special)
-        await source.start(content=f"View your duplicate {type.value}.")
+        view = CountryballsDuplicateSource(is_special)
+        view.header.content = f"View your duplicate {type.value}."
+        menu = Menu(self.bot, view, ChunkedListSource(entries), SelectFormatter(view.callback))
+        await menu.init()
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
@@ -795,6 +737,7 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User,
         special: SpecialEnabledTransform | None = None,
+        duplicates: bool = False,
     ):
         """
         Compare your countryballs with another user.
@@ -805,6 +748,8 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             The user you want to compare with
         special: Special
             Filter the results of the comparison to a special event.
+        duplicates: bool
+            Whether to compare duplicates.
         """
         await interaction.response.defer(thinking=True)
         if interaction.user == user:
@@ -812,17 +757,16 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             return
 
         try:
-            player = await Player.get(discord_id=user.id)
-        except DoesNotExist:
+            player = await Player.objects.aget(discord_id=user.id)
+        except Player.DoesNotExist:
             await interaction.followup.send(
                 f"{user.display_name} doesn't have any {settings.plural_collectible_name} yet."
             )
             return
 
-        if user.id in self.bot.blacklist and not is_staff(interaction):
-            await interaction.followup.send(
-                "You cannot compare the inventory of a blacklisted user.", ephemeral=True
-            )
+        staff = await is_staff(interaction)
+        if user.id in self.bot.blacklist and not staff:
+            await interaction.followup.send("You cannot compare the inventory of a blacklisted user.", ephemeral=True)
             return
 
         if await inventory_privacy(self.bot, interaction, player, user) is False:
@@ -833,87 +777,69 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
-                if y.enabled and (special.end_date is None or y.created_at < special.end_date)
+                if y.enabled and (special.end_date is None or y.created_at is None or y.created_at < special.end_date)
             }
 
-        player1, _ = await Player.get_or_create(discord_id=interaction.user.id)
-        player2, _ = await Player.get_or_create(discord_id=user.id)
+        player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
 
         blocked = await player.is_blocked(player1)
-        if blocked and not is_staff(interaction):
-            await interaction.followup.send(
-                "You cannot compare with a user that has you blocked.", ephemeral=True
-            )
+        if blocked and not staff:
+            await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
             return
 
         blocked = await player.is_blocked(player2)
-        if blocked and not is_staff(interaction):
-            await interaction.followup.send(
-                "You cannot compare with a user that has you blocked.", ephemeral=True
-            )
+        if blocked and not staff:
+            await interaction.followup.send("You cannot compare with a user that has you blocked.", ephemeral=True)
             return
-        queryset = BallInstance.filter(ball__enabled=True).distinct()
+        queryset = BallInstance.objects.filter(ball__enabled=True).distinct()
+        if duplicates:
+            queryset = queryset.values("ball_id").annotate(counts=Count("ball_id")).filter(counts__gt=1)
         if special:
             queryset = queryset.filter(special=special)
         user1_balls = cast(
-            list[int],
-            await queryset.filter(player=player1).values_list("ball_id", flat=True),
+            list[int], [x async for x in queryset.filter(player=player1).values_list("ball_id", flat=True)]
         )
         user2_balls = cast(
-            list[int],
-            await queryset.filter(player=player2).values_list("ball_id", flat=True),
+            list[int], [x async for x in queryset.filter(player=player2).values_list("ball_id", flat=True)]
         )
-        both = set(user1_balls) & set(user2_balls)
-        user1_only = set(user1_balls) - set(user2_balls)
-        user2_only = set(user2_balls) - set(user1_balls)
-        neither = set(bot_countryballs.keys()) - both - user1_only - user2_only
 
-        entries = []
+        special_str = f" ({special.name})" if special else ""
+        comparison_type = "Duplicates Comparison" if duplicates else "Comparison"
+        text = (
+            f"## {comparison_type} of {interaction.user.display_name} and {user.display_name}'s "
+            f"{settings.plural_collectible_name}{special_str}\n"
+        )
 
         def fill_fields(title: str, ids: set[int]):
-            first_field_added = False
-            buffer = ""
+            nonlocal text
+            text += f"### {title}{' duplicates' if duplicates else ''}\n"
+            if not ids:
+                text += "None\n"
+                return
 
             for ball_id in ids:
                 emoji = self.bot.get_emoji(bot_countryballs[ball_id])
                 if not emoji:
                     continue
+                text += f"{emoji} "
+            text += "\n"
 
-                text = f"{emoji} "
-                if len(buffer) + len(text) > 1024:
-                    # hitting embed limits, adding an intermediate field
-                    if first_field_added:
-                        entries.append(("\u200b", buffer))
-                    else:
-                        entries.append((f"__**{title}**__", buffer))
-                        first_field_added = True
-                    buffer = ""
-                buffer += text
+        all_ball_ids = set(bot_countryballs.keys())
+        u1_s, u2_s = set(user1_balls), set(user2_balls)
+        fill_fields("Both have", u1_s & u2_s)
+        fill_fields(f"Only {interaction.user.display_name} has", u1_s - u2_s)
+        fill_fields(f"Only {user.display_name} has", u2_s - u1_s)
+        fill_fields("Neither have", all_ball_ids - u1_s - u2_s)
 
-            if buffer:  # add what's remaining
-                if first_field_added:
-                    entries.append(("\u200b", buffer))
-                else:
-                    entries.append((f"__**{title}**__", buffer))
-
-        if both:
-            fill_fields("Both have", both)
-        else:
-            entries.append(("__**Both have**__", "None"))
-        fill_fields(f"{interaction.user.display_name} has", user1_only)
-        fill_fields(f"{user.display_name} has", user2_only)
-        fill_fields("Neither have", neither)
-
-        source = FieldPageSource(entries, per_page=5, inline=False, clear_description=False)
-        special_str = f" ({special.name})" if special else ""
-        source.embed.title = (
-            f"Comparison of {interaction.user.display_name} and {user.display_name}'s "
-            f"{settings.plural_collectible_name}{special_str}"
-        )
-        source.embed.colour = discord.Colour.blurple()
-
-        pages = Pages(source=source, interaction=interaction, compact=True)
-        await pages.start()
+        view = LayoutView()
+        container = Container()
+        display = TextDisplay("")
+        container.add_item(display)
+        view.add_item(container)
+        menu = Menu(self.bot, view, TextSource(text, delims=["\n###", " "]), TextFormatter(display))
+        await menu.init()
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     async def collection(
@@ -933,70 +859,65 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
             Whether or not to send the command ephemerally.
         """
         await interaction.response.defer(thinking=True, ephemeral=ephemeral)
-        player, _ = await Player.get_or_create(discord_id=interaction.user.id)
+        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
         query = (
-            BallInstance.filter(player=player)
+            BallInstance.objects.filter(player=player)
+            .values("player_id")
             .annotate(
-                total=RawSQL("COUNT(*)"),
-                traded=RawSQL("SUM(CASE WHEN trade_player_id IS NULL THEN 0 ELSE 1 END)"),
-                specials=RawSQL(
-                    "SUM(CASE WHEN special_id IS NULL OR special_id IN "
-                    "(SELECT id FROM special WHERE hidden = TRUE) THEN 0 ELSE 1 END)"
+                total=Count("id"),
+                traded=Count("id", filter=Q(trade_player_id__isnull=False)),
+                specials=Count(
+                    "id",
+                    filter=Q(special_id__isnull=False)
+                    & ~Exists(Special.objects.filter(hidden=True, id=OuterRef("special_id"))),
                 ),
             )
-            .group_by("player_id")
         )
         specials = (
-            BallInstance.filter(player=player)
+            BallInstance.objects.filter(player=player)
             .exclude(special=None)
             .exclude(special__hidden=True)
-            .annotate(count=Count("id"))
-            .group_by("special__name")
+            .values("special__name")
+            .annotate(count=Count("special__name"))
+            .order_by("-count")
         )
         if countryball:
             query = query.filter(ball=countryball)
             specials = specials.filter(ball=countryball)
-        counts_list = await query.values("player_id", "total", "traded", "specials")
-        specials = await specials.values("special__name", "count")
 
-        if not counts_list:
+        try:
+            counts = await query.aget()
+        except BallInstance.DoesNotExist:
             if countryball:
                 await interaction.followup.send(
-                    f"You don't have any {countryball.country} "
-                    f"{settings.plural_collectible_name} yet."
+                    f"You don't have any {countryball.country} {settings.plural_collectible_name} yet."
                 )
             else:
-
-                await interaction.followup.send(
-                    f"You don't have any {settings.plural_collectible_name} yet."
-                )
+                await interaction.followup.send(f"You don't have any {settings.plural_collectible_name} yet.")
             return
-        counts = counts_list[0]
-        all_specials = await Special.filter(hidden=False)
-        special_emojis = {x.name: x.emoji for x in all_specials}
+        all_specials = Special.objects.filter(hidden=False)
+        special_emojis = {x.name: x.emoji async for x in all_specials}
 
         desc = (
-            f"**Total**: {counts["total"]:,} ({counts["total"] - counts["traded"]:,} caught, "
+            f"**Total**: {counts['total']:,} ({counts['total'] - counts['traded']:,} caught, "
             f"{counts['traded']:,} received from trade)\n"
             f"**Total Specials**: {counts['specials']:,}\n\n"
         )
         if counts["specials"]:
             desc += "**Specials**:\n"
-        for special in sorted(specials, key=lambda x: x["count"], reverse=True):
+        async for special in specials:
             emoji = special_emojis.get(special["special__name"], "")
-            desc += f"{emoji} {special['special__name']}: {special["count"]:,}\n"
+            desc += f"{emoji} {special['special__name']}: {special['count']:,}\n"
 
         embed = discord.Embed(
             title=f"Collection of {countryball.country}" if countryball else "Total Collection",
             description=desc,
             color=discord.Color.blurple(),
         )
-        embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url
-        )
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         if countryball:
-            file_location = "./admin_panel/media/" + countryball.wild_card
+            file_location = countryball.wild_card.path
             file = discord.File(file_location, filename="countryball.png")
             embed.set_thumbnail(url="attachment://countryball.png")
             await interaction.followup.send(embed=embed, file=file)

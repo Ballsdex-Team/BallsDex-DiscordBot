@@ -1,25 +1,25 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
-from asgiref.sync import async_to_sync
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
 from django.db.models import OuterRef, Subquery
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django_admin_action_forms import action_with_form
 from django_admin_inline_paginator.admin import TabularInlinePaginated
-
-from admin_panel.webhook import notify_admins
 
 from ..forms import BlacklistActionForm, BlacklistedListFilter
 from ..models import BallInstance, BlacklistedID, BlacklistHistory, GuildConfig, Player
 from ..utils import BlacklistTabular
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
     from django.http import HttpRequest
+
+log = logging.getLogger(__name__)
 
 
 class BallInstanceTabular(TabularInlinePaginated):
@@ -45,9 +45,7 @@ class BallInstanceTabular(TabularInlinePaginated):
             .get_queryset(request)
             .prefetch_related("ball", "special")
             .annotate(
-                guild_config_id=Subquery(
-                    GuildConfig.objects.filter(guild_id=OuterRef("server_id")).values("pk")[:1]
-                )
+                guild_config_id=Subquery(GuildConfig.objects.filter(guild_id=OuterRef("server_id")).values("pk")[:1])
             )
         )
 
@@ -60,7 +58,7 @@ class BallInstanceTabular(TabularInlinePaginated):
             (quote(obj.guild_config_id),),  # type: ignore
         )
         # Display a link to the admin page.
-        return format_html(f'<a href="{admin_url}">{obj.server_id}</a>')
+        return mark_safe(f'<a href="{admin_url}">{obj.server_id}</a>')
 
 
 @admin.register(Player)
@@ -81,37 +79,27 @@ class PlayerAdmin(admin.ModelAdmin):
     def blacklisted(self, obj: Player):
         return obj.is_blacklisted()
 
-    @action_with_form(
-        BlacklistActionForm, description="Blacklist the selected users"
-    )  # type: ignore
+    @action_with_form(BlacklistActionForm, description="Blacklist the selected users")  # type: ignore
     def blacklist_users(self, request: "HttpRequest", queryset: "QuerySet[Player]", data: dict):
-        reason = (
-            data["reason"]
-            + f"\nDone through the admin panel by {request.user} ({request.user.pk})"
-        )
+        reason = data["reason"] + f"\nDone through the admin panel by {request.user} ({request.user.pk})"
         blacklists: list[BlacklistedID] = []
         histories: list[BlacklistHistory] = []
         for player in queryset:
             if BlacklistedID.objects.filter(discord_id=player.discord_id).exists():
-                self.message_user(
-                    request, f"Player {player.discord_id} is already blacklisted!", messages.ERROR
-                )
+                self.message_user(request, f"Player {player.discord_id} is already blacklisted!", messages.ERROR)
                 return
-            blacklists.append(
-                BlacklistedID(discord_id=player.discord_id, reason=reason, moderator_id=None)
-            )
-            histories.append(
-                BlacklistHistory(discord_id=player.discord_id, reason=reason, moderator_id=0)
-            )
+            blacklists.append(BlacklistedID(discord_id=player.discord_id, reason=reason, moderator_id=None))
+            histories.append(BlacklistHistory(discord_id=player.discord_id, reason=reason, moderator_id=0))
         BlacklistedID.objects.bulk_create(blacklists)
         BlacklistHistory.objects.bulk_create(histories)
 
         self.message_user(
             request,
-            f"Created blacklist for {queryset.count()} user{"s" if queryset.count() > 1 else ""}. "
+            f"Created blacklist for {queryset.count()} user{'s' if queryset.count() > 1 else ''}. "
             "This will be applied after reloading the bot's cache.",
         )
-        async_to_sync(notify_admins)(
+        log.info(
             f"{request.user} blacklisted players "
-            f'{", ".join([str(x.discord_id) for x in queryset])} for the reason: {data["reason"]}.'
+            f"{', '.join([str(x.discord_id) for x in queryset])} for the reason: {data['reason']}.",
+            extra={"webhook": True},
         )

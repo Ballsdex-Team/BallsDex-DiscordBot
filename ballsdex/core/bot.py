@@ -7,7 +7,7 @@ import math
 import time
 import types
 from datetime import datetime
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Self, Sequence
 
 import aiohttp
 import discord
@@ -15,13 +15,11 @@ import discord.gateway
 from aiohttp import ClientTimeout
 from cachetools import TTLCache
 from discord import app_commands
-from discord.app_commands.translator import (
-    TranslationContextLocation,
-    TranslationContextTypes,
-    locale_str,
-)
+from discord.app_commands.translator import TranslationContextLocation, TranslationContextTypes, locale_str
 from discord.enums import Locale
 from discord.ext import commands
+from discord.utils import MISSING
+from django.apps import apps
 from prometheus_client import Histogram
 from rich import box, print
 from rich.console import Console
@@ -29,8 +27,10 @@ from rich.table import Table
 
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
+from ballsdex.core.help import HelpCommand
 from ballsdex.core.metrics import PrometheusServer
-from ballsdex.core.models import (
+from ballsdex.core.utils.checks import check_perms
+from bd_models.models import (
     Ball,
     BlacklistedGuild,
     BlacklistedID,
@@ -42,13 +42,24 @@ from ballsdex.core.models import (
     regimes,
     specials,
 )
-from ballsdex.settings import settings
+from settings.models import settings
 
 if TYPE_CHECKING:
     from discord.ext.commands.bot import PrefixType
 
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
+impersonations: dict[int, discord.Member] = {}
+
+DEFAULT_PACKAGES = (
+    ("admin", "ballsdex.packages.admin"),
+    ("balls", "ballsdex.packages.balls"),
+    ("guildconfig", "ballsdex.packages.guildconfig"),
+    ("countryballs", "ballsdex.packages.countryballs"),
+    ("info", "ballsdex.packages.info"),
+    ("players", "ballsdex.packages.players"),
+    ("trade", "ballsdex.packages.trade"),
+)
 
 
 def owner_check(ctx: commands.Context[BallsDexBot]):
@@ -56,19 +67,14 @@ def owner_check(ctx: commands.Context[BallsDexBot]):
 
 
 class Translator(app_commands.Translator):
-    async def translate(
-        self, string: locale_str, locale: Locale, context: TranslationContextTypes
-    ) -> str | None:
+    async def translate(self, string: locale_str, locale: Locale, context: TranslationContextTypes) -> str | None:
         text = (
             string.message.replace("countryballs", settings.plural_collectible_name)
             .replace("countryball", settings.collectible_name)
-            .replace("/balls", f"/{settings.players_group_cog_name}")
+            .replace("/balls", f"/{settings.balls_slash_name}")
             .replace("BallsDex", settings.bot_name)
         )
-        if context.location in (
-            TranslationContextLocation.command_name,
-            TranslationContextLocation.group_name,
-        ):
+        if context.location in (TranslationContextLocation.command_name, TranslationContextLocation.group_name):
             text = text.replace(" ", "-").lower()
 
         return text
@@ -76,18 +82,14 @@ class Translator(app_commands.Translator):
 
 # observing the duration and status code of HTTP requests through aiohttp TraceConfig
 async def on_request_start(
-    session: aiohttp.ClientSession,
-    trace_ctx: types.SimpleNamespace,
-    params: aiohttp.TraceRequestStartParams,
+    session: aiohttp.ClientSession, trace_ctx: types.SimpleNamespace, params: aiohttp.TraceRequestStartParams
 ):
     # register t1 before sending request
     trace_ctx.start = session.loop.time()
 
 
 async def on_request_end(
-    session: aiohttp.ClientSession,
-    trace_ctx: types.SimpleNamespace,
-    params: aiohttp.TraceRequestEndParams,
+    session: aiohttp.ClientSession, trace_ctx: types.SimpleNamespace, params: aiohttp.TraceRequestEndParams
 ):
     time = session.loop.time() - trace_ctx.start
 
@@ -106,32 +108,59 @@ async def on_request_end(
     http_counter.labels(route_key, params.response.status).observe(time)
 
 
-class CommandTree(app_commands.CommandTree):
+class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
     disable_time_check: bool = False
 
-    async def interaction_check(self, interaction: discord.Interaction[BallsDexBot], /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction[Bot], /) -> bool:
         # checking if the moment we receive this interaction isn't too late already
         # there is a 3 seconds limit for initial response, taking a little margin into account
         # https://discord.com/developers/docs/interactions/receiving-and-responding#responding-to-an-interaction
         if not self.disable_time_check:
             delta = datetime.now(tz=interaction.created_at.tzinfo) - interaction.created_at
             if delta.total_seconds() >= 2.8:
-                log.warning(
-                    f"Skipping interaction {interaction.id}, "
-                    f"running {delta.total_seconds()}s late."
-                )
+                log.warning(f"Skipping interaction {interaction.id}, running {delta.total_seconds()}s late.")
                 return False
 
         bot = interaction.client
         if not bot.is_ready():
             if interaction.type != discord.InteractionType.autocomplete:
-                await interaction.response.send_message(
-                    "The bot is currently starting, please wait for a few minutes... "
-                    f"({round((len(bot.shards) / bot.shard_count) * 100)}%)",
-                    ephemeral=True,
-                )
+                try:
+                    await interaction.response.send_message(
+                        "The bot is currently starting, please wait for a few minutes... "
+                        f"({round((len(bot.shards) / bot.shard_count) * 100)}%)",
+                        ephemeral=True,
+                    )
+                except discord.NotFound:
+                    pass
             return False  # wait for all shards to be connected
+
+        if impersonated := impersonations.get(interaction.user.id, None):
+            interaction.user = impersonated
+            interaction._permissions = impersonated._permissions or 0
         return await bot.blacklist_check(interaction)
+
+    async def load_command_mentions(
+        self, app_commands: list[app_commands.AppCommand] | None = None, *, cog: commands.Cog | None = None
+    ):
+        if app_commands is None:
+            cmds = {x.name: x.id for x in await self.fetch_commands()}
+        else:
+            cmds = {x.name: x.id for x in app_commands}
+
+        for cmd in (cog or self).walk_commands():
+            cmd_id = cmds.get(cmd.root_parent.name if cmd.root_parent else cmd.name, None)
+            if not cmd_id:
+                continue
+            cmd.extras["mention"] = f"</{cmd.qualified_name}:{cmd_id}>"
+
+    async def sync(self, *, guild: discord.abc.Snowflake | None = None) -> list[app_commands.AppCommand]:
+        app_commands = await super().sync(guild=guild)
+        if not guild:
+            # assign the mentions
+            await self.load_command_mentions(app_commands)
+            return app_commands
+
+        return app_commands
 
 
 class BallsDexBot(commands.AutoShardedBot):
@@ -145,6 +174,7 @@ class BallsDexBot(commands.AutoShardedBot):
         disable_message_content: bool = False,
         disable_time_check: bool = False,
         skip_tree_sync: bool = False,
+        gateway_url: str | None = None,
         dev: bool = False,
         **options,
     ):
@@ -154,10 +184,7 @@ class BallsDexBot(commands.AutoShardedBot):
         # guild_messages: spawning is based on messages sent, content is not necessary
         # emojis_and_stickers: DB holds emoji IDs for the balls which are fetched from 3 servers
         intents = discord.Intents(
-            guilds=True,
-            guild_messages=True,
-            emojis_and_stickers=True,
-            message_content=not disable_message_content,
+            guilds=True, guild_messages=True, emojis_and_stickers=True, message_content=not disable_message_content
         )
         if disable_message_content:
             log.warning("Message content disabled, this will make spam detection harder")
@@ -168,15 +195,18 @@ class BallsDexBot(commands.AutoShardedBot):
             trace.on_request_end.append(on_request_end)
             options["http_trace"] = trace
 
-        super().__init__(command_prefix, intents=intents, tree_cls=CommandTree, **options)
-        self.tree.disable_time_check = disable_time_check  # type: ignore
+        super().__init__(
+            command_prefix, intents=intents, tree_cls=CommandTree, help_command=HelpCommand(width=100), **options
+        )
+        self.tree: CommandTree[Self]
+        self.tree.disable_time_check = disable_time_check
         self.skip_tree_sync = skip_tree_sync
+        self.gateway_url = gateway_url
 
         self.dev = dev
         self.prometheus_server: PrometheusServer | None = None
 
         self.tree.error(self.on_application_command_error)
-        self.add_check(owner_check)  # Only owners are able to use text commands
 
         self._shutdown = 0
         self.startup_time: datetime | None = None
@@ -190,34 +220,8 @@ class BallsDexBot(commands.AutoShardedBot):
         self.owner_ids: set[int]
 
     async def start_prometheus_server(self):
-        self.prometheus_server = PrometheusServer(
-            self, settings.prometheus_host, settings.prometheus_port
-        )
+        self.prometheus_server = PrometheusServer(self, settings.prometheus_host, settings.prometheus_port)
         await self.prometheus_server.run()
-
-    def assign_ids_to_app_groups(
-        self, group: app_commands.Group, synced_commands: list[app_commands.AppCommandGroup]
-    ):
-        for synced_command in synced_commands:
-            bot_command = group.get_command(synced_command.name)
-            if not bot_command:
-                continue
-            bot_command.extras["mention"] = synced_command.mention
-            if isinstance(bot_command, app_commands.Group) and bot_command.commands:
-                self.assign_ids_to_app_groups(
-                    bot_command, cast(list[app_commands.AppCommandGroup], synced_command.options)
-                )
-
-    def assign_ids_to_app_commands(self, synced_commands: list[app_commands.AppCommand]):
-        for synced_command in synced_commands:
-            bot_command = self.tree.get_command(synced_command.name, type=synced_command.type)
-            if not bot_command:
-                continue
-            bot_command.extras["mention"] = synced_command.mention
-            if isinstance(bot_command, app_commands.Group) and bot_command.commands:
-                self.assign_ids_to_app_groups(
-                    bot_command, cast(list[app_commands.AppCommandGroup], synced_command.options)
-                )
 
     def get_emoji(self, id: int) -> discord.Emoji | None:
         return self.application_emojis.get(id) or super().get_emoji(id)
@@ -232,32 +236,32 @@ class BallsDexBot(commands.AutoShardedBot):
             self.application_emojis[emoji.id] = emoji
 
         balls.clear()
-        for ball in await Ball.all():
+        async for ball in Ball.objects.all():
             balls[ball.pk] = ball
         table.add_row(settings.collectible_name.title() + "s", str(len(balls)))
 
         regimes.clear()
-        for regime in await Regime.all():
+        async for regime in Regime.objects.all():
             regimes[regime.pk] = regime
         table.add_row("Regimes", str(len(regimes)))
 
         economies.clear()
-        for economy in await Economy.all():
+        async for economy in Economy.objects.all():
             economies[economy.pk] = economy
         table.add_row("Economies", str(len(economies)))
 
         specials.clear()
-        for special in await Special.all():
+        async for special in Special.objects.all():
             specials[special.pk] = special
         table.add_row("Special events", str(len(specials)))
 
         self.blacklist = set()
-        for blacklisted_id in await BlacklistedID.all().only("discord_id"):
+        async for blacklisted_id in BlacklistedID.objects.all().only("discord_id"):
             self.blacklist.add(blacklisted_id.discord_id)
         table.add_row("Blacklisted users", str(len(self.blacklist)))
 
         self.blacklist_guild = set()
-        for blacklisted_id in await BlacklistedGuild.all().only("discord_id"):
+        async for blacklisted_id in BlacklistedGuild.objects.all().only("discord_id"):
             self.blacklist_guild.add(blacklisted_id.discord_id)
         table.add_row("Blacklisted guilds", str(len(self.blacklist_guild)))
 
@@ -267,17 +271,13 @@ class BallsDexBot(commands.AutoShardedBot):
 
     async def gateway_healthy(self) -> bool:
         """Check whether or not the gateway proxy is ready and healthy."""
-        if settings.gateway_url is None:
+        if self.gateway_url is None:
             raise RuntimeError("This is only available on the production bot instance.")
 
         try:
-            base_url = str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY).replace(
-                "ws://", "http://"
-            )
+            base_url = str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY).replace("ws://", "http://")
             async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"{base_url}/health", timeout=ClientTimeout(total=10)
-                ) as resp:
+                async with session.get(f"{base_url}/health", timeout=ClientTimeout(total=10)) as resp:
                     return resp.status == 200
         except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
             return False
@@ -285,7 +285,7 @@ class BallsDexBot(commands.AutoShardedBot):
     async def setup_hook(self) -> None:
         await self.tree.set_translator(Translator())
         log.info("Starting up with %s shards...", self.shard_count)
-        if settings.gateway_url is None:
+        if self.gateway_url is None:
             return
 
         while True:
@@ -296,6 +296,23 @@ class BallsDexBot(commands.AutoShardedBot):
 
             log.warning("Gateway proxy is not ready yet, waiting 30 more seconds...")
             await asyncio.sleep(30)
+
+    # override cog reload to reconfigure app command mentions
+    async def add_cog(
+        self,
+        cog: commands.Cog,
+        /,
+        *,
+        override: bool = False,
+        guild: discord.abc.Snowflake | None = MISSING,
+        guilds: Sequence[discord.abc.Snowflake] = MISSING,
+    ) -> None:
+        # hook that will check before loading a cog that Django permission checks are valid
+        await check_perms()
+        await super().add_cog(cog, override=override, guild=guild, guilds=guilds)
+        if self.is_ready():
+            await self.tree.load_command_mentions(cog=cog)
+        # otherwise, bot is still starting, that will be done with the sync
 
     async def on_ready(self):
         if self.cogs != {}:
@@ -321,9 +338,7 @@ class BallsDexBot(commands.AutoShardedBot):
         if len(self.owner_ids) > 1:
             log.info(f"{len(self.owner_ids)} users are set as bot owner.")
         else:
-            log.info(
-                f"{await self.fetch_user(next(iter(self.owner_ids)))} is the owner of this bot."
-            )
+            log.info(f"{await self.fetch_user(next(iter(self.owner_ids)))} is the owner of this bot.")
 
         await self.load_cache()
         grammar = "" if len(self.blacklist) == 1 else "s"
@@ -336,11 +351,14 @@ class BallsDexBot(commands.AutoShardedBot):
             await self.add_cog(Dev())
 
         loaded_packages = []
-        for package in settings.packages:
-            package_name = package.replace("ballsdex.packages.", "")
+        packages = list(DEFAULT_PACKAGES)
+        for app in apps.get_app_configs():
+            if dpy_package := getattr(app, "dpy_package", None):
+                packages.append((app.label, dpy_package))
 
+        for package_name, path in packages:
             try:
-                await self.load_extension(package)
+                await self.load_extension(path)
             except Exception:
                 log.error(f"Failed to load package {package_name}", exc_info=True)
             else:
@@ -351,25 +369,11 @@ class BallsDexBot(commands.AutoShardedBot):
             log.info("No package loaded.")
 
         if not self.skip_tree_sync:
+            log.info("Syncing global commands...")
             synced_commands = await self.tree.sync()
-            log.info(f"Synced {len(synced_commands)} commands.")
-            try:
-                self.assign_ids_to_app_commands(synced_commands)
-            except Exception:
-                log.error("Failed to assign IDs to app commands", exc_info=True)
+            log.info(f"Synced {len(synced_commands)} global commands.")
         else:
             log.warning("Skipping command synchronization.")
-
-        if not self.skip_tree_sync and "ballsdex.packages.admin" in settings.packages:
-            for guild_id in settings.admin_guild_ids:
-                guild = self.get_guild(guild_id)
-                if not guild:
-                    continue
-                synced_commands = await self.tree.sync(guild=guild)
-                grammar = "" if len(synced_commands) == 1 else "s"
-                log.info(
-                    f"Synced {len(synced_commands)} admin command{grammar} for guild {guild.id}."
-                )
 
         if settings.prometheus_enabled:
             try:
@@ -377,170 +381,149 @@ class BallsDexBot(commands.AutoShardedBot):
             except Exception:
                 log.exception("Failed to start Prometheus server, stats will be unavailable.")
 
-        print(
-            f"\n    [bold][red]{settings.bot_name} bot[/red] [green]"
-            "is now operational![/green][/bold]\n"
-        )
+        print(f"\n    [bold][red]{settings.bot_name} bot[/red] [green]is now operational![/green][/bold]\n")
 
-    async def blacklist_check(self, interaction: discord.Interaction[Self]) -> bool:
-        if interaction.user.id in self.blacklist:
-            if interaction.type != discord.InteractionType.autocomplete:
-                await interaction.response.send_message(
-                    "You are blacklisted from the bot."
-                    "\nYou can appeal this blacklist in our support server: {}".format(
-                        settings.discord_invite
-                    ),
-                    ephemeral=True,
-                )
-            return False
-        if interaction.guild_id and interaction.guild_id in self.blacklist_guild:
-            if interaction.type != discord.InteractionType.autocomplete:
-                await interaction.response.send_message(
-                    "This server is blacklisted from the bot."
-                    "\nYou can appeal this blacklist in our support server: {}".format(
-                        settings.discord_invite
-                    ),
-                    ephemeral=True,
-                )
-            return False
-        if interaction.command and interaction.user.id in self.command_log:
-            log.info(
-                f"{interaction.user} ({interaction.user.id}) used "
-                f'"{interaction.command.qualified_name}" in '
-                f"{interaction.guild} ({interaction.guild_id})"
+    async def blacklist_check(self, source: discord.Interaction[Self] | commands.Context[Self]) -> bool:
+        if isinstance(source, discord.Interaction):
+            user = source.user
+            guild_id = source.guild_id
+            if source.type != discord.InteractionType.autocomplete:
+                send_func = source.response.send_message
+            else:
+                # empty awaitable function
+                send_func = lambda *ar, **kw: asyncio.sleep(0)  # noqa: E731
+        else:
+            user = source.author
+            guild_id = source.guild.id if source.guild else None
+            send_func = source.send
+        if user.id in self.blacklist:
+            await send_func(
+                "You are blacklisted from the bot.\nYou can appeal this blacklist in our support server: {}".format(
+                    settings.discord_invite
+                ),
+                ephemeral=True,
             )
+            return False
+        if guild_id and guild_id in self.blacklist_guild:
+            await send_func(
+                "This server is blacklisted from the bot."
+                "\nYou can appeal this blacklist in our support server: {}".format(settings.discord_invite),
+                ephemeral=True,
+            )
+            return False
+        if source.command and user.id in self.command_log:
+            log.info(f'{user} ({user.id}) used "{source.command.qualified_name}" in {source.guild} ({guild_id})')
         return True
 
     async def on_command_error(
-        self, context: commands.Context, exception: commands.errors.CommandError
+        self, context: commands.Context, exception: commands.errors.CommandError | app_commands.AppCommandError
     ):
         if isinstance(exception, (commands.CommandNotFound, commands.DisabledCommand)):
             return
 
         assert context.command
-        if isinstance(exception, (commands.ConversionError, commands.UserInputError)):
-            # in case we need to know what happened
-            log.debug("Silenced command exception", exc_info=exception)
-            await context.send_help(context.command)
-            return
+        match exception:
+            case commands.BadArgument():
+                await context.send(exception.args[0])
 
-        if isinstance(exception, commands.MissingRequiredAttachment):
-            await context.send("An attachment is missing.")
-            return
+            case commands.ConversionError() | commands.UserInputError():
+                # in case we need to know what happened
+                log.debug("Silenced command exception", exc_info=exception)
+                await context.send_help(context.command)
 
-        if isinstance(exception, commands.CheckFailure):
-            if isinstance(exception, commands.BotMissingPermissions):
-                missing_perms = ", ".join(exception.missing_permissions)
+            case commands.MissingRequiredAttachment():
+                await context.send("An attachment is missing.", ephemeral=True)
+
+            case app_commands.CommandOnCooldown() | commands.CommandOnCooldown():
                 await context.send(
-                    f"The bot is missing the permissions: `{missing_perms}`."
-                    " Give the bot those permissions for the command to work as expected."
+                    "This command is on cooldown. Please retry "
+                    f"<t:{math.ceil(time.time() + exception.retry_after)}:R>.",
+                    ephemeral=True,
                 )
-                return
 
-            if isinstance(exception, commands.MissingPermissions):
-                missing_perms = ", ".join(exception.missing_permissions)
-                await context.send(
-                    f"You are missing the following permissions: `{missing_perms}`."
-                    " You need those permissions to run this command."
-                )
-                return
+            case app_commands.TransformerError():
+                await context.send("One of the arguments provided cannot be parsed.", ephemeral=True)
+                log.debug("Failed running converter", exc_info=exception)
 
-            return
+            case commands.CheckFailure() | app_commands.CheckFailure():
+                match exception:
+                    case commands.BotMissingPermissions() | app_commands.BotMissingPermissions():
+                        missing_perms = ", ".join(exception.missing_permissions)
+                        await context.send(
+                            f"The bot is missing the permissions: `{missing_perms}`."
+                            " Give the bot those permissions for the command to work as expected.",
+                            ephemeral=True,
+                        )
 
-        if isinstance(exception, commands.CommandInvokeError):
-            await context.send(
-                "An error occured when running the command. Contact support if this persists."
-            )
-            log.error(
-                f"Unknown error in text command {context.command.qualified_name}",
-                exc_info=exception,
-            )
+                    case commands.MissingPermissions() | app_commands.MissingPermissions():
+                        missing_perms = ", ".join(exception.missing_permissions)
+                        await context.send(
+                            f"You are missing the following permissions: `{missing_perms}`."
+                            " You need those permissions to run this command.",
+                            ephemeral=True,
+                        )
+
+                    case _:
+                        await context.send("You are not allowed to use this command.", ephemeral=True)
+
+            case app_commands.CommandInvokeError() | commands.CommandInvokeError():
+                match exception.original:
+                    case discord.Forbidden():
+                        await context.send("The bot does not have the permission to do something.", ephemeral=True)
+                        # log to know where permissions are lacking
+                        log.warning(
+                            f"Missing permissions for command {context.command.qualified_name}",
+                            exc_info=exception.original,
+                        )
+
+                    case discord.InteractionResponded():
+                        # most likely an interaction received twice (happens sometimes),
+                        # or two instances are running on the same token.
+                        log.warning(
+                            f"Tried invoking command {context.command.qualified_name}, but the "
+                            "interaction was already responded to.",
+                            exc_info=exception.original,
+                        )
+
+                    case discord.NotFound(code=10062) | discord.NotFound(code=10015):
+                        log.warning("Expired interaction", exc_info=exception.original)
+
+                    case _:
+                        # still including traceback because it may be a programming error
+                        await context.send(
+                            "An error occured when running the command. Contact support if this persists.",
+                            ephemeral=True,
+                        )
+                        log.error(
+                            f"Unknown error in {'slash' if context.interaction else 'text'} command "
+                            f"{context.command.qualified_name}",
+                            exc_info=exception.original,
+                        )
+
+            case _:
+                await context.send("An unknown error occured, contact support if this persists.")
+                log.error("Unknown exception", exc_info=exception)
 
     async def on_application_command_error(
         self, interaction: discord.Interaction[Self], error: app_commands.AppCommandError
     ):
-        async def send(content: str):
-            if interaction.response.is_done():
-                await interaction.followup.send(content, ephemeral=True)
-            else:
-                await interaction.response.send_message(content, ephemeral=True)
-
-        if isinstance(error, app_commands.CommandOnCooldown):
-            await send(
-                "This command is on cooldown. Please retry "
-                f"<t:{math.ceil(time.time() + error.retry_after)}:R>."
-            )
-            return
-
-        if isinstance(error, app_commands.CheckFailure):
-            if isinstance(error, app_commands.BotMissingPermissions):
-                missing_perms = ", ".join(error.missing_permissions)
-                await send(
-                    f"The bot is missing the permissions: `{missing_perms}`."
-                    " Give the bot those permissions for the command to work as expected."
-                )
+        if isinstance(error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)):
+            if not self.is_ready():
+                log.warning("Command not found, but the bot hasn't started yet.")
                 return
-
-            if isinstance(error, app_commands.MissingPermissions):
-                missing_perms = ", ".join(error.missing_permissions)
-                await send(
-                    f"You are missing the following permissions: `{missing_perms}`."
-                    " You need those permissions to run this command."
-                )
+            if interaction.type == discord.InteractionType.autocomplete:
                 return
-
-            return
-
-        if isinstance(error, app_commands.TransformerError):
-            await send("One of the arguments provided cannot be parsed.")
-            log.debug("Failed running converter", exc_info=error)
-            return
-
-        if isinstance(error, app_commands.CommandInvokeError):
-            assert interaction.command
-
-            if isinstance(error.original, discord.Forbidden):
-                await send("The bot does not have the permission to do something.")
-                # log to know where permissions are lacking
-                log.warning(
-                    f"Missing permissions for app command {interaction.command.qualified_name}",
-                    exc_info=error.original,
-                )
-                return
-
-            if isinstance(error.original, discord.InteractionResponded):
-                # most likely an interaction received twice (happens sometimes),
-                # or two instances are running on the same token.
-                log.warning(
-                    f"Tried invoking command {interaction.command.qualified_name}, but the "
-                    "interaction was already responded to.",
-                    exc_info=error.original,
-                )
-                # still including traceback because it may be a programming error
-
-            log.error(
-                f"Error in slash command {interaction.command.qualified_name}",
-                exc_info=error.original,
-            )
-            await send(
-                "An error occured when running the command. Contact support if this persists."
-            )
-            return
-
-        if isinstance(
-            error, (app_commands.CommandNotFound, app_commands.CommandSignatureMismatch)
-        ):
-            await send("Commands desynchronized, contact support to fix this.")
+            send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
+            try:
+                await send("Commands desynchronized, contact support to fix this.")
+            except discord.NotFound:
+                pass
             log.error(error.args[0])
+            return
 
-        await send("An error occured when running the command. Contact support if this persists.")
-        log.error("Unknown error in interaction", exc_info=error)
+        await self.on_command_error(await commands.Context.from_interaction(interaction), error)
 
     async def on_error(self, event_method: str, /, *args, **kwargs):
         formatted_args = ", ".join((repr(x) for x in args))
         formatted_kwargs = " ".join(f"{x}={y:r}" for x, y in kwargs.items())
-        log.error(
-            f"Error in event {event_method}. Args: {formatted_args}. Kwargs: {formatted_kwargs}",
-            exc_info=True,
-        )
-        self.tree.interaction_check
+        log.error(f"Error in event {event_method}. Args: {formatted_args}. Kwargs: {formatted_kwargs}", exc_info=True)

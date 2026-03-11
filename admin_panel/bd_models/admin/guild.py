@@ -1,23 +1,24 @@
+import logging
 from typing import TYPE_CHECKING
 
-from asgiref.sync import async_to_sync
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
+from django.db.models import Exists, OuterRef
 from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_action_forms import action_with_form
 from django_admin_inline_paginator.admin import InlinePaginated
 from nonrelated_inlines.admin import NonrelatedInlineMixin
 
-from admin_panel.webhook import notify_admins
-
 from ..forms import BlacklistActionForm, BlacklistedListFilter
 from ..models import BallInstance, BlacklistedGuild, BlacklistHistory, GuildConfig
 from ..utils import BlacklistTabular
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
     from django.http import HttpRequest
+
+log = logging.getLogger(__name__)
 
 
 class BallInstanceGuildTabular(InlinePaginated, NonrelatedInlineMixin, admin.TabularInline):
@@ -32,9 +33,7 @@ class BallInstanceGuildTabular(InlinePaginated, NonrelatedInlineMixin, admin.Tab
     can_delete = False
 
     def get_form_queryset(self, obj: GuildConfig):
-        return BallInstance.objects.filter(server_id=obj.guild_id).prefetch_related(
-            "player", "ball", "special"
-        )
+        return BallInstance.objects.filter(server_id=obj.guild_id).prefetch_related("player", "ball", "special")
 
     @admin.display(description="Time to catch")
     def catch_time(self, obj: BallInstance):
@@ -52,9 +51,7 @@ class BallInstanceGuildTabular(InlinePaginated, NonrelatedInlineMixin, admin.Tab
     def player(self, obj: BallInstance):
         opts = obj.player._meta
         admin_url = reverse(
-            "%s:%s_%s_change" % (self.admin_site.name, opts.app_label, opts.model_name),
-            None,
-            (quote(obj.player.pk),),
+            "%s:%s_%s_change" % (self.admin_site.name, opts.app_label, opts.model_name), None, (quote(obj.player.pk),)
         )
         # Display a link to the admin page.
         return format_html(f'<a href="{admin_url}">{obj.player}</a>')
@@ -72,35 +69,29 @@ class GuildAdmin(admin.ModelAdmin):
     inlines = (BlacklistTabular, BallInstanceGuildTabular)
     actions = ("blacklist_guilds",)
 
+    def get_queryset(self, request: "HttpRequest") -> "QuerySet[GuildConfig]":
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(blacklisted=Exists(BlacklistedGuild.objects.filter(discord_id=OuterRef("guild_id"))))
+        )
+
     @admin.display(description="Is blacklisted", boolean=True)
     def blacklisted(self, obj: GuildConfig):
-        return BlacklistedGuild.objects.filter(discord_id=obj.guild_id).exists()
+        return obj.blacklisted  # pyright: ignore[reportAttributeAccessIssue]
 
-    @action_with_form(
-        BlacklistActionForm, description="Blacklist the selected guilds"
-    )  # type: ignore
-    def blacklist_guilds(
-        self, request: "HttpRequest", queryset: "QuerySet[GuildConfig]", data: dict
-    ):
-        reason = (
-            data["reason"]
-            + f"\nDone through the admin panel by {request.user} ({request.user.pk})"
-        )
+    @action_with_form(BlacklistActionForm, description="Blacklist the selected guilds")  # type: ignore
+    def blacklist_guilds(self, request: "HttpRequest", queryset: "QuerySet[GuildConfig]", data: dict):
+        reason = data["reason"] + f"\nDone through the admin panel by {request.user} ({request.user.pk})"
         blacklists: list[BlacklistedGuild] = []
         histories: list[BlacklistHistory] = []
         for guild in queryset:
             if BlacklistedGuild.objects.filter(discord_id=guild.guild_id).exists():
-                self.message_user(
-                    request, f"Guild {guild.guild_id} is already blacklisted!", messages.ERROR
-                )
+                self.message_user(request, f"Guild {guild.guild_id} is already blacklisted!", messages.ERROR)
                 return
-            blacklists.append(
-                BlacklistedGuild(discord_id=guild.guild_id, reason=reason, moderator_id=None)
-            )
+            blacklists.append(BlacklistedGuild(discord_id=guild.guild_id, reason=reason, moderator_id=None))
             histories.append(
-                BlacklistHistory(
-                    discord_id=guild.guild_id, reason=reason, moderator_id=0, id_type="guild"
-                )
+                BlacklistHistory(discord_id=guild.guild_id, reason=reason, moderator_id=0, id_type="guild")
             )
         BlacklistedGuild.objects.bulk_create(blacklists)
         BlacklistHistory.objects.bulk_create(histories)
@@ -108,10 +99,11 @@ class GuildAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             f"Created blacklist for {queryset.count()} guild"
-            f"{"s" if queryset.count() > 1 else ""}. This will be applied after "
+            f"{'s' if queryset.count() > 1 else ''}. This will be applied after "
             "reloading the bot's cache.",
         )
-        async_to_sync(notify_admins)(
+        log.info(
             f"{request.user} blacklisted guilds "
-            f'{", ".join([str(x.guild_id) for x in queryset])} for the reason: {data["reason"]}.'
+            f"{', '.join([str(x.guild_id) for x in queryset])} for the reason: {data['reason']}.",
+            extra={"webhook": True},
         )

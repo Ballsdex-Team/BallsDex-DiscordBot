@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ext import commands
-from tortoise.exceptions import DoesNotExist
 
-from ballsdex.core.models import GuildConfig
-from ballsdex.packages.countryballs.countryball import BallSpawnView
-from ballsdex.packages.countryballs.spawn import BaseSpawnManager
-from ballsdex.settings import settings
+from bd_models.models import GuildConfig
+from settings.models import settings
+
+from .countryball import BallSpawnView
+from .spawn import BaseSpawnManager
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -34,10 +34,10 @@ class CountryBallsSpawner(commands.Cog):
 
     async def load_cache(self):
         i = 0
-        async for config in GuildConfig.filter(enabled=True, spawn_channel__isnull=False).only(
+        async for config in GuildConfig.objects.filter(enabled=True, spawn_channel__isnull=False).only(
             "guild_id", "spawn_channel"
         ):
-            self.cache[config.guild_id] = config.spawn_channel
+            self.cache[config.guild_id] = cast(int, config.spawn_channel)
             i += 1
         grammar = "" if i == 1 else "s"
         log.info(f"Loaded {i} guild{grammar} in cache.")
@@ -74,10 +74,7 @@ class CountryBallsSpawner(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ballsdex_settings_change(
-        self,
-        guild: discord.Guild,
-        channel: discord.TextChannel | None = None,
-        enabled: bool | None = None,
+        self, guild: discord.Guild, channel: discord.TextChannel | None = None, enabled: bool | None = None
     ):
         if guild.id not in self.cache:
             if enabled is False:
@@ -86,11 +83,11 @@ class CountryBallsSpawner(commands.Cog):
                 self.cache[guild.id] = channel.id
             else:
                 try:
-                    config = await GuildConfig.get(guild_id=guild.id)
-                except DoesNotExist:
+                    config = await GuildConfig.objects.aget(guild_id=guild.id)
+                except GuildConfig.DoesNotExist:
                     return
                 else:
-                    self.cache[guild.id] = config.spawn_channel
+                    self.cache[guild.id] = cast(int, config.spawn_channel)
         else:
             if enabled is False:
                 del self.cache[guild.id]

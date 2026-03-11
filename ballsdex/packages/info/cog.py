@@ -5,22 +5,19 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
+from asgiref.sync import sync_to_async
 from discord import app_commands
-from discord.app_commands.translator import (
-    TranslationContext,
-    TranslationContextLocation,
-    locale_str,
-)
+from discord.app_commands.translator import TranslationContext, TranslationContextLocation, locale_str
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
-from ballsdex.core.models import Ball
-from ballsdex.core.models import balls as countryballs
+from ballsdex.core.utils.django import row_count_estimate
 from ballsdex.core.utils.formatting import pagify
-from ballsdex.core.utils.tortoise import row_count_estimate
-from ballsdex.settings import settings
+from bd_models.models import Ball
+from bd_models.models import balls as countryballs
+from settings.models import settings
 
-from .license import LicenseInfo
+from .license import LicenseInfo, extra_apps_dist
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -63,9 +60,7 @@ class Info(commands.Cog):
         """
         Get information about this bot.
         """
-        embed = discord.Embed(
-            title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple()
-        )
+        embed = discord.Embed(title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple())
 
         try:
             balls = await self._get_10_balls_emojis()
@@ -74,8 +69,8 @@ class Info(commands.Cog):
             balls = []
 
         balls_count = len([x for x in countryballs.values() if x.enabled])
-        players_count = await row_count_estimate("player")
-        balls_instances_count = await row_count_estimate("ballinstance")
+        players_count = await sync_to_async(row_count_estimate)("player")
+        balls_instances_count = await sync_to_async(row_count_estimate)("ballinstance")
 
         if self.bot.startup_time is not None:
             uptime_duration = datetime.now() - self.bot.startup_time
@@ -117,13 +112,13 @@ class Info(commands.Cog):
         owner_credits = "by the team" if bot_info.team else "by"
         dex_credits = (
             f"This instance is owned {owner_credits} {owner}.\nAn instance of [Ballsdex]"
-            f"({settings.github_link}) by El Laggron and maintained by the Ballsdex Team "
-            f"and community of [contributors]({settings.github_link}/graphs/contributors)."
+            f"({settings.repository}) by El Laggron and maintained by the Ballsdex Team "
+            f"and community of [contributors]({settings.repository}/graphs/contributors)."
         )
         embed.description = (
             f"{' '.join(str(x) for x in balls)}\n"
             f"{settings.about_description}\n"
-            f"*Running version **[{ballsdex_version}]({settings.github_link}/releases)***\n"
+            f"*Running version **[{ballsdex_version}]({settings.repository}/releases)***\n"
             f"The bot has been online for **{formatted_uptime}**.\n\n"
             f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
             f"**{players_count:,}** players that caught "
@@ -133,18 +128,22 @@ class Info(commands.Cog):
             "Consider supporting El Laggron on "
             "[Patreon](https://patreon.com/retke) :heart:\n\n"
             f"[Discord server]({settings.discord_invite}) • [Invite me]({invite_link}) • "
-            f"[Source code and issues]({settings.github_link})\n"
+            f"[Source code and issues]({settings.repository})\n"
             f"[Terms of Service]({settings.terms_of_service}) • "
             f"[Privacy policy]({settings.privacy_policy})"
         )
 
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         v = sys.version_info
-        embed.set_footer(
-            text=f"Python {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}"
-        )
+        python = "Python"
+        if v.major == 3 and v.minor == 14 and random.random() < 0.1:
+            python = "πthon"
+        embed.set_footer(text=f"{python} {v.major}.{v.minor}.{v.micro} • discord.py {discord.__version__}")
 
-        await interaction.response.send_message(embed=embed, view=LicenseInfo())
+        view = LicenseInfo()
+        if not extra_apps_dist:
+            view.remove_item(view.children[-1])
+        await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command()
     async def help(self, interaction: discord.Interaction["BallsDexBot"]):
@@ -152,9 +151,7 @@ class Info(commands.Cog):
         Show the list of commands from the bot.
         """
         assert self.bot.user
-        embed = discord.Embed(
-            title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple()
-        )
+        embed = discord.Embed(title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple())
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
         for cog in self.bot.cogs.values():
@@ -172,8 +169,6 @@ class Info(commands.Cog):
                 continue
             pages = pagify(content, page_length=1024)
             for i, page in enumerate(pages):
-                embed.add_field(
-                    name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False
-                )
+                embed.add_field(name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False)
 
         await interaction.response.send_message(embed=embed)

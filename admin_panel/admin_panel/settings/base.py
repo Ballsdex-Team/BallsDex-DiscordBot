@@ -3,21 +3,28 @@
 # You should copy the production.example.py file as "production.py" and place your settings there
 # That file will not be tracked by git
 
+import logging
+import os
+import pathlib
+import sys
+import tomllib
 from pathlib import Path
 
 import dj_database_url
 
-from ballsdex.settings import read_settings, settings
 
-try:
-    read_settings(Path("../config.yml"))
-except FileNotFoundError:
-    from rich import print
+def discover_extra_packages() -> list[str]:
+    file = os.environ.get("BALLSDEXBOT_EXTRA_TOML")
+    if not file:
+        return []
+    try:
+        with open(file, "rb") as f:
+            contents = tomllib.load(f)
+    except FileNotFoundError:
+        return []
+    packages: list = contents.get("ballsdex", {}).get("packages", [])
+    return [x["path"] for x in packages if x["enabled"]]
 
-    print(
-        "[yellow][bold]Could not find ../config.yml file.[/bold] "
-        "Please run the bot once to generate this file.[/yellow]"
-    )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,13 +36,8 @@ SECRET_KEY = None
 # https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Serving-the-admin-panel-online
 # THIS HAS SECURITY IMPLICATIONS, ENABLES PRIVILEGE ESCALATION AND REMOTE CODE EXECUTION
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-]
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+INTERNAL_IPS = ["127.0.0.1"]
 
 
 # Application definition
@@ -51,9 +53,16 @@ INSTALLED_APPS = [
     "django_admin_inline_paginator",
     "social_django",
     "admin_panel.apps.BallsdexAdminConfig",
+    "users",
     "bd_models",
     "preview",
-] + settings.django_apps
+    "settings",
+]
+
+EXTRA_APPS = discover_extra_packages()
+if conflict := set(INSTALLED_APPS).intersection(set(EXTRA_APPS)):
+    raise RuntimeError(f"Some extra apps are conflicting with core apps: {conflict}")
+INSTALLED_APPS.extend(EXTRA_APPS)
 
 MIDDLEWARE = [
     "allow_cidr.middleware.AllowCIDRMiddleware",
@@ -81,24 +90,29 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "social_django.context_processors.backends",
                 "social_django.context_processors.login_redirect",
-            ],
+            ]
         },
-    },
+    }
 ]
 
 WSGI_APPLICATION = "admin_panel.wsgi.application"
 
 # Logging
+if env_log_dir := os.environ.get("BALLSDEX_LOG_DIR"):
+    log_dir = pathlib.Path(env_log_dir)
+else:
+    log_dir = pathlib.Path("./logs")
+    if pathlib.Path("./manage.py").exists():
+        log_dir = ".." / log_dir
+    log_dir.mkdir(exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "filters": {
-        "require_debug_false": {
-            "()": "django.utils.log.RequireDebugFalse",
-        },
-        "require_debug_true": {
-            "()": "django.utils.log.RequireDebugTrue",
-        },
+        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+        "require_debug_true": {"()": "django.utils.log.RequireDebugTrue"},
+        "bot_only": {"()": "admin_panel.logging.RequireBot"},
     },
     "formatters": {
         "django.server": {
@@ -106,36 +120,44 @@ LOGGING = {
             "format": "[{server_time}] {message}",
             "style": "{",
         },
-        "uvicorn": {
-            "()": "uvicorn.logging.ColourizedFormatter",
-            "format": "{levelprefix} ({name}) {msg}",
-            "style": "{",
-        },
+        "rich": {"()": "discord.utils._ColourFormatter"},
+        "basic": {"format": "[{asctime}] {levelname} {name}: {message}", "datefmt": "%Y-%m-%d %H:%M:%S", "style": "{"},
     },
     "handlers": {
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "uvicorn",
+        "console": {"level": logging.DEBUG, "class": "logging.StreamHandler", "formatter": "rich"},
+        "file": {
+            "level": logging.INFO,
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": log_dir / "ballsdex.log",
+            "maxBytes": 8**7,
+            "backupCount": 8,
+            "formatter": "basic",
         },
-        "django.server": {
-            "level": "INFO",
-            "class": "logging.StreamHandler",
-            "formatter": "django.server",
+        "buffer": {
+            "level": logging.INFO,
+            "class": "admin_panel.logging.DequeHandler",
+            "filters": ["bot_only"],
+            "formatter": "rich",
         },
+        "webhook": {"level": logging.INFO, "class": "admin_panel.logging.WebhookHandler"},
+        "django.server": {"level": logging.INFO, "class": "logging.StreamHandler", "formatter": "django.server"},
+        "queue": {"class": "logging.handlers.QueueHandler", "handlers": ["console", "file", "webhook"]},
     },
     "loggers": {
-        "root": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
-        "django.server": {
-            "handlers": ["django.server"],
-            "level": "INFO",
-            "propagate": False,
+        "root": {"handlers": ["queue", "buffer"], "level": logging.INFO},
+        "uvicorn": {"handlers": ["queue"], "level": logging.INFO},
+        "django.server": {"handlers": ["django.server"], "level": logging.INFO, "propagate": False},
+        "aiohttp": {"level": logging.WARNING},
+        "discord": {"level": logging.INFO},
+        "django.db.backends": {
+            "level": logging.DEBUG if os.environ.get("DATABASE_QUERY_LOG") else logging.INFO,
+            "handlers": [],
         },
     },
 }
+LOGGING_CONFIG = "admin_panel.logging.setup_logging"
+if "startbot" in sys.argv:
+    SILENCED_SYSTEM_CHECKS = ["staticfiles.W004"]
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -147,19 +169,13 @@ DATABASES = {"default": dj_database_url.config("BALLSDEXBOT_DB_URL")}
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+AUTH_USER_MODEL = "users.User"
 
 
 # Internationalization
@@ -178,7 +194,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = "static"
+STATIC_ROOT = os.environ.get("STATIC_ROOT", "static")
 STATICFILES_DIRS = ["staticfiles"]
 
 MEDIA_URL = "media/"
@@ -206,16 +222,5 @@ SOCIAL_AUTH_PIPELINE = (
 )
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/"
 
-SOCIAL_AUTH_DISCORD_KEY = settings.client_id
-SOCIAL_AUTH_DISCORD_SECRET = settings.client_secret
-SOCIAL_AUTH_DISCORD_SCOPE = ["identify", "guilds", "guilds.members.read"]
-
-if settings.client_id and settings.client_secret:
-    AUTHENTICATION_BACKENDS = [
-        "social_core.backends.discord.DiscordOAuth2",
-        "django.contrib.auth.backends.ModelBackend",
-    ]
-else:
-    AUTHENTICATION_BACKENDS = [
-        "django.contrib.auth.backends.ModelBackend",
-    ]
+SOCIAL_AUTH_DISCORD_SCOPE = ["identify"]
+AUTHENTICATION_BACKENDS = ["social_core.backends.discord.DiscordOAuth2", "django.contrib.auth.backends.ModelBackend"]

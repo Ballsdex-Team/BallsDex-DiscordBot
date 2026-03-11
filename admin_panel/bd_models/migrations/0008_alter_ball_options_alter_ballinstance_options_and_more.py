@@ -4,23 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("bd_models", "0007_player_trade_cooldown_policy"),
-    ]
+    dependencies = [("bd_models", "0007_player_trade_cooldown_policy")]
 
     operations = [
         migrations.AlterModelOptions(
-            name="ball",
-            options={"managed": True, "verbose_name": "ball", "verbose_name_plural": "balls"},
+            name="ball", options={"managed": True, "verbose_name": "ball", "verbose_name_plural": "balls"}
         ),
-        migrations.AlterModelOptions(
-            name="ballinstance",
-            options={"managed": True, "verbose_name": "ball instance"},
-        ),
+        migrations.AlterModelOptions(name="ballinstance", options={"managed": True, "verbose_name": "ball instance"}),
         migrations.AlterField(
-            model_name="ball",
-            name="country",
-            field=models.CharField(max_length=48, unique=True, verbose_name="Name"),
+            model_name="ball", name="country", field=models.CharField(max_length=48, unique=True, verbose_name="Name")
         ),
     ]

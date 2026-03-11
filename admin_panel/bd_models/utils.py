@@ -21,8 +21,7 @@ class ApproxCountPaginator(Paginator):
 
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT reltuples AS estimate FROM pg_class where relname = "
-                f"'{self.object_list.model._meta.db_table}';"  # type: ignore
+                f"SELECT reltuples AS estimate FROM pg_class where relname = '{self.object_list.model._meta.db_table}';"  # type: ignore
             )
             result = int(cursor.fetchone()[0])  # type: ignore
             if result < 100000:

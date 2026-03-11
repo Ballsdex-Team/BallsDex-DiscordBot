@@ -23,3 +23,15 @@
     margin-bottom: 15px;
     margin: 10px;
 }
+
+#changelist .changelist-form-container {
+    display: flex;
+    flex-wrap: unset;
+    align-items: flex-start;
+    width: 100%;
+}
+
+#changelist .changelist-form-container form {
+    flex-basis:66%;
+    min-width:0;
+}

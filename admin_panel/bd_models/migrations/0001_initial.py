@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -13,12 +12,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Ball",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("country", models.CharField(max_length=48, unique=True)),
                 ("health", models.IntegerField(help_text="Ball health stat")),
                 ("attack", models.IntegerField(help_text="Ball attack stat")),
@@ -27,41 +21,21 @@ class Migration(migrations.Migration):
                 (
                     "wild_card",
                     models.ImageField(
-                        help_text="Image used when a new ball spawns in the wild",
-                        max_length=200,
-                        upload_to="",
+                        help_text="Image used when a new ball spawns in the wild", max_length=200, upload_to=""
                     ),
                 ),
                 (
                     "collection_card",
-                    models.ImageField(
-                        help_text="Image used when displaying balls", max_length=200, upload_to=""
-                    ),
+                    models.ImageField(help_text="Image used when displaying balls", max_length=200, upload_to=""),
                 ),
-                (
-                    "credits",
-                    models.CharField(help_text="Author of the collection artwork", max_length=64),
-                ),
-                (
-                    "capacity_name",
-                    models.CharField(
-                        help_text="Name of the countryball's capacity", max_length=64
-                    ),
-                ),
+                ("credits", models.CharField(help_text="Author of the collection artwork", max_length=64)),
+                ("capacity_name", models.CharField(help_text="Name of the countryball's capacity", max_length=64)),
                 (
                     "capacity_description",
-                    models.CharField(
-                        help_text="Description of the countryball's capacity", max_length=256
-                    ),
+                    models.CharField(help_text="Description of the countryball's capacity", max_length=256),
                 ),
-                (
-                    "capacity_logic",
-                    models.JSONField(editable=False, help_text="Effect of this capacity"),
-                ),
-                (
-                    "enabled",
-                    models.BooleanField(help_text="Enables spawning and show in completion"),
-                ),
+                ("capacity_logic", models.JSONField(editable=False, help_text="Effect of this capacity")),
+                ("enabled", models.BooleanField(help_text="Enables spawning and show in completion")),
                 (
                     "short_name",
                     models.CharField(
@@ -76,32 +50,20 @@ class Migration(migrations.Migration):
                     "catch_names",
                     models.TextField(
                         blank=True,
-                        help_text="Additional possible names for catching this ball, separated "
-                        "by semicolons",
+                        help_text="Additional possible names for catching this ball, separated by semicolons",
                         null=True,
                     ),
                 ),
-                (
-                    "tradeable",
-                    models.BooleanField(help_text="Whether this ball can be traded with others"),
-                ),
+                ("tradeable", models.BooleanField(help_text="Whether this ball can be traded with others")),
                 ("created_at", models.DateTimeField(auto_now_add=True, null=True)),
                 ("translations", models.TextField(blank=True, null=True)),
             ],
-            options={
-                "db_table": "ball",
-                "managed": False,
-            },
+            options={"db_table": "ball", "managed": False},
         ),
         migrations.CreateModel(
             name="BallInstance",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("catch_date", models.DateTimeField()),
                 ("health_bonus", models.IntegerField()),
                 ("attack_bonus", models.IntegerField()),
@@ -109,9 +71,7 @@ class Migration(migrations.Migration):
                 (
                     "server_id",
                     models.BigIntegerField(
-                        blank=True,
-                        help_text="Discord server ID where this ball was caught",
-                        null=True,
+                        blank=True, help_text="Discord server ID where this ball was caught", null=True
                     ),
                 ),
                 ("tradeable", models.BooleanField()),
@@ -119,65 +79,39 @@ class Migration(migrations.Migration):
                 (
                     "locked",
                     models.DateTimeField(
-                        blank=True,
-                        help_text="If the instance was locked for a trade and when",
-                        null=True,
+                        blank=True, help_text="If the instance was locked for a trade and when", null=True
                     ),
                 ),
                 ("spawned_time", models.DateTimeField(blank=True, null=True)),
             ],
-            options={
-                "db_table": "ballinstance",
-                "managed": False,
-            },
+            options={"db_table": "ballinstance", "managed": False},
         ),
         migrations.CreateModel(
             name="BlacklistedGuild",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("discord_id", models.BigIntegerField(help_text="Discord Guild ID", unique=True)),
                 ("reason", models.TextField(blank=True, null=True)),
                 ("date", models.DateTimeField(auto_now_add=True, null=True)),
                 ("moderator_id", models.BigIntegerField(blank=True, null=True)),
             ],
-            options={
-                "db_table": "blacklistedguild",
-                "managed": False,
-            },
+            options={"db_table": "blacklistedguild", "managed": False},
         ),
         migrations.CreateModel(
             name="BlacklistedID",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("discord_id", models.BigIntegerField(help_text="Discord user ID", unique=True)),
                 ("reason", models.TextField(blank=True, null=True)),
                 ("date", models.DateTimeField(auto_now_add=True, null=True)),
                 ("moderator_id", models.BigIntegerField(blank=True, null=True)),
             ],
-            options={
-                "db_table": "blacklistedid",
-                "managed": False,
-            },
+            options={"db_table": "blacklistedid", "managed": False},
         ),
         migrations.CreateModel(
             name="BlacklistHistory",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("discord_id", models.BigIntegerField(help_text="Discord ID")),
                 ("moderator_id", models.BigIntegerField(help_text="Discord Moderator ID")),
                 ("reason", models.TextField(blank=True, null=True)),
@@ -185,105 +119,53 @@ class Migration(migrations.Migration):
                 ("id_type", models.CharField(default="user", max_length=64)),
                 ("action_type", models.CharField(default="blacklist", max_length=64)),
             ],
-            options={
-                "verbose_name_plural": "blacklisthistories",
-                "db_table": "blacklisthistory",
-                "managed": False,
-            },
+            options={"verbose_name_plural": "blacklisthistories", "db_table": "blacklisthistory", "managed": False},
         ),
         migrations.CreateModel(
             name="Block",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("date", models.DateTimeField(auto_now_add=True)),
             ],
-            options={
-                "db_table": "block",
-                "managed": False,
-            },
+            options={"db_table": "block", "managed": False},
         ),
         migrations.CreateModel(
             name="Economy",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("name", models.CharField(max_length=64)),
-                (
-                    "icon",
-                    models.ImageField(help_text="512x512 PNG image", max_length=200, upload_to=""),
-                ),
+                ("icon", models.ImageField(help_text="512x512 PNG image", max_length=200, upload_to="")),
             ],
-            options={
-                "verbose_name_plural": "economies",
-                "db_table": "economy",
-                "managed": False,
-            },
+            options={"verbose_name_plural": "economies", "db_table": "economy", "managed": False},
         ),
         migrations.CreateModel(
             name="Friendship",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("since", models.DateTimeField(auto_now_add=True)),
             ],
-            options={
-                "db_table": "friendship",
-                "managed": False,
-            },
+            options={"db_table": "friendship", "managed": False},
         ),
         migrations.CreateModel(
             name="Guildconfig",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("guild_id", models.BigIntegerField(help_text="Discord guild ID", unique=True)),
                 (
                     "spawn_channel",
                     models.BigIntegerField(
-                        blank=True,
-                        help_text="Discord channel ID where balls will spawn",
-                        null=True,
+                        blank=True, help_text="Discord channel ID where balls will spawn", null=True
                     ),
                 ),
-                (
-                    "enabled",
-                    models.BooleanField(
-                        help_text="Whether the bot will spawn countryballs in this guild"
-                    ),
-                ),
+                ("enabled", models.BooleanField(help_text="Whether the bot will spawn countryballs in this guild")),
                 ("silent", models.BooleanField()),
             ],
-            options={
-                "db_table": "guildconfig",
-                "managed": False,
-            },
+            options={"db_table": "guildconfig", "managed": False},
         ),
         migrations.CreateModel(
             name="Player",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("discord_id", models.BigIntegerField(help_text="Discord user ID", unique=True)),
                 (
                     "donation_policy",
@@ -313,47 +195,25 @@ class Migration(migrations.Migration):
                 (
                     "friend_policy",
                     models.SmallIntegerField(
-                        choices=[(1, "Allow"), (2, "Deny")],
-                        help_text="Open or close your friend requests",
+                        choices=[(1, "Allow"), (2, "Deny")], help_text="Open or close your friend requests"
                     ),
                 ),
             ],
-            options={
-                "db_table": "player",
-                "managed": False,
-            },
+            options={"db_table": "player", "managed": False},
         ),
         migrations.CreateModel(
             name="Regime",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("name", models.CharField(max_length=64)),
-                (
-                    "background",
-                    models.ImageField(
-                        help_text="1428x2000 PNG image", max_length=200, upload_to=""
-                    ),
-                ),
+                ("background", models.ImageField(help_text="1428x2000 PNG image", max_length=200, upload_to="")),
             ],
-            options={
-                "db_table": "regime",
-                "managed": False,
-            },
+            options={"db_table": "regime", "managed": False},
         ),
         migrations.CreateModel(
             name="Special",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("name", models.CharField(max_length=64)),
                 (
                     "catch_phrase",
@@ -367,25 +227,18 @@ class Migration(migrations.Migration):
                 (
                     "start_date",
                     models.DateTimeField(
-                        blank=True,
-                        help_text="Start time of the event. If blank, starts immediately",
-                        null=True,
+                        blank=True, help_text="Start time of the event. If blank, starts immediately", null=True
                     ),
                 ),
                 (
                     "end_date",
                     models.DateTimeField(
-                        blank=True,
-                        help_text="End time of the event. If blank, the event is permanent",
-                        null=True,
+                        blank=True, help_text="End time of the event. If blank, the event is permanent", null=True
                     ),
                 ),
                 (
                     "rarity",
-                    models.FloatField(
-                        help_text="Value between 0 and 1, chances of using this "
-                        "special background."
-                    ),
+                    models.FloatField(help_text="Value between 0 and 1, chances of using this special background."),
                 ),
                 (
                     "emoji",
@@ -399,53 +252,27 @@ class Migration(migrations.Migration):
                 (
                     "background",
                     models.ImageField(
-                        blank=True,
-                        help_text="1428x2000 PNG image",
-                        max_length=200,
-                        null=True,
-                        upload_to="",
+                        blank=True, help_text="1428x2000 PNG image", max_length=200, null=True, upload_to=""
                     ),
                 ),
-                (
-                    "tradeable",
-                    models.BooleanField(help_text="Whether balls of this event can be traded"),
-                ),
+                ("tradeable", models.BooleanField(help_text="Whether balls of this event can be traded")),
                 ("hidden", models.BooleanField(help_text="Hides the event from user commands")),
             ],
-            options={
-                "db_table": "special",
-                "managed": False,
-            },
+            options={"db_table": "special", "managed": False},
         ),
         migrations.CreateModel(
             name="Trade",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("date", models.DateTimeField(auto_now_add=True)),
             ],
-            options={
-                "db_table": "trade",
-                "managed": False,
-            },
+            options={"db_table": "trade", "managed": False},
         ),
         migrations.CreateModel(
             name="Tradeobject",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"))
             ],
-            options={
-                "db_table": "tradeobject",
-                "managed": False,
-            },
+            options={"db_table": "tradeobject", "managed": False},
         ),
     ]

@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 
 from ballsdex.core.image_generator.image_gen import draw_card
-from ballsdex.core.models import Ball, BallInstance, Special
+from bd_models.models import Ball, BallInstance, Special
 
 from .utils import refresh_cache
 
@@ -10,9 +10,9 @@ from .utils import refresh_cache
 async def render_ballinstance(request: HttpRequest, ball_pk: int) -> HttpResponse:
     await refresh_cache()
 
-    ball = await Ball.get(pk=ball_pk)
+    ball = await Ball.objects.aget(pk=ball_pk)
     instance = BallInstance(ball=ball)
-    image, kwargs = draw_card(instance, media_path="./media/")
+    image, kwargs = draw_card(instance)
 
     response = HttpResponse(content_type="image/png")
     image.save(response, **kwargs)  # type: ignore
@@ -22,17 +22,14 @@ async def render_ballinstance(request: HttpRequest, ball_pk: int) -> HttpRespons
 async def render_special(request: HttpRequest, special_pk: int) -> HttpResponse:
     await refresh_cache()
 
-    ball = await Ball.first()
+    ball = await Ball.objects.afirst()
     if ball is None:
-        messages.warning(
-            request,
-            "You must create a countryball before being able to generate a special's preview.",
-        )
+        messages.warning(request, "You must create a countryball before being able to generate a special's preview.")
         return HttpResponse(status_code=422)
 
-    special = await Special.get(pk=special_pk)
+    special = await Special.objects.aget(pk=special_pk)
     instance = BallInstance(ball=ball, special=special)
-    image, kwargs = draw_card(instance, media_path="./media/")
+    image, kwargs = draw_card(instance)
 
     response = HttpResponse(content_type="image/png")
     image.save(response, **kwargs)  # type: ignore

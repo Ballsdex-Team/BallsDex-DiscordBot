@@ -1,0 +1,73 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Admin panel",
+            "presentation": {
+                "hidden": false,
+                "group": "Ballsdex",
+                "order": 3
+            },
+            "type": "debugpy",
+            "request": "launch",
+            "args": [
+                "--reload",
+                "--reload-include",
+                "\"*.html\"",
+                "admin_panel.asgi:application"
+            ],
+            "cwd": "${workspaceFolder}/admin_panel",
+            "module": "uvicorn",
+            "django": true,
+            "env": {
+                "BALLSDEXBOT_DB_URL": "postgres://ballsdex:defaultballsdexpassword@localhost:5432/ballsdex",
+                "DJANGO_SETTINGS_MODULE": "admin_panel.settings.dev"
+            },
+            "justMyCode": false
+        },
+        {
+            "name": "Bot",
+            "presentation": {
+                "hidden": false,
+                "group": "Ballsdex",
+                "order": 1
+            },
+            "type": "debugpy",
+            "request": "launch",
+            "module": "ballsdex",
+            "args": [
+                "--dev",
+                "--debug",
+            ],
+            "env": {
+                "BALLSDEXBOT_DB_URL": "postgres://ballsdex:defaultballsdexpassword@localhost:5432/ballsdex",
+                "DJANGO_SETTINGS_MODULE": "admin_panel.settings.dev"
+            },
+            "justMyCode": false
+        },
+        {
+            "name": "Bot (skip command sync)",
+            "presentation": {
+                "hidden": false,
+                "group": "Ballsdex",
+                "order": 2
+            },
+            "type": "debugpy",
+            "request": "launch",
+            "module": "ballsdex",
+            "args": [
+                "--dev",
+                "--debug",
+                "--skip-tree-sync"
+            ],
+            "env": {
+                "BALLSDEXBOT_DB_URL": "postgres://ballsdex:defaultballsdexpassword@localhost:5432/ballsdex",
+                "DJANGO_SETTINGS_MODULE": "admin_panel.settings.dev"
+            },
+            "justMyCode": false
+        }
+    ]
+}

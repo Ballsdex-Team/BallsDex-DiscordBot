@@ -8,7 +8,7 @@ from django_admin_action_forms import AdminActionForm
 from .models import BlacklistedGuild, BlacklistedID, Player
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models.query import QuerySet
     from django.http import HttpRequest
 
     from .admin import GuildAdmin, PlayerAdmin
@@ -23,9 +23,7 @@ class BlacklistedListFilter(admin.SimpleListFilter):
     title = "blacklisted"
     parameter_name = "blacklisted"
 
-    def lookups(
-        self, request: "HttpRequest", model_admin: "PlayerAdmin | GuildAdmin"
-    ) -> list[tuple[Any, str]]:
+    def lookups(self, request: "HttpRequest", model_admin: "PlayerAdmin | GuildAdmin") -> list[tuple[Any, str]]:
         return [(True, "True"), (False, "False")]
 
     def queryset(

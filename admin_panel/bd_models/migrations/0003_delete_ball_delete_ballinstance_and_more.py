@@ -56,56 +56,22 @@ def aerich_move_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("bd_models", "0002_move_upload_files"),
-    ]
+    dependencies = [("bd_models", "0002_move_upload_files")]
 
     operations = [
-        migrations.RunPython(
-            code=execute_aerich_migration_check,
-            reverse_code=aerich_move_backwards,
-        ),
-        migrations.DeleteModel(
-            name="Ball",
-        ),
-        migrations.DeleteModel(
-            name="BallInstance",
-        ),
-        migrations.DeleteModel(
-            name="BlacklistedGuild",
-        ),
-        migrations.DeleteModel(
-            name="BlacklistedID",
-        ),
-        migrations.DeleteModel(
-            name="BlacklistHistory",
-        ),
-        migrations.DeleteModel(
-            name="Block",
-        ),
-        migrations.DeleteModel(
-            name="Economy",
-        ),
-        migrations.DeleteModel(
-            name="Friendship",
-        ),
-        migrations.DeleteModel(
-            name="Guildconfig",
-        ),
-        migrations.DeleteModel(
-            name="Player",
-        ),
-        migrations.DeleteModel(
-            name="Regime",
-        ),
-        migrations.DeleteModel(
-            name="Special",
-        ),
-        migrations.DeleteModel(
-            name="Trade",
-        ),
-        migrations.DeleteModel(
-            name="Tradeobject",
-        ),
+        migrations.RunPython(code=execute_aerich_migration_check, reverse_code=aerich_move_backwards),
+        migrations.DeleteModel(name="Ball"),
+        migrations.DeleteModel(name="BallInstance"),
+        migrations.DeleteModel(name="BlacklistedGuild"),
+        migrations.DeleteModel(name="BlacklistedID"),
+        migrations.DeleteModel(name="BlacklistHistory"),
+        migrations.DeleteModel(name="Block"),
+        migrations.DeleteModel(name="Economy"),
+        migrations.DeleteModel(name="Friendship"),
+        migrations.DeleteModel(name="Guildconfig"),
+        migrations.DeleteModel(name="Player"),
+        migrations.DeleteModel(name="Regime"),
+        migrations.DeleteModel(name="Special"),
+        migrations.DeleteModel(name="Trade"),
+        migrations.DeleteModel(name="Tradeobject"),
     ]

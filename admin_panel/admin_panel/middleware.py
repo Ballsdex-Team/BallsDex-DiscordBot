@@ -11,7 +11,7 @@ class SecurityHeadersMiddleware:
     def __call__(self, request: "HttpRequest") -> "HttpResponse":
         response = self.get_response(request)
         response["Content-Security-Policy"] = (
-            "default-src 'self' http://*.discordapp.com http://discord.com; frame-ancestors 'self'"
+            "default-src 'unsafe-inline' 'self' http://*.discordapp.com http://discord.com; frame-ancestors 'self'"
         )
         response["X-XSS-Protection"] = "1; mode=block"
         response["X-Robots-Tag"] = "none"

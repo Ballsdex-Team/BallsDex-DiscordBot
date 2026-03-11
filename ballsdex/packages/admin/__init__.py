@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from discord import app_commands
 
-from ballsdex.packages.admin.cog import Admin
+from .cog import Admin
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -21,9 +21,7 @@ def command_count(cog: Admin) -> int:
             total += len(param.name) + len(param.description)
             for choice in param.choices:
                 total += len(choice.name) + (
-                    int(choice.value)
-                    if isinstance(choice.value, int | float)
-                    else len(choice.value)
+                    int(choice.value) if isinstance(choice.value, int | float) else len(choice.value)
                 )
     return total
 

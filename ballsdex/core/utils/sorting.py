@@ -1,38 +1,16 @@
-import enum
 from typing import TYPE_CHECKING
 
-from tortoise.expressions import F, RawSQL
+from django.db.models.expressions import F, RawSQL
+
+from .enums import FilteringChoices, SortingChoices
 
 if TYPE_CHECKING:
-    from tortoise.queryset import QuerySet
+    from django.db.models.query import QuerySet
 
-    from ballsdex.core.models import BallInstance
-
-
-class FilteringChoices(enum.Enum):
-    only_specials = "special"
-    non_specials = "non_special"
-    self_caught = "self_caught"
-    this_server = "this_server"
+    from bd_models.models import BallInstance
 
 
-class SortingChoices(enum.Enum):
-    alphabetic = "ball__country"
-    catch_date = "-catch_date"
-    rarity = "ball__rarity"
-    special = "special__id"
-    health = "health"
-    attack = "attack"
-    health_bonus = "-health_bonus"
-    attack_bonus = "-attack_bonus"
-    stats_bonus = "stats"
-    # total_stats = "total_stats"
-    duplicates = "duplicates"
-
-
-def sort_balls(
-    sort: SortingChoices, queryset: "QuerySet[BallInstance]"
-) -> "QuerySet[BallInstance]":
+def sort_balls[QS: QuerySet[BallInstance]](sort: SortingChoices, queryset: QS) -> QS:
     """
     Edit a queryset in place to apply the selected sorting options. You can call this function
     multiple times with the same queryset to have multiple sort methods.
@@ -52,27 +30,21 @@ def sort_balls(
         The same queryset modified to apply the ordering. Await it to obtain the result.
     """
     if sort == SortingChoices.duplicates:
-        return queryset.annotate(count=RawSQL("COUNT(*) OVER (PARTITION BY ball_id)")).order_by(
-            "-count"
-        )
+        return queryset.annotate(count=RawSQL("COUNT(*) OVER (PARTITION BY ball_id)", ())).order_by("-count")
     elif sort == SortingChoices.stats_bonus:
-        return queryset.annotate(stats_bonus=F("health_bonus") + F("attack_bonus")).order_by(
-            "-stats_bonus"
-        )
+        return queryset.annotate(stats_bonus=F("health_bonus") + F("attack_bonus")).order_by("-stats_bonus")
     elif sort == SortingChoices.health or sort == SortingChoices.attack:
         # Use the sorting name as the annotation key to avoid issues when this function
         # is called multiple times. Using the same annotation name twice will error.
         return queryset.annotate(
             **{f"{sort.value}_sort": F(f"{sort.value}_bonus") + F(f"ball__{sort.value}")}
         ).order_by(f"-{sort.value}_sort")
-    # elif sort == SortingChoices.total_stats:
-    #     return (
-    #         queryset.select_related("ball")
-    #         .annotate(
-    #             stats=RawSQL("ballinstance__ball.health + ballinstance__ball.attack :: BIGINT")
-    #         )
-    #         .order_by("-stats")
-    #     )
+    elif sort == SortingChoices.total_stats:
+        return (
+            queryset.select_related("ball")
+            .annotate(stats=RawSQL("ball.health + ball.attack :: BIGINT", ()))
+            .order_by("-stats")
+        )
     elif sort == SortingChoices.rarity:
         return queryset.order_by(sort.value, "ball__country")
     else:
@@ -89,7 +61,7 @@ def filter_balls(
     ----------
     filter: FilteringChoices
         One of the supported filtering methods
-    balls: QuerySet[BallInstance]
+    queryset: QuerySet[BallInstance]
         A ballinstance queryset.
     guild_id: int | None
         The ID of the server to filter by. Only used for the ``this_server`` filter.

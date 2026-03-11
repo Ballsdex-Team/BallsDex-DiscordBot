@@ -3,11 +3,12 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from bd_models.models import Ball, Economy, Regime, Special
 from django.db import connection, migrations
 from django.db.models import Case, ImageField, When
 from django.db.models.expressions import F, Value
 from django.db.models.functions import Concat, Replace
+
+from bd_models.models import Ball, Economy, Regime, Special
 
 if TYPE_CHECKING:
     from django.apps.registry import Apps
@@ -18,14 +19,7 @@ MEDIA = Path("./media")
 OLD_STATIC = Path("../static/uploads")
 CORE_SRC = Path("../ballsdex/core/image_generator/src")
 
-DEFAULT_ASSETS = [
-    "capitalist.png",
-    "communist.png",
-    "democracy.png",
-    "dictatorship.png",
-    "shiny.png",
-    "union.png",
-]
+DEFAULT_ASSETS = ["capitalist.png", "communist.png", "democracy.png", "dictatorship.png", "shiny.png", "union.png"]
 
 
 def _replace_text(column: str, reverse: bool = False) -> "dict[str, Expression]":
@@ -33,10 +27,7 @@ def _replace_text(column: str, reverse: bool = False) -> "dict[str, Expression]"
         r = Case(
             When(
                 **{f"{column}__in": DEFAULT_ASSETS},
-                then=Concat(
-                    Value("/ballsdex/core/image_generator/src/", output_field=ImageField()),
-                    F(column),
-                ),
+                then=Concat(Value("/ballsdex/core/image_generator/src/", output_field=ImageField()), F(column)),
             ),
             default=Concat(Value("/static/uploads/", output_field=ImageField()), F(column)),
         )
@@ -88,10 +79,7 @@ def move_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
     if "ball" not in connection.introspection.table_names():
         return
 
-    Ball.objects.update(
-        **_replace_text("wild_card", reverse=True),
-        **_replace_text("collection_card", reverse=True),
-    )
+    Ball.objects.update(**_replace_text("wild_card", reverse=True), **_replace_text("collection_card", reverse=True))
     Economy.objects.update(**_replace_text("icon", reverse=True))
     Regime.objects.update(**_replace_text("background", reverse=True))
     Special.objects.update(**_replace_text("background", reverse=True))
@@ -109,9 +97,6 @@ def move_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("bd_models", "0001_initial"),
-    ]
+    dependencies = [("bd_models", "0001_initial")]
 
     operations = [migrations.RunPython(move_forwards, move_backwards, atomic=True)]

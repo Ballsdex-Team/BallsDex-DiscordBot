@@ -3,11 +3,10 @@ import os
 import sys
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
-from tortoise.exceptions import DoesNotExist
 
 from ballsdex.core.image_generator.image_gen import draw_card
-from ballsdex.core.models import Ball, BallInstance, Special
-from ballsdex.settings import settings
+from bd_models.models import Ball, BallInstance, Special
+from settings.models import settings
 
 from ...utils import refresh_cache
 
@@ -25,8 +24,7 @@ class Command(BaseCommand):
             "If not provided, the first entry is used.",
         )
         parser.add_argument(
-            "--special",
-            help="The special event's background you want to use, otherwise regime is used",
+            "--special", help="The special event's background you want to use, otherwise regime is used"
         )
 
     async def generate_preview(self, *args, **options):
@@ -34,32 +32,28 @@ class Command(BaseCommand):
 
         if ball_name := options.get("ball"):
             try:
-                ball = await Ball.get(country__iexact=ball_name)
-            except DoesNotExist as e:
-                raise CommandError(
-                    f'No {settings.collectible_name} found with the name "{ball_name}"'
-                ) from e
+                ball = await Ball.objects.aget(country__iexact=ball_name)
+            except Ball.DoesNotExist as e:
+                raise CommandError(f'No {settings.collectible_name} found with the name "{ball_name}"') from e
         else:
-            ball = await Ball.first()
+            ball = await Ball.objects.afirst()
             if ball is None:
                 raise CommandError(f"You need at least one {settings.collectible_name} created.")
 
         special: Special | None = None
         if special_name := options.get("special"):
             try:
-                special = await Special.get(name__iexact=special_name)
-            except DoesNotExist as e:
+                special = await Special.objects.aget(name__iexact=special_name)
+            except Special.DoesNotExist as e:
                 raise CommandError(f'No special found with the name "{special_name}"') from e
 
         # use stderr to avoid piping
         self.stderr.write(
-            self.style.SUCCESS(
-                f"Generating card for {ball.country}" + (f" ({special.name})" if special else "")
-            )
+            self.style.SUCCESS(f"Generating card for {ball.country}" + (f" ({special.name})" if special else ""))
         )
 
         instance = BallInstance(ball=ball, special=special)
-        image, kwargs = draw_card(instance, media_path="./media/")
+        image, kwargs = draw_card(instance)
 
         if sys.platform not in ("win32", "darwin") and not os.environ.get("DISPLAY"):
             self.stderr.write(
