@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "bd_models",
     "preview",
     "settings",
+    "media_management",
 ]
 
 EXTRA_APPS = discover_extra_packages()
