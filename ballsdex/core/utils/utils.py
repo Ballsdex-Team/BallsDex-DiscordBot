@@ -4,6 +4,7 @@ import discord
 
 from bd_models.enums import PrivacyPolicy
 from bd_models.models import Player
+from settings.models import settings
 
 from .checks import get_user_for_check
 
@@ -35,6 +36,7 @@ async def is_staff(interaction: discord.Interaction["BallsDexBot"], *perms: str)
         return user
     if not user.is_staff:
         return False
+
     return await user.ahas_perms(perms)
 
 
@@ -70,7 +72,9 @@ async def inventory_privacy(
     if interaction.user.id == player.discord_id:
         return True
     if await is_staff(interaction):
-        return True
+        if settings.inv_privacy_bypass_ids and interaction.channel_id in settings.inv_privacy_bypass_ids:
+            return True
+
     if privacy_policy == PrivacyPolicy.DENY:
         await interaction.followup.send("This user has set their inventory to private.", ephemeral=True)
         return False
