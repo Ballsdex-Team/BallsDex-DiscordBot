@@ -138,7 +138,7 @@ class ModelTransformer[T: "Model"](app_commands.Transformer, commands.Converter)
         try:
             instance = await self.get_from_pk(int(value, self.base))
             await self.validate(await commands.Context.from_interaction(interaction), instance)
-        except (self.model.DoesNotExist, KeyError, ValueError):
+        except self.model.DoesNotExist, KeyError, ValueError:
             raise commands.BadArgument(
                 f"The {self.name} could not be found. Make sure to use the autocomplete function on this command."
             )
