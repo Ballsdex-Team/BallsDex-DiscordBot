@@ -50,6 +50,7 @@ type Interaction = discord.Interaction[BallsDexBot]
 log = logging.getLogger(__name__)
 
 TRADE_TIMEOUT = 60 * 30
+COOLDOWN_BYPASS_TIMEOUT = 10
 
 
 class SetMoneyModal(Modal, title="Set money offering"):
@@ -527,7 +528,7 @@ class TradeInstance(LayoutView):
         )
         if not both_bypass and self.confirmation_phase_start is not None:
             elapsed = (datetime.now() - self.confirmation_phase_start).total_seconds()
-            remaining = 10 - elapsed
+            remaining = COOLDOWN_BYPASS_TIMEOUT - elapsed
             if remaining > 0:
                 await interaction.response.send_message(
                     f"Please wait {remaining:.0f} more second(s) before confirming.", ephemeral=True
