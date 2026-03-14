@@ -176,7 +176,7 @@ async def send_interactive(
             else:
                 try:
                     await ctx.channel.delete_messages((query, resp))  # type: ignore
-                except (discord.HTTPException, AttributeError):
+                except discord.HTTPException, AttributeError:
                     # In case the bot can't delete other users' messages,
                     # or is not a bot account
                     # or channel is a DM
