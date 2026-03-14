@@ -12,6 +12,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from ballsdex.core.discord import LayoutView
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import Menu, ModelSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
@@ -356,3 +357,32 @@ class Trade(commands.GroupCog):
         view.add_item(selector)
         await selector.configure(self.bot, self, query)
         await interaction.followup.send(view=view, ephemeral=True)
+
+    @app_commands.command()
+    async def cancel(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Cancel your active trade.
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        result = await self.get_trade(interaction)
+        if result is None:
+            await interaction.followup.send("You do not have any active trade.")
+            return
+        trade, trader = result
+        if trade.trader1.confirmed and trade.trader2.confirmed:
+            await interaction.followup.send("You can't cancel now; the trade has already gone through.")
+            return
+        view = ConfirmChoiceView(
+            interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
+        )
+        await interaction.followup.send("Are you sure you want to cancel this trade?", view=view, ephemeral=True)
+        await view.wait()
+        if not view.value:
+            return
+
+        try:
+            await trader.cancel()
+        except TradeError as e:
+            await interaction.followup.send(e.error_message, ephemeral=True)
+        else:
+            await trade.edit_message(None)
