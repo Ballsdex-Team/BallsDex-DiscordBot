@@ -22,9 +22,7 @@ class CountryballsViewer(LayoutView):
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         if self.author_id and interaction.user.id != self.author_id:
-            await interaction.response.send_message(
-                "You are not allowed to interact with this menu.", ephemeral=True
-            )
+            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
             return False
         return True
 
@@ -69,9 +67,7 @@ class CountryballsDuplicateSource(LayoutView):
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         if self.author_id and interaction.user.id != self.author_id:
-            await interaction.response.send_message(
-                "You are not allowed to interact with this menu.", ephemeral=True
-            )
+            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
             return False
         return True
 
@@ -170,4 +166,3 @@ class CountryballsDuplicateSource(LayoutView):
                 await self.original_message.edit(view=self)
             except discord.NotFound:
                 pass
-
