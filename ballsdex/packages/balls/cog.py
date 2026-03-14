@@ -332,6 +332,9 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         view = LayoutView()
         container = Container()
+        if user is not None and user != interaction.user:
+            header = TextDisplay(f"Viewing {user_obj.display_name}'s completion")
+            container.add_item(header)
         display = TextDisplay("")
         container.add_item(display)
         view.add_item(container)
