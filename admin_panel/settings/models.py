@@ -119,12 +119,17 @@ class Settings(models.Model):
 
     # admin command control
     admin_channel_ids = models.TextField(
-        help_text="Semicolon-delimited list of channel IDs where admin commands can be used. Ignored for owners. "
+        help_text="Semicolon-delimited channel IDs where staff may bypass inventory privacy. Ignored for owners."
         "If empty, then admin commands can be used everywhere.",
         validators=(RegexValidator(COLON_IDS_RE, message="The IDs must be semicolon-separated"),),
         blank=True,
         default="",
     )
+
+    @cached_property
+    def inv_privacy_bypass_ids(self) -> list[int]:
+        return [] if self.admin_channel_ids is None else [int(x) for x in self.admin_channel_ids.split(";") if x]
+
     webhook_logging = models.URLField(
         help_text="An optional Discord Webhook where admin events will be logged.",
         validators=(RegexValidator(DISCORD_WEBHOOK_RE, message="Only Discord webhooks are supported."),),
