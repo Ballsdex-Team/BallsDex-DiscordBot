@@ -149,7 +149,12 @@ class Trade(commands.GroupCog):
             await interaction.followup.send("The trade has started.", ephemeral=True)
 
     @app_commands.command(extras={"trade": TradeCommandType.PICK})
-    async def add(self, interaction: Interaction, countryball: BallInstanceTransform):
+    async def add(
+        self,
+        interaction: Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+    ):
         """
         Add a countryball to your trade proposal. You must have a trade open.
 
@@ -157,6 +162,8 @@ class Trade(commands.GroupCog):
         ----------
         countryball: BallInstance
             The countryball you are adding to your trade.
+        special: Special | None
+            The special you want to filter the countryball by.
         """
         result = await self.get_trade(interaction)
         if result is None:
@@ -174,7 +181,12 @@ class Trade(commands.GroupCog):
             )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
-    async def remove(self, interaction: Interaction, countryball: BallInstanceTransform):
+    async def remove(
+        self,
+        interaction: Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+    ):
         """
         Remove a countryball from your trade proposal. You must have a trade open.
 
@@ -182,6 +194,8 @@ class Trade(commands.GroupCog):
         ----------
         countryball: BallInstance
             The countryball you are removing from your trade.
+        special: Special | None
+            The special you want to filter the countryball by.
         """
         result = await self.get_trade(interaction)
         if result is None:
