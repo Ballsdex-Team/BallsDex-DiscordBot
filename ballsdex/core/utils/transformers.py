@@ -16,7 +16,7 @@ from django.db.models import Model, Q
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
-from bd_models.models import Ball, BallInstance, Economy, Regime, Special
+from bd_models.models import Ball, BallInstance, Economy, Group, Regime, Special
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -26,7 +26,14 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.core.utils.transformers")
 
-__all__ = ("BallTransform", "BallInstanceTransform", "SpecialTransform", "RegimeTransform", "EconomyTransform")
+__all__ = (
+    "BallTransform",
+    "BallInstanceTransform",
+    "SpecialTransform",
+    "RegimeTransform",
+    "EconomyTransform",
+    "GroupTransform",
+)
 
 
 class TradeCommandType(Enum):
@@ -294,10 +301,16 @@ class EconomyTransformer(TTLModelTransformer[Economy]):
     model = Economy
 
 
+class GroupTransformer(TTLModelTransformer[Group]):
+    name = "group"
+    model = Group
+
+
 BallTransform = app_commands.Transform[Ball, BallTransformer]
 BallInstanceTransform = app_commands.Transform[BallInstance, BallInstanceTransformer]
 SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
 RegimeTransform = app_commands.Transform[Regime, RegimeTransformer]
 EconomyTransform = app_commands.Transform[Economy, EconomyTransformer]
+GroupTransform = app_commands.Transform[Group, GroupTransformer]
 SpecialEnabledTransform = app_commands.Transform[Special, SpecialTransformer(hidden=False)]
 BallEnabledTransform = app_commands.Transform[Ball, BallTransformer(enabled=True)]

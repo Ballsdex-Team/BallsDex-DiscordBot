@@ -15,6 +15,7 @@ from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallInstanceTransform,
+    GroupTransform,
     SpecialEnabledTransform,
     TradeCommandType,
 )
@@ -116,6 +117,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         reverse: bool = False,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        group: GroupTransform | None = None,
         filter: FilteringChoices | None = None,
     ):
         """
@@ -133,6 +135,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             Filter the list by a specific countryball.
         special: Special
             Filter the list by a specific special event.
+        group: Group
+            Filter the list by a specific group.
         filter: FilteringChoices
             Filter the list by a specific filter.
         """
@@ -171,6 +175,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             query = query.filter(ball=countryball)
         if special:
             query = query.filter(special=special)
+        if group:
+            group_ball_ids = set(
+                [x async for x in group.balls.filter(enabled=True).values_list("id", flat=True)]
+            )
+            query = query.filter(ball_id__in=group_ball_ids)
         if sort:
             query = sort_balls(sort, query)
         else:
@@ -180,15 +189,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if not await query.aexists():
             ball_txt = countryball.country if countryball else ""
             special_txt = special if special else ""
+            group_txt = group.name if group else ""
 
-            if special_txt and ball_txt:
-                combined = f"{special_txt} {ball_txt}"
-            elif special_txt:
-                combined = special_txt
-            elif ball_txt:
-                combined = ball_txt
-            else:
-                combined = ""
+            combined_parts = [str(x) for x in [special_txt, group_txt, ball_txt] if x]
+            combined = " ".join(combined_parts)
 
             combined_txt = f"{combined} " if combined else ""
             if user_obj == interaction.user:
@@ -220,6 +224,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
         special: SpecialEnabledTransform | None = None,
+        group: GroupTransform | None = None,
         filter: FilteringChoices | None = None,
         duplicates: bool = False,
     ):
@@ -232,6 +237,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The user whose completion you want to view, if not yours.
         special: Special
             The special you want to see the completion of
+        group: Group
+            The group you want to see the completion of
         filter: FilteringChoices
             Filter the list by a specific filter.
         duplicates: bool
@@ -268,6 +275,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         # Only ID and emoji is interesting for us
         bot_countryballs = {x: y.emoji_id for x, y in balls.items() if y.enabled}
 
+        if group:
+            group_ball_ids = set(
+                [x async for x in group.balls.filter(enabled=True).values_list("id", flat=True)]
+            )
+            bot_countryballs = {x: y for x, y in bot_countryballs.items() if x in group_ball_ids}
+
         # Set of ball IDs owned by the player
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
         if special:
@@ -277,6 +290,15 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 for x, y in balls.items()
                 if y.enabled and (special.end_date is None or y.created_at is None or y.created_at < special.end_date)
             }
+            # Re-apply group filter if group is also specified
+            if group:
+                group_ball_ids = set(
+                    [x async for x in group.balls.filter(enabled=True).values_list("id", flat=True)]
+                )
+                bot_countryballs = {x: y for x, y in bot_countryballs.items() if x in group_ball_ids}
+
+        if group:
+            filters["ball_id__in"] = group_ball_ids
 
         if filter:
             query = filter_balls(filter, BallInstance.objects.filter(**filters), interaction.guild_id)
@@ -303,10 +325,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         )
 
         special_str = f" ({special.name})" if special else ""
+        group_str = f" ({group.name})" if group else ""
         original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
         duplicates_str = " duplicates" if duplicates else ""
         text = (
-            f"## {settings.bot_name}{original_catcher_string}{special_str}{duplicates_str} progression: "
+            f"## {settings.bot_name}{original_catcher_string}{special_str}{group_str}{duplicates_str} progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**\n"
         )
 
@@ -634,6 +657,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction: discord.Interaction["BallsDexBot"],
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        group: GroupTransform | None = None,
         current_server: bool = False,
     ):
         """
@@ -645,6 +669,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The countryball you want to count
         special: Special
             The special you want to count
+        group: Group
+            The group you want to count
         current_server: bool
             Only count countryballs caught in the current server
         """
@@ -657,6 +683,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             filters["ball"] = countryball
         if special:
             filters["special"] = special
+        if group:
+            group_ball_ids = set(
+                [x async for x in group.balls.filter(enabled=True).values_list("id", flat=True)]
+            )
+            filters["ball_id__in"] = group_ball_ids
         if current_server:
             filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
@@ -667,10 +698,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
+        group_str = f"{group.name} " if group else ""
         guild = f" caught in {interaction.guild.name}" if current_server else ""
 
         await interaction.followup.send(
-            f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural}{guild}."
+            f"You have {balls:,} {special_str}{group_str}{country}{settings.collectible_name}{plural}{guild}."
         )
 
     @app_commands.command()
@@ -741,6 +773,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User,
         special: SpecialEnabledTransform | None = None,
+        group: GroupTransform | None = None,
         duplicates: bool = False,
     ):
         """
@@ -752,6 +785,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The user you want to compare with
         special: Special
             Filter the results of the comparison to a special event.
+        group: Group
+            Filter the results of the comparison to a specific group.
         duplicates: bool
             Whether to compare duplicates.
         """
@@ -784,6 +819,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 if y.enabled and (special.end_date is None or y.created_at is None or y.created_at < special.end_date)
             }
 
+        if group:
+            group_ball_ids = set(
+                [x async for x in group.balls.filter(enabled=True).values_list("id", flat=True)]
+            )
+            bot_countryballs = {x: y for x, y in bot_countryballs.items() if x in group_ball_ids}
+
         player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
 
@@ -801,6 +842,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             queryset = queryset.values("ball_id").annotate(counts=Count("ball_id")).filter(counts__gt=1)
         if special:
             queryset = queryset.filter(special=special)
+        if group:
+            queryset = queryset.filter(ball_id__in=group_ball_ids)
         user1_balls = cast(
             list[int], [x async for x in queryset.filter(player=player1).values_list("ball_id", flat=True)]
         )
@@ -809,10 +852,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         )
 
         special_str = f" ({special.name})" if special else ""
+        group_str = f" ({group.name})" if group else ""
         comparison_type = "Duplicates Comparison" if duplicates else "Comparison"
         text = (
             f"## {comparison_type} of {interaction.user.display_name} and {user.display_name}'s "
-            f"{settings.plural_collectible_name}{special_str}\n"
+            f"{settings.plural_collectible_name}{special_str}{group_str}\n"
         )
 
         def fill_fields(title: str, ids: set[int]):
