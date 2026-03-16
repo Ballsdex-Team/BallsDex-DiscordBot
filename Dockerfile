@@ -23,7 +23,7 @@ RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/c
     apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main postgresql18-client && \
     apk add --no-cache tiff-dev jpeg-dev openjpeg-dev zlib-dev freetype-dev \
     lcms2-dev libwebp-dev tcl-dev tk-dev harfbuzz-dev fribidi-dev \
-    libimagequant-dev libxcb-dev libpng-dev libavif-dev
+    libimagequant-dev libxcb-dev libpng-dev libavif-dev ffmpeg
 
 ARG UID GID
 RUN addgroup -S ballsdex -g ${GID:-1000} && \
