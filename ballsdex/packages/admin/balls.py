@@ -441,7 +441,7 @@ async def balls_create(
     if not emoji:
         await ctx.send(
             "The bot couldn't find the given emoji. Maybe it doesn't exist or the bot doesn't have access to it.",
-            ephemeral=True
+            ephemeral=True,
         )
         return
     await ctx.defer(ephemeral=True)
