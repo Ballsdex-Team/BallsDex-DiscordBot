@@ -62,6 +62,7 @@ class UserTradeHistoryFlags(TradeHistoryFlags):
     user2: discord.User | None = flag(description="The second user you want to check the history of")
     special: SpecialTransform | None = flag(description="The special you want to filter the history by")
 
+
 class CreateFlags(FlagConverter):
     name: Range[str, None, 48] = flag(description="The name of the countryball", aliases=["country"])
     health: int = flag(description="The health of the countryball")
@@ -71,13 +72,9 @@ class CreateFlags(FlagConverter):
     credits: Range[str, None, 64] = flag(description="Authors of wild card and collection card")
     capacity_name: Range[str, None, 64] = flag(description="Name of the countryball's capacity")
     capacity_description: Range[str, None, 256] = flag(description="Description of the countryball's capacity")
-    enabled: bool = flag(
-        description="Type 'no' if you don't want this countryball to spawn.",
-        default=True
-    )
+    enabled: bool = flag(description="Type 'no' if you don't want this countryball to spawn.", default=True)
     tradeable: bool = flag(
-        description="Type 'no' if you don't want this countryball to be traded with others.",
-        default=True
+        description="Type 'no' if you don't want this countryball to be traded with others.", default=True
     )
     regime: RegimeTransform = flag(description="Political regime of this countryball")
     economy: EconomyTransform | None = flag(description="Economical regime of this countryball", default=None)

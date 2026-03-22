@@ -414,6 +414,7 @@ async def balls_count(ctx: commands.Context[BallsDexBot], *, flags: BallsCountFl
             f"There {verb} {balls} {special_str}{country}{settings.collectible_name}{plural}.", ephemeral=True
         )
 
+
 @balls.command(name="create")
 @checks.has_permissions("bd_models.add_ball")
 async def balls_create(
@@ -421,7 +422,7 @@ async def balls_create(
     wild_card: discord.Attachment,
     collection_card: discord.Attachment,
     *,
-    flags: CreateFlags
+    flags: CreateFlags,
 ):
     """
     Create a countryball.
@@ -439,8 +440,7 @@ async def balls_create(
     emoji = ctx.bot.get_emoji(int(flags.emoji_id))
     if not emoji:
         await ctx.send(
-            "The bot couldn't find the given emoji. "
-            "Maybe it doesn't exist or the bot doesn't have access to it.",
+            "The bot couldn't find the given emoji. Maybe it doesn't exist or the bot doesn't have access to it.",
             ephemeral=True
         )
         return
@@ -452,12 +452,10 @@ async def balls_create(
         log.exception(
             f"Failed saving collection card file when creating {settings.collectible_name}",
             exc_info=True,
-            extra={"webhook": True}
+            extra={"webhook": True},
         )
         await ctx.send(
-            "An error occurred while trying to save collection card file. "
-            "Check the error in bot logs.",
-            ephemeral=True
+            "An error occurred while trying to save collection card file. Check the error in bot logs.", ephemeral=True
         )
         return
 
@@ -467,12 +465,10 @@ async def balls_create(
         log.exception(
             f"Failed saving wild card file when creating {settings.collectible_name}",
             exc_info=True,
-            extra={"webhook": True}
+            extra={"webhook": True},
         )
         await ctx.send(
-            "An error occurred while trying to save wild card file. "
-            "Check the error in bot logs.",
-            ephemeral=True
+            "An error occurred while trying to save wild card file. Check the error in bot logs.", ephemeral=True
         )
         return
 
@@ -491,29 +487,27 @@ async def balls_create(
             regime=flags.regime,
             economy=flags.economy,
             wild_card=wild_card_path.name,
-            collection_card=collection_card_path.name
+            collection_card=collection_card_path.name,
         )
     except IntegrityError:
         log.exception(
             f"Failed creating {settings.collectible_name} because "
             f"a {settings.collectible_name} with that name ({flags.name}) already exists.",
             exc_info=True,
-            extra={"webhook": True}
+            extra={"webhook": True},
         )
         await ctx.send(
             f"An error occured while creating the {settings.collectible_name}. Check the error in bot logs.",
-            ephemeral=True
+            ephemeral=True,
         )
         return
     except Exception:
         log.exception(
-            f"Failed creating {settings.collectible_name} with admin command",
-            exc_info=True,
-            extra={"webhook": True}
+            f"Failed creating {settings.collectible_name} with admin command", exc_info=True, extra={"webhook": True}
         )
         await ctx.send(
             f"An error occured while creating the {settings.collectible_name}. Check the error in bot logs.",
-            ephemeral=True
+            ephemeral=True,
         )
         return
     else:
@@ -525,9 +519,6 @@ async def balls_create(
             f"{admin_url}\n"
             f"{flags.name=} regime={flags.regime.name} economy={flags.economy.name if flags.economy else None} "
             f"{flags.health=} {flags.attack=} {flags.rarity=} {flags.enabled=} {flags.tradeable=} emoji={emoji}",
-            files=files
+            files=files,
         )
-        log.info(
-            f'{ctx.author} created a new {settings.collectible_name} "{ball.country}"',
-            extra={"webhook": True}
-        )
+        log.info(f'{ctx.author} created a new {settings.collectible_name} "{ball.country}"', extra={"webhook": True})
