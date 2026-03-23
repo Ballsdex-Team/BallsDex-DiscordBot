@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 log = logging.getLogger("ballsdex.packages.admin.balls")
 FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
 
+
 async def _spawn_bomb(
     ctx: commands.Context[BallsDexBot],
     countryball_cls: type["BallSpawnView"],
