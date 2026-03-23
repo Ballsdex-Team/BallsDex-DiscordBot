@@ -2,12 +2,12 @@ import asyncio
 import logging
 import random
 import re
-from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ext import commands
 from discord.utils import format_dt
+from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from django.urls import reverse
 
@@ -25,20 +25,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.admin.balls")
 FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
-
-
-async def save_file(attachment: discord.Attachment) -> Path:
-    path = Path(f"/code/admin_panel/media/{attachment.filename}")
-    match = FILENAME_RE.match(attachment.filename)
-    if not match:
-        raise TypeError("The file you uploaded lacks an extension.")
-    i = 1
-    while path.exists():
-        path = Path(f"/code/admin_panel/media/{match.group(1)}-{i}{match.group(2)}")
-        i = i + 1
-    await attachment.save(path)
-    return path.relative_to("/code/admin_panel/media/")
-
 
 async def _spawn_bomb(
     ctx: commands.Context[BallsDexBot],
@@ -447,32 +433,9 @@ async def balls_create(
     await ctx.defer(ephemeral=True)
 
     try:
-        collection_card_path = await save_file(collection_card)
-    except Exception:
-        log.exception(
-            f"Failed saving collection card file when creating {settings.collectible_name}",
-            exc_info=True,
-            extra={"webhook": True},
-        )
-        await ctx.send(
-            "An error occurred while trying to save collection card file. Check the error in bot logs.", ephemeral=True
-        )
-        return
+        wild_card_data = await wild_card.read()
+        collection_card_data = await collection_card.read()
 
-    try:
-        wild_card_path = await save_file(wild_card)
-    except Exception:
-        log.exception(
-            f"Failed saving wild card file when creating {settings.collectible_name}",
-            exc_info=True,
-            extra={"webhook": True},
-        )
-        await ctx.send(
-            "An error occurred while trying to save wild card file. Check the error in bot logs.", ephemeral=True
-        )
-        return
-
-    try:
         ball = await Ball.objects.acreate(
             country=flags.name,
             health=flags.health,
@@ -486,8 +449,8 @@ async def balls_create(
             tradeable=flags.tradeable,
             regime=flags.regime,
             economy=flags.economy,
-            wild_card=wild_card_path.name,
-            collection_card=collection_card_path.name,
+            wild_card=ContentFile(wild_card_data, wild_card.filename),
+            collection_card=ContentFile(collection_card_data, collection_card.filename),
         )
     except IntegrityError:
         log.exception(
