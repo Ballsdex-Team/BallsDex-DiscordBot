@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
+from django import forms
 from django.contrib import admin
 from django.contrib.admin.utils import quote
 from django.forms import Textarea
@@ -8,11 +9,20 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 
+from ballsdex.core.image_generator.image_gen import RENDERERS
+
 from ..models import Ball, BallInstance, Economy, Regime, TradeObject, Variant, transform_media
 
 if TYPE_CHECKING:
     from django.db.models import Field, Model, QuerySet
     from django.http import HttpRequest
+
+
+class RendererDropdownAdminMixin(admin.ModelAdmin):
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == "renderer":
+            kwargs["widget"] = forms.Select(choices=[(r, r) for r in RENDERERS])
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
 
 @admin.register(Regime)
@@ -73,13 +83,13 @@ class EconomyAdmin(admin.ModelAdmin):
 
 
 @admin.register(Variant)
-class VariantAdmin(admin.ModelAdmin):
-    list_display = ("base_ball", "name", "pk")
+class VariantAdmin(RendererDropdownAdminMixin, admin.ModelAdmin):
+    list_display = ("name", "base_ball", "pk")
     search_fields = ("name",)
 
 
 @admin.register(Ball)
-class BallAdmin(admin.ModelAdmin):
+class BallAdmin(RendererDropdownAdminMixin, admin.ModelAdmin):
     autocomplete_fields = ("regime", "economy")
     readonly_fields = ("collection_image", "spawn_image")
     save_on_top = True
