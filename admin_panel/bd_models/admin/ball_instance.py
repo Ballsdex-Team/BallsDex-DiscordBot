@@ -33,7 +33,7 @@ class BallInstanceAdmin(admin.ModelAdmin):
     save_on_top = True
     readonly_fields = ("catch_date",)
     fieldsets = [
-        (None, {"fields": ("ball", "health_bonus", "attack_bonus", "special")}),
+        (None, {"fields": ("ball", "health_bonus", "attack_bonus", "special", "variant")}),
         ("Ownership", {"fields": ("player", "favorite", "trade_player")}),
         (
             "Advanced",
