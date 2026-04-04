@@ -32,7 +32,7 @@ class BallInstanceAdmin(admin.ModelAdmin):
     autocomplete_fields = ("player", "trade_player", "ball", "special")
     save_on_top = True
     fieldsets = [
-        (None, {"fields": ("ball", "health_bonus", "attack_bonus", "special")}),
+        (None, {"fields": ("ball", "health_bonus", "attack_bonus", "special", "variant")}),
         ("Ownership", {"fields": ("player", "favorite", "trade_player")}),
         (
             "Advanced",

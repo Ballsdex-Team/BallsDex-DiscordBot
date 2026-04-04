@@ -25,7 +25,7 @@ class SpecialAdmin(admin.ModelAdmin):
                 "at the specified time.",
             },
         ),
-        ("Advanced", {"fields": ["tradeable", "hidden"], "classes": ["collapse"]}),
+        ("Advanced", {"fields": ["tradeable", "hidden", "renderer"], "classes": ["collapse"]}),
     ]
 
     list_display = ["name", "pk", "emoji_display", "start_date", "end_date", "rarity", "hidden"]
