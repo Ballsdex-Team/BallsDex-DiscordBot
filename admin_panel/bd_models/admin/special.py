@@ -4,6 +4,8 @@ from django.contrib import admin
 from django.forms import Textarea
 from django.utils.safestring import mark_safe
 
+from bd_models.admin.ball import RendererDropdownAdminMixin
+
 from ..models import Special
 
 if TYPE_CHECKING:
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
 
 
 @admin.register(Special)
-class SpecialAdmin(admin.ModelAdmin):
+class SpecialAdmin(RendererDropdownAdminMixin, admin.ModelAdmin):
     save_on_top = True
     fieldsets = [
         (None, {"fields": ["name", "catch_phrase", "rarity", "emoji", "background", "credits"]}),
