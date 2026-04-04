@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import discord
-from discord.ui import ActionRow, Select, TextDisplay
+from discord.ui import ActionRow, Button, Select, TextDisplay
 from django.db.models import Count, Exists, OuterRef, Q, Value
 
 from ballsdex.core.discord import LayoutView
@@ -15,6 +15,17 @@ if TYPE_CHECKING:
 
 
 class CountryballsViewer(LayoutView):
+    def __init__(self, *, timeout: float | None = 180) -> None:
+        super().__init__(timeout=timeout)
+        self.original_message: discord.InteractionMessage | None = None
+        self.author_id: int | None = None
+
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
+        if self.author_id and interaction.user.id != self.author_id:
+            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
+            return False
+        return True
+
     header = TextDisplay("")
     select_row = ActionRow()
 
@@ -26,11 +37,39 @@ class CountryballsViewer(LayoutView):
         await interaction.followup.send(content=content, file=file, view=view)
         file.close()
 
+    quit_row = ActionRow()
+
+    @quit_row.button(label="Quit", style=discord.ButtonStyle.danger)
+    async def quit_button(self, interaction: discord.Interaction["BallsDexBot"], button_obj: Button):
+        self.stop()
+        for item in self.walk_children():
+            if hasattr(item, "disabled"):
+                item.disabled = True  # type: ignore
+        await interaction.response.edit_message(view=self)
+
+    async def on_timeout(self):
+        for item in self.walk_children():
+            if hasattr(item, "disabled"):
+                item.disabled = True  # type: ignore
+        if self.original_message:
+            try:
+                await self.original_message.edit(view=self)
+            except discord.NotFound:
+                pass
+
 
 class CountryballsDuplicateSource(LayoutView):
     def __init__(self, is_special: bool, *, timeout: float | None = 180) -> None:
         super().__init__(timeout=timeout)
         self.is_special = is_special
+        self.original_message: discord.InteractionMessage | None = None
+        self.author_id: int | None = None
+
+    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
+        if self.author_id and interaction.user.id != self.author_id:
+            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
+            return False
+        return True
 
     header = TextDisplay("")
     select_row = ActionRow()
@@ -107,3 +146,23 @@ class CountryballsDuplicateSource(LayoutView):
             if emoji:
                 embed.set_thumbnail(url=emoji.url)
         await interaction.followup.send(embed=embed)
+
+    quit_row = ActionRow()
+
+    @quit_row.button(label="Quit", style=discord.ButtonStyle.danger)
+    async def quit_button(self, interaction: discord.Interaction["BallsDexBot"], button_obj: Button):
+        self.stop()
+        for item in self.walk_children():
+            if hasattr(item, "disabled"):
+                item.disabled = True  # type: ignore
+        await interaction.response.edit_message(view=self)
+
+    async def on_timeout(self):
+        for item in self.walk_children():
+            if hasattr(item, "disabled"):
+                item.disabled = True  # type: ignore
+        if self.original_message:
+            try:
+                await self.original_message.edit(view=self)
+            except discord.NotFound:
+                pass
