@@ -8,7 +8,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 
-from ..models import Ball, BallInstance, Economy, Regime, TradeObject, transform_media
+from ..models import Ball, BallInstance, Economy, Regime, TradeObject, Variant, transform_media
 
 if TYPE_CHECKING:
     from django.db.models import Field, Model, QuerySet
@@ -72,6 +72,12 @@ class EconomyAdmin(admin.ModelAdmin):
         return mark_safe(f'<img src="/media/{transform_media(str(obj.icon))}" height=30px />')
 
 
+@admin.register(Variant)
+class VariantAdmin(admin.ModelAdmin):
+    list_display = ("base_ball", "name", "pk")
+    search_fields = ("name",)
+
+
 @admin.register(Ball)
 class BallAdmin(admin.ModelAdmin):
     autocomplete_fields = ("regime", "economy")
@@ -95,7 +101,15 @@ class BallAdmin(admin.ModelAdmin):
             {
                 "description": "Advanced settings",
                 "classes": ["collapse"],
-                "fields": ["enabled", "tradeable", "short_name", "catch_names", "translations", "capacity_logic"],
+                "fields": [
+                    "enabled",
+                    "tradeable",
+                    "short_name",
+                    "catch_names",
+                    "translations",
+                    "renderer",
+                    "capacity_logic",
+                ],
             },
         ),
     ]
