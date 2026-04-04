@@ -4,7 +4,7 @@ from admin_auto_filters.filters import AutocompleteFilter
 from django.contrib import admin, messages
 from django.db.models import Prefetch
 
-from ..models import BallInstance, Player, Trade, TradeObject
+from ..models import BallInstance, Player, Trade, TradeObject, Variant
 from ..utils import ApproxCountPaginator
 
 if TYPE_CHECKING:
@@ -56,6 +56,17 @@ class BallInstanceAdmin(admin.ModelAdmin):
     search_fields = ("id",)  # field is ignored, but required for the text area to show up
 
     actions = ("soft_delete",)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "variant":
+            if request and request.resolver_match:
+                obj_id = request.resolver_match.kwargs.get("object_id")
+
+                if obj_id:
+                    obj = BallInstance.objects.get(pk=obj_id)
+                    kwargs["queryset"] = Variant.objects.filter(base_ball=obj.ball)
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_search_results(
         self, request: "HttpRequest", queryset: "QuerySet[BallInstance]", search_term: str
