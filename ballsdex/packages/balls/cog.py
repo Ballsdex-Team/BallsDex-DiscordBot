@@ -190,13 +190,14 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             else:
                 combined = ""
 
+            combined_txt = f"{combined} " if combined else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
-                    f"You don't have any {combined} {settings.plural_collectible_name} yet."
+                    f"You don't have any {combined_txt}{settings.plural_collectible_name} yet."
                 )
             else:
                 await interaction.followup.send(
-                    f"{user_obj.name} doesn't have any {combined} {settings.plural_collectible_name} yet."
+                    f"{user_obj.name} doesn't have any {combined_txt}{settings.plural_collectible_name} yet."
                 )
             return
         if reverse:
@@ -332,6 +333,9 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         view = LayoutView()
         container = Container()
+        if user is not None and user != interaction.user:
+            header = TextDisplay(f"Viewing {user_obj.display_name}'s completion")
+            container.add_item(header)
         display = TextDisplay("")
         container.add_item(display)
         view.add_item(container)

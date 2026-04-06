@@ -21,6 +21,7 @@ from django.utils import timezone
 from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView, Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
+from bd_models.enums import TradeCooldownPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 from settings.models import settings
 from settings.utils import format_currency
@@ -49,6 +50,7 @@ type Interaction = discord.Interaction[BallsDexBot]
 log = logging.getLogger(__name__)
 
 TRADE_TIMEOUT = 60 * 30
+COOLDOWN_BYPASS_TIMEOUT = 10
 
 
 class SetMoneyModal(Modal, title="Set money offering"):
@@ -423,6 +425,7 @@ class TradeInstance(LayoutView):
         self.confirmation_lock = asyncio.Lock()
         self.edit_lock = asyncio.Lock()
         self.next_edit_interaction: Interaction | None = None
+        self.confirmation_phase_start: datetime | None = None
 
         self.timeout_task = asyncio.create_task(self._timeout(), name=f"trade-timeout-{id(self)}")
 
@@ -465,6 +468,8 @@ class TradeInstance(LayoutView):
         except TradeError as e:
             await interaction.followup.send(e.error_message, ephemeral=True)
         else:
+            if self.confirmation_phase and self.confirmation_phase_start is None:
+                self.confirmation_phase_start = datetime.now()
             await self.edit_message(interaction)
 
     @buttons.button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
@@ -517,6 +522,18 @@ class TradeInstance(LayoutView):
     )
     async def confirm_button(self, interaction: Interaction, button: Button):
         trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
+        both_bypass = (
+            self.trader1.player.trade_cooldown_policy == TradeCooldownPolicy.BYPASS
+            and self.trader2.player.trade_cooldown_policy == TradeCooldownPolicy.BYPASS
+        )
+        if not both_bypass and self.confirmation_phase_start is not None:
+            elapsed = (datetime.now() - self.confirmation_phase_start).total_seconds()
+            remaining = COOLDOWN_BYPASS_TIMEOUT - elapsed
+            if remaining > 0:
+                await interaction.response.send_message(
+                    f"Please wait {remaining:.0f} more second(s) before confirming.", ephemeral=True
+                )
+                return
         await interaction.response.defer()
         try:
             await trader.confirm()
