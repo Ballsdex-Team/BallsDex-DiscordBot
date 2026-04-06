@@ -12,7 +12,7 @@ from ballsdex.core.dev import send_interactive
 from ballsdex.core.discord import LayoutView, View
 from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.menus import Menu, TextFormatter, TextSource
-from bd_models.models import Ball, Special
+from bd_models.models import Ball
 from settings.models import load_settings, settings
 
 log = logging.getLogger("ballsdex.core.commands")
@@ -148,19 +148,6 @@ class Core(commands.Cog):
                 continue
 
             lines.append(f" - Ball `{ball.country}` has a broken emoji")
-
-        specials = Special.objects.all()
-        async for special in specials:
-            if not special.emoji:
-                continue
-
-            if not special.emoji.isdigit():
-                continue
-
-            if self.bot.get_emoji(int(special.emoji)):
-                continue
-
-            lines.append(f" - Special `{special.name}` has a broken emoji")
 
         lines.append("# Broken media:")
         for ball in balls:
