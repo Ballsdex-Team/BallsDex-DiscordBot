@@ -12,7 +12,7 @@ from ballsdex.core.dev import send_interactive
 from ballsdex.core.discord import LayoutView, View
 from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.menus import Menu, TextFormatter, TextSource
-from bd_models.models import Ball
+from bd_models.models import Ball, Special
 from settings.models import load_settings, settings
 
 log = logging.getLogger("ballsdex.core.commands")
@@ -131,6 +131,48 @@ class Core(commands.Cog):
 
         delta = await wrapper()
         await ctx.send(f"Analyzed database in {round(delta * 1000)}ms.")
+
+    @commands.command()
+    @commands.is_owner()
+    async def checkmedia(self, ctx: commands.Context):
+        """
+        Check collectible media filesizes and emoji ids
+        """
+
+        lines = []
+        lines.append("# Missing emojis:")
+        balls = [ball async for ball in Ball.objects.all()]
+
+        for ball in balls:
+            if self.bot.get_emoji(ball.emoji_id):
+                continue
+
+            lines.append(f" - Ball `{ball.country}` has a broken emoji")
+
+        specials = Special.objects.all()
+        async for special in specials:
+            if not special.emoji:
+                continue
+
+            if not special.emoji.isdigit():
+                continue
+
+            if self.bot.get_emoji(int(special.emoji)):
+                continue
+
+            lines.append(f" - Special `{special.name}` has a broken emoji")
+
+        lines.append("# Broken media:")
+        for ball in balls:
+            if not ball.wild_card.storage.exists(ball.wild_card.name):
+                lines.append(f" - Spawn image for `{ball.country}` is missing")
+            if not ball.collection_card.storage.exists(ball.collection_card.name):
+                lines.append(f" - Collection card for `{ball.country}` is missing")
+            if ball.wild_card.size > 8 * (10**6):
+                lines.append(f" - Spawn image for `{ball.country}` is {ball.wild_card.size // 10**6}MB")
+
+        pages = pagify("\n".join(lines), delims=["###", "\n\n", "\n"], priority=True)
+        await send_interactive(ctx, pages, block=None)
 
     @commands.command()
     @commands.is_owner()
