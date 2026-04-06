@@ -134,6 +134,35 @@ class Core(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
+    async def checkmedia(self, ctx: commands.Context):
+        """
+        Check collectible media filesizes and emoji ids
+        """
+
+        lines = []
+        lines.append("# Missing emojis:")
+        balls = [ball async for ball in Ball.objects.all()]
+
+        for ball in balls:
+            if self.bot.get_emoji(ball.emoji_id):
+                continue
+
+            lines.append(f" - Ball `{ball.country}` has a broken emoji")
+
+        lines.append("# Broken media:")
+        for ball in balls:
+            if not ball.wild_card.storage.exists(ball.wild_card.name):
+                lines.append(f" - Spawn image for `{ball.country}` is missing")
+            if not ball.collection_card.storage.exists(ball.collection_card.name):
+                lines.append(f" - Collection card for `{ball.country}` is missing")
+            if ball.wild_card.size > 8 * (10**6):
+                lines.append(f" - Spawn image for `{ball.country}` is {ball.wild_card.size // 10**6}MB")
+
+        pages = pagify("\n".join(lines), delims=["###", "\n\n", "\n"], priority=True)
+        await send_interactive(ctx, pages, block=None)
+
+    @commands.command()
+    @commands.is_owner()
     async def migrateemotes(self, ctx: commands.Context):
         """
         Upload all guild emojis used by the bot to application emojis.
