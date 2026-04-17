@@ -32,6 +32,5 @@ class Command(BaseCommand):
             raise CommandError("No settings instance found")
 
         import_settings_from_yaml(content, s)
-        s.save()
 
         self.stdout.write(self.style.SUCCESS("Settings imported successfully"))
