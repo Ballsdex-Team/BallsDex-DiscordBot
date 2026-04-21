@@ -139,10 +139,9 @@ class Trade(commands.GroupCog):
         try:
             await trade.trader1.refresh_container()
             await trade.trader2.refresh_container()
-            trade.message = await interaction.channel.send(
-                view=trade,
-                allowed_mentions=await can_mention([player1, player2])
-            )  # type: ignore
+            trade.message = await interaction.channel.send(  # type: ignore
+                view=trade, allowed_mentions=await can_mention([player1, player2])
+            )
         except Exception:
             # unregister the trade if something failed to avoid the 30 min timeout
             del self.trades[interaction.channel.id][interaction.user.id]
