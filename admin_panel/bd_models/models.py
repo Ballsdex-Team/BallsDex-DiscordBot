@@ -43,6 +43,7 @@ balls: dict[int, Ball] = {}
 regimes: dict[int, Regime] = {}
 economies: dict[int, Economy] = {}
 specials: dict[int, Special] = {}
+variants: dict[int, Variant] = {}
 
 
 class QuerySet[T: models.Model](models.QuerySet[T]):
@@ -260,6 +261,8 @@ class Special(models.Model):
     hidden = models.BooleanField(help_text="Hides the event from user commands", default=False)
     credits = models.CharField(max_length=64, help_text="Author of the special event artwork", null=True)
 
+    renderer = models.CharField(max_length=128, null=True, blank=True, help_text="Renderer to use")
+
     objects: Manager[Self] = Manager()
     enabled_objects = SpecialEnabledManager()
 
@@ -303,6 +306,8 @@ class Ball(models.Model):
     created_at = models.DateTimeField(blank=True, null=True, auto_now_add=True, editable=False)
     translations = models.TextField(blank=True, null=True)
 
+    renderer = models.CharField(max_length=128, null=True, blank=True, help_text="Renderer to use")
+
     objects: Manager[Self] = Manager()
     enabled_objects: EnabledManager[Self] = EnabledManager()
     tradeable_objects: TradeableManager[Self] = TradeableManager()
@@ -344,6 +349,19 @@ class Ball(models.Model):
         return super().save(**kwargs)
 
 
+class Variant(models.Model):
+    name = models.CharField(max_length=64)
+
+    base_ball = models.ForeignKey(Ball, on_delete=models.CASCADE)
+    base_ball_id: int
+
+    collection_card = models.ImageField(max_length=200, null=True, help_text="Image used when displaying balls")
+    renderer = models.CharField(max_length=128, null=True, blank=True, help_text="Renderer to use")
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class BallInstance(models.Model):
     catch_date = models.DateTimeField(auto_now_add=True)
     health_bonus = models.IntegerField(default=0)
@@ -371,6 +389,9 @@ class BallInstance(models.Model):
     objects: BallInstanceManager[Self] = BallInstanceManager()
     tradeable_objects: TradeableManager[Self] = TradeableManager()
     all_objects: BaseBallInstanceManager[Self] = BaseBallInstanceManager()
+
+    variant = models.ForeignKey(Variant, null=True, on_delete=models.SET_NULL)
+    variant_id: int
 
     class Meta:
         managed = True
@@ -431,6 +452,10 @@ class BallInstance(models.Model):
     @property
     def specialcard(self) -> Special | None:
         return specials.get(self.special_id, None) if self.special_id else None
+
+    @property
+    def cached_variant(self) -> Variant | None:
+        return variants.get(self.variant_id, None) or self.variant
 
     @admin.display(description="Countryball")
     def admin_description(self) -> SafeText:

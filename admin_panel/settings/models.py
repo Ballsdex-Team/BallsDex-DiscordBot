@@ -119,7 +119,7 @@ class Settings(models.Model):
 
     # admin command control
     admin_channel_ids = models.TextField(
-        help_text="Semicolon-delimited channel IDs where staff may bypass inventory privacy. Ignored for owners."
+        help_text="Semicolon-delimited channel IDs where staff may bypass inventory privacy. "
         "If empty, then admin commands can be used everywhere.",
         validators=(RegexValidator(COLON_IDS_RE, message="The IDs must be semicolon-separated"),),
         blank=True,
