@@ -193,7 +193,8 @@ class BallSpawnView(View):
     def name(self):
         return self.model.country
 
-    def get_random_special(self) -> Special | None:
+    @staticmethod
+    def get_random_special() -> Special | None:
         population = [
             x
             for x in specials.values()
