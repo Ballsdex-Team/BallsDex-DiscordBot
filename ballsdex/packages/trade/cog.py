@@ -20,6 +20,7 @@ from ballsdex.core.utils.transformers import (
     SpecialEnabledTransform,
     TradeCommandType,
 )
+from ballsdex.core.utils.utils import can_mention
 from bd_models.models import BallInstance, Player
 from bd_models.models import Trade as TradeModel
 from settings.models import settings
@@ -138,7 +139,9 @@ class Trade(commands.GroupCog):
         try:
             await trade.trader1.refresh_container()
             await trade.trader2.refresh_container()
-            trade.message = await interaction.channel.send(view=trade)  # type: ignore
+            trade.message = await interaction.channel.send(  # type: ignore
+                view=trade, allowed_mentions=await can_mention([player1, player2])
+            )
         except Exception:
             # unregister the trade if something failed to avoid the 30 min timeout
             del self.trades[interaction.channel.id][interaction.user.id]

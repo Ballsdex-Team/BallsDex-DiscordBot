@@ -56,11 +56,15 @@ class Core(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def reloadtree(self, ctx: commands.Context):
+    async def reloadtree(self, ctx: commands.Context, guild_id: int | None = None):
         """
         Sync the application commands with Discord
         """
-        await self.bot.tree.sync()
+        if guild_id is None:
+            await self.bot.tree.sync()
+        else:
+            guild = discord.Object(id=guild_id)
+            await self.bot.tree.sync(guild=guild)
         await ctx.send("Application commands tree reloaded.")
 
     async def reload_package(self, package: str, *, with_prefix=False):
