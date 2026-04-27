@@ -43,6 +43,7 @@ balls: dict[int, Ball] = {}
 regimes: dict[int, Regime] = {}
 economies: dict[int, Economy] = {}
 specials: dict[int, Special] = {}
+groups: dict[int, "Group"] = {}
 
 
 class QuerySet[T: models.Model](models.QuerySet[T]):
@@ -342,6 +343,20 @@ class Ball(models.Model):
         self.translations = lower_catch_names(self.translations)
 
         return super().save(**kwargs)
+
+
+class Group(models.Model):
+    name = models.CharField(max_length=64, unique=True, help_text="Name of the group")
+    balls = models.ManyToManyField(Ball, related_name="groups", blank=True, help_text="Balls in this group")
+
+    objects: Manager[Self] = Manager()
+
+    class Meta:
+        managed = True
+        db_table = "group"
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class BallInstance(models.Model):
