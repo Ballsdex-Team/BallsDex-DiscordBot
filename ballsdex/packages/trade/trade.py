@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import uuid
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
@@ -40,6 +41,7 @@ from .errors import (
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
+    from opentelemetry.trace import SpanContext
 
     from ballsdex.core.bot import BallsDexBot
 
@@ -59,6 +61,9 @@ class SetMoneyModal(Modal, title="Set money offering"):
     def __init__(self, trading_user: TradingUser):
         super().__init__()
         self.trading_user = trading_user
+        # Mirror trade correlation attrs so the Modal span picks them up.
+        self.trade_id = trading_user.trade.trade_id
+        self.trade_origin_context = trading_user.trade.trade_origin_context
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         if not interaction.user.id == self.trading_user.user.id:
@@ -426,6 +431,11 @@ class TradeInstance(LayoutView):
         self.edit_lock = asyncio.Lock()
         self.next_edit_interaction: Interaction | None = None
         self.confirmation_phase_start: datetime | None = None
+
+        # APM correlation: every span emitted during this trade is tagged with this id,
+        # and carries a span link back to the /trade start trace (populated by the cog).
+        self.trade_id: str = uuid.uuid4().hex
+        self.trade_origin_context: "SpanContext | None" = None
 
         self.timeout_task = asyncio.create_task(self._timeout(), name=f"trade-timeout-{id(self)}")
 
