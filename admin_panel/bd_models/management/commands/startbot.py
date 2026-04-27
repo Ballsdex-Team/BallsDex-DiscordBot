@@ -199,7 +199,7 @@ def bot_exception_handler(bot: BallsDexBot, bot_task: asyncio.Future):
     """
     try:
         bot_task.result()
-    except (SystemExit, KeyboardInterrupt, asyncio.CancelledError):
+    except SystemExit, KeyboardInterrupt, asyncio.CancelledError:
         pass  # Handled by the global_exception_handler, or cancellation
     except Exception as exc:
         log.critical("The main bot task didn't handle an exception and has crashed", exc_info=exc)

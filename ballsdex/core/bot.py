@@ -288,7 +288,7 @@ class BallsDexBot(commands.AutoShardedBot):
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"{base_url}/health", timeout=ClientTimeout(total=10)) as resp:
                     return resp.status == 200
-        except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
+        except aiohttp.ClientConnectionError, asyncio.TimeoutError:
             return False
 
     async def setup_hook(self) -> None:
