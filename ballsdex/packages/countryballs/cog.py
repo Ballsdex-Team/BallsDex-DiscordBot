@@ -55,7 +55,7 @@ class CountryBallsSpawner(commands.Cog):
         if guild.id in self.bot.blacklist_guild:
             return
 
-        with tracing.span( "countryballs.spawn"):
+        with tracing.span("countryballs.spawn"):
             result = await self.spawn_manager.handle_message(message)
             tracing.set_tag("spawn.result", result)
 
