@@ -26,8 +26,17 @@ class Settings(models.Model):
     # base settings
     bot_token = models.CharField(help_text="Discord bot token", max_length=80, default="")
     prefix = models.CharField(help_text="Prefix for all text commands", max_length=10, default="b.")
-    collectible_name = models.TextField(help_text="The singular name of your collectible", default="countryball")
-    plural_collectible_name = models.TextField(help_text="The plural name of your collectible", default="countryballs")
+    collectible_name = models.TextField(
+        help_text="The singular name of your collectible",
+        default="countryball",
+        validators=(RegexValidator(SLASH_COMMAND_RE, message="Invalid slash command name."),),
+    )
+    plural_collectible_name = models.TextField(
+        help_text="The plural name of your collectible",
+        default="countryballs",
+        validators=(RegexValidator(SLASH_COMMAND_RE, message="Invalid slash command name."),),
+    )
+
     bot_name = models.TextField(help_text="The name of your bot", default="BallsDex")
     balls_slash_name = models.TextField(
         help_text='Overrides "/balls" slash command',
