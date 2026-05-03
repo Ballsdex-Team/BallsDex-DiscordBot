@@ -8,11 +8,19 @@
    <table>
      <thead><tr>
        <th class="column-player1">
+        {% if player1 %}
         <a href="{% url 'admin:bd_models_player_change' player1.id %}">
-        {{ player1 }}</a></th>
+        {{ player1 }}</a>
+        {% else %}
+        Player 1
+        {% endif %}</th>
        <th class="column-player2">
+        {% if player2 %}
         <a href="{% url 'admin:bd_models_player_change' player2.id %}">
-        {{ player2 }}</a></th>
+        {{ player2 }}</a>
+        {% else %}
+        Player 2
+        {% endif %}</th>
      </tr></thead>
 
      <tbody>
@@ -32,8 +40,8 @@
      {% endfor %}
      </tbody>
      <thead><tr>
-      <th>Total items: {{ player1_len }}</th>
-      <th>Total items: {{ player2_len }}</th>
+      <th>Total items: {% if player1_len is defined %}{{ player1_len }}{% else %}0{% endif %}</th>
+      <th>Total items: {% if player2_len is defined %}{{ player2_len }}{% else %}0{% endif %}</th>
     </tr></thead>
    </table>
 </fieldset>
