@@ -254,9 +254,7 @@ class Special(models.Model):
         blank=True, null=True, help_text="End time of the event. If blank, the event is permanent"
     )
     rarity = models.FloatField(help_text="Value between 0 and 1, chances of using this special background.")
-    emoji = models.CharField(
-        max_length=20, blank=True, null=True, help_text="Either a unicode character or a discord emoji ID"
-    )
+    emoji = models.CharField(max_length=20, blank=True, null=True, help_text="A unicode character")
     background = models.ImageField(max_length=200, blank=True, null=True, help_text="1428x2000 PNG image")
     tradeable = models.BooleanField(help_text="Whether balls of this event can be traded", default=True)
     hidden = models.BooleanField(help_text="Hides the event from user commands", default=False)

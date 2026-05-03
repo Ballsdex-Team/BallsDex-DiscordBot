@@ -12,6 +12,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from ballsdex.core.discord import LayoutView
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import Menu, ModelSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
@@ -20,6 +21,7 @@ from ballsdex.core.utils.transformers import (
     SpecialEnabledTransform,
     TradeCommandType,
 )
+from ballsdex.core.utils.utils import can_mention
 from bd_models.models import BallInstance, Player
 from bd_models.models import Trade as TradeModel
 from settings.models import settings
@@ -138,7 +140,9 @@ class Trade(commands.GroupCog):
         try:
             await trade.trader1.refresh_container()
             await trade.trader2.refresh_container()
-            trade.message = await interaction.channel.send(view=trade)  # type: ignore
+            trade.message = await interaction.channel.send(  # type: ignore
+                view=trade, allowed_mentions=await can_mention([player1, player2])
+            )
         except Exception:
             # unregister the trade if something failed to avoid the 30 min timeout
             del self.trades[interaction.channel.id][interaction.user.id]
@@ -149,7 +153,12 @@ class Trade(commands.GroupCog):
             await interaction.followup.send("The trade has started.", ephemeral=True)
 
     @app_commands.command(extras={"trade": TradeCommandType.PICK})
-    async def add(self, interaction: Interaction, countryball: BallInstanceTransform):
+    async def add(
+        self,
+        interaction: Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+    ):
         """
         Add a countryball to your trade proposal. You must have a trade open.
 
@@ -157,6 +166,8 @@ class Trade(commands.GroupCog):
         ----------
         countryball: BallInstance
             The countryball you are adding to your trade.
+        special: Special | None
+            The special you want to filter the countryball by.
         """
         result = await self.get_trade(interaction)
         if result is None:
@@ -174,7 +185,12 @@ class Trade(commands.GroupCog):
             )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
-    async def remove(self, interaction: Interaction, countryball: BallInstanceTransform):
+    async def remove(
+        self,
+        interaction: Interaction,
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+    ):
         """
         Remove a countryball from your trade proposal. You must have a trade open.
 
@@ -182,6 +198,8 @@ class Trade(commands.GroupCog):
         ----------
         countryball: BallInstance
             The countryball you are removing from your trade.
+        special: Special | None
+            The special you want to filter the countryball by.
         """
         result = await self.get_trade(interaction)
         if result is None:
@@ -356,3 +374,32 @@ class Trade(commands.GroupCog):
         view.add_item(selector)
         await selector.configure(self.bot, self, query)
         await interaction.followup.send(view=view, ephemeral=True)
+
+    @app_commands.command()
+    async def cancel(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Cancel your active trade.
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        result = await self.get_trade(interaction)
+        if result is None:
+            await interaction.followup.send("You do not have any active trade.")
+            return
+        trade, trader = result
+        if trade.trader1.confirmed and trade.trader2.confirmed:
+            await interaction.followup.send("You can't cancel now; the trade has already gone through.")
+            return
+        view = ConfirmChoiceView(
+            interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
+        )
+        await interaction.followup.send("Are you sure you want to cancel this trade?", view=view, ephemeral=True)
+        await view.wait()
+        if not view.value:
+            return
+
+        try:
+            await trader.cancel()
+        except TradeError as e:
+            await interaction.followup.send(e.error_message, ephemeral=True)
+        else:
+            await trade.edit_message(None)

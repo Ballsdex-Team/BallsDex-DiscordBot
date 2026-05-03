@@ -95,15 +95,24 @@ async def on_request_end(
 
     # to categorize HTTP calls per path, we need to access the corresponding discord.http.Route
     # object, which is not available in the context of an aiohttp TraceConfig, therefore it's
-    # obtained by accessing the locals() from the calling function HTTPConfig.request
-    # "params.url.path" is not usable as it contains raw IDs and tokens, breaking categories
+    # obtained by walking the call stack to find the frame containing the Route object.
+    # "params.url.path" is not usable as it contains raw IDs and tokens, breaking categories.
+    # We walk up to 15 frames to account for instrumentation layers (e.g. ddtrace) that may
+    # insert extra frames between aiohttp's trace callback and discord.py's HTTPClient.request.
+    route_key = None
     frame = inspect.currentframe()
-    _locals = frame.f_back.f_back.f_back.f_back.f_back.f_locals  # type: ignore
-    if route := _locals.get("route"):
-        route_key = route.key
-    else:
-        # calling function is HTTPConfig.static_login which has no Route object
-        route_key = f"{params.response.method} {params.url.path}"
+    try:
+        f = frame.f_back  # type: ignore
+        for _ in range(15):
+            if f is None:
+                break
+            route = f.f_locals.get("route")
+            if route is not None and hasattr(route, "key"):
+                route_key = route.key
+                break
+            f = f.f_back
+    finally:
+        del frame
 
     http_counter.labels(route_key, params.response.status).observe(time)
 
@@ -134,7 +143,12 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
                     pass
             return False  # wait for all shards to be connected
 
-        if impersonated := impersonations.get(interaction.user.id, None):
+        data = interaction.data or {}
+        subcmd = (data.get("options") or [{}])[0].get("name")
+        if data.get("name") == "admin" and subcmd == "impersonate":
+            # if the user is trying to stop impersonating, don't impersonate
+            pass
+        elif impersonated := impersonations.get(interaction.user.id, None):
             interaction.user = impersonated
             interaction._permissions = impersonated._permissions or 0
         return await bot.blacklist_check(interaction)
