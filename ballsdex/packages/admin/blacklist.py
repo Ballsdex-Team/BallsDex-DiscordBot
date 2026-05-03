@@ -88,6 +88,7 @@ async def blacklist_remove(ctx: commands.Context[BallsDexBot], user: discord.Use
 
 
 @blacklist.command(name="info")
+@checks.has_permissions("bd_models.view_blacklistedid")
 async def blacklist_info(ctx: commands.Context[BallsDexBot], user: discord.User):
     """
     Check if a user is blacklisted and show the corresponding reason.
@@ -279,7 +280,7 @@ async def blacklist_remove_guild(ctx: commands.Context[BallsDexBot], guild_id: s
 
 
 @blacklistguild.command(name="info")
-@checks.has_permissions("bd_models.view_blacklistedid")
+@checks.has_permissions("bd_models.view_blacklistedguild")
 async def blacklist_info_guild(ctx: commands.Context[BallsDexBot], guild_id: str):
     """
     Check if a guild is blacklisted and show the corresponding reason.
