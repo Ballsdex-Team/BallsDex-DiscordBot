@@ -30,9 +30,9 @@ class TradeListFormatter(Formatter[QuerySet[Trade], Select]):
             p2_items=Count("tradeobject", filter=Q(tradeobject__player=F("player2"))),
         ):
             self.item.add_option(
-                label=f"Trade #{trade.pk:0X} - {format_dt(trade.date, 's')}",
+                label=f"Trade #{trade.pk:0X} - {trade.date:%Y-%m-%d %H:%M}",
                 description=f"{trade.player1.discord_id} ({trade.p1_items} items) • "  # pyright: ignore[reportAttributeAccessIssue]
-                f"{trade.player1.discord_id} ({trade.p2_items} items)",  # pyright: ignore[reportAttributeAccessIssue]
+                f"{trade.player2.discord_id} ({trade.p2_items} items)",  # pyright: ignore[reportAttributeAccessIssue]
                 value=trade.pk,
             )
 
