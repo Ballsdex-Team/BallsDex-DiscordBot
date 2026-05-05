@@ -55,18 +55,19 @@ class CountryBallsSpawner(commands.Cog):
         if guild.id in self.bot.blacklist_guild:
             return
 
+        result = await self.spawn_manager.handle_message(message)
+
+        if isinstance(result, tuple):
+            result, algo = result
+        else:
+            algo = settings.spawn_manager
+
+        if result is False:
+            return
+
         with tracing.span("countryballs.spawn"):
-            result = await self.spawn_manager.handle_message(message)
             tracing.set_tag("spawn.result", result)
-
-            if isinstance(result, tuple):
-                result, algo = result
-            else:
-                algo = settings.spawn_manager
             tracing.set_tag("spawn.algo", algo)
-
-            if result is False:
-                return
 
             channel = guild.get_channel(self.cache[guild.id])
             if not channel:
