@@ -11,6 +11,7 @@ from discord.ext import commands
 from django.db.models import Q
 from django.utils import timezone
 
+from ballsdex.core import tracing
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import Menu, ModelSource
@@ -135,6 +136,10 @@ class Trade(commands.GroupCog):
 
         await interaction.response.defer(ephemeral=True)
         trade = TradeInstance.configure(self, (player1, interaction.user), (player2, user))
+        # APM: tag the command span with the trade id and capture its trace context so
+        # every subsequent button/modal interaction on this trade links back here.
+        tracing.set_tag("trade.id", trade.trade_id)
+        trade.trade_origin_context = tracing.current_trace_context()
         self.trades[interaction.channel.id][interaction.user.id] = trade
         self.trades[interaction.channel.id][user.id] = trade
         try:
