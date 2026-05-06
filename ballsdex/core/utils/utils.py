@@ -73,9 +73,9 @@ async def inventory_privacy(
         return True
 
     staff = await get_user_for_check(interaction.client, interaction.user)
-    if staff:
-        if staff is True:  # only possible when user is superuser
-            return True
+    if isinstance(staff, bool) and staff:  # only possible when user is superuser
+        return True
+    if staff and staff.is_staff:
         if settings.inv_privacy_bypass_ids and interaction.channel_id in settings.inv_privacy_bypass_ids:
             return True
 
