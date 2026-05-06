@@ -383,6 +383,9 @@ class BallInstance(models.Model):
             models.Index(fields=("player_id",)),
             models.Index(fields=("special_id",)),
             models.Index(fields=("deleted",)),
+            models.Index(fields=("server_id",)),
+            models.Index(fields=("catch_date",)),
+            models.Index(fields=("server_id", "catch_date")),
         )
 
     def short_description(self, *, is_trade: bool = False) -> str:

@@ -25,6 +25,7 @@ from rich import box, print
 from rich.console import Console
 from rich.table import Table
 
+from ballsdex.core import tracing
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.help import HelpCommand
@@ -119,6 +120,27 @@ async def on_request_end(
 
 class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
     disable_time_check: bool = False
+
+    async def _call(self, interaction: discord.Interaction[Bot]) -> None:
+        with tracing.span(
+            "discord.app_command",
+            tags={
+                "discord.interaction.type": interaction.type.name,
+                "discord.user.id": interaction.user.id,
+                "discord.guild.id": interaction.guild_id,
+                "discord.channel.id": interaction.channel_id,
+            },
+        ) as span:
+            try:
+                await super()._call(interaction)
+            finally:
+                # interaction.command is populated inside super()._call(), so we finalize
+                # the resource/tags here to cover both slash and context-menu commands.
+                if span is not None:
+                    command = interaction.command
+                    name = command.qualified_name if command else "unknown"
+                    span.set_attribute("resource.name", name)
+                    span.set_attribute("discord.command.name", name)
 
     async def interaction_check(self, interaction: discord.Interaction[Bot], /) -> bool:
         # checking if the moment we receive this interaction isn't too late already
@@ -231,11 +253,31 @@ class BallsDexBot(commands.AutoShardedBot):
         self.command_log: set[int] = set()
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
 
+        if tracing.enabled():
+            log.info("OpenTelemetry tracing is enabled.")
+
         self.owner_ids: set[int]
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(self, settings.prometheus_host, settings.prometheus_port)
         await self.prometheus_server.run()
+
+    async def invoke(self, ctx: commands.Context[Self], /) -> None:
+        command = ctx.command
+        if command:
+            with tracing.span(
+                "discord.prefix_command",
+                resource=command.qualified_name if command else "unknown",
+                tags={
+                    "discord.command.name": command.qualified_name if command else None,
+                    "discord.user.id": ctx.author.id,
+                    "discord.guild.id": ctx.guild.id if ctx.guild else None,
+                    "discord.channel.id": ctx.channel.id if ctx.channel else None,
+                },
+            ):
+                await super().invoke(ctx)
+        else:
+            await super().invoke(ctx)
 
     def get_emoji(self, id: int) -> discord.Emoji | None:
         return self.application_emojis.get(id) or super().get_emoji(id)
