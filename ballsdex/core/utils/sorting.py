@@ -50,9 +50,9 @@ def sort_balls[QS: QuerySet[BallInstance]](sort: SortingChoices, queryset: QS) -
         return queryset.order_by(sort.value, "ball__country")
     elif sort == SortingChoices.catch_time:
         return (
-            queryset.exclude(spawned_time=None)
+            queryset
             .annotate(catch_speed=ExpressionWrapper(F("catch_date") - F("spawned_time"), output_field=DurationField()))
-            .order_by("catch_speed")
+            .order_by(F("catch_speed").asc(nulls_last=True))
         )
     else:
         return queryset.order_by(sort.value)
