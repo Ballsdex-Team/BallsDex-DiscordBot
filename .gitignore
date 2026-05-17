@@ -24,6 +24,8 @@ venv
 *sqlite3*
 *.rdb
 pgbackups
+pre-migration-data-dump.sql
+final-data-dump.sql
 
 # static
 static
