@@ -22,6 +22,13 @@ class YAMLImportForm(AdminActionForm):
 
 @admin.register(PromptMessage)
 class PromptMessageAdmin(admin.ModelAdmin):
+    search_help_text = """{user} will mention the user.
+{collectible} is the collectible name.
+{collectibles} is the plural collectible name.
+{ball} is the spawned collectible's name
+{emoji} is the collectible's emoji.
+{wrong} is what the user put for a wrong message"""
+
     formfield_overrides = {models.TextField: {"widget": widgets.Textarea({"rows": 2, "cols": 60})}}
 
     list_display = ("category", "message", "rarity")
