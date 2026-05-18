@@ -172,7 +172,7 @@ class BallSpawnView(View):
         # prevent countryball from being traded while spawned
         await ball_instance.lock_for_trade()
 
-        view = cls(bot, ball_instance.ball)
+        view = cls(bot, ball_instance.countryball)
         view.ballinstance = ball_instance
         view.og_id = ball_instance.player.discord_id
         return view
@@ -403,7 +403,7 @@ class BallSpawnView(View):
         if ball.specialcard and ball.specialcard.catch_phrase:
             text += f"*{ball.specialcard.catch_phrase}*\n"
         if new_ball:
-            text += f"This is a **new {settings.collectible_name}** that has been added to your completion!"
+            text += f"This is a **new {settings.collectible_name}** that has been added to your completion!\n"
         if self.ballinstance:
             text += f"This {settings.collectible_name} was dropped by <@{self.og_id}>\n"
 
