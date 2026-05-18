@@ -20,19 +20,33 @@ class YAMLImportForm(AdminActionForm):
     file = forms.FileField(widget=forms.ClearableFileInput(attrs={"accept": ".yml,.yaml"}), allow_empty_file=False)
 
 
-class PromptInline(admin.TabularInline):
-    model = PromptMessage
+@admin.register(PromptMessage)
+class PromptMessageAdmin(admin.ModelAdmin):
     formfield_overrides = {models.TextField: {"widget": widgets.Textarea({"rows": 2, "cols": 60})}}
-    extra = 0
-    classes = ("collapse",)
-    ordering = ("category",)
+
+    list_display = ("category", "message", "rarity")
+    list_editable = ("category", "message", "rarity")
+
+    list_filter = ("category",)
+    exclude = ("settings", "id")
+
+    # otherwise, category is link
+    list_display_links = None
+
+    search_fields = ("message",)
+
+    list_per_page = 100
+
+    def save_model(self, request, obj, form, change):
+        if obj.settings_id is None:
+            obj.settings = Settings.objects.first()
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Settings)
 class SettingsAdmin(admin.ModelAdmin):
     save_on_top = True
     formfield_overrides = {models.TextField: {"widget": widgets.TextInput}}
-    inlines = (PromptInline,)
     fieldsets = [
         (None, {"fields": ("bot_token", "prefix")}),
         (
