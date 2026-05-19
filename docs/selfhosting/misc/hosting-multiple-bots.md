@@ -11,6 +11,9 @@ git clone https://github.com/laggron42/BallsDex-DiscordBot.git <botname>
 
 Then, run `cd <botname>` (replacing <botname> with whatever you chose). Like with one bot, every time you need to type commands for a dex, you must always open the bot's directory first.
 
+!!! warning
+    You must not change your bot's folders name after installation. Doing so will result in your dex being unable to find your config and data.
+
 ## 2. Change the port
 If you do not change the port for the new bot, they will collide and the new bot won't be able to run.
 
