@@ -40,7 +40,6 @@ def boolean_input(question: str, default: bool | None = None) -> bool:
             return False
         else:
             result = None
-            continue
 
     # Shouldn't be possible to get here but this appeases pyright
     return False

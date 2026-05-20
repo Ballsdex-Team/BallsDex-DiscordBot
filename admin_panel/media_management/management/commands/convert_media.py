@@ -13,11 +13,11 @@ CONVERTABLE_FORMATS = [".jpeg", ".png", ".jpg", ".bmp", ".gif", ".webp", ".avif"
 
 
 class Command(BaseCommand):
-    help = "Remove unused files"
+    help = "Convert media files to webp for smaller size"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--media-path", help=f"The path to the media folder.If not provided, {DEFAULT_MEDIA_PATH} is used."
+            "--media-path", help=f"The path to the media folder. If not provided, {DEFAULT_MEDIA_PATH} is used."
         )
         parser.add_argument(
             "--target-format",
@@ -74,6 +74,7 @@ class Command(BaseCommand):
                         (f"Skipping converting {file.name} since it does not appear to be an image format")
                     )
                 )
+                continue
 
             target = file.with_suffix(target_format)
 
@@ -114,7 +115,6 @@ class Command(BaseCommand):
                 raise CommandError(f"ffmpeg exited with non-0 exit code {result.returncode}!")
             finally:
                 self.stdout.write(f"ffmpeg did not complete successfully: error: {result.stderr}")
-                self.stdout.write(self.style.ERROR("Cleaned up temp dir"))
 
         self.stdout.write(self.style.SUCCESS("Files converted!"))
         shutil.copytree(tmp_dir, media_path, dirs_exist_ok=True)
