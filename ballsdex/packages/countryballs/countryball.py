@@ -383,6 +383,7 @@ class BallSpawnView(View):
                 # observe the size of the server, rounded to the nearest power of 10
                 guild_size=10 ** math.ceil(math.log(max(user.guild.member_count - 1, 1), 10)),
                 spawn_algo=self.algo,
+                shard_id=user.guild.shard_id,
             ).inc()
 
         return ball, is_new
