@@ -242,7 +242,7 @@ class Settings(models.Model):
                 collectibles=self.plural_collectible_name,
                 **kwargs,
             )
-        except ValueError, IndexError, KeyError:
+        except (ValueError, IndexError, KeyError):
             return message
 
     @property
