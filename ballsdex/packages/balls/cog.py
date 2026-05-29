@@ -873,6 +873,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
     async def collection(
         self,
         interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User | None = None,
         countryball: BallEnabledTransform | None = None,
         ephemeral: bool = False,
     ):
@@ -881,13 +882,49 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         Parameters
         ----------
+        user: discord.User
+            The user whose collection you want to view, if not yours.
         countryball: Ball
             The countryball you want to see the collection of
         ephemeral: bool
             Whether or not to send the command ephemerally.
         """
         await interaction.response.defer(thinking=True, ephemeral=ephemeral)
-        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        user_obj = user or interaction.user
+        staff = await is_staff(interaction)
+
+        try:
+            if user is None:
+                player, _ = await Player.objects.aget_or_create(discord_id=user_obj.id)
+            else:
+                player = await Player.objects.aget(discord_id=user_obj.id)
+        except Player.DoesNotExist:
+            if countryball:
+                await interaction.followup.send(
+                    f"{user_obj.display_name} doesn't have any {countryball.country} "
+                    f"{settings.plural_collectible_name} yet."
+                )
+            else:
+                await interaction.followup.send(
+                    f"{user_obj.display_name} doesn't have any {settings.plural_collectible_name} yet."
+                )
+            return
+
+        if user is not None:
+            if user.id in self.bot.blacklist and not staff:
+                await interaction.followup.send("You cannot view the collection of a blacklisted user.", ephemeral=True)
+                return
+
+            interaction_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+            blocked = await player.is_blocked(interaction_player)
+            if blocked and not staff:
+                await interaction.followup.send(
+                    "You cannot view the collection of a user that has blocked you.", ephemeral=True
+                )
+                return
+
+            if await inventory_privacy(self.bot, interaction, player, user_obj) is False:
+                return
 
         query = (
             BallInstance.objects.filter(player=player)
@@ -918,11 +955,22 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             counts = await query.aget()
         except BallInstance.DoesNotExist:
             if countryball:
-                await interaction.followup.send(
-                    f"You don't have any {countryball.country} {settings.plural_collectible_name} yet."
-                )
+                if user_obj == interaction.user:
+                    await interaction.followup.send(
+                        f"You don't have any {countryball.country} {settings.plural_collectible_name} yet."
+                    )
+                else:
+                    await interaction.followup.send(
+                        f"{user_obj.display_name} doesn't have any {countryball.country} "
+                        f"{settings.plural_collectible_name} yet."
+                    )
             else:
-                await interaction.followup.send(f"You don't have any {settings.plural_collectible_name} yet.")
+                if user_obj == interaction.user:
+                    await interaction.followup.send(f"You don't have any {settings.plural_collectible_name} yet.")
+                else:
+                    await interaction.followup.send(
+                        f"{user_obj.display_name} doesn't have any {settings.plural_collectible_name} yet."
+                    )
             return
         all_specials = Special.objects.filter(hidden=False)
         special_emojis = {x.name: x.emoji async for x in all_specials}
@@ -943,7 +991,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             description=desc,
             color=discord.Color.blurple(),
         )
-        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
+        embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
         if countryball:
             file_location = countryball.wild_card.path
             file = discord.File(file_location, filename="countryball.png")
