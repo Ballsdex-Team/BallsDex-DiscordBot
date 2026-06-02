@@ -45,4 +45,5 @@ admin_panel/admin_panel/settings/production.py
 extra/*
 !extra/.gitkeep
 !extra/balls_extension
+!extra/collectible
 .gitmodules
