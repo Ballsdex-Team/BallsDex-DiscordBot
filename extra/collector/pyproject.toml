@@ -1,0 +1,5 @@
+[project]
+name = "collector"
+version = "1.0.0"
+
+dependencies = []

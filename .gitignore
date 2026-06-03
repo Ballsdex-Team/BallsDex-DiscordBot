@@ -47,4 +47,5 @@ extra/*
 !extra/balls_extension
 !extra/collectible
 !extra/pack
+!extra/collector
 .gitmodules
