@@ -8,6 +8,7 @@ import discord
 from discord import ButtonStyle, SeparatorSpacing
 from discord.ui import ActionRow, Button, Container, Label, Section, Select, Separator, TextDisplay, Thumbnail, button
 
+from ballsdex.core.bot import impersonations
 from ballsdex.core.discord import Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from bd_models.models import (
@@ -248,7 +249,14 @@ class RelationContainer(Container):
 
             async def button_callback(interaction: Interaction):
                 # should be handled by the view's interaction_check, but just in case
-                assert interaction.user.id == player.discord_id
+                impersonated = impersonations.get(interaction.user.id)
+                if interaction.user.id != player.discord_id and (
+                    impersonated is None or impersonated.id != player.discord_id
+                ):
+                    await interaction.response.send_message(
+                        "You are not allowed to interact with this!", ephemeral=True
+                    )
+                    return
 
                 await interaction.response.defer(ephemeral=True)
                 view = ConfirmChoiceView(interaction)
