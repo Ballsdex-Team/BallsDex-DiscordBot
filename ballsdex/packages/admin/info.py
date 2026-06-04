@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils.timezone import get_current_timezone
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.utils import checks
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from bd_models.models import BallInstance, GuildConfig, Player
 from settings.models import settings
@@ -34,6 +35,7 @@ class PlayerInfoView(discord.ui.View):
 
 
 @commands.hybrid_group()
+@checks.has_permissions("bd_models.view_guildconfig", "bd_models.view_player")
 async def info(ctx: commands.Context[BallsDexBot]):
     """
     Information commands
@@ -42,6 +44,7 @@ async def info(ctx: commands.Context[BallsDexBot]):
 
 
 @info.command()
+@checks.has_permissions("bd_models.view_guildconfig")
 async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7):
     """
     Show information about the server provided
@@ -107,6 +110,7 @@ async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7
 
 
 @info.command()
+@checks.has_permissions("bd_models.view_player", "bd_models.view_ballinstance")
 async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int = 7):
     """
     Show information about the user provided

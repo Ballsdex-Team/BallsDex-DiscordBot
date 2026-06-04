@@ -56,11 +56,15 @@ class Core(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def reloadtree(self, ctx: commands.Context):
+    async def reloadtree(self, ctx: commands.Context, guild_id: int | None = None):
         """
         Sync the application commands with Discord
         """
-        await self.bot.tree.sync()
+        if guild_id is None:
+            await self.bot.tree.sync()
+        else:
+            guild = discord.Object(id=guild_id)
+            await self.bot.tree.sync(guild=guild)
         await ctx.send("Application commands tree reloaded.")
 
     async def reload_package(self, package: str, *, with_prefix=False):
@@ -131,6 +135,35 @@ class Core(commands.Cog):
 
         delta = await wrapper()
         await ctx.send(f"Analyzed database in {round(delta * 1000)}ms.")
+
+    @commands.command()
+    @commands.is_owner()
+    async def checkmedia(self, ctx: commands.Context):
+        """
+        Check collectible media filesizes and emoji ids
+        """
+
+        lines = []
+        lines.append("# Missing emojis:")
+        balls = [ball async for ball in Ball.objects.all()]
+
+        for ball in balls:
+            if self.bot.get_emoji(ball.emoji_id):
+                continue
+
+            lines.append(f" - Ball `{ball.country}` has a broken emoji")
+
+        lines.append("# Broken media:")
+        for ball in balls:
+            if not ball.wild_card.storage.exists(ball.wild_card.name):
+                lines.append(f" - Spawn image for `{ball.country}` is missing")
+            if not ball.collection_card.storage.exists(ball.collection_card.name):
+                lines.append(f" - Collection card for `{ball.country}` is missing")
+            if ball.wild_card.size > 8 * (10**6):
+                lines.append(f" - Spawn image for `{ball.country}` is {ball.wild_card.size // 10**6}MB")
+
+        pages = pagify("\n".join(lines), delims=["###", "\n\n", "\n"], priority=True)
+        await send_interactive(ctx, pages, block=None)
 
     @commands.command()
     @commands.is_owner()

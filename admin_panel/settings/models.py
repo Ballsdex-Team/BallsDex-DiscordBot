@@ -14,6 +14,10 @@ from django.dispatch import receiver
 from django.forms import ValidationError
 from django.utils.functional import cached_property
 
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
+    from bd_models.models import Ball
+
 COLON_IDS_RE = re.compile(r"^(\d{17,21}(;\d{17,21})*)?$")
 SLASH_COMMAND_RE = re.compile(r"^[-_'\S]{1,32}$")
 DISCORD_INVITE_RE = re.compile(r"^https?://(discord.gg|discord(app)?.com/invite)/[a-zA-Z0-9]+$")
@@ -26,8 +30,17 @@ class Settings(models.Model):
     # base settings
     bot_token = models.CharField(help_text="Discord bot token", max_length=80, default="")
     prefix = models.CharField(help_text="Prefix for all text commands", max_length=10, default="b.")
-    collectible_name = models.TextField(help_text="The singular name of your collectible", default="countryball")
-    plural_collectible_name = models.TextField(help_text="The plural name of your collectible", default="countryballs")
+    collectible_name = models.TextField(
+        help_text="The singular name of your collectible",
+        default="countryball",
+        validators=(RegexValidator(SLASH_COMMAND_RE, message="Invalid slash command name."),),
+    )
+    plural_collectible_name = models.TextField(
+        help_text="The plural name of your collectible",
+        default="countryballs",
+        validators=(RegexValidator(SLASH_COMMAND_RE, message="Invalid slash command name."),),
+    )
+
     bot_name = models.TextField(help_text="The name of your bot", default="BallsDex")
     balls_slash_name = models.TextField(
         help_text='Overrides "/balls" slash command',
@@ -119,12 +132,17 @@ class Settings(models.Model):
 
     # admin command control
     admin_channel_ids = models.TextField(
-        help_text="Semicolon-delimited list of channel IDs where admin commands can be used. Ignored for owners. "
+        help_text="Semicolon-delimited channel IDs where staff may bypass inventory privacy. Ignored for owners."
         "If empty, then admin commands can be used everywhere.",
         validators=(RegexValidator(COLON_IDS_RE, message="The IDs must be semicolon-separated"),),
         blank=True,
         default="",
     )
+
+    @cached_property
+    def inv_privacy_bypass_ids(self) -> list[int]:
+        return [] if self.admin_channel_ids is None else [int(x) for x in self.admin_channel_ids.split(";") if x]
+
     webhook_logging = models.URLField(
         help_text="An optional Discord Webhook where admin events will be logged.",
         validators=(RegexValidator(DISCORD_WEBHOOK_RE, message="Only Discord webhooks are supported."),),
@@ -211,6 +229,22 @@ class Settings(models.Model):
                     population=list(self.slow_messages.keys()), weights=list(self.slow_messages.values()), k=1
                 )[0]
 
+    def get_formatted_message(
+        self, category: PromptMessage.PromptType, model: Ball, mention: str, bot: BallsDexBot, **kwargs: str
+    ):
+        message = self.get_random_message(category)
+        try:
+            return message.format(
+                user=mention,
+                ball=model.country,
+                emoji=str(bot.get_emoji(model.emoji_id)),
+                collectible=self.collectible_name,
+                collectibles=self.plural_collectible_name,
+                **{k: str(v) for k, v in kwargs.items()},
+            )
+        except (ValueError, IndexError, KeyError):
+            return message
+
     @property
     @warnings.deprecated("This setting returns nothing, Webhook notifications must be used instead")
     def log_channel(self):
@@ -259,7 +293,7 @@ class PromptMessage(models.Model):
         )
 
     def __str__(self) -> str:
-        return ""
+        return self.message
 
 
 @receiver(post_init, sender=Settings)

@@ -12,11 +12,12 @@ If the changes resolve an issue, please include "Resolves #XX" where "XX" is the
 
 <!--
 Answer yes or no if you tested your changes locally.
+To answer, add an "x" in between the square brackets [x] for the option you want to choose. 
 
 If your change is only grammatical and doesn't change any logic, choose "Yes".
 -->
-Yes
-No
+- [ ] Yes
+- [ ] No
 
 <!--
 If the change you introduced is big enough, make a list of checkboxes with all different

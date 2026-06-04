@@ -46,12 +46,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         if self.view.caught:
-            slow_message = settings.get_random_message(PromptMessage.PromptType.SLOW).format(
-                user=interaction.user.mention,
-                collectible=settings.collectible_name,
-                ball=self.view.name,
-                collectibles=settings.plural_collectible_name,
-                emoji=interaction.client.get_emoji(self.view.model.emoji_id),
+            slow_message = settings.get_formatted_message(
+                category=PromptMessage.PromptType.SLOW,
+                mention=interaction.user.mention,
+                model=self.view.model,
+                bot=interaction.client,
             )
 
             await interaction.followup.send(slow_message, ephemeral=True, allowed_mentions=await can_mention([player]))
@@ -63,13 +62,12 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             else:
                 wrong_name = self.name.value
 
-            wrong_message = settings.get_random_message(PromptMessage.PromptType.WRONG).format(
-                user=interaction.user.mention,
-                collectible=settings.collectible_name,
-                ball=self.view.name,
-                collectibles=settings.plural_collectible_name,
+            wrong_message = settings.get_formatted_message(
+                category=PromptMessage.PromptType.WRONG,
+                mention=interaction.user.mention,
+                model=self.view.model,
+                bot=interaction.client,
                 wrong=wrong_name,
-                emoji=interaction.client.get_emoji(self.view.model.emoji_id),
             )
             await interaction.followup.send(
                 wrong_message, allowed_mentions=await can_mention([player]), ephemeral=False
@@ -146,12 +144,11 @@ class BallSpawnView(View):
     @button(style=discord.ButtonStyle.primary, label="Catch me!")
     async def catch_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
         if self.caught:
-            slow_message = settings.get_random_message(PromptMessage.PromptType.SLOW).format(
-                user=interaction.user.mention,
-                collectible=settings.collectible_name,
-                ball=self.name,
-                collectibles=settings.plural_collectible_name,
-                emoji=interaction.client.get_emoji(self.model.emoji_id),
+            slow_message = settings.get_formatted_message(
+                category=PromptMessage.PromptType.SLOW,
+                mention=interaction.user.mention,
+                model=self.model,
+                bot=interaction.client,
             )
             await interaction.response.send_message(slow_message, ephemeral=True)
         else:
@@ -193,7 +190,8 @@ class BallSpawnView(View):
     def name(self):
         return self.model.country
 
-    def get_random_special(self) -> Special | None:
+    @staticmethod
+    def get_random_special() -> Special | None:
         population = [
             x
             for x in specials.values()
@@ -243,11 +241,8 @@ class BallSpawnView(View):
         try:
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
-                spawn_message = settings.get_random_message(PromptMessage.PromptType.SPAWN).format(
-                    collectible=settings.collectible_name,
-                    ball=self.name,
-                    collectibles=settings.plural_collectible_name,
-                    emoji=self.bot.get_emoji(self.model.emoji_id),
+                spawn_message = settings.get_formatted_message(
+                    category=PromptMessage.PromptType.SPAWN, mention="", model=self.model, bot=self.bot
                 )
 
                 self.message = await channel.send(
@@ -382,6 +377,7 @@ class BallSpawnView(View):
                 # observe the size of the server, rounded to the nearest power of 10
                 guild_size=10 ** math.ceil(math.log(max(user.guild.member_count - 1, 1), 10)),
                 spawn_algo=self.algo,
+                shard_id=user.guild.shard_id,
             ).inc()
 
         return ball, is_new
@@ -407,12 +403,8 @@ class BallSpawnView(View):
             text += f"This {settings.collectible_name} was dropped by <@{self.og_id}>\n"
 
         caught_message = (
-            settings.get_random_message(PromptMessage.PromptType.CATCH).format(
-                user=mention,
-                collectible=settings.collectible_name,
-                ball=self.name,
-                collectibles=settings.plural_collectible_name,
-                emoji=self.bot.get_emoji(self.model.emoji_id),
+            settings.get_formatted_message(
+                category=PromptMessage.PromptType.CATCH, mention=mention, model=self.model, bot=self.bot
             )
             + " "
         )

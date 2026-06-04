@@ -27,6 +27,7 @@ class SortingChoices(enum.Enum):
     attack_bonus = "-attack_bonus"
     stats_bonus = "stats"
     total_stats = "total_stats"
+    catch_time = "catch_time"
 
     # manual sorts are not sorted by SQL queries but by our code
     # this may be do-able with SQL still, but I don't have much experience ngl

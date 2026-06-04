@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import uuid
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
@@ -21,6 +22,7 @@ from django.utils import timezone
 from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView, Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
+from bd_models.enums import TradeCooldownPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 from settings.models import settings
 from settings.utils import format_currency
@@ -39,6 +41,7 @@ from .errors import (
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
+    from opentelemetry.trace import SpanContext
 
     from ballsdex.core.bot import BallsDexBot
 
@@ -49,6 +52,7 @@ type Interaction = discord.Interaction[BallsDexBot]
 log = logging.getLogger(__name__)
 
 TRADE_TIMEOUT = 60 * 30
+COOLDOWN_BYPASS_TIMEOUT = 10
 
 
 class SetMoneyModal(Modal, title="Set money offering"):
@@ -57,6 +61,9 @@ class SetMoneyModal(Modal, title="Set money offering"):
     def __init__(self, trading_user: TradingUser):
         super().__init__()
         self.trading_user = trading_user
+        # Mirror trade correlation attrs so the Modal span picks them up.
+        self.trade_id = trading_user.trade.trade_id
+        self.trade_origin_context = trading_user.trade.trade_origin_context
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         if not interaction.user.id == self.trading_user.user.id:
@@ -423,6 +430,12 @@ class TradeInstance(LayoutView):
         self.confirmation_lock = asyncio.Lock()
         self.edit_lock = asyncio.Lock()
         self.next_edit_interaction: Interaction | None = None
+        self.confirmation_phase_start: datetime | None = None
+
+        # APM correlation: every span emitted during this trade is tagged with this id,
+        # and carries a span link back to the /trade start trace (populated by the cog).
+        self.trade_id: str = uuid.uuid4().hex
+        self.trade_origin_context: "SpanContext | None" = None
 
         self.timeout_task = asyncio.create_task(self._timeout(), name=f"trade-timeout-{id(self)}")
 
@@ -465,6 +478,8 @@ class TradeInstance(LayoutView):
         except TradeError as e:
             await interaction.followup.send(e.error_message, ephemeral=True)
         else:
+            if self.confirmation_phase and self.confirmation_phase_start is None:
+                self.confirmation_phase_start = datetime.now()
             await self.edit_message(interaction)
 
     @buttons.button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
@@ -517,6 +532,18 @@ class TradeInstance(LayoutView):
     )
     async def confirm_button(self, interaction: Interaction, button: Button):
         trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
+        both_bypass = (
+            self.trader1.player.trade_cooldown_policy == TradeCooldownPolicy.BYPASS
+            and self.trader2.player.trade_cooldown_policy == TradeCooldownPolicy.BYPASS
+        )
+        if not both_bypass and self.confirmation_phase_start is not None:
+            elapsed = (datetime.now() - self.confirmation_phase_start).total_seconds()
+            remaining = COOLDOWN_BYPASS_TIMEOUT - elapsed
+            if remaining > 0:
+                await interaction.response.send_message(
+                    f"Please wait {remaining:.0f} more second(s) before confirming.", ephemeral=True
+                )
+                return
         await interaction.response.defer()
         try:
             await trader.confirm()

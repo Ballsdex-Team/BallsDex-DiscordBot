@@ -13,7 +13,9 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.core.metrics")
 
-caught_balls = Counter("caught_cb", "Caught countryballs", ["country", "special", "guild_size", "spawn_algo"])
+caught_balls = Counter(
+    "caught_cb", "Caught countryballs", ["country", "special", "guild_size", "spawn_algo", "shard_id"]
+)
 
 
 class PrometheusServer:

@@ -113,9 +113,9 @@ async def history_user(ctx: commands.Context["BallsDexBot"], user: discord.User,
         queryset = queryset.filter(Q(player1__discord_id=user.id) | Q(player2__discord_id=user.id))
 
     if flags.countryball:
-        queryset = queryset.filter(Q(tradeobjects__ballinstance__ball=flags.countryball)).distinct()
+        queryset = queryset.filter(Q(tradeobject__ballinstance__ball=flags.countryball)).distinct()
     if flags.special:
-        queryset = queryset.filter(Q(tradeobjects__ballinstance__special=flags.special)).distinct()
+        queryset = queryset.filter(Q(tradeobject__ballinstance__special=flags.special)).distinct()
 
     await _build_history_view(ctx, queryset, title, f"/bd_models/trade/{query_params}")
 

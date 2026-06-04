@@ -25,6 +25,7 @@ from rich import box, print
 from rich.console import Console
 from rich.table import Table
 
+from ballsdex.core import tracing
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.help import HelpCommand
@@ -49,7 +50,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
-impersonations: dict[int, discord.Member] = {}
 
 DEFAULT_PACKAGES = (
     ("admin", "ballsdex.packages.admin"),
@@ -95,21 +95,51 @@ async def on_request_end(
 
     # to categorize HTTP calls per path, we need to access the corresponding discord.http.Route
     # object, which is not available in the context of an aiohttp TraceConfig, therefore it's
-    # obtained by accessing the locals() from the calling function HTTPConfig.request
-    # "params.url.path" is not usable as it contains raw IDs and tokens, breaking categories
+    # obtained by walking the call stack to find the frame containing the Route object.
+    # "params.url.path" is not usable as it contains raw IDs and tokens, breaking categories.
+    # We walk up to 15 frames to account for instrumentation layers (e.g. ddtrace) that may
+    # insert extra frames between aiohttp's trace callback and discord.py's HTTPClient.request.
+    route_key = None
     frame = inspect.currentframe()
-    _locals = frame.f_back.f_back.f_back.f_back.f_back.f_locals  # type: ignore
-    if route := _locals.get("route"):
-        route_key = route.key
-    else:
-        # calling function is HTTPConfig.static_login which has no Route object
-        route_key = f"{params.response.method} {params.url.path}"
+    try:
+        f = frame.f_back  # type: ignore
+        for _ in range(15):
+            if f is None:
+                break
+            route = f.f_locals.get("route")
+            if route is not None and hasattr(route, "key"):
+                route_key = route.key
+                break
+            f = f.f_back
+    finally:
+        del frame
 
     http_counter.labels(route_key, params.response.status).observe(time)
 
 
 class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
     disable_time_check: bool = False
+
+    async def _call(self, interaction: discord.Interaction[Bot]) -> None:
+        with tracing.span(
+            "discord.app_command",
+            tags={
+                "discord.interaction.type": interaction.type.name,
+                "discord.user.id": interaction.user.id,
+                "discord.guild.id": interaction.guild_id,
+                "discord.channel.id": interaction.channel_id,
+            },
+        ) as span:
+            try:
+                await super()._call(interaction)
+            finally:
+                # interaction.command is populated inside super()._call(), so we finalize
+                # the resource/tags here to cover both slash and context-menu commands.
+                if span is not None:
+                    command = interaction.command
+                    name = command.qualified_name if command else "unknown"
+                    span.set_attribute("resource.name", name)
+                    span.set_attribute("discord.command.name", name)
 
     async def interaction_check(self, interaction: discord.Interaction[Bot], /) -> bool:
         # checking if the moment we receive this interaction isn't too late already
@@ -134,7 +164,12 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
                     pass
             return False  # wait for all shards to be connected
 
-        if impersonated := impersonations.get(interaction.user.id, None):
+        data = interaction.data or {}
+        subcmd = (data.get("options") or [{}])[0].get("name")
+        if data.get("name") == "admin" and subcmd == "impersonate":
+            # if the user is trying to stop impersonating, don't impersonate
+            pass
+        elif impersonated := bot.impersonations.get(interaction.user.id, None):
             interaction.user = impersonated
             interaction._permissions = impersonated._permissions or 0
         return await bot.blacklist_check(interaction)
@@ -216,12 +251,33 @@ class BallsDexBot(commands.AutoShardedBot):
         self.catch_log: set[int] = set()
         self.command_log: set[int] = set()
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
+        self.impersonations: dict[int, discord.Member] = {}
+
+        if tracing.enabled():
+            log.info("OpenTelemetry tracing is enabled.")
 
         self.owner_ids: set[int]
 
     async def start_prometheus_server(self):
         self.prometheus_server = PrometheusServer(self, settings.prometheus_host, settings.prometheus_port)
         await self.prometheus_server.run()
+
+    async def invoke(self, ctx: commands.Context[Self], /) -> None:
+        command = ctx.command
+        if command:
+            with tracing.span(
+                "discord.prefix_command",
+                resource=command.qualified_name if command else "unknown",
+                tags={
+                    "discord.command.name": command.qualified_name if command else None,
+                    "discord.user.id": ctx.author.id,
+                    "discord.guild.id": ctx.guild.id if ctx.guild else None,
+                    "discord.channel.id": ctx.channel.id if ctx.channel else None,
+                },
+            ):
+                await super().invoke(ctx)
+        else:
+            await super().invoke(ctx)
 
     def get_emoji(self, id: int) -> discord.Emoji | None:
         return self.application_emojis.get(id) or super().get_emoji(id)
