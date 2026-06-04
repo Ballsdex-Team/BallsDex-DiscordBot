@@ -41,6 +41,8 @@ def _trade_span_links(holder: object) -> list | None:
 
 
 class BaseView(DiscordBaseView):
+    original_message: discord.Message | None = None
+
     def restrict_author(self, discord_id: int):
         self.discord_id = discord_id
 
@@ -75,6 +77,17 @@ class BaseView(DiscordBaseView):
             links=_trade_span_links(self),
         ):
             await super()._scheduled_task(item, interaction)
+
+    async def on_timeout(self):
+        if not self.original_message:
+            return
+        for item in self.walk_children():
+            if hasattr(item, "disabled"):
+                item.disabled = True  # type: ignore
+        try:
+            await self.original_message.edit(view=self)  # pyright: ignore[reportCallIssue, reportArgumentType]
+        except discord.NotFound:
+            pass
 
 
 class View(discord.ui.View, BaseView):
