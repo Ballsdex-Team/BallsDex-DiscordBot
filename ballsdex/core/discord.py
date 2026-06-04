@@ -1,7 +1,7 @@
 # pyright: reportIncompatibleMethodOverride=false
 
 import logging
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, cast
 
 import discord
 from discord.ui import Item
@@ -63,9 +63,16 @@ class BaseView(DiscordBaseView):
         return await super().interaction_check(interaction)
 
     async def _scheduled_task(self, item: Item[Self], interaction: Interaction):
+        try:
+            callback = item.callback.__name__
+        except AttributeError:
+            try:
+                callback = cast("discord.ui.item._ItemCallback", item.callback).callback.__name__
+            except AttributeError:
+                callback = type(item).__name__
         with tracing.span(
             "discord.component",
-            resource=f"{type(self).__name__}.{getattr(item, 'custom_id', type(item).__name__)}",
+            resource=f"{type(self).__name__}.{callback}",
             tags={
                 "discord.view.class": type(self).__name__,
                 "discord.item.type": type(item).__name__,
