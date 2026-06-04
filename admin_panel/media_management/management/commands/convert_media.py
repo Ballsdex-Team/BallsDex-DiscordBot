@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
@@ -95,32 +96,24 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("Conversion cancelled."))
             return
 
-        tmp_dir = Path("/tmp/bd-convert-dest")
-        try:
-            shutil.rmtree(tmp_dir)
-            self.stdout.write(self.style.WARNING("Temp dir already exists. Deleting."))
-        except FileNotFoundError:
-            pass
+        with tempfile.TemporaryDirectory(prefix="bd-convert-") as tmp_dir_path:
+            tmp_dir = Path(tmp_dir_path)
 
-        tmp_dir.mkdir()
+            command = self._get_ffmpeg_command(
+                {src: (tmp_dir / target.name).absolute() for src, target in to_convert.items()}
+            )
 
-        command = self._get_ffmpeg_command(
-            {src: (tmp_dir / target.name).absolute() for src, target in to_convert.items()}
-        )
+            result = subprocess.run(command, capture_output=True, text=True)
 
-        result = subprocess.run(command, capture_output=True, text=True)
+            if result.returncode != 0:
+                try:
+                    raise CommandError(f"ffmpeg exited with non-0 exit code {result.returncode}!")
+                finally:
+                    self.stdout.write(f"ffmpeg did not complete successfully: error: {result.stderr}")
 
-        if result.returncode != 0:
-            try:
-                raise CommandError(f"ffmpeg exited with non-0 exit code {result.returncode}!")
-            finally:
-                self.stdout.write(f"ffmpeg did not complete successfully: error: {result.stderr}")
-
-        self.stdout.write(self.style.SUCCESS("Files converted!"))
-        shutil.copytree(tmp_dir, media_path, dirs_exist_ok=True)
-        self.stdout.write(self.style.SUCCESS("Moved files to media dir!"))
-        shutil.rmtree(tmp_dir)
-        self.stdout.write(self.style.SUCCESS("Cleaned up temp dir!"))
+            self.stdout.write(self.style.SUCCESS("Files converted!"))
+            shutil.copytree(tmp_dir, media_path, dirs_exist_ok=True)
+            self.stdout.write(self.style.SUCCESS("Moved files to media dir!"))
 
         for model_instance, model_image, media_attr in medias:
             model_image_path = model_image.absolute()
@@ -134,3 +127,4 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Database updated!"))
         self.stdout.write("You may want to run remove_unused_files to remove the old copies.")
+        self.stdout.write("Remember to reloadcache to apply!")
