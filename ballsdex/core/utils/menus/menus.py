@@ -231,6 +231,8 @@ class Menu[P]:
         if container:
             container._update_view(self.view)
             self.controls._parent = container
+        else:
+            self.controls._update_view(self.view)
 
     async def set_page(self, page: int):
         self.current_page = page

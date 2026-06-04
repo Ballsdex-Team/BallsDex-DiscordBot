@@ -15,17 +15,6 @@ if TYPE_CHECKING:
 
 
 class CountryballsViewer(LayoutView):
-    def __init__(self, *, timeout: float | None = 180) -> None:
-        super().__init__(timeout=timeout)
-        self.original_message: discord.InteractionMessage | None = None
-        self.author_id: int | None = None
-
-    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
-        if self.author_id and interaction.user.id != self.author_id:
-            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
-            return False
-        return True
-
     header = TextDisplay("")
     select_row = ActionRow()
 
@@ -47,29 +36,11 @@ class CountryballsViewer(LayoutView):
                 item.disabled = True  # type: ignore
         await interaction.response.edit_message(view=self)
 
-    async def on_timeout(self):
-        for item in self.walk_children():
-            if hasattr(item, "disabled"):
-                item.disabled = True  # type: ignore
-        if self.original_message:
-            try:
-                await self.original_message.edit(view=self)
-            except discord.NotFound:
-                pass
-
 
 class CountryballsDuplicateSource(LayoutView):
     def __init__(self, is_special: bool, *, timeout: float | None = 180) -> None:
         super().__init__(timeout=timeout)
         self.is_special = is_special
-        self.original_message: discord.InteractionMessage | None = None
-        self.author_id: int | None = None
-
-    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
-        if self.author_id and interaction.user.id != self.author_id:
-            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
-            return False
-        return True
 
     header = TextDisplay("")
     select_row = ActionRow()
@@ -158,13 +129,3 @@ class CountryballsDuplicateSource(LayoutView):
             if hasattr(item, "disabled"):
                 item.disabled = True  # type: ignore
         await interaction.response.edit_message(view=self)
-
-    async def on_timeout(self):
-        for item in self.walk_children():
-            if hasattr(item, "disabled"):
-                item.disabled = True  # type: ignore
-        if self.original_message:
-            try:
-                await self.original_message.edit(view=self)
-            except discord.NotFound:
-                pass
