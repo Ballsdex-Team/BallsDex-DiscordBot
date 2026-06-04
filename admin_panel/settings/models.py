@@ -14,6 +14,10 @@ from django.dispatch import receiver
 from django.forms import ValidationError
 from django.utils.functional import cached_property
 
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
+    from bd_models.models import Ball
+
 COLON_IDS_RE = re.compile(r"^(\d{17,21}(;\d{17,21})*)?$")
 SLASH_COMMAND_RE = re.compile(r"^[-_'\S]{1,32}$")
 DISCORD_INVITE_RE = re.compile(r"^https?://(discord.gg|discord(app)?.com/invite)/[a-zA-Z0-9]+$")
@@ -225,6 +229,22 @@ class Settings(models.Model):
                     population=list(self.slow_messages.keys()), weights=list(self.slow_messages.values()), k=1
                 )[0]
 
+    def get_formatted_message(
+        self, category: PromptMessage.PromptType, model: Ball, mention: str, bot: BallsDexBot, **kwargs: str
+    ):
+        message = self.get_random_message(category)
+        try:
+            return message.format(
+                user=mention,
+                ball=model.country,
+                emoji=str(bot.get_emoji(model.emoji_id)),
+                collectible=self.collectible_name,
+                collectibles=self.plural_collectible_name,
+                **{k: str(v) for k, v in kwargs.items()},
+            )
+        except (ValueError, IndexError, KeyError):
+            return message
+
     @property
     @warnings.deprecated("This setting returns nothing, Webhook notifications must be used instead")
     def log_channel(self):
@@ -273,7 +293,7 @@ class PromptMessage(models.Model):
         )
 
     def __str__(self) -> str:
-        return ""
+        return self.message
 
 
 @receiver(post_init, sender=Settings)
