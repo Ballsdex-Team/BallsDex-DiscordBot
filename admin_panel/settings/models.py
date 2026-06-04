@@ -237,10 +237,10 @@ class Settings(models.Model):
             return message.format(
                 user=mention,
                 ball=model.country,
-                emoji=bot.get_emoji(model.emoji_id),
+                emoji=str(bot.get_emoji(model.emoji_id)),
                 collectible=self.collectible_name,
                 collectibles=self.plural_collectible_name,
-                **kwargs,
+                **{k: str(v) for k, v in kwargs.items()},
             )
         except (ValueError, IndexError, KeyError):
             return message
