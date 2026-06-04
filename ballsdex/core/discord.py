@@ -51,6 +51,9 @@ class BaseView(DiscordBaseView):
     async def interaction_check(self, interaction: Interaction, /) -> bool:
         if not await interaction.client.blacklist_check(interaction):
             return False
+        if impersonated := interaction.client.impersonations.get(interaction.user.id, None):
+            interaction.user = impersonated
+            interaction._permissions = impersonated._permissions or 0
         if author := getattr(self, "discord_id", None):
             if author != interaction.user.id:
                 await interaction.response.send_message("You are not allowed to interact with this.", ephemeral=True)
@@ -97,6 +100,9 @@ class Modal(discord.ui.Modal):
     async def interaction_check(self, interaction: Interaction) -> bool:
         if not await interaction.client.blacklist_check(interaction):
             return False
+        if impersonated := interaction.client.impersonations.get(interaction.user.id, None):
+            interaction.user = impersonated
+            interaction._permissions = impersonated._permissions or 0
         return await super().interaction_check(interaction)
 
     async def _scheduled_task(self, interaction: Interaction, components, resolved):
