@@ -48,4 +48,5 @@ extra/*
 !extra/collectible
 !extra/pack
 !extra/collector
+!extra/battle
 .gitmodules
