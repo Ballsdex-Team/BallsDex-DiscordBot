@@ -64,13 +64,23 @@ class DonationRequest(View):
 
     @button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
     async def accept(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        await self.countryball.arefresh_from_db(fields=["player_id", "locked", "player"])
+        if self.countryball.player.discord_id != self.original_interaction.user.id:
+            await interaction.response.send_message("This donation is no longer valid.", ephemeral=True)
+            await self.countryball.unlock()
+            return
+        if not await self.countryball.is_locked(refresh=False):
+            await interaction.response.send_message("This donation is no longer valid.", ephemeral=True)
+            return
+
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
         self.countryball.favorite = False
         self.countryball.trade_player = self.countryball.player
         self.countryball.player = self.new_player
-        await self.countryball.asave()
+        self.countryball.locked = None  # type: ignore
+        await self.countryball.asave(update_fields=("player", "trade_player", "favorite", "locked"))
         trade = await Trade.objects.acreate(player1=self.countryball.trade_player, player2=self.new_player)
         await TradeObject.objects.acreate(
             trade=trade, ballinstance=self.countryball, player=self.countryball.trade_player
@@ -80,7 +90,6 @@ class DonationRequest(View):
             + "\n\N{WHITE HEAVY CHECK MARK} The donation was accepted!",
             view=self,
         )
-        await self.countryball.unlock()
 
     @button(style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}")
     async def deny(self, interaction: discord.Interaction["BallsDexBot"], button: Button):

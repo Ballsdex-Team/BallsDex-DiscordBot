@@ -268,7 +268,7 @@ class Trade(commands.GroupCog):
             if trade_user:
                 p2 = await Player.objects.only("id").aget(discord_id=trade_user.id)
         except Player.DoesNotExist:
-            await interaction.response.send_message("One of the players does not exist.", ephemeral=True)
+            await interaction.followup.send("One of the players does not exist.", ephemeral=True)
             return
         if trade_user:
             queryset = queryset.filter((Q(player1=p1, player2=p2)) | (Q(player1=p2, player2=p1)))
@@ -354,7 +354,7 @@ class Trade(commands.GroupCog):
             return
         query = (
             BallInstance.objects.filter(
-                Q(locked=None) | Q(locked__lt=timezone.now() - timedelta(seconds=60)),
+                Q(locked=None) | Q(locked__lt=timezone.now() - timedelta(minutes=30)),
                 player__discord_id=interaction.user.id,
             )
             .exclude(tradeable=False)

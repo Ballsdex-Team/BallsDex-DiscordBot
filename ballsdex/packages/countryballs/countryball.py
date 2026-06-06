@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 import random
@@ -35,46 +36,51 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     async def on_error(self, interaction: discord.Interaction["BallsDexBot"], error: Exception) -> None:
         if isinstance(error, discord.NotFound) and error.code == 10062:
             return
-        log.exception("An error occured in countryball catching prompt", exc_info=error)
+        log.exception("An error occurred in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
-            await interaction.followup.send(f"An error occured with this {settings.collectible_name}.")
+            await interaction.followup.send(f"An error occurred with this {settings.collectible_name}.")
         else:
-            await interaction.response.send_message(f"An error occured with this {settings.collectible_name}.")
+            await interaction.response.send_message(f"An error occurred with this {settings.collectible_name}.")
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         await interaction.response.defer(thinking=True)
 
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        if self.view.caught:
-            slow_message = settings.get_formatted_message(
-                category=PromptMessage.PromptType.SLOW,
-                mention=interaction.user.mention,
-                model=self.view.model,
-                bot=interaction.client,
+        async with self.view._catch_lock:
+            if self.view.caught:
+                slow_message = settings.get_formatted_message(
+                    category=PromptMessage.PromptType.SLOW,
+                    mention=interaction.user.mention,
+                    model=self.view.model,
+                    bot=interaction.client,
+                )
+
+                await interaction.followup.send(
+                    slow_message, ephemeral=True, allowed_mentions=await can_mention([player])
+                )
+                return
+
+            if not self.view.is_name_valid(self.name.value):
+                if len(self.name.value) > 500:
+                    wrong_name = self.name.value[:500] + "..."
+                else:
+                    wrong_name = self.name.value
+
+                wrong_message = settings.get_formatted_message(
+                    category=PromptMessage.PromptType.WRONG,
+                    mention=interaction.user.mention,
+                    model=self.view.model,
+                    bot=interaction.client,
+                    wrong=wrong_name,
+                )
+                await interaction.followup.send(
+                    wrong_message, allowed_mentions=await can_mention([player]), ephemeral=False
+                )
+                return
+
+            ball, has_caught_before = await self.view.catch_ball(
+                interaction.user, player=player, guild=interaction.guild
             )
-
-            await interaction.followup.send(slow_message, ephemeral=True, allowed_mentions=await can_mention([player]))
-            return
-
-        if not self.view.is_name_valid(self.name.value):
-            if len(self.name.value) > 500:
-                wrong_name = self.name.value[:500] + "..."
-            else:
-                wrong_name = self.name.value
-
-            wrong_message = settings.get_formatted_message(
-                category=PromptMessage.PromptType.WRONG,
-                mention=interaction.user.mention,
-                model=self.view.model,
-                bot=interaction.client,
-                wrong=wrong_name,
-            )
-            await interaction.followup.send(
-                wrong_message, allowed_mentions=await can_mention([player]), ephemeral=False
-            )
-            return
-
-        ball, has_caught_before = await self.view.catch_ball(interaction.user, player=player, guild=interaction.guild)
 
         await interaction.followup.send(
             self.view.get_catch_message(ball, has_caught_before, interaction.user.mention),
@@ -125,6 +131,7 @@ class BallSpawnView(View):
         self.atk_bonus: int | None = None
         self.hp_bonus: int | None = None
         self.og_id: int
+        self._catch_lock = asyncio.Lock()
 
         self.catch_button.label = settings.catch_button_label
 

@@ -33,6 +33,7 @@ media
 .pytest_cache
 
 # settings
+.env
 config.yml
 config/production.py
 config/extra.toml

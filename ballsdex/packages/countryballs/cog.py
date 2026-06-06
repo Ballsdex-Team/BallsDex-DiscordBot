@@ -42,6 +42,10 @@ class CountryBallsSpawner(commands.Cog):
             i += 1
         grammar = "" if i == 1 else "s"
         log.info(f"Loaded {i} guild{grammar} in cache.")
+        self.spawn_manager.sync_active_guilds(set(self.cache.keys()))
+
+    async def cog_unload(self) -> None:
+        await self.spawn_manager.stop()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -100,3 +104,4 @@ class CountryBallsSpawner(commands.Cog):
                 del self.cache[guild.id]
             elif channel:
                 self.cache[guild.id] = channel.id
+        self.spawn_manager.sync_active_guilds(set(self.cache.keys()))

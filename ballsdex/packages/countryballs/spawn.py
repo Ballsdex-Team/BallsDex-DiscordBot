@@ -4,11 +4,11 @@ import random
 from abc import abstractmethod
 from collections import deque, namedtuple
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Literal
 
 import discord
-from discord.utils import format_dt
+from discord.utils import format_dt, utcnow
 
 from settings.models import settings
 
@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.packages.countryballs")
+
+INACTIVE_COOLDOWN_TTL = timedelta(hours=24)
+PRUNE_INTERVAL = timedelta(hours=1)
 
 CachedMessage = namedtuple("CachedMessage", ["content", "author_id"])
 
@@ -33,6 +36,15 @@ class BaseSpawnManager:
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
+
+    async def start(self) -> None:
+        pass
+
+    async def stop(self) -> None:
+        pass
+
+    def sync_active_guilds(self, guild_ids: set[int]) -> None:
+        pass
 
     @abstractmethod
     async def handle_message(self, message: discord.Message) -> bool | tuple[Literal[True], str]:
@@ -103,17 +115,19 @@ class SpawnCooldown:
     threshold: int = field(default_factory=lambda: random.randint(settings.spawn_chance_min, settings.spawn_chance_max))
     lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
     message_cache: deque[CachedMessage] = field(default_factory=lambda: deque(maxlen=100))
+    last_activity: datetime = field(init=False)
+
+    def __post_init__(self):
+        self.last_activity = self.time
 
     def reset(self, time: datetime):
         self.scaled_message_count = 1.0
         self.threshold = random.randint(settings.spawn_chance_min, settings.spawn_chance_max)
-        try:
-            self.lock.release()
-        except RuntimeError:  # lock is not acquired
-            pass
         self.time = time
+        self.last_activity = time
 
     async def increase(self, message: discord.Message) -> bool:
+        self.last_activity = message.created_at
         # this is a deque, not a list
         # its property is that, once the max length is reached (100 for us),
         # the oldest element is removed, thus we only have the last 100 messages in memory
@@ -143,6 +157,49 @@ class SpawnManager(BaseSpawnManager):
     def __init__(self, bot: "BallsDexBot"):
         super().__init__(bot)
         self.cooldowns: dict[int, SpawnCooldown] = {}
+        self._active_guilds: set[int] = set()
+        self._prune_task: asyncio.Task[None] | None = None
+
+    async def start(self) -> None:
+        if self._prune_task is None:
+            self._prune_task = asyncio.create_task(self._prune_loop(), name="spawn-cooldown-prune")
+
+    async def stop(self) -> None:
+        if self._prune_task is not None:
+            self._prune_task.cancel()
+            try:
+                await self._prune_task
+            except asyncio.CancelledError:
+                pass
+            self._prune_task = None
+
+    def sync_active_guilds(self, guild_ids: set[int]) -> None:
+        self._active_guilds = guild_ids
+        self._prune_inactive()
+
+    def _prune_inactive(self) -> None:
+        now = utcnow()
+        stale: list[int] = []
+        for guild_id, cooldown in self.cooldowns.items():
+            if guild_id in self._active_guilds:
+                continue
+            if cooldown.lock.locked():
+                continue
+            if now - cooldown.last_activity < INACTIVE_COOLDOWN_TTL:
+                continue
+            stale.append(guild_id)
+        for guild_id in stale:
+            del self.cooldowns[guild_id]
+        if stale:
+            log.debug("Pruned %d inactive spawn cooldowns", len(stale))
+
+    async def _prune_loop(self) -> None:
+        try:
+            while True:
+                await asyncio.sleep(PRUNE_INTERVAL.total_seconds())
+                self._prune_inactive()
+        except asyncio.CancelledError:
+            raise
 
     async def handle_message(self, message: discord.Message) -> bool:
         guild = message.guild

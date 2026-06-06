@@ -10,3 +10,4 @@ async def setup(bot: "BallsDexBot"):
     cog = CountryBallsSpawner(bot)
     await bot.add_cog(cog)
     await cog.load_cache()
+    await cog.spawn_manager.start()

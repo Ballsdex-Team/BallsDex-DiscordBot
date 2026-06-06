@@ -118,7 +118,7 @@ split-on-trailing-comma = false
 
 [tool.pyright]
 extraPaths = ["./admin_panel"]
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 reportIncompatibleMethodOverride = "warning"
 reportIncompatibleVariableOverride = "warning"
 

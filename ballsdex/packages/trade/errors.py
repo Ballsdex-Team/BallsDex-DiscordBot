@@ -16,7 +16,7 @@ class TradeError(RuntimeError):
     def error_message(self) -> str:
         if self.msg is None:
             log.error("Unknown error during trade", exc_info=self)
-            return "An unknown exception occured. Contact support if this persists."
+            return "An unknown exception occurred. Contact support if this persists."
         return self.msg
 
 

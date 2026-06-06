@@ -3,11 +3,17 @@
         "editor.rulers": [
             120
         ],
-        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.defaultFormatter": "charliermarsh.ruff"
     },
     "python.languageServer": "Pylance",
     "python.analysis.languageServerMode": "full",
     "python.analysis.diagnosticsSource": "Pyright",
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.pythonVersion": "3.14",
+    "python.analysis.extraPaths": [
+        "./admin_panel"
+    ],
+    "python.analysis.django": true,
     "python.defaultInterpreterPath": ".venv/bin/python",
-    "ruff.importStrategy": "fromEnvironment",
+    "ruff.importStrategy": "fromEnvironment"
 }

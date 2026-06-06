@@ -5,14 +5,14 @@ a development environment, with some tips on the code structure.
 
 ## Setting up the environment
 
-### PostgreSQL and Redis
+### PostgreSQL
 
 Using Docker:
 
 1. Install Docker.
-2. Run `docker compose build` at the root of this repository.
-3. Run `docker compose up -d postgres-db`. This will not start the bot, only the
-   database and redis server.
+2. Copy `.env.example` to `.env` and change the database password.
+3. Run `docker compose build` at the root of this repository.
+4. Run `docker compose up -d postgres-db`. This will not start the bot, only the database.
 
 ----
 
@@ -22,39 +22,36 @@ Export the appropriate environment variables as described in the
 
 ### Installing the dependencies
 
-1. Get Python 3.13 and pip.
-2. Install poetry with `pip install poetry`.
-3. Run `poetry install`.
-4. You may run commands inside the virtualenv with `poetry run ...`, or use `poetry shell`.
+1. Install [uv](https://docs.astral.sh/uv/) and Python 3.14.
+2. Run `uv sync --all-extras` at the root of this repository.
+3. Run commands with `uv run ...`, or activate the virtualenv in `.venv/`.
 
 ## Running the code
 
-Before running any command, you must be in the poetry virtualenv, with the following
-environment variables exported:
+Before running any command, export the following environment variables:
 
 ```bash
-poetry shell
 export BALLSDEXBOT_DB_URL="postgres://ballsdex:defaultballsdexpassword@localhost:5432/ballsdex"
 ```
 
-If needed, feel free to change the host, port, user or password of the database or redis server.
+If needed, feel free to change the host, port, user or password of the database.
 
 ### Starting the bot
 
 ```bash
-python3 -m ballsdex --dev --debug
+uv run python3 -m ballsdex --dev --debug
 ```
 
-You can do `python3 -m ballsdex -h` to see the available options.
+You can do `uv run python3 -m ballsdex -h` to see the available options.
 
 ### Starting the admin panel
 
 ```bash
 cd admin_panel
 export DJANGO_SETTINGS_MODULE=admin_panel.settings.dev
-python3 manage.py migrate
-python3 manage.py collectstatic --no-input
-uvicorn --reload --reload-include "*.html" admin_panel.asgi:application
+uv run python3 manage.py migrate
+uv run python3 manage.py collectstatic --no-input
+uv run uvicorn --reload --reload-include "*.html" admin_panel.asgi:application
 ```
 
 You will be running the admin panel with additional debug tools. There is the django debug
@@ -76,41 +73,39 @@ pyinstrument, allowing you to profile a page by appending `?profile` at the end.
 
 ## Integrating your IDE
 
-To have proper autocompletion and type checking, your IDE must be aware of your poetry virtualenv.
+To have proper autocompletion and type checking, your IDE must be aware of the project virtualenv
+created by uv in `.venv/`.
 
-The path to Python can be obtained with `poetry env info -p`, copy that and configure your editor
-to use it. Some editors like VS code may detect your poetry env automatically when picking
-versions.
+Configure your editor to use `.venv/bin/python`. VS Code should detect the environment
+automatically when opening the repository (see `.vscode/settings.json`).
 
-You can also install extensions to work with black, flake8 and pyright (Pylance for VS code).
+You can also install extensions to work with ruff and pyright (Pylance for VS code).
 Their configurations are already written in `pyproject.toml`, so it should work as-is.
 
 ## Migrations
 
-If you are modifying models definition, you need migrations to update the database schema.
+If you are modifying model definitions, you need migrations to update the database schema.
 
-First, synchronize your changes between `ballsdex/core/models.py` and
-`admin_panel/bd_models/models.py`, they must be identical!
-
-Then you can run `python3 manage.py makemigrations` to generate a migration file. Re-read its
-contents to ensure there is only what you modified, and commit it.
+Edit models in `admin_panel/bd_models/models.py`, then run
+`uv run python3 manage.py makemigrations` from the `admin_panel/` directory to generate a migration
+file. Re-read its contents to ensure there is only what you modified, and commit it.
 
 You can read more about migrations
-[here](https://docs.djangoproject.com/en/5.1/topics/migrations/), the engine is very extensive!
+[here](https://docs.djangoproject.com/en/6.0/topics/migrations/), the engine is very extensive!
 
 ## Coding style
 
-The code is formatted by `black`, style verified by `flake8`, and static checked by `pyright`.
+The code is formatted and linted by `ruff`, and statically checked by `pyright`.
 They can be setup as a pre-commit hook to make them run before committing files:
 
 ```sh
-pre-commit install
+uv run pre-commit install
 ```
 
 You can also run them manually:
 
 ```sh
-pre-commit run -a
+uv run pre-commit run -a
 ```
 
 All rules are defined in `pyproject.toml`, meaning your editor will pick them up if you install

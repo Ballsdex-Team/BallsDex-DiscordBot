@@ -82,6 +82,9 @@ class SetMoneyModal(Modal, title="Set money offering"):
         except ValueError:
             await interaction.response.send_message("This number could not be parsed.", ephemeral=True)
             return
+        if proposal_amount < 0:
+            await interaction.response.send_message("Amount must be zero or positive.", ephemeral=True)
+            return
         await self.trading_user.player.arefresh_from_db(fields=["money"])
         if not self.trading_user.player.can_afford(proposal_amount):
             await interaction.response.send_message("You cannot afford that amount.", ephemeral=True)
@@ -369,7 +372,7 @@ class TradingUser(Container):
             The trade is cancelled
         """
         if self.locked:
-            raise AlreadyLockedError()
+            raise LockedError()
         if self.view.cancelled:
             raise CancelledError()
         await self.get_queryset().aupdate(locked=None)
@@ -446,9 +449,9 @@ class TradeInstance(LayoutView):
         log.exception(f"Error in trade between {self.trader1} and {self.trader2}", exc_info=error)
         await self.cleanup()
         send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
-        await send("An error occured, the trade will be cancelled.", ephemeral=True)
+        await send("An error occurred, the trade will be cancelled.", ephemeral=True)
         self.add_item(
-            TextDisplay("An error occured and the trade has been cancelled! Contact support if this persists.")
+            TextDisplay("An error occurred and the trade has been cancelled! Contact support if this persists.")
         )
         await self.message.edit(view=self)
 
@@ -656,7 +659,15 @@ class TradeInstance(LayoutView):
         assert self.trader1.confirmed and self.trader2.confirmed
         trade_objects: list[TradeObject] = []
         balls: list[BallInstance] = []
-        trade = Trade.objects.create(player1=self.trader1.player, player2=self.trader2.player)
+        if self.trader1.money < 0 or self.trader2.money < 0:
+            raise IntegrityError()
+
+        trade = Trade.objects.create(
+            player1=self.trader1.player,
+            player2=self.trader2.player,
+            player1_money=self.trader1.money,
+            player2_money=self.trader2.money,
+        )
 
         def money_check(trader: TradingUser) -> Player:
             player = Player.objects.select_for_update(nowait=True).get(id=trader.player.pk)
@@ -701,18 +712,40 @@ class TradeInstance(LayoutView):
         TradeObject.objects.bulk_create(trade_objects)
         return trade
 
+    def _unregister_from_cog(self):
+        if not hasattr(self, "message") or not self.message:
+            return
+        channel_trades = self.cog.trades.get(self.message.channel.id)
+        if not channel_trades:
+            return
+        channel_trades.pop(self.trader1.user.id, None)
+        channel_trades.pop(self.trader2.user.id, None)
+        if not channel_trades:
+            self.cog.trades.pop(self.message.channel.id, None)
+
     async def finish_trade(self):
         if self.confirmation_lock.locked():
             raise SynchronizationError()
         await self.confirmation_lock.acquire()
-        self.timeout_task.cancel()
-        trade = await sync_to_async(self.perform_trade_operation)()
-        self.stop()
-        # edition of the message will be triggered by the caller
-        self.add_item(TextDisplay(f"## The trade has been completed!\n-# ID: `#{trade.pk:0X}`"))
+        try:
+            self.timeout_task.cancel()
+            trade = await sync_to_async(self.perform_trade_operation)()
+        except TradeError:
+            self.trader1.confirmed = False
+            self.trader2.confirmed = False
+            await self._cleanup()
+            raise
+        else:
+            self.stop()
+            self._unregister_from_cog()
+            self.add_item(TextDisplay(f"## The trade has been completed!\n-# ID: `#{trade.pk:0X}`"))
+        finally:
+            if self.confirmation_lock.locked():
+                self.confirmation_lock.release()
 
     async def _cleanup(self):
         self.stop()
+        self._unregister_from_cog()
         await BallInstance.objects.filter(id__in=self.trader1.proposal | self.trader2.proposal).aupdate(locked=None)
         for item in self.walk_children():
             if hasattr(item, "disabled"):
