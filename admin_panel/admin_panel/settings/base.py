@@ -59,6 +59,8 @@ INSTALLED_APPS = [
     "settings",
     "currency_app",
     "pack_models",
+    "collector_app",
+    "merchant_app",
 ]
 
 EXTRA_APPS = discover_extra_packages()

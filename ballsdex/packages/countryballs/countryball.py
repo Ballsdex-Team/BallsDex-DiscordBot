@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
+from currency_app.models import CurrencySettings, MoneyInstance
 from discord.ui import Button, TextInput, button
 from django.utils import timezone
 
@@ -74,12 +75,25 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             )
             return
 
+        currency_settings = await CurrencySettings.aload()
         ball, has_caught_before = await self.view.catch_ball(interaction.user, player=player, guild=interaction.guild)
+        text = self.view.get_catch_message(ball, has_caught_before, interaction.user.mention)
+        if self.view.ballinstance is None:
+            if random.random() < currency_settings.spawn_chance:
+                amount = currency_settings.spawn_amount
+                money_instance, created = await MoneyInstance.objects.aget_or_create(
+                    player=player, defaults={"amount": amount}
+                )
+                if not created:
+                    money_instance.amount += amount
+                    await money_instance.asave(update_fields=("amount",))
+                currency_emoji = interaction.client.get_emoji(currency_settings.emoji_id or 0)
+                if currency_emoji:
+                    text += f"You get {currency_emoji} **{amount}** {currency_settings.display_name(amount)}!"
+                else:
+                    text += f"You get **{amount}** {currency_settings.display_name(amount)}!"
 
-        await interaction.followup.send(
-            self.view.get_catch_message(ball, has_caught_before, interaction.user.mention),
-            allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
-        )
+        await interaction.followup.send(text, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned))
         await interaction.followup.edit_message(self.view.message.id, view=self.view)
 
 
