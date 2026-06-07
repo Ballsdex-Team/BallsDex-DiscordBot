@@ -16,7 +16,8 @@ packages = importlib.metadata.packages_distributions()
 extra_apps_dist: dict[str, importlib.metadata.Distribution] = {}
 for app in settings.EXTRA_APPS:
     try:
-        extra_apps_dist[app] = importlib.metadata.distribution(packages[app][0])
+        dist = importlib.metadata.distribution(packages[app][0])
+        extra_apps_dist[dist.name] = dist
     except (KeyError, IndexError):
         pass
 

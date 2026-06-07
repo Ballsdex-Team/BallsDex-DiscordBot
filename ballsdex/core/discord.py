@@ -1,7 +1,7 @@
 # pyright: reportIncompatibleMethodOverride=false
 
 import logging
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, cast
 
 import discord
 from discord.ui import Item
@@ -41,6 +41,8 @@ def _trade_span_links(holder: object) -> list | None:
 
 
 class BaseView(DiscordBaseView):
+    original_message: discord.Message | None = None
+
     def restrict_author(self, discord_id: int):
         self.discord_id = discord_id
 
@@ -51,6 +53,9 @@ class BaseView(DiscordBaseView):
     async def interaction_check(self, interaction: Interaction, /) -> bool:
         if not await interaction.client.blacklist_check(interaction):
             return False
+        if impersonated := interaction.client.impersonations.get(interaction.user.id, None):
+            interaction.user = impersonated
+            interaction._permissions = impersonated._permissions or 0
         if author := getattr(self, "discord_id", None):
             if author != interaction.user.id:
                 await interaction.response.send_message("You are not allowed to interact with this.", ephemeral=True)
@@ -58,9 +63,16 @@ class BaseView(DiscordBaseView):
         return await super().interaction_check(interaction)
 
     async def _scheduled_task(self, item: Item[Self], interaction: Interaction):
+        try:
+            callback = item.callback.__name__
+        except AttributeError:
+            try:
+                callback = cast("discord.ui.item._ItemCallback", item.callback).callback.__name__
+            except AttributeError:
+                callback = type(item).__name__
         with tracing.span(
             "discord.component",
-            resource=f"{type(self).__name__}.{getattr(item, 'custom_id', type(item).__name__)}",
+            resource=f"{type(self).__name__}.{callback}",
             tags={
                 "discord.view.class": type(self).__name__,
                 "discord.item.type": type(item).__name__,
@@ -72,6 +84,17 @@ class BaseView(DiscordBaseView):
             links=_trade_span_links(self),
         ):
             await super()._scheduled_task(item, interaction)
+
+    async def on_timeout(self):
+        if not self.original_message:
+            return
+        for item in self.walk_children():
+            if hasattr(item, "disabled"):
+                item.disabled = True  # type: ignore
+        try:
+            await self.original_message.edit(view=self)  # pyright: ignore[reportCallIssue, reportArgumentType]
+        except discord.NotFound:
+            pass
 
 
 class View(discord.ui.View, BaseView):
@@ -97,6 +120,9 @@ class Modal(discord.ui.Modal):
     async def interaction_check(self, interaction: Interaction) -> bool:
         if not await interaction.client.blacklist_check(interaction):
             return False
+        if impersonated := interaction.client.impersonations.get(interaction.user.id, None):
+            interaction.user = impersonated
+            interaction._permissions = impersonated._permissions or 0
         return await super().interaction_check(interaction)
 
     async def _scheduled_task(self, interaction: Interaction, components, resolved):

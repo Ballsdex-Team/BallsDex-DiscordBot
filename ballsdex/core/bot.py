@@ -50,7 +50,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.core.bot")
 http_counter = Histogram("discord_http_requests", "HTTP requests", ["key", "code"])
-impersonations: dict[int, discord.Member] = {}
 
 DEFAULT_PACKAGES = (
     ("admin", "ballsdex.packages.admin"),
@@ -170,7 +169,7 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
         if data.get("name") == "admin" and subcmd == "impersonate":
             # if the user is trying to stop impersonating, don't impersonate
             pass
-        elif impersonated := impersonations.get(interaction.user.id, None):
+        elif impersonated := bot.impersonations.get(interaction.user.id, None):
             interaction.user = impersonated
             interaction._permissions = impersonated._permissions or 0
         return await bot.blacklist_check(interaction)
@@ -252,6 +251,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self.catch_log: set[int] = set()
         self.command_log: set[int] = set()
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
+        self.impersonations: dict[int, discord.Member] = {}
 
         if tracing.enabled():
             log.info("OpenTelemetry tracing is enabled.")
