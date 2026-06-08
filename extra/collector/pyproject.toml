@@ -2,4 +2,12 @@
 name = "collector"
 version = "1.0.0"
 
+authors = [
+    { name = "Valen7440"}
+]
+
 dependencies = []
+
+[project.urls]
+Patreon = "https://www.patreon.com/Valen7440"
+Funding = "https://ko-fi.com/valen7440"
