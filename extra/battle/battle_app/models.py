@@ -59,7 +59,7 @@ class Buff(models.Model):
 
     class Meta:
         managed = True
-        db_table = "special"
+        db_table = "buff"
 
     def display(self):
         if self.cached_ball:

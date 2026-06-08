@@ -7,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import ActionRow, Button, Container, Section, TextDisplay
 
+from ballsdex.core.bot import impersonations
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -389,13 +390,13 @@ class Admin(commands.Cog):
             The user to impersonate
         """
         if user is None:
-            if ctx.author.id not in self.bot.impersonations:
+            if ctx.author.id not in impersonations:
                 await ctx.send_help(ctx.command)
                 return
-            del self.bot.impersonations[ctx.author.id]
+            del impersonations[ctx.author.id]
             await ctx.send("You are not impersonating anymore.")
         else:
-            self.bot.impersonations[ctx.author.id] = user
+            impersonations[ctx.author.id] = user
             await ctx.send(
                 f"Your next commands will be run as if {user.display_name} ran it.\n"
                 "Avoid running the commands in a different server, this can lead to weird issues.\n"

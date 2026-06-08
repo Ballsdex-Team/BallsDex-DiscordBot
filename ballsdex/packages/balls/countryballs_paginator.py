@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import discord
-from discord.ui import ActionRow, Button, Select, TextDisplay
+from discord.ui import ActionRow, Select, TextDisplay
 from django.db.models import Count, Exists, OuterRef, Q, Value
 
 from ballsdex.core.discord import LayoutView
@@ -25,16 +25,6 @@ class CountryballsViewer(LayoutView):
         content, file, view = await ball.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file, view=view)
         file.close()
-
-    quit_row = ActionRow()
-
-    @quit_row.button(label="Quit", style=discord.ButtonStyle.danger)
-    async def quit_button(self, interaction: discord.Interaction["BallsDexBot"], button_obj: Button):
-        self.stop()
-        for item in self.walk_children():
-            if hasattr(item, "disabled"):
-                item.disabled = True  # type: ignore
-        await interaction.response.edit_message(view=self)
 
 
 class CountryballsDuplicateSource(LayoutView):
@@ -119,13 +109,3 @@ class CountryballsDuplicateSource(LayoutView):
             await interaction.followup.send(embed=embed, file=file)
         else:
             await interaction.followup.send(embed=embed)
-
-    quit_row = ActionRow()
-
-    @quit_row.button(label="Quit", style=discord.ButtonStyle.danger)
-    async def quit_button(self, interaction: discord.Interaction["BallsDexBot"], button_obj: Button):
-        self.stop()
-        for item in self.walk_children():
-            if hasattr(item, "disabled"):
-                item.disabled = True  # type: ignore
-        await interaction.response.edit_message(view=self)

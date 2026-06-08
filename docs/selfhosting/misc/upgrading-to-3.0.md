@@ -196,7 +196,9 @@ docker compose down --volumes
 Ballsdex 3.0 does not use `config.yml` anymore for its configuration, instead it's all on the
 admin panel. You can still import your old settings.
 
-1.  Start the admin panel
+1.  [Create a local admin account](/selfhosting/admin-panel/getting-started/).
+    Remember that all admin accounts were lost in the process, you have to recreate one.
+2.  Start the admin panel
 
     === "With Docker"
 
@@ -237,22 +239,11 @@ admin panel. You can still import your old settings.
 
             You will have to find a solution later to expose the static files yourself.
 
-2. Import your settings
-
-   === "With Docker"
-
-       ```bash
-       cat config.yml | docker compose exec -iT admin-panel python3 -m django import_settings_yml
-       ```
-
-   === "Without Docker"
-       
-       ```bash
-       DJANGO_SETTINGS_MODULE=admin_panel.settings python3 -m django import_settings_yml config.yml
-       ```
-
-2.  If not using Oauth2, [Create a local admin account](/selfhosting/admin-panel/getting-started/).
-Remember that all admin accounts were lost in the process, you have to recreate one.
+3.  Open [the new settings page](http://localhost:8000/settings/settings/)
+4.  Tick the checkbox next to "Global bot settings"
+5.  In the "Action" drop-down, select "Import YAML settings" and click "Go"
+6.  Choose the `config.yml` file to upload, and continue
+7.  Verify that all the settings were imported as intended.
 
 !!! warning
     This will override settings you have previously configured here.

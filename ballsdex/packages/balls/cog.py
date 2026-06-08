@@ -208,13 +208,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         view = CountryballsViewer()
         view.restrict_author(interaction.user.id)
         menu = Menu.countryballs(self.bot, view, view.selected, query)
-        await menu.init(position=2)
+        await menu.init()
         if user_obj != interaction.user:
             view.header.content = f"Viewing {user_obj.name}'s {settings.plural_collectible_name}"
         else:
             view.header.content = f"Viewing your {settings.plural_collectible_name}"
-        message = await interaction.followup.send(view=view, wait=True)
-        view.original_message = message
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
@@ -754,12 +753,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         ]
 
         view = CountryballsDuplicateSource(is_special)
-        view.restrict_author(interaction.user.id)
         view.header.content = f"View your duplicate {type.value}."
         menu = Menu(self.bot, view, ChunkedListSource(entries), SelectFormatter(view.callback))
-        await menu.init(position=2)
-        message = await interaction.followup.send(view=view, wait=True)
-        view.original_message = message
+        await menu.init()
+        await interaction.followup.send(view=view)
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
