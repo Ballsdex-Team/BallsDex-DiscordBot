@@ -68,7 +68,9 @@ class Item(models.Model):
         if has_min and has_max and self.minimum_rarity > self.maximum_rarity:  # type: ignore
             raise ValidationError("Minimum rarity cannot be greater than maximum rarity.")
 
-        return super().save(force_insert, force_update, using, update_fields)
+        return super().save(
+            force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields
+        )
 
     class Meta:
         managed = True
@@ -98,7 +100,9 @@ class ItemBall(models.Model):
         if has_rarity:
             raise ValidationError("You must define null `minimum_rarity` and `maximum_rarity` in the original item.")
 
-        return super().save(force_insert, force_update, using, update_fields)
+        return super().save(
+            force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields
+        )
 
     class Meta:
         managed = True

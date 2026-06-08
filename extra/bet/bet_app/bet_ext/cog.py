@@ -322,6 +322,7 @@ class Match(commands.GroupCog):
         if not player.bet:
             await interaction.response.send_message("You have no items in your current bet.", ephemeral=True)
             return
+        await interaction.response.defer(ephemeral=True, thinking=True)
 
         player1 = match.player1
         player2 = match.player2

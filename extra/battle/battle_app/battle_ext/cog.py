@@ -78,12 +78,15 @@ def gen_deck(balls) -> str:
 
 
 def update_embed(
-    author_balls, opponent_balls, author, opponent, author_ready, opponent_ready, max_size: int
+    author_balls, opponent_balls, author, opponent, author_ready, opponent_ready, max_size: int, cog: "Battle"
 ) -> discord.Embed:
     """Creates an embed for the battle setup phase."""
+    add_cmd = cog.add.extras.get("mention", "`/battle add`")
+    del_cmd = cog.remove.extras.get("mention", "`/battle remove`")
+
     embed = discord.Embed(
         title="Battle Plan",
-        description=f"Add or remove items you want to propose to the other player using the '/battle add' and '/battle remove' commands. Remember, you may add up to **{max_size}** items in a deck for this battle. Once you've finished, click the tick button to start the battle.",
+        description=f"Add or remove items you want to propose to the other player using the {add_cmd} and {del_cmd} commands. Remember, you may add up to **{max_size}** items in a deck for this battle. Once you've finished, click the tick button to start the battle.",
         color=discord.Colour.blurple(),
     )
 
@@ -212,9 +215,11 @@ class Battle(commands.GroupCog):
             author_emoji = ":white_check_mark:" if interaction.user == guild_battle.author else ""
             opponent_emoji = ":white_check_mark:" if interaction.user == guild_battle.opponent else ""
 
+            add_cmd = self.add.extras.get("mention", "`/battle add`")
+            del_cmd = self.remove.extras.get("mention", "`/battle remove`")
             embed = discord.Embed(
                 title="Battle Plan",
-                description="Add or remove items you want to propose to the other player using the '/battle add' and '/battle remove' commands. Remember, you may add up to **{max_size}** items in a deck for this battle. Once you've finished, click the tick button to start the battle.",
+                description=f"Add or remove items you want to propose to the other player using the {add_cmd} and {del_cmd} commands. Remember, you may add up to **{max_size}** items in a deck for this battle. Once you've finished, click the tick button to start the battle.",
                 color=discord.Colour.blurple(),
             )
 
@@ -271,7 +276,7 @@ class Battle(commands.GroupCog):
         self.battles[interaction.channel_id] = GuildBattle(
             author=interaction.user, opponent=opponent, deck_size=max_size
         )
-        embed = update_embed([], [], interaction.user.name, opponent.name, False, False, max_size)
+        embed = update_embed([], [], interaction.user.name, opponent.name, False, False, max_size, self)
 
         start_button = discord.ui.Button(style=discord.ButtonStyle.success, emoji="✔", label="Ready")
         cancel_button = discord.ui.Button(style=discord.ButtonStyle.danger, emoji="✖", label="Cancel")
@@ -352,6 +357,7 @@ class Battle(commands.GroupCog):
                 guild_battle.author_ready,
                 guild_battle.opponent_ready,
                 guild_battle.deck_size,
+                self,
             )
         )
 
@@ -410,6 +416,7 @@ class Battle(commands.GroupCog):
                     guild_battle.author_ready,
                     guild_battle.opponent_ready,
                     guild_battle.deck_size,
+                    self,
                 )
             )
         else:
