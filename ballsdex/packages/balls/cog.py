@@ -22,7 +22,7 @@ from ballsdex.core.utils.transformers import (
 )
 from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
 from bd_models.enums import DonationPolicy
-from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls
+from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls
 from settings.models import settings
 
 from .countryballs_paginator import CountryballsDuplicateSource, CountryballsViewer
@@ -954,3 +954,43 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             await interaction.followup.send(embed=embed, file=file)
         else:
             await interaction.followup.send(embed=embed)
+
+    @app_commands.command()
+    @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
+    async def details(self, interaction: discord.Interaction["BallsDexBot"], countryball: BallEnabledTransform):
+        """
+        Display detailed statistics for a specific countryball.
+
+        Parameters
+        ----------
+        countryball: Ball
+            The countryball you want to inspect.
+        """
+
+        await interaction.response.defer(thinking=True)
+
+        ball = await Ball.objects.select_related("regime", "economy").aget(pk=countryball.pk)
+
+        emoji = self.bot.get_emoji(ball.emoji_id) or ""
+
+        regime_name = ball.regime.name if ball.regime else "N/A"
+        economy_name = ball.economy.name if ball.economy else "N/A"
+
+        embed = discord.Embed(
+            title=f"{emoji} {ball.country} Information",
+            description=(
+                f"⋄ **Short Name:** {ball.short_name or 'N/A'}\n"
+                f"⋄ **Catch Names:** {ball.catch_names or 'N/A'}\n"
+                f"⋄ **Regime:** {regime_name}\n"
+                f"⋄ **Economy:** {economy_name}\n"
+                f"⋄ **Rarity:** {ball.rarity}\n"
+                f"⋄ **Attack:** {ball.attack}\n"
+                f"⋄ **Health:** {ball.health}\n"
+                f"⋄ **Capacity Name:** {ball.capacity_name}\n"
+                f"⋄ **Capacity Description:** {ball.capacity_description}\n"
+                f"⋄ **Image Credits:** {ball.credits}\n"
+            ).replace("⋄", "⋄"),
+            color=discord.Color.blurple(),
+        )
+
+        await interaction.followup.send(embed=embed)
