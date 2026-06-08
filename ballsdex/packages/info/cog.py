@@ -60,6 +60,7 @@ class Info(commands.Cog):
         """
         Get information about this bot.
         """
+        await interaction.response.defer(thinking=True)
         embed = discord.Embed(title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple())
 
         try:
@@ -143,13 +144,14 @@ class Info(commands.Cog):
         view = LicenseInfo()
         if not extra_apps_dist:
             view.remove_item(view.children[-1])
-        await interaction.response.send_message(embed=embed, view=view)
+        await interaction.followup.send(embed=embed, view=view)
 
     @app_commands.command()
     async def help(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Show the list of commands from the bot.
         """
+        await interaction.response.defer(thinking=True)
         assert self.bot.user
         embed = discord.Embed(title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple())
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
@@ -171,4 +173,4 @@ class Info(commands.Cog):
             for i, page in enumerate(pages):
                 embed.add_field(name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False)
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)

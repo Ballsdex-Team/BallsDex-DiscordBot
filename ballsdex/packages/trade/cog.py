@@ -99,42 +99,42 @@ class Trade(commands.GroupCog):
             The user you want to trade with.
         """
         assert interaction.channel
+        await interaction.response.defer(ephemeral=True)
         if self.lockdown is not None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Trading has been globally disabled by the admins for the following reason: {self.lockdown}",
                 ephemeral=True,
             )
             return
 
         if user.bot:
-            await interaction.response.send_message("You cannot trade with bots.", ephemeral=True)
+            await interaction.followup.send("You cannot trade with bots.", ephemeral=True)
             return
         if user.id == interaction.user.id:
-            await interaction.response.send_message("You cannot trade with yourself.", ephemeral=True)
+            await interaction.followup.send("You cannot trade with yourself.", ephemeral=True)
             return
 
         player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
         blocked = await player1.is_blocked(player2)
         if blocked:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You cannot begin a trade with a user that you have blocked.", ephemeral=True
             )
             return
         blocked2 = await player2.is_blocked(player1)
         if blocked2:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You cannot begin a trade with a user that has blocked you.", ephemeral=True
             )
             return
         if await self.get_trade(interaction) is not None:
-            await interaction.response.send_message("You already have an active trade.", ephemeral=True)
+            await interaction.followup.send("You already have an active trade.", ephemeral=True)
             return
         if await self.get_trade(interaction, user) is not None:
-            await interaction.response.send_message(f"{user.mention} already has an active trade.", ephemeral=True)
+            await interaction.followup.send(f"{user.mention} already has an active trade.", ephemeral=True)
             return
 
-        await interaction.response.defer(ephemeral=True)
         trade = TradeInstance.configure(self, (player1, interaction.user), (player2, user))
         # APM: tag the command span with the trade id and capture its trace context so
         # every subsequent button/modal interaction on this trade links back here.
@@ -174,18 +174,19 @@ class Trade(commands.GroupCog):
         special: Special | None
             The special you want to filter the countryball by.
         """
+        await interaction.response.defer(thinking=True, ephemeral=True)
         result = await self.get_trade(interaction)
         if result is None:
-            await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
+            await interaction.followup.send("You do not have any active trade.", ephemeral=True)
             return
         trade, trader = result
         try:
             await trader.add_to_proposal(BallInstance.objects.filter(id=countryball.pk))
         except TradeError as e:
-            await interaction.response.send_message(e.error_message, ephemeral=True)
+            await interaction.followup.send(e.error_message, ephemeral=True)
         else:
             await trade.edit_message(None)
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{countryball.description(is_trade=True, include_emoji=True, bot=self.bot)} added.", ephemeral=True
             )
 
@@ -206,18 +207,19 @@ class Trade(commands.GroupCog):
         special: Special | None
             The special you want to filter the countryball by.
         """
+        await interaction.response.defer(thinking=True, ephemeral=True)
         result = await self.get_trade(interaction)
         if result is None:
-            await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
+            await interaction.followup.send("You do not have any active trade.", ephemeral=True)
             return
         trade, trader = result
         try:
             await trader.remove_from_proposal(BallInstance.objects.filter(id=countryball.pk))
         except TradeError as e:
-            await interaction.response.send_message(e.error_message, ephemeral=True)
+            await interaction.followup.send(e.error_message, ephemeral=True)
         else:
             await trade.edit_message(None)
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{countryball.description(is_trade=True, include_emoji=True, bot=self.bot)} removed.", ephemeral=True
             )
 
@@ -268,7 +270,7 @@ class Trade(commands.GroupCog):
             if trade_user:
                 p2 = await Player.objects.only("id").aget(discord_id=trade_user.id)
         except Player.DoesNotExist:
-            await interaction.response.send_message("One of the players does not exist.", ephemeral=True)
+            await interaction.followup.send("One of the players does not exist.", ephemeral=True)
             return
         if trade_user:
             queryset = queryset.filter((Q(player1=p1, player2=p2)) | (Q(player1=p2, player2=p1)))

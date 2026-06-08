@@ -80,7 +80,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             self.view.get_catch_message(ball, has_caught_before, interaction.user.mention),
             allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
         )
-        await interaction.followup.edit_message(self.view.message.id, view=self.view)
+        try:
+            await interaction.followup.edit_message(self.view.message.id, view=self.view)
+        except discord.NotFound:
+            # the spawn message was deleted before the catch completed; nothing to update
+            pass
 
 
 class BallSpawnView(View):
@@ -254,7 +258,7 @@ class BallSpawnView(View):
         except discord.Forbidden:
             log.warning(f"Missing permission to spawn ball in channel {channel}.")
         except discord.HTTPException:
-            log.error("Failed to spawn ball", exc_info=True)
+            log.error(f"Failed to spawn {self.name} in channel {channel}.", exc_info=True)
         return False
 
     def is_name_valid(self, text: str) -> bool:

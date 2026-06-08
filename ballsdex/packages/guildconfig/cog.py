@@ -50,15 +50,14 @@ class Config(commands.GroupCog):
         channel: discord.TextChannel
             The channel you want to set, current one if not specified.
         """
+        await interaction.response.defer(thinking=True, ephemeral=True)
         user = cast(discord.Member, interaction.user)
 
         if channel is None:
             if isinstance(interaction.channel, discord.TextChannel):
                 channel = interaction.channel
             else:
-                await interaction.response.send_message(
-                    "The current channel is not a valid text channel.", ephemeral=True
-                )
+                await interaction.followup.send("The current channel is not a valid text channel.", ephemeral=True)
                 return
 
         view = AcceptTOSView(interaction, channel, user)
@@ -67,7 +66,7 @@ class Config(commands.GroupCog):
         guild = interaction.guild
         assert guild
         if guild.unavailable:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "The server is unavailable to the bot and will not work properly. "
                 "Kicking and readding the bot may fix this.",
                 ephemeral=True,
@@ -85,9 +84,7 @@ class Config(commands.GroupCog):
         message = await channel.send(embed=embed, view=view)
         view.message = message
 
-        await interaction.response.send_message(
-            f"The activation embed has been sent in {channel.mention}.", ephemeral=True
-        )
+        await interaction.followup.send(f"The activation embed has been sent in {channel.mention}.", ephemeral=True)
 
     @app_commands.command()
     @app_commands.checks.has_permissions(manage_guild=True)
@@ -96,13 +93,14 @@ class Config(commands.GroupCog):
         """
         Disable or enable countryballs spawning.
         """
+        await interaction.response.defer(thinking=True)
         guild = cast(discord.Guild, interaction.guild)  # guild-only command
         config, created = await GuildConfig.objects.aget_or_create(guild_id=interaction.guild_id)
         if config.enabled:
             config.enabled = False  # type: ignore
             await config.asave()
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=False)
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{settings.bot_name} is now disabled in this server. Commands will still be "
                 f"available, but the spawn of new {settings.plural_collectible_name} "
                 "is suspended.\nTo re-enable the spawn, use the same command."
@@ -113,18 +111,18 @@ class Config(commands.GroupCog):
             self.bot.dispatch("ballsdex_settings_change", guild, enabled=True)
             if config.spawn_channel and (channel := guild.get_channel(config.spawn_channel)):
                 if channel:
-                    await interaction.response.send_message(
+                    await interaction.followup.send(
                         f"{settings.bot_name} is now enabled in this server, "
                         f"{settings.plural_collectible_name} will start spawning "
                         f"soon in {channel.mention}."
                     )
                 else:
-                    await interaction.response.send_message(
+                    await interaction.followup.send(
                         "The spawning channel specified in the configuration is not available.", ephemeral=True
                     )
             else:
                 config_cmd = self.channel.extras.get("mention", "`/config channel`")
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"{settings.bot_name} is now enabled in this server, however there is no "
                     f"spawning channel set. Please configure one with {config_cmd}."
                 )
@@ -135,30 +133,29 @@ class Config(commands.GroupCog):
         """
         Check the server configuration status.
         """
+        await interaction.response.defer(thinking=True)
         config = await GuildConfig.objects.aget_or_none(guild_id=interaction.guild_id)
         config_cmd = self.channel.extras.get("mention", "`/config channel`")
         if not config or not config.spawn_channel:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{settings.bot_name} is not configured in this server yet.\nPlease use {config_cmd} to set a channel.",
                 ephemeral=False,
             )
         else:
             assert interaction.guild
             if interaction.guild.unavailable:
-                await interaction.response.send_message(
-                    "Your server is unavailable to the bot. Readding it may fix this."
-                )
+                await interaction.followup.send("Your server is unavailable to the bot. Readding it may fix this.")
                 return
             channel = interaction.guild.get_channel(config.spawn_channel)
             if channel:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"{settings.bot_name} is configured in this server.\n"
                     f"Spawn channel: {channel.mention}\n"
                     f"Status: {'Enabled' if config.enabled else 'Disabled'}",
                     ephemeral=False,
                 )
             else:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"{settings.bot_name} is configured, but the specified channel "
                     "could not be found.\n"
                     f"Please use {config_cmd} to set it again.",

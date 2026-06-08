@@ -487,9 +487,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if not countryball:
             return
 
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
         if settings.max_favorites == 0:
-            await interaction.response.send_message(
-                f"You cannot set favorite {settings.plural_collectible_name} in this bot."
+            await interaction.followup.send(
+                f"You cannot set favorite {settings.plural_collectible_name} in this bot.", ephemeral=True
             )
             return
 
@@ -497,7 +499,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             try:
                 player = await Player.objects.aget(discord_id=interaction.user.id)
             except Player.DoesNotExist:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You don't have any {settings.plural_collectible_name} yet.", ephemeral=True
                 )
                 return
@@ -506,7 +508,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 f"{settings.collectible_name}" if settings.max_favorites == 1 else f"{settings.plural_collectible_name}"
             )
             if await player.balls.filter(favorite=True).acount() >= settings.max_favorites:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You cannot set more than {settings.max_favorites} favorite {grammar}.", ephemeral=True
                 )
                 return
@@ -514,7 +516,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             countryball.favorite = True  # type: ignore
             await countryball.asave()
             emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
                 f"is now a favorite {settings.collectible_name}!",
                 ephemeral=True,
@@ -524,7 +526,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             countryball.favorite = False  # type: ignore
             await countryball.asave()
             emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
                 f"isn't a favorite {settings.collectible_name} anymore.",
                 ephemeral=True,
