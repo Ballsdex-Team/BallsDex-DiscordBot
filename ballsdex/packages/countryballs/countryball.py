@@ -35,11 +35,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     async def on_error(self, interaction: discord.Interaction["BallsDexBot"], error: Exception) -> None:
         if isinstance(error, discord.NotFound) and error.code == 10062:
             return
-        log.exception("An error occured in countryball catching prompt", exc_info=error)
+        log.exception("An error occurred in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
-            await interaction.followup.send(f"An error occured with this {settings.collectible_name}.")
+            await interaction.followup.send(f"An error occurred with this {settings.collectible_name}.")
         else:
-            await interaction.response.send_message(f"An error occured with this {settings.collectible_name}.")
+            await interaction.response.send_message(f"An error occurred with this {settings.collectible_name}.")
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         await interaction.response.defer(thinking=True)

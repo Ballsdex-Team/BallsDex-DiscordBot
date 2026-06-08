@@ -26,7 +26,7 @@ async def _error_handler(interaction: Interaction, error: Exception) -> bool:
         return True
     if not interaction.is_expired() and interaction.type != discord.InteractionType.autocomplete:
         send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
-        await send("An error occured. Contact support if this persists.", ephemeral=True)
+        await send("An error occurred. Contact support if this persists.", ephemeral=True)
     return False
 
 
