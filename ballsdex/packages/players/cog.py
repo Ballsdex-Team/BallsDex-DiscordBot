@@ -62,7 +62,7 @@ class Player(commands.GroupCog):
         user: discord.User
             The user you want to add as a friend.
         """
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=True)
         player1, _ = await PlayerModel.objects.aget_or_create(discord_id=interaction.user.id)
         player2, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
 
