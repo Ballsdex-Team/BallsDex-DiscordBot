@@ -1,0 +1,1664 @@
+{
+  "rarities": [
+    {
+      "name": "Gomu Gomu no Mi (Gum Gum)",
+      "rarity": 1,
+      "type": "fruit"
+    },
+    {
+      "name": "Magu Magu no Mi (Magma Magma)",
+      "rarity": 1,
+      "type": "fruit"
+    },
+    {
+      "name": "Yami Yami no Mi (Dark Dark)",
+      "rarity": 1,
+      "type": "fruit"
+    },
+    {
+      "name": "Oro Jackson",
+      "rarity": 1,
+      "type": "ship"
+    },
+    {
+      "name": "Yoru",
+      "rarity": 1,
+      "type": "weapon"
+    },
+    {
+      "name": "Ragnir",
+      "rarity": 1,
+      "type": "weapon"
+    },
+    {
+      "name": "Rocks Pirates",
+      "rarity": 1,
+      "type": "crew"
+    },
+    {
+      "name": "Roger Pirates",
+      "rarity": 1,
+      "type": "crew"
+    },
+    {
+      "name": "Red Hair Pirates",
+      "rarity": 1,
+      "type": "crew"
+    },
+    {
+      "name": "Gura Gura no Mi (Quake Quake)",
+      "rarity": 4,
+      "type": "fruit"
+    },
+    {
+      "name": "Moby Dick",
+      "rarity": 4,
+      "type": "ship"
+    },
+    {
+      "name": "Shusui",
+      "rarity": 4,
+      "type": "weapon"
+    },
+    {
+      "name": "Blackbeard Pirates",
+      "rarity": 4,
+      "type": "crew"
+    },
+    {
+      "name": "Ope Ope no Mi",
+      "rarity": 5,
+      "type": "fruit"
+    },
+    {
+      "name": "Seiryu (Azure Dragon)",
+      "rarity": 5,
+      "type": "fruit"
+    },
+    {
+      "name": "Thousand Sunny",
+      "rarity": 5,
+      "type": "ship"
+    },
+    {
+      "name": "Ace",
+      "rarity": 5,
+      "type": "weapon"
+    },
+    {
+      "name": "Murakumogiri",
+      "rarity": 5,
+      "type": "weapon"
+    },
+    {
+      "name": "Whitebeard Pirates",
+      "rarity": 5,
+      "type": "crew"
+    },
+    {
+      "name": "Beast Pirates",
+      "rarity": 5,
+      "type": "crew"
+    },
+    {
+      "name": "Tori Tori: Phoenix",
+      "rarity": 7,
+      "type": "fruit"
+    },
+    {
+      "name": "Nikyu Nikyu no Mi (Paw Paw)",
+      "rarity": 7,
+      "type": "fruit"
+    },
+    {
+      "name": "Saber of Xebec",
+      "rarity": 7,
+      "type": "ship"
+    },
+    {
+      "name": "Red Force",
+      "rarity": 7,
+      "type": "ship"
+    },
+    {
+      "name": "Gryphon",
+      "rarity": 7,
+      "type": "weapon"
+    },
+    {
+      "name": "Wado Ichimonji",
+      "rarity": 7,
+      "type": "weapon"
+    },
+    {
+      "name": "Big Mom Pirates",
+      "rarity": 7,
+      "type": "crew"
+    },
+    {
+      "name": "Cross Guild",
+      "rarity": 7,
+      "type": "crew"
+    },
+    {
+      "name": "Jiki Jiki no Mi (Magnet Magnet)",
+      "rarity": 9,
+      "type": "fruit"
+    },
+    {
+      "name": "Queen Mama Chanter",
+      "rarity": 9,
+      "type": "ship"
+    },
+    {
+      "name": "Enma",
+      "rarity": 9,
+      "type": "weapon"
+    },
+    {
+      "name": "Straw Hat Pirates",
+      "rarity": 9,
+      "type": "crew"
+    },
+    {
+      "name": "Itsumade",
+      "rarity": 10,
+      "type": "fruit"
+    },
+    {
+      "name": "Fengxi",
+      "rarity": 10,
+      "type": "fruit"
+    },
+    {
+      "name": "Sandworm",
+      "rarity": 10,
+      "type": "fruit"
+    },
+    {
+      "name": "Bakotsu",
+      "rarity": 10,
+      "type": "fruit"
+    },
+    {
+      "name": "Gyuki",
+      "rarity": 10,
+      "type": "fruit"
+    },
+    {
+      "name": "Ratatoskr",
+      "rarity": 10,
+      "type": "fruit"
+    },
+    {
+      "name": "Victoria Punk",
+      "rarity": 10,
+      "type": "ship"
+    },
+    {
+      "name": "Polar Tang",
+      "rarity": 10,
+      "type": "ship"
+    },
+    {
+      "name": "Wind Granma",
+      "rarity": 10,
+      "type": "ship"
+    },
+    {
+      "name": "Shodai Kitetsu",
+      "rarity": 10,
+      "type": "weapon"
+    },
+    {
+      "name": "Revolutionary Army",
+      "rarity": 10,
+      "type": "crew"
+    },
+    {
+      "name": "Gods Knights",
+      "rarity": 10,
+      "type": "crew"
+    },
+    {
+      "name": "SSG",
+      "rarity": 10,
+      "type": "crew"
+    },
+    {
+      "name": "Perfume Yuda",
+      "rarity": 12,
+      "type": "ship"
+    },
+    {
+      "name": "Yakuza Kasen",
+      "rarity": 12,
+      "type": "weapon"
+    },
+    {
+      "name": "Hie Hie no Mi (Chilly Chilly)",
+      "rarity": 15,
+      "type": "fruit"
+    },
+    {
+      "name": "Thriller Bark",
+      "rarity": 15,
+      "type": "ship"
+    },
+    {
+      "name": "Ame no Habakiri",
+      "rarity": 15,
+      "type": "weapon"
+    },
+    {
+      "name": "Sandai Kitetsu",
+      "rarity": 15,
+      "type": "weapon"
+    },
+    {
+      "name": "Donquixote Pirates",
+      "rarity": 15,
+      "type": "crew"
+    },
+    {
+      "name": "Pika Pika no Mi (Light Light)",
+      "rarity": 16,
+      "type": "fruit"
+    },
+    {
+      "name": "Flying Dutchman",
+      "rarity": 16,
+      "type": "ship"
+    },
+    {
+      "name": "Giant Warrior Pirates",
+      "rarity": 16,
+      "type": "crew"
+    },
+    {
+      "name": "Doku Doku no Mi (Venom Venom)",
+      "rarity": 17,
+      "type": "fruit"
+    },
+    {
+      "name": "Garp’s Battleship",
+      "rarity": 17,
+      "type": "ship"
+    },
+    {
+      "name": "New Giant Warrior Pirates",
+      "rarity": 17,
+      "type": "crew"
+    },
+    {
+      "name": "Mera Mera no Mi (Fire Fire)",
+      "rarity": 18,
+      "type": "fruit"
+    },
+    {
+      "name": "Goro Goro no Mi (Thunder Thunder)",
+      "rarity": 18,
+      "type": "fruit"
+    },
+    {
+      "name": "Mochi Mochi no Mi",
+      "rarity": 18,
+      "type": "fruit"
+    },
+    {
+      "name": "Hito Hito: Buddha",
+      "rarity": 18,
+      "type": "fruit"
+    },
+    {
+      "name": "Soru Soru no Mi (Soul Soul)",
+      "rarity": 18,
+      "type": "fruit"
+    },
+    {
+      "name": "Suna Suna no Mi (Sand Sand)",
+      "rarity": 18,
+      "type": "fruit"
+    },
+    {
+      "name": "Numancia Flamingo",
+      "rarity": 18,
+      "type": "ship"
+    },
+    {
+      "name": "Coffin Boat",
+      "rarity": 18,
+      "type": "ship"
+    },
+    {
+      "name": "Striker",
+      "rarity": 18,
+      "type": "ship"
+    },
+    {
+      "name": "Raiu",
+      "rarity": 18,
+      "type": "weapon"
+    },
+    {
+      "name": "Heart Pirates",
+      "rarity": 18,
+      "type": "crew"
+    },
+    {
+      "name": "Kuja Pirates",
+      "rarity": 18,
+      "type": "crew"
+    },
+    {
+      "name": "Kidd Pirates",
+      "rarity": 18,
+      "type": "crew"
+    },
+    {
+      "name": "Nidai Kitetsu",
+      "rarity": 20,
+      "type": "weapon"
+    },
+    {
+      "name": "Stay Tune",
+      "rarity": 22,
+      "type": "ship"
+    },
+    {
+      "name": "Hanjomaru",
+      "rarity": 22,
+      "type": "ship"
+    },
+    {
+      "name": "Liberal Hind",
+      "rarity": 22,
+      "type": "ship"
+    },
+    {
+      "name": "Jewelry Margerita",
+      "rarity": 22,
+      "type": "ship"
+    },
+    {
+      "name": "Grudge Dolph",
+      "rarity": 22,
+      "type": "ship"
+    },
+    {
+      "name": "Neko:Leopard",
+      "rarity": 24,
+      "type": "fruit"
+    },
+    {
+      "name": "Golden Lion Pirates",
+      "rarity": 24,
+      "type": "crew"
+    },
+    {
+      "name": "Okuchi no Makami",
+      "rarity": 25,
+      "type": "fruit"
+    },
+    {
+      "name": "Going Merry",
+      "rarity": 25,
+      "type": "ship"
+    },
+    {
+      "name": "Kaken",
+      "rarity": 25,
+      "type": "weapon"
+    },
+    {
+      "name": "Kikoku",
+      "rarity": 25,
+      "type": "weapon"
+    },
+    {
+      "name": "Fallen Monk Pirates",
+      "rarity": 25,
+      "type": "crew"
+    },
+    {
+      "name": "Zushi Zushi no Mi (Press Press)",
+      "rarity": 26,
+      "type": "fruit"
+    },
+    {
+      "name": "Buggy Pirates",
+      "rarity": 26,
+      "type": "crew"
+    },
+    {
+      "name": "Kage Kage no Mi (Shadow Shadow)",
+      "rarity": 27,
+      "type": "fruit"
+    },
+    {
+      "name": "Ark Maxim",
+      "rarity": 27,
+      "type": "ship"
+    },
+    {
+      "name": "Oto and Kogarashi",
+      "rarity": 27,
+      "type": "weapon"
+    },
+    {
+      "name": "Firetank Pirates",
+      "rarity": 27,
+      "type": "crew"
+    },
+    {
+      "name": "Ito Ito no Mi (String String)",
+      "rarity": 28,
+      "type": "fruit"
+    },
+    {
+      "name": "Thriller Bark Pirates",
+      "rarity": 28,
+      "type": "crew"
+    },
+    {
+      "name": "Mori Mori no Mi (Forest Forest)",
+      "rarity": 29,
+      "type": "fruit"
+    },
+    {
+      "name": "Fuwa Fuwa no Mi (Float Float)",
+      "rarity": 29,
+      "type": "fruit"
+    },
+    {
+      "name": "Sexy Foxy",
+      "rarity": 29,
+      "type": "ship"
+    },
+    {
+      "name": "Big Top",
+      "rarity": 29,
+      "type": "ship"
+    },
+    {
+      "name": "Hawkins Pirates",
+      "rarity": 29,
+      "type": "crew"
+    },
+    {
+      "name": "On Air Pirates",
+      "rarity": 29,
+      "type": "crew"
+    },
+    {
+      "name": "Napoleon",
+      "rarity": 30,
+      "type": "weapon"
+    },
+    {
+      "name": "Toshi Toshi no Mi (Age Age)",
+      "rarity": 31,
+      "type": "fruit"
+    },
+    {
+      "name": "Yonta Maria",
+      "rarity": 31,
+      "type": "ship"
+    },
+    {
+      "name": "Shiguren",
+      "rarity": 31,
+      "type": "weapon"
+    },
+    {
+      "name": "Sun Pirates",
+      "rarity": 31,
+      "type": "crew"
+    },
+    {
+      "name": "Moku Moku no Mi (Smoke Smoke)",
+      "rarity": 32,
+      "type": "fruit"
+    },
+    {
+      "name": "Spade Pirates",
+      "rarity": 32,
+      "type": "crew"
+    },
+    {
+      "name": "Pteranodon",
+      "rarity": 33,
+      "type": "fruit"
+    },
+    {
+      "name": "Brachiosaurus",
+      "rarity": 33,
+      "type": "fruit"
+    },
+    {
+      "name": "Susu Susu no Mi (Soot Soot)",
+      "rarity": 33,
+      "type": "fruit"
+    },
+    {
+      "name": "Aro Aro no Mi (Arrow Arrow)",
+      "rarity": 33,
+      "type": "fruit"
+    },
+    {
+      "name": "Kyubi no Kitsune (Nine Tailed Fox)",
+      "rarity": 33,
+      "type": "fruit"
+    },
+    {
+      "name": "Bezan Black",
+      "rarity": 33,
+      "type": "ship"
+    },
+    {
+      "name": "Dreadnaught Sabre",
+      "rarity": 33,
+      "type": "ship"
+    },
+    {
+      "name": "Miss Love Duck",
+      "rarity": 33,
+      "type": "ship"
+    },
+    {
+      "name": "X Drake Pirates",
+      "rarity": 33,
+      "type": "crew"
+    },
+    {
+      "name": "Bonney Pirates",
+      "rarity": 33,
+      "type": "crew"
+    },
+    {
+      "name": "Germa 66",
+      "rarity": 33,
+      "type": "crew"
+    },
+    {
+      "name": "Barto Club",
+      "rarity": 33,
+      "type": "crew"
+    },
+    {
+      "name": "Beautiful Pirates",
+      "rarity": 33,
+      "type": "crew"
+    },
+    {
+      "name": "Island Ship",
+      "rarity": 35,
+      "type": "ship"
+    },
+    {
+      "name": "Durandal",
+      "rarity": 35,
+      "type": "weapon"
+    },
+    {
+      "name": "Soul Solid",
+      "rarity": 35,
+      "type": "weapon"
+    },
+    {
+      "name": "Yubashiri",
+      "rarity": 35,
+      "type": "weapon"
+    },
+    {
+      "name": "Neo Marines",
+      "rarity": 35,
+      "type": "crew"
+    },
+    {
+      "name": "Going Luffy",
+      "rarity": 37,
+      "type": "ship"
+    },
+    {
+      "name": "Sleeping Horse",
+      "rarity": 37,
+      "type": "ship"
+    },
+    {
+      "name": "Warabide",
+      "rarity": 37,
+      "type": "weapon"
+    },
+    {
+      "name": "Mero Mero no Mi (Love Love)",
+      "rarity": 38,
+      "type": "fruit"
+    },
+    {
+      "name": "Krieg Pirates",
+      "rarity": 38,
+      "type": "crew"
+    },
+    {
+      "name": "Gasu Gasu no Mi (Gas Gas)",
+      "rarity": 39,
+      "type": "fruit"
+    },
+    {
+      "name": "Yuki Yuki no Mi (Snow Snow)",
+      "rarity": 39,
+      "type": "fruit"
+    },
+    {
+      "name": "Bara Bara no Mi (Chop Chop)",
+      "rarity": 39,
+      "type": "fruit"
+    },
+    {
+      "name": "Mammoth Ship",
+      "rarity": 39,
+      "type": "ship"
+    },
+    {
+      "name": "Shirauo",
+      "rarity": 39,
+      "type": "weapon"
+    },
+    {
+      "name": "Arlong Pirates",
+      "rarity": 39,
+      "type": "crew"
+    },
+    {
+      "name": "Eisen Whip",
+      "rarity": 41,
+      "type": "weapon"
+    },
+    {
+      "name": "Yamata Orochi",
+      "rarity": 42,
+      "type": "fruit"
+    },
+    {
+      "name": "Piece of Spadille",
+      "rarity": 42,
+      "type": "ship"
+    },
+    {
+      "name": "Funkfreed",
+      "rarity": 42,
+      "type": "weapon"
+    },
+    {
+      "name": "Kiribachi",
+      "rarity": 42,
+      "type": "weapon"
+    },
+    {
+      "name": "New Fishman Pirates",
+      "rarity": 42,
+      "type": "crew"
+    },
+    {
+      "name": "Black Cat Pirates",
+      "rarity": 42,
+      "type": "crew"
+    },
+    {
+      "name": "Doru Doru no Mi (Wax Wax)",
+      "rarity": 43,
+      "type": "fruit"
+    },
+    {
+      "name": "Hapi Hapi no Mi (Harpy)",
+      "rarity": 44,
+      "type": "fruit"
+    },
+    {
+      "name": "Cat Claws",
+      "rarity": 44,
+      "type": "weapon"
+    },
+    {
+      "name": "Yonta Maria Fleet",
+      "rarity": 44,
+      "type": "crew"
+    },
+    {
+      "name": "Mane Mane no Mi (Clone Clone)",
+      "rarity": 45,
+      "type": "fruit"
+    },
+    {
+      "name": "Horo Horo no Mi",
+      "rarity": 45,
+      "type": "fruit"
+    },
+    {
+      "name": "New Witch’s Tongue",
+      "rarity": 45,
+      "type": "ship"
+    },
+    {
+      "name": "Bliking",
+      "rarity": 45,
+      "type": "ship"
+    },
+    {
+      "name": "Kashu",
+      "rarity": 45,
+      "type": "weapon"
+    },
+    {
+      "name": "Same-Kiri",
+      "rarity": 45,
+      "type": "weapon"
+    },
+    {
+      "name": "New Foxy Pirates",
+      "rarity": 45,
+      "type": "crew"
+    },
+    {
+      "name": "Bellamy Pirates",
+      "rarity": 45,
+      "type": "crew"
+    },
+    {
+      "name": "Batto Batto no Mi (Bat Bat)",
+      "rarity": 47,
+      "type": "fruit"
+    },
+    {
+      "name": "Shark Superb",
+      "rarity": 47,
+      "type": "ship"
+    },
+    {
+      "name": "Snapper Head",
+      "rarity": 47,
+      "type": "ship"
+    },
+    {
+      "name": "Terry-Sword",
+      "rarity": 47,
+      "type": "weapon"
+    },
+    {
+      "name": "Bliking Pirates",
+      "rarity": 47,
+      "type": "crew"
+    },
+    {
+      "name": "Hobi Hobi no Mi",
+      "rarity": 48,
+      "type": "fruit"
+    },
+    {
+      "name": "Alvida Pirates",
+      "rarity": 48,
+      "type": "crew"
+    },
+    {
+      "name": "Pachycephalosaurus",
+      "rarity": 49,
+      "type": "fruit"
+    },
+    {
+      "name": "White Tiger",
+      "rarity": 49,
+      "type": "ship"
+    },
+    {
+      "name": "Snail Ship",
+      "rarity": 49,
+      "type": "ship"
+    },
+    {
+      "name": "Mammoth",
+      "rarity": 50,
+      "type": "fruit"
+    },
+    {
+      "name": "Allosaurus",
+      "rarity": 50,
+      "type": "fruit"
+    },
+    {
+      "name": "Saber Tiger",
+      "rarity": 50,
+      "type": "fruit"
+    },
+    {
+      "name": "Triceratops",
+      "rarity": 50,
+      "type": "fruit"
+    },
+    {
+      "name": "Spinosaurus",
+      "rarity": 50,
+      "type": "fruit"
+    },
+    {
+      "name": "Happo Navy",
+      "rarity": 50,
+      "type": "crew"
+    },
+    {
+      "name": "Ideo Pirates",
+      "rarity": 50,
+      "type": "crew"
+    },
+    {
+      "name": "Tontatta Pirates",
+      "rarity": 50,
+      "type": "crew"
+    },
+    {
+      "name": "Cook Pirates",
+      "rarity": 50,
+      "type": "crew"
+    },
+    {
+      "name": "Baratie",
+      "rarity": 51,
+      "type": "ship"
+    },
+    {
+      "name": "Hebi: Anaconda",
+      "rarity": 55,
+      "type": "fruit"
+    },
+    {
+      "name": "Ushi Ushi no Mi (Giraffe)",
+      "rarity": 55,
+      "type": "fruit"
+    },
+    {
+      "name": "Horu Horu no Mi (Hormone Hormone)",
+      "rarity": 55,
+      "type": "fruit"
+    },
+    {
+      "name": "Rumbar Pirates",
+      "rarity": 55,
+      "type": "crew"
+    },
+    {
+      "name": "Caribou Pirates",
+      "rarity": 55,
+      "type": "crew"
+    },
+    {
+      "name": "Brownbeard Pirates",
+      "rarity": 55,
+      "type": "crew"
+    },
+    {
+      "name": "Flying Pirates",
+      "rarity": 55,
+      "type": "crew"
+    },
+    {
+      "name": "Toki Toki no Mi (Time Time)",
+      "rarity": 58,
+      "type": "fruit"
+    },
+    {
+      "name": "Falcon",
+      "rarity": 58,
+      "type": "fruit"
+    },
+    {
+      "name": "Shibo Shibo no Mi (Squeeze Squeeze)",
+      "rarity": 58,
+      "type": "fruit"
+    },
+    {
+      "name": "Gunyo Gunyo no Mi (Clay Clay)",
+      "rarity": 58,
+      "type": "fruit"
+    },
+    {
+      "name": "Decalvan Brothers Pirates",
+      "rarity": 58,
+      "type": "crew"
+    },
+    {
+      "name": "Whitey Bay Pirates",
+      "rarity": 58,
+      "type": "crew"
+    },
+    {
+      "name": "Little Pirates",
+      "rarity": 58,
+      "type": "crew"
+    },
+    {
+      "name": "Maelstrom Spider Pirates",
+      "rarity": 58,
+      "type": "crew"
+    },
+    {
+      "name": "Kira Kira no Mi (Diamond Diamond)",
+      "rarity": 62,
+      "type": "fruit"
+    },
+    {
+      "name": "AO Pirates",
+      "rarity": 62,
+      "type": "crew"
+    },
+    {
+      "name": "Cerberus",
+      "rarity": 63,
+      "type": "fruit"
+    },
+    {
+      "name": "Saruyama Alliance",
+      "rarity": 63,
+      "type": "crew"
+    },
+    {
+      "name": "Wapu Wapu no Mi (Warp Warp)",
+      "rarity": 64,
+      "type": "fruit"
+    },
+    {
+      "name": "Numa Numa no Mi (Swamp Swamp)",
+      "rarity": 64,
+      "type": "fruit"
+    },
+    {
+      "name": "Dadan Family",
+      "rarity": 64,
+      "type": "crew"
+    },
+    {
+      "name": "Shiro Shiro no Mi (Castle Castle)",
+      "rarity": 66,
+      "type": "fruit"
+    },
+    {
+      "name": "Noro Noro no Mi (Slow Slow)",
+      "rarity": 66,
+      "type": "fruit"
+    },
+    {
+      "name": "Brew Pirates",
+      "rarity": 66,
+      "type": "crew"
+    },
+    {
+      "name": "Palms Pirates",
+      "rarity": 66,
+      "type": "crew"
+    },
+    {
+      "name": "Doma Pirates",
+      "rarity": 66,
+      "type": "crew"
+    },
+    {
+      "name": "Blondie Pirates",
+      "rarity": 66,
+      "type": "crew"
+    },
+    {
+      "name": "Epoida Pirates",
+      "rarity": 66,
+      "type": "crew"
+    },
+    {
+      "name": "Ramba Pirates",
+      "rarity": 66,
+      "type": "crew"
+    },
+    {
+      "name": "Islewan Pirates",
+      "rarity": 66,
+      "type": "crew"
+    },
+    {
+      "name": "Bari Bari no Mi (Barrier Barrier)",
+      "rarity": 68,
+      "type": "fruit"
+    },
+    {
+      "name": "Iba Iba no Mi (Thorn Thorn)",
+      "rarity": 69,
+      "type": "fruit"
+    },
+    {
+      "name": "Space Pirates",
+      "rarity": 69,
+      "type": "crew"
+    },
+    {
+      "name": "Kirin",
+      "rarity": 70,
+      "type": "fruit"
+    },
+    {
+      "name": "Gran Tesoro Pirates",
+      "rarity": 70,
+      "type": "crew"
+    },
+    {
+      "name": "Ishi Ishi no Mi (Stone Stone)",
+      "rarity": 71,
+      "type": "fruit"
+    },
+    {
+      "name": "Hana Hana no Mi (Flower Flower)",
+      "rarity": 72,
+      "type": "fruit"
+    },
+    {
+      "name": "Wara Wara no Mi (Straw Straw)",
+      "rarity": 73,
+      "type": "fruit"
+    },
+    {
+      "name": "Pero Pero no Mi (Lick Lick)",
+      "rarity": 74,
+      "type": "fruit"
+    },
+    {
+      "name": "Suke Suke no Mi (Clear Clear)",
+      "rarity": 74,
+      "type": "fruit"
+    },
+    {
+      "name": "Oto Oto no Mi (Tone Tone)",
+      "rarity": 74,
+      "type": "fruit"
+    },
+    {
+      "name": "Bizzare Pirates",
+      "rarity": 74,
+      "type": "crew"
+    },
+    {
+      "name": "Takotopus Pirates",
+      "rarity": 74,
+      "type": "crew"
+    },
+    {
+      "name": "Inu: Hound",
+      "rarity": 77,
+      "type": "fruit"
+    },
+    {
+      "name": "Dachshund",
+      "rarity": 77,
+      "type": "fruit"
+    },
+    {
+      "name": "Uma Uma no Mi (Horse)",
+      "rarity": 77,
+      "type": "fruit"
+    },
+    {
+      "name": "Nomi Nomi no Mi (Brain Brain)",
+      "rarity": 80,
+      "type": "fruit"
+    },
+    {
+      "name": "Sube Sube no Mi (Slip Slip)",
+      "rarity": 81,
+      "type": "fruit"
+    },
+    {
+      "name": "Woshu Woshu no Mi (Wash Wash)",
+      "rarity": 82,
+      "type": "fruit"
+    },
+    {
+      "name": "King Cobra",
+      "rarity": 82,
+      "type": "fruit"
+    },
+    {
+      "name": "Inu:Wolf",
+      "rarity": 82,
+      "type": "fruit"
+    },
+    {
+      "name": "Inu:Dalmatian",
+      "rarity": 82,
+      "type": "fruit"
+    },
+    {
+      "name": "Sui Sui no Mi (Swim Swim)",
+      "rarity": 85,
+      "type": "fruit"
+    },
+    {
+      "name": "Kiro Kiro no Mi (Kilo Kilo)",
+      "rarity": 87,
+      "type": "fruit"
+    },
+    {
+      "name": "Ton Ton no Mi (Ton Ton)",
+      "rarity": 87,
+      "type": "fruit"
+    },
+    {
+      "name": "Baku Baku no Mi (Munch Munch)",
+      "rarity": 89,
+      "type": "fruit"
+    },
+    {
+      "name": "Shima Shima no Mi (Island Island)",
+      "rarity": 90,
+      "type": "fruit"
+    },
+    {
+      "name": "Kuku Kuku no Mi (Cook Cook)",
+      "rarity": 90,
+      "type": "fruit"
+    },
+    {
+      "name": "Bane Bane no Mi (Spring Spring)",
+      "rarity": 92,
+      "type": "fruit"
+    },
+    {
+      "name": "Netsu Netsu no Mi (Heat Heat)",
+      "rarity": 93,
+      "type": "fruit"
+    },
+    {
+      "name": "Ato Ato no Mi (Art Art)",
+      "rarity": 94,
+      "type": "fruit"
+    },
+    {
+      "name": "Toge Toge no Mi (Spike Spike)",
+      "rarity": 95,
+      "type": "fruit"
+    },
+    {
+      "name": "Juku Juku no Mi (Ripe Ripe)",
+      "rarity": 96,
+      "type": "fruit"
+    },
+    {
+      "name": "Seiryu (Azure Dragon copy)",
+      "rarity": 96,
+      "type": "fruit"
+    },
+    {
+      "name": "Onyudo",
+      "rarity": 98,
+      "type": "fruit"
+    },
+    {
+      "name": "Ori Ori no Mi (Bind Bind)",
+      "rarity": 98,
+      "type": "fruit"
+    },
+    {
+      "name": "Tori: Albatross",
+      "rarity": 100,
+      "type": "fruit"
+    },
+    {
+      "name": "Kyo Kyo no Mi (Buff Buff)",
+      "rarity": 100,
+      "type": "fruit"
+    },
+    {
+      "name": "Nui Nui no Mi (Stitch Stitch)",
+      "rarity": 102,
+      "type": "fruit"
+    },
+    {
+      "name": "Nagi Nagi no Mi (Silent Silent)",
+      "rarity": 102,
+      "type": "fruit"
+    },
+    {
+      "name": "Kobu Kobu no Mi (Pump Pump)",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Bomu Bomu no Mi (Bomb Bomb)",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Buki Buki no Mi (Arms Arms)",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Fude Fude no Mi (Brush Brush)",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Pegasus",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Rosamygale Grauvogeli",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Mira Mira no Mi (Mirror Mirror)",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Buku Buku no Mi (Book Book)",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Supa Supa no Mi (Dice Dice)",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Beri Beri no Mi",
+      "rarity": 104,
+      "type": "fruit"
+    },
+    {
+      "name": "Yomi Yomi no Mi (Revive Revive)",
+      "rarity": 114,
+      "type": "fruit"
+    },
+    {
+      "name": "Guru Guru no Mi (Spin Spin)",
+      "rarity": 115,
+      "type": "fruit"
+    },
+    {
+      "name": "Beta Beta no Mi (Sticky Sticky)",
+      "rarity": 115,
+      "type": "fruit"
+    },
+    {
+      "name": "Hira Hira no Mi (Ripple Ripple)",
+      "rarity": 117,
+      "type": "fruit"
+    },
+    {
+      "name": "Deka Deka no Mi (Huge Huge)",
+      "rarity": 118,
+      "type": "fruit"
+    },
+    {
+      "name": "Choki Choki no Mi (Snip Snip)",
+      "rarity": 118,
+      "type": "fruit"
+    },
+    {
+      "name": "Gabu Gabu no Mi (Gluck Gluck)",
+      "rarity": 118,
+      "type": "fruit"
+    },
+    {
+      "name": "Clima Tact",
+      "rarity": 120,
+      "type": "weapon"
+    },
+    {
+      "name": "Oshi Oshi no Mi (Push Push)",
+      "rarity": 121,
+      "type": "fruit"
+    },
+    {
+      "name": "Inu: Tanuki",
+      "rarity": 121,
+      "type": "fruit"
+    },
+    {
+      "name": "Nori Nori no Mi (Ride Ride)",
+      "rarity": 121,
+      "type": "fruit"
+    },
+    {
+      "name": "Hoya Hoya no Mi (Lamp Lamp)",
+      "rarity": 121,
+      "type": "fruit"
+    },
+    {
+      "name": "Maki Maki no Mi (Scroll Scroll)",
+      "rarity": 121,
+      "type": "fruit"
+    },
+    {
+      "name": "Shari Shari no Mi (Wheel Wheel)",
+      "rarity": 121,
+      "type": "fruit"
+    },
+    {
+      "name": "Giro Giro no Mi (Glare Glare)",
+      "rarity": 127,
+      "type": "fruit"
+    },
+    {
+      "name": "Hachi Kumo",
+      "rarity": 128,
+      "type": "fruit"
+    },
+    {
+      "name": "Shiku Shiku no Mi (Sick Sick)",
+      "rarity": 129,
+      "type": "fruit"
+    },
+    {
+      "name": "Koro Koro no Mi (Roll Roll)",
+      "rarity": 130,
+      "type": "fruit"
+    },
+    {
+      "name": "Neko:Cheetah",
+      "rarity": 131,
+      "type": "fruit"
+    },
+    {
+      "name": "Mogu Mogu no Mi (Mole Mole)",
+      "rarity": 131,
+      "type": "fruit"
+    },
+    {
+      "name": "Zou Zou no Mi (Elephant)",
+      "rarity": 131,
+      "type": "fruit"
+    },
+    {
+      "name": "Ushi: Bison",
+      "rarity": 131,
+      "type": "fruit"
+    },
+    {
+      "name": "Inu: Jackal",
+      "rarity": 131,
+      "type": "fruit"
+    },
+    {
+      "name": "Riki Riki no Mi (Strong Strong)",
+      "rarity": 136,
+      "type": "fruit"
+    },
+    {
+      "name": "Bisu Bisu no Mi (Biscuit Biscuit)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Bata Bata no Mi (Butter Butter)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Pamu Pamu no Mi (Pop Pop)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Memo Memo no Mi (Memory Memory)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Fuku Fuku no Mi (Clothes Clothes)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Awa Awa no Mi (Bubble Bubble)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Doa Doa no Mi (Door Door)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Muchi Muchi no Mi (Whip Whip)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Poke Poke no Mi (Pocket Pocket)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Kyubu Kyubu no Mi (Cube Cube)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Chiyu Chiyu no Mi (Heal Heal)",
+      "rarity": 137,
+      "type": "fruit"
+    },
+    {
+      "name": "Rako Rako no Mi (Sea Otter)",
+      "rarity": 148,
+      "type": "fruit"
+    },
+    {
+      "name": "Iku Iku no Mi (Growth Growth)",
+      "rarity": 149,
+      "type": "fruit"
+    },
+    {
+      "name": "Gocha Gocha no Mi (Merge Merge)",
+      "rarity": 150,
+      "type": "fruit"
+    },
+    {
+      "name": "Hito Hito no Mi (Human Human)",
+      "rarity": 151,
+      "type": "fruit"
+    },
+    {
+      "name": "Jake Jake no Mi (Jacket Jacket)",
+      "rarity": 152,
+      "type": "fruit"
+    },
+    {
+      "name": "Kuri Kuri no Mi (Cream Cream)",
+      "rarity": 153,
+      "type": "fruit"
+    },
+    {
+      "name": "Kibi Kibi no Mi (Kibi Dango)",
+      "rarity": 154,
+      "type": "fruit"
+    },
+    {
+      "name": "Minorhino",
+      "rarity": 155,
+      "type": "fruit"
+    },
+    {
+      "name": "Minotaurus",
+      "rarity": 155,
+      "type": "fruit"
+    },
+    {
+      "name": "Minozebra",
+      "rarity": 155,
+      "type": "fruit"
+    },
+    {
+      "name": "Minokoala",
+      "rarity": 155,
+      "type": "fruit"
+    },
+    {
+      "name": "Mato Mato no Mi (Mark Mark)",
+      "rarity": 159,
+      "type": "fruit"
+    },
+    {
+      "name": "Goru Goru no Mi (Gold Gold)",
+      "rarity": 160,
+      "type": "fruit"
+    },
+    {
+      "name": "Gasha Gasha no Mi (Clank Clank)",
+      "rarity": 160,
+      "type": "fruit"
+    },
+    {
+      "name": "Sara:Axolotl",
+      "rarity": 162,
+      "type": "fruit"
+    },
+    {
+      "name": "Kame Kame no Mi (Turtle Turtle)",
+      "rarity": 162,
+      "type": "fruit"
+    },
+    {
+      "name": "Hornet",
+      "rarity": 164,
+      "type": "fruit"
+    },
+    {
+      "name": "Tsutsu Tsutsu no Mi (Cannon Cannon)",
+      "rarity": 164,
+      "type": "fruit"
+    },
+    {
+      "name": "Kyatapira",
+      "rarity": 166,
+      "type": "fruit"
+    },
+    {
+      "name": "Tama Tama no Mi (Egg Egg)",
+      "rarity": 166,
+      "type": "fruit"
+    },
+    {
+      "name": "Kabutomushi",
+      "rarity": 168,
+      "type": "fruit"
+    },
+    {
+      "name": "Kachi Kachi no Mi (Hard Hard)",
+      "rarity": 170,
+      "type": "fruit"
+    },
+    {
+      "name": "Mini Mini no Mi",
+      "rarity": 170,
+      "type": "fruit"
+    },
+    {
+      "name": "Moa Moa no Mi (More More)",
+      "rarity": 170,
+      "type": "fruit"
+    },
+    {
+      "name": "Alpaca",
+      "rarity": 170,
+      "type": "fruit"
+    },
+    {
+      "name": "Hiso Hiso no Mi (Whisper Whisper)",
+      "rarity": 172,
+      "type": "fruit"
+    },
+    {
+      "name": "Goe Goe no Mi (Scream Scream)",
+      "rarity": 174,
+      "type": "fruit"
+    },
+    {
+      "name": "Peto Peto no Mi (Pet Pet)",
+      "rarity": 174,
+      "type": "fruit"
+    },
+    {
+      "name": "Bijo Bijo no Mi (Vision Vision)",
+      "rarity": 174,
+      "type": "fruit"
+    },
+    {
+      "name": "Raki Raki no Mi (Luck Luck)",
+      "rarity": 177,
+      "type": "fruit"
+    },
+    {
+      "name": "Nuke Nuke no Mi (Through Through)",
+      "rarity": 177,
+      "type": "fruit"
+    },
+    {
+      "name": "Gutsu Gutsu no Mi (Smelt Smelt)",
+      "rarity": 179,
+      "type": "fruit"
+    },
+    {
+      "name": "Noko Noko no Mi (Shroom Shroom)",
+      "rarity": 179,
+      "type": "fruit"
+    },
+    {
+      "name": "Nemu Nemu no Mi (Sleep Sleep)",
+      "rarity": 179,
+      "type": "fruit"
+    },
+    {
+      "name": "Kama Kama no Mi (Sickle Sickle)",
+      "rarity": 182,
+      "type": "fruit"
+    },
+    {
+      "name": "Modo Modo no Mi (Return Return)",
+      "rarity": 182,
+      "type": "fruit"
+    },
+    {
+      "name": "Ami Ami no Mi (Net Net)",
+      "rarity": 182,
+      "type": "fruit"
+    },
+    {
+      "name": "Jara Jara no Mi (Chain Chain)",
+      "rarity": 182,
+      "type": "fruit"
+    },
+    {
+      "name": "Uta Uta no Mi (Sing Sing)",
+      "rarity": 187,
+      "type": "fruit"
+    },
+    {
+      "name": "Smile Fruit",
+      "rarity": 189,
+      "type": "fruit"
+    },
+    {
+      "name": "Iro Iro no Mi (Colour Colour)",
+      "rarity": 189,
+      "type": "fruit"
+    },
+    {
+      "name": "Ame Ame no Mi (Candy Candy)",
+      "rarity": 191,
+      "type": "fruit"
+    },
+    {
+      "name": "Sabi Sabi no Mi (Rust Rust)",
+      "rarity": 191,
+      "type": "fruit"
+    }
+  ]
+}

@@ -57,6 +57,10 @@ INSTALLED_APPS = [
     "bd_models",
     "preview",
     "settings",
+    "currency_app",
+    "pack_models",
+    "collector_app",
+    "merchant_app",
 ]
 
 EXTRA_APPS = discover_extra_packages()

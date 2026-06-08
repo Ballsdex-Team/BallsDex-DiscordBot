@@ -24,6 +24,8 @@ venv
 *sqlite3*
 *.rdb
 pgbackups
+pre-migration-data-dump.sql
+final-data-dump.sql
 
 # static
 static
@@ -42,4 +44,11 @@ admin_panel/admin_panel/settings/production.py
 # extra package dev
 extra/*
 !extra/.gitkeep
+!extra/balls_extension
+!extra/collectible
+!extra/pack
+!extra/collector
+!extra/battle
+!extra/merchant
+!extra/bet
 .gitmodules

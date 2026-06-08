@@ -2,12 +2,13 @@ import asyncio
 import logging
 import random
 import re
-from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ext import commands
 from discord.utils import format_dt
+from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from django.urls import reverse
 
 from ballsdex.core.bot import BallsDexBot
@@ -16,7 +17,7 @@ from ballsdex.core.utils.buttons import ConfirmChoiceView
 from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
 from settings.models import settings
 
-from .flags import BallsCountFlags, GiveBallFlags, SpawnFlags
+from .flags import BallsCountFlags, CreateFlags, GiveBallFlags, SpawnFlags
 
 if TYPE_CHECKING:
     from ballsdex.packages.countryballs.cog import CountryBallsSpawner
@@ -24,19 +25,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.admin.balls")
 FILENAME_RE = re.compile(r"^(.+)(\.\S+)$")
-
-
-async def save_file(attachment: discord.Attachment) -> Path:
-    path = Path(f"./admin_panel/media/{attachment.filename}")
-    match = FILENAME_RE.match(attachment.filename)
-    if not match:
-        raise TypeError("The file you uploaded lacks an extension.")
-    i = 1
-    while path.exists():
-        path = Path(f"./admin_panel/media/{match.group(1)}-{i}{match.group(2)}")
-        i = i + 1
-    await attachment.save(path)
-    return path.relative_to("./admin_panel/media/")
 
 
 async def _spawn_bomb(
@@ -412,3 +400,89 @@ async def balls_count(ctx: commands.Context[BallsDexBot], *, flags: BallsCountFl
         await ctx.send(
             f"There {verb} {balls} {special_str}{country}{settings.collectible_name}{plural}.", ephemeral=True
         )
+
+
+@balls.command(name="create")
+@checks.has_permissions("bd_models.add_ball")
+async def balls_create(
+    ctx: commands.Context[BallsDexBot],
+    wild_card: discord.Attachment,
+    collection_card: discord.Attachment,
+    *,
+    flags: CreateFlags,
+):
+    """
+    Create a countryball.
+
+    Parameters
+    ----------
+    wild_card: discord.Attachment
+        Image used to spawn the countryball
+    collection_card: discord.Attachment
+        Image used when displaying countryballs
+    """
+    if not flags.emoji_id.isnumeric():
+        await ctx.send("The emoji ID isn't a valid number.", ephemeral=True)
+        return
+    emoji = ctx.bot.get_emoji(int(flags.emoji_id))
+    if not emoji:
+        await ctx.send(
+            "The bot couldn't find the given emoji. Maybe it doesn't exist or the bot doesn't have access to it.",
+            ephemeral=True,
+        )
+        return
+    await ctx.defer(ephemeral=True)
+
+    try:
+        wild_card_data = await wild_card.read()
+        collection_card_data = await collection_card.read()
+
+        ball = await Ball.objects.acreate(
+            country=flags.name,
+            health=flags.health,
+            attack=flags.attack,
+            rarity=flags.rarity,
+            emoji_id=emoji.id,
+            credits=flags.credits,
+            capacity_name=flags.capacity_name,
+            capacity_description=flags.capacity_description,
+            enabled=flags.enabled,
+            tradeable=flags.tradeable,
+            regime=flags.regime,
+            economy=flags.economy,
+            wild_card=ContentFile(wild_card_data, wild_card.filename),
+            collection_card=ContentFile(collection_card_data, collection_card.filename),
+        )
+    except IntegrityError:
+        log.exception(
+            f"Failed creating {settings.collectible_name} because "
+            f"a {settings.collectible_name} with that name ({flags.name}) already exists.",
+            exc_info=True,
+            extra={"webhook": True},
+        )
+        await ctx.send(
+            f"An error occured while creating the {settings.collectible_name}. Check the error in bot logs.",
+            ephemeral=True,
+        )
+        return
+    except Exception:
+        log.exception(
+            f"Failed creating {settings.collectible_name} with admin command", exc_info=True, extra={"webhook": True}
+        )
+        await ctx.send(
+            f"An error occured while creating the {settings.collectible_name}. Check the error in bot logs.",
+            ephemeral=True,
+        )
+        return
+    else:
+        await ctx.bot.load_cache()
+        files = [await wild_card.to_file(), await collection_card.to_file()]
+        admin_url = f"[View online](<{reverse('admin:bd_models_ball_change', args=(ball.pk,))}>)"
+        await ctx.send(
+            f"A new {settings.collectible_name} has been created! The internal cache was reloaded.\n"
+            f"{admin_url}\n"
+            f"{flags.name=} regime={flags.regime.name} economy={flags.economy.name if flags.economy else None} "
+            f"{flags.health=} {flags.attack=} {flags.rarity=} {flags.enabled=} {flags.tradeable=} emoji={emoji}",
+            files=files,
+        )
+        log.info(f'{ctx.author} created a new {settings.collectible_name} "{ball.country}"', extra={"webhook": True})

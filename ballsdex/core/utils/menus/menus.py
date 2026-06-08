@@ -233,6 +233,7 @@ class Menu[P]:
             self.controls._parent = container
 
     async def set_page(self, page: int):
+        self.current_page = page
         p = await self.source.get_page(page)
         for formatter in self.formatters:
             await formatter.format_page(p)

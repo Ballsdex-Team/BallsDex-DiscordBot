@@ -71,7 +71,11 @@ async def inventory_privacy(
     interacting_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
     if interaction.user.id == player.discord_id:
         return True
-    if await is_staff(interaction):
+
+    staff = await get_user_for_check(interaction.client, interaction.user)
+    if isinstance(staff, bool) and staff:  # only possible when user is superuser
+        return True
+    if staff and staff.is_staff:
         if settings.inv_privacy_bypass_ids and interaction.channel_id in settings.inv_privacy_bypass_ids:
             return True
 
