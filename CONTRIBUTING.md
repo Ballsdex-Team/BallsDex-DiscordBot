@@ -9,7 +9,6 @@ a development environment, with some tips on the code structure.
 
 Using Docker:
 1. Install Docker.
-2. Copy `.env.example` to `.env`.
 3. Run `docker compose build` at the root of this repository.
 4. Run `docker compose up -d postgres-db`. This will start the database.
 
