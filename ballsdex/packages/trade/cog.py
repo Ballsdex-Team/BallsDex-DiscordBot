@@ -148,11 +148,12 @@ class Trade(commands.GroupCog):
             trade.message = await interaction.channel.send(  # type: ignore
                 view=trade, allowed_mentions=await can_mention([player1, player2])
             )
-        except Exception:
+        except Exception as exc:
             # unregister the trade if something failed to avoid the 30 min timeout
             del self.trades[interaction.channel.id][interaction.user.id]
             del self.trades[interaction.channel.id][user.id]
             await trade.cleanup()
+            log.error(f"Failed to initialize trade between {interaction.user.id} and {user.id}", exc_info=exc)
             raise
         else:
             await interaction.followup.send("The trade has started.", ephemeral=True)
