@@ -82,6 +82,9 @@ class SetMoneyModal(Modal, title="Set money offering"):
         except ValueError:
             await interaction.response.send_message("This number could not be parsed.", ephemeral=True)
             return
+        if proposal_amount < 0:
+            await interaction.response.send_message("Amount cannot be negative.", ephemeral=True)
+            return
         await self.trading_user.player.arefresh_from_db(fields=["money"])
         if not self.trading_user.player.can_afford(proposal_amount):
             await interaction.response.send_message("You cannot afford that amount.", ephemeral=True)
