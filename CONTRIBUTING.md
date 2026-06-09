@@ -10,7 +10,7 @@ a development environment, with some tips on the code structure.
 Using Docker:
 1. Install Docker.
 2. Run `docker compose build` at the root of this repository.
-4. Run `docker compose up -d postgres-db`. This will start the database.
+3. Run `docker compose up -d postgres-db`. This will start the database.
 
 Without docker, check how to install and setup PostgreSQL on your OS.
 Export the appropriate environment variables as described in the
