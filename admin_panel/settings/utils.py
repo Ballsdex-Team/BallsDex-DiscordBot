@@ -6,7 +6,7 @@ def format_currency(amount: int, shortened: bool = True):
         if settings.currency_symbol_before:
             return f"{settings.currency_symbol}{amount}"
         else:
-            return f"{settings.currency_symbol}{amount}"
+            return f"{amount}{settings.currency_symbol}"
     else:
         if amount == 0:
             return f"no {settings.currency_name}"
