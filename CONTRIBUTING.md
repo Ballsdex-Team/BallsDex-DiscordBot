@@ -30,8 +30,7 @@ Export the appropriate environment variables as described in the
 
 ## Running the code
 
-Before running any command, make sure the following environment variables are configured,
-either in your `.env` file or in your shell:
+Before running any command, make sure the following environment variables are configured in your shell:
 
 ```bash
 export BALLSDEXBOT_DB_URL="postgres://ballsdex:defaultballsdexpassword@localhost:5432/ballsdex"
