@@ -1,10 +1,13 @@
 import logging
 
 import discord
+from asgiref.sync import sync_to_async
 from discord.ext import commands
+from django.db import connection
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
+from ballsdex.core.utils.buttons import ConfirmChoiceView
 from bd_models.models import Player
 from settings.models import settings
 
@@ -126,3 +129,41 @@ async def set(ctx: commands.Context[BallsDexBot], user: discord.User, amount: in
         f"{ctx.author} ({ctx.author.id}) set the balance of {user} ({user.id}) to {amount:,} coins",
         extra={"webhook": True},
     )
+
+
+@money.command()
+@checks.is_superuser()
+async def setdefault(ctx: commands.Context[BallsDexBot], amount: int, force: bool = False):
+    """
+    Set the default amount of currency provided to new users.
+
+    Parameters
+    ----------
+    amount: int
+        The new default amount to set.
+    force: bool
+        If true, then ALL users will have their balance reset to the default!
+    """
+    view = ConfirmChoiceView(ctx)
+    msg = f"You are about to set the new default balance to {amount}.\n"
+    if force:
+        msg += (
+            ":warning: You have chosen to reset ALL PLAYERS balance and set it to the new amount. "
+            "This operation cannot be undone, all existing balances will be lost.\n"
+        )
+    msg += "\nDo you want to continue?"
+    await ctx.send(msg, view=view)
+    await view.wait()
+    if not view.value:
+        return
+
+    @sync_to_async
+    def wrapper():
+        with connection.cursor() as cursor:
+            cursor.execute(f"ALTER TABLE player ALTER COLUMN money SET DEFAULT {int(amount)}")
+
+    await wrapper()
+    if force:
+        await Player.objects.all().aupdate(money=amount)
+
+    await ctx.send("New default set.")

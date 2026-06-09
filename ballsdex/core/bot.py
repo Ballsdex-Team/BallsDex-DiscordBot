@@ -57,6 +57,7 @@ DEFAULT_PACKAGES = (
     ("guildconfig", "ballsdex.packages.guildconfig"),
     ("countryballs", "ballsdex.packages.countryballs"),
     ("info", "ballsdex.packages.info"),
+    ("money", "ballsdex.packages.money"),
     ("players", "ballsdex.packages.players"),
     ("trade", "ballsdex.packages.trade"),
 )
