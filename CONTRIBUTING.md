@@ -23,9 +23,6 @@ Export the appropriate environment variables as described in the
 3. Run `uv sync`.
 4. You may run commands inside the virtualenv with `uv run ...`.
 
-### Environment configuration
-
-1. Copy `.env.example` to `.env` and configure the values as needed.
 
 ## Running the code
 
