@@ -44,18 +44,16 @@ async def leaderboard(
     if special:
         filters &= Q(balls__special=special)
     queryset = queryset.filter(filters).annotate(count=Count("balls", distinct=True)).order_by("-count")[:10]
-    stats = [(x, x.count) async for x in queryset]  # type: ignore
-
     ball_txt = countryball.country if countryball else ""
     special_txt = special.name if special else ""
     combined_parts = [str(x) for x in [special_txt, ball_txt] if x]
     combined = " ".join(combined_parts)
-
-    if not stats:
+    if not await queryset.aexists():
         await interaction.response.send_message(
             f"Players don't have any {settings.plural_collectible_name} {combined}", ephemeral=True
         )
         return
+    stats = [(x, x.count) async for x in queryset]  # type: ignore
 
     sorted_stats = sorted(stats, key=lambda x: x[1], reverse=True)
     entries = []
@@ -71,11 +69,7 @@ async def leaderboard(
         total_count += count
         entries.append(
             Section(
-                TextDisplay(
-                    f"### Top {medals.get(top, top)}\n"
-                    f"> User: {user.display_name}\n"
-                    f"> Count: {count}"
-                ),
+                TextDisplay(f"### Top {medals.get(top, top)}\n> User: {user.display_name}\n> Count: {count}"),
                 accessory=Thumbnail(media=user.display_avatar.url),
             )
         )

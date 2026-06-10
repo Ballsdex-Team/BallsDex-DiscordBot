@@ -37,6 +37,7 @@ def load_rarity_json(path: Path) -> list[Item]:
 
 
 items = load_rarity_json(Path(os.path.dirname(os.path.abspath(__file__)), "./items.json"))
+# items = []
 
 
 class Pack(commands.GroupCog):
