@@ -163,7 +163,7 @@ class Admin(commands.Cog):
             if not view.value:
                 return
             async with ctx.typing():
-                self.bot.tree.add_command(self.admin.app_command, guild=ctx.guild)
+                self.bot.tree.add_command(self.admin.app_command, guild=ctx.guild, override=True)
                 await self.bot.tree.sync(guild=ctx.guild)
                 log.info(f"Admin commands added to guild {ctx.guild.id} by {ctx.author}")
                 await ctx.send(
