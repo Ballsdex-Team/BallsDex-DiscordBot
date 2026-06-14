@@ -53,14 +53,14 @@ async def leaderboard(
     combined_parts = [str(x) for x in [special_txt, ball_txt] if x]
     combined = " ".join(combined_parts)
     if not await query.aexists():
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"Players don't have any {settings.plural_collectible_name} {combined}", ephemeral=True
         )
         return
-    player_ids = [x["player_id"] async for x in query]
-    players_qs = [x async for x in Player.objects.filter(id__in=player_ids)]
+    player_ids = [(x["player_id"], x["ball_count"]) async for x in query]
+    players_qs = [x async for x in Player.objects.filter(id__in=[x[0] for x in player_ids])]
     players = {p.pk: p for p in players_qs}
-    instances = [{"player": players[x], "ball_count": x["ball_count"]} for x in player_ids]
+    instances = [{"player": players[x[0]], "ball_count": x[1]} for x in player_ids]
 
     entries = []
     total_count = 0
