@@ -659,7 +659,12 @@ class TradeInstance(LayoutView):
         assert self.trader1.confirmed and self.trader2.confirmed
         trade_objects: list[TradeObject] = []
         balls: list[BallInstance] = []
-        trade = Trade.objects.create(player1=self.trader1.player, player2=self.trader2.player)
+        trade = Trade.objects.create(
+            player1=self.trader1.player,
+            player2=self.trader2.player,
+            player1_money=self.trader1.money,
+            player2_money=self.trader2.money,
+        )
 
         def money_check(trader: TradingUser) -> Player:
             player = Player.objects.select_for_update(nowait=True).get(id=trader.player.pk)

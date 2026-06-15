@@ -116,6 +116,8 @@ async def history_user(ctx: commands.Context["BallsDexBot"], user: discord.User,
         queryset = queryset.filter(Q(tradeobject__ballinstance__ball=flags.countryball)).distinct()
     if flags.special:
         queryset = queryset.filter(Q(tradeobject__ballinstance__special=flags.special)).distinct()
+    if getattr(flags, "currency", False):
+        queryset = queryset.filter(Q(player1_money__gt=0) | Q(player2_money__gt=0))
 
     await _build_history_view(ctx, queryset, title, f"/bd_models/trade/{query_params}")
 
@@ -145,6 +147,8 @@ async def history_ball(ctx: commands.Context["BallsDexBot"], countryball_id: str
 
     queryset = _build_base_queryset(flags.sort_oldest, flags.days)
     queryset = queryset.filter(tradeobject__ballinstance_id=ball.pk)
+    if getattr(flags, "currency", False):
+        queryset = queryset.filter(Q(player1_money__gt=0) | Q(player2_money__gt=0))
 
     await _build_history_view(
         ctx,
