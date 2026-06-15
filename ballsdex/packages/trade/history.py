@@ -70,9 +70,14 @@ class HistoryView(LayoutView):
         )
         container.add_item(Separator())
 
-        money = self.trade.player1_money if player.pk == self.trade.player1_id else self.trade.player2_money
-        if money:
-            container.add_item(TextDisplay(f"Also gave {format_currency(money, shortened=False)}."))
+        if player.pk == self.trade.player1_id:
+            money_given, money_received = self.trade.player1_money, self.trade.player2_money
+        else:
+            money_given, money_received = self.trade.player2_money, self.trade.player1_money
+        if money_given:
+            container.add_item(TextDisplay(f"Money traded: {format_currency(money_given, shortened=False)}"))
+        if money_received:
+            container.add_item(TextDisplay(f"Money received: {format_currency(money_received, shortened=False)}"))
 
         text = ""
         async for ball in BallInstance.objects.filter(tradeobject__trade=self.trade, tradeobject__player=player):
