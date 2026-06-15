@@ -2,6 +2,7 @@ import discord
 from discord.ext.commands import FlagConverter, Range, flag
 
 from ballsdex.core.utils.transformers import BallTransform, EconomyTransform, RegimeTransform, SpecialTransform
+from settings.models import settings
 
 
 class StatusFlags(FlagConverter):
@@ -55,6 +56,10 @@ class BallsCountFlags(FlagConverter):
 class TradeHistoryFlags(FlagConverter):
     sort_oldest: bool = flag(description='"yes" to have oldest trades first', default=False)
     days: int | None = flag(description="Retrieve entries from the last n days")
+    if settings.currency_enabled:
+        currency: bool = flag(
+            default=False, description=f"Only show trades that included {settings.currency_plural}"
+        )
 
 
 class UserTradeHistoryFlags(TradeHistoryFlags):

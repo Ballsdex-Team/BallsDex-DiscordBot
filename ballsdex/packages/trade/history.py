@@ -10,6 +10,7 @@ from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.menus import Formatter, Menu, TextFormatter, TextSource
 from bd_models.models import BallInstance, Player, Trade
 from settings.models import settings
+from settings.utils import format_currency
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -68,6 +69,10 @@ class HistoryView(LayoutView):
             )
         )
         container.add_item(Separator())
+
+        money = self.trade.player1_money if player.pk == self.trade.player1_id else self.trade.player2_money
+        if money:
+            container.add_item(TextDisplay(f"Also gave {format_currency(money, shortened=False)}."))
 
         text = ""
         async for ball in BallInstance.objects.filter(tradeobject__trade=self.trade, tradeobject__player=player):

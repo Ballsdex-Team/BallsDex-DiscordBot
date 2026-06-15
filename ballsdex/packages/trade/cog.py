@@ -54,6 +54,11 @@ class Trade(commands.GroupCog):
         self.trades: dict[int, dict[int, TradeInstance]] = defaultdict(dict)
         self.user_cache: LRUCache[int, discord.User] = LRUCache(maxsize=2000)
 
+        if not settings.currency_enabled and self.__cog_app_commands_group__:
+            history_command = self.__cog_app_commands_group__.get_command("history")
+            if history_command:
+                del history_command._params["currency"]  # type: ignore
+
     async def fetch_user(self, discord_id: int) -> discord.User:
         if cached := self.user_cache.get(discord_id, None):
             return cached
@@ -222,6 +227,7 @@ class Trade(commands.GroupCog):
             )
 
     @app_commands.command()
+    @app_commands.describe(currency=f"Only show trades that included {settings.currency_plural}")
     async def history(
         self,
         interaction: Interaction,
@@ -230,6 +236,7 @@ class Trade(commands.GroupCog):
         days: int | None = None,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        currency: bool = False,
     ):
         """
         Show your trade history.
@@ -246,6 +253,8 @@ class Trade(commands.GroupCog):
             The countryball you want to filter the trade history by.
         special: Special | None
             The special you want to filter the trade history by.
+        currency: bool
+            Only show trades that included currency.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -288,6 +297,9 @@ class Trade(commands.GroupCog):
             queryset = queryset.filter(Q(tradeobject__ballinstance__ball=countryball)).distinct()
         elif special:
             queryset = queryset.filter(Q(tradeobject__ballinstance__special=special)).distinct()
+
+        if currency:
+            queryset = queryset.filter(Q(player1_money__gt=0) | Q(player2_money__gt=0))
 
         if not await queryset.aexists():
             await interaction.followup.send("No history found.", ephemeral=True)
