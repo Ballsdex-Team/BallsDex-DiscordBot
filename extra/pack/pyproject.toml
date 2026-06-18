@@ -15,6 +15,3 @@ dependencies = []
 [project.urls]
 Patreon = "https://www.patreon.com/Valen7440"
 Funding = "https://ko-fi.com/valen7440"
-
-[tool.setuptools.package-data]
-"pack_app.pack_ext" = ["items.json"]
