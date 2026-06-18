@@ -1,9 +1,6 @@
-import json
-import os
 import random
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import discord
@@ -20,24 +17,10 @@ from ballsdex.settings import settings
 from bd_models.models import Ball, BallInstance, Player, Special, specials
 
 from .components import ShopMenuSource
-from .item_types import Item, ItemType
 from .transformers import ItemTransform
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
-
-
-def load_rarity_json(path: Path) -> list[Item]:
-    with open(path, "r", encoding="utf-8") as f:
-        try:
-            data = json.load(f)["rarities"]
-        except KeyError:
-            raise ValueError("Invalid rarity JSON format: 'rarities' key not found.")
-    return data
-
-
-items = load_rarity_json(Path(os.path.dirname(os.path.abspath(__file__)), "./items.json"))
-# items = []
 
 
 class Pack(commands.GroupCog):
@@ -117,19 +100,7 @@ class Pack(commands.GroupCog):
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
         )
         embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
-        desc = f"📖 **Rarity:** {rarity}\n"
-        rarities = [x for x in items if x["name"] == ball.country]
-        for item in rarities:
-            if item["type"] == ItemType.Crew:
-                desc += f"🏴‍☠️ **Crew Rarity:** {item['rarity']}\n"
-            elif item["type"] == ItemType.Fruit:
-                desc += f"🍎 **Fruit Rarity:** {item['rarity']}\n"
-            elif item["type"] == ItemType.Ship:
-                desc += f"🚢 **Ship Rarity:** {item['rarity']}\n"
-            elif item["type"] == ItemType.Weapon:
-                desc += f"⚔️ **Weapon Rarity:** {item['rarity']}\n"
-        desc += f"❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
-        embed.description = desc
+        embed.description = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         footer_text = (
             f"Uses: {resource.daily_uses}/3. Come back tomorrow."
@@ -187,19 +158,7 @@ class Pack(commands.GroupCog):
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
         )
         embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
-        desc = f"📖 **Rarity:** {rarity}\n"
-        rarities = [x for x in items if x["name"] == ball.country]
-        for item in rarities:
-            if item["type"] == ItemType.Crew:
-                desc += f"🏴‍☠️ **Crew Rarity:** {item['rarity']}\n"
-            elif item["type"] == ItemType.Fruit:
-                desc += f"🍎 **Fruit Rarity:** {item['rarity']}\n"
-            elif item["type"] == ItemType.Ship:
-                desc += f"🚢 **Ship Rarity:** {item['rarity']}\n"
-            elif item["type"] == ItemType.Weapon:
-                desc += f"⚔️ **Weapon Rarity:** {item['rarity']}\n"
-        desc += f"❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
-        embed.description = desc
+        embed.description = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         embed.set_footer(text="Come back next week for another pack!")
         with ThreadPoolExecutor() as pool:
@@ -275,20 +234,9 @@ class Pack(commands.GroupCog):
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
         )
         embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
-        desc = f"📖 **Rarity:** {rarity}\n"
-        rarities = [x for x in items if x["name"] == ball.country]
-        for item in rarities:
-            if item["type"] == ItemType.Crew:
-                desc += f"🏴‍☠️ **Crew Rarity:** {item['rarity']}\n"
-            elif item["type"] == ItemType.Fruit:
-                desc += f"🍎 **Fruit Rarity:** {item['rarity']}\n"
-            elif item["type"] == ItemType.Ship:
-                desc += f"🚢 **Ship Rarity:** {item['rarity']}\n"
-            elif item["type"] == ItemType.Weapon:
-                desc += f"⚔️ **Weapon Rarity:** {item['rarity']}\n"
+        desc = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
         if special:
             desc += f"⚡ **Special:** {special.name}\n"
-        desc += f"❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
         embed.description = desc
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         with ThreadPoolExecutor() as pool:

@@ -117,6 +117,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         sort: SortingChoices | None = None,
         reverse: bool = False,
         countryball: BallEnabledTransform | None = None,
+        economy: EconomyTransform | None = None,
+        regime: RegimeTransform | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
     ):
@@ -133,6 +135,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             Reverse the output of the list.
         countryball: Ball
             Filter the list by a specific countryball.
+        regime: Regime
+            Filter the list by a specific regime.
+        economy: Economy
+            Filter the list by a specific economy.
         special: Special
             Filter the list by a specific special event.
         filter: FilteringChoices
@@ -171,6 +177,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             query = filter_balls(filter, query, interaction.guild_id)
         if countryball:
             query = query.filter(ball=countryball)
+        if regime:
+            query = query.filter(ball__regime=regime)
+        if economy:
+            query = query.filter(ball__economy=economy)
         if special:
             query = query.filter(special=special)
         if sort:
