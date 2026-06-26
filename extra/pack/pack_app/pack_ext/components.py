@@ -51,7 +51,7 @@ class SelectBallPackView(Pages):
         if pack.prize:
             if instance.amount < pack.prize:
                 emoji = self.bot.get_emoji(pack.emoji_id) if pack.emoji_id else ""
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You don't enough {currency_emoji} {currency_settings.name} to buy "
                     f"**{emoji} {pack.name}**\n"
                     f"Your actual balance: "
