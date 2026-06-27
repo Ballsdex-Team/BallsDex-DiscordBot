@@ -44,24 +44,7 @@ class SelectBallPackView(Pages):
         await interaction.response.defer(thinking=True, ephemeral=True)
         ball = await Ball.objects.aget(pk=int(interaction.data.get("values")[0]))  # type: ignore
         pack = self.pack
-        currency_settings = await CurrencySettings.aload()
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        instance, _ = await MoneyInstance.objects.aget_or_create(player=player)
-        currency_emoji = self.bot.get_emoji(currency_settings.emoji_id) if currency_settings.emoji_id else ""
-        if pack.prize:
-            if instance.amount < pack.prize:
-                emoji = self.bot.get_emoji(pack.emoji_id) if pack.emoji_id else ""
-                await interaction.followup.send(
-                    f"You don't enough {currency_emoji} {currency_settings.name} to buy "
-                    f"**{emoji} {pack.name}**\n"
-                    f"Your actual balance: "
-                    f"**{currency_emoji} {instance.amount:,} {currency_settings.display_name(instance.amount)}**"
-                )
-                return
-            else:
-                instance.amount -= pack.prize
-                await instance.asave(update_fields=("amount",))
-
         special = pack.special or BallSpawnView.get_random_special()
         rarity = ball.rarity
         instance = await BallInstance.objects.acreate(
@@ -126,7 +109,9 @@ class ShopPages(Pages):
         balls = [x.cached_ball async for x in pack.balls.all()]
         if balls:
             paginator = SelectBallPackView(pack, interaction, balls)
-            await paginator.start(content="Select the countryballs that you want to purchase.", ephemeral=True)
+            await paginator.start(
+                content=f"Select the {settings.collectible_name} that you want to purchase.", ephemeral=True
+            )
             return
         else:
             await interaction.response.defer(thinking=True, ephemeral=True)
