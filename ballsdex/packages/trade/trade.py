@@ -230,7 +230,11 @@ class TradingUser(Container):
             button = Button(label="Change", style=discord.ButtonStyle.primary)
             button.callback = self.set_currency
             currency_section = Section(
-                TextDisplay(f"{settings.currency_name} proposed: {format_currency(self.money)}"), accessory=button
+                TextDisplay(
+                    f"{settings.currency_display_name(self.cog.bot)} proposed: "
+                    f"{format_currency(self.money, bot=self.cog.bot)}"
+                ),
+                accessory=button,
             )
             self.add_item(currency_section)
 

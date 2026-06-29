@@ -76,7 +76,13 @@ class SettingsAdmin(admin.ModelAdmin):
                 "unless you configure the values below. It is recommended that you keep it disabled unless you have "
                 "3rd-party integrations that will make use of the currency.\n"
                 "Only admin commands and trade support are included in the core bot for now.",
-                "fields": ("currency_name", "currency_plural_name", "currency_symbol", "currency_symbol_before"),
+                "fields": (
+                    "currency_name",
+                    "currency_plural_name",
+                    "currency_symbol",
+                    "currency_symbol_before",
+                    "currency_emoji_id",
+                ),
                 "classes": ("collapse",),
             },
         ),
