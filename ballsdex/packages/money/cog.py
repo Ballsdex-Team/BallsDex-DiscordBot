@@ -36,7 +36,7 @@ class Money(commands.GroupCog):
         else:
             balance = player.money
         await interaction.response.send_message(
-            f"You have {format_currency(balance, shortened=False)}.", ephemeral=True
+            f"You have {format_currency(balance, shortened=False, bot=self.bot)}.", ephemeral=True
         )
 
     @transaction.atomic()
@@ -72,14 +72,16 @@ class Money(commands.GroupCog):
             return
         if user == interaction.user:
             await interaction.response.send_message(
-                f"You cannot give {settings.currency_plural} to yourself.", ephemeral=True
+                f"You cannot give {settings.currency_display_plural(self.bot)} to yourself.", ephemeral=True
             )
             return
 
         await interaction.response.defer()
         old_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         if not old_player.can_afford(amount):
-            await interaction.followup.send(f"You do not have enough {settings.currency_plural}.", ephemeral=True)
+            await interaction.followup.send(
+                f"You do not have enough {settings.currency_display_plural(self.bot)}.", ephemeral=True
+            )
             return
 
         new_player, _ = await Player.objects.aget_or_create(discord_id=user.id)
