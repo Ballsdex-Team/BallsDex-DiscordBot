@@ -8,7 +8,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 
-from ..models import Ball, BallInstance, Economy, Regime, TradeObject, transform_media
+from ..models import Ball, BallGroup, BallInstance, Economy, Regime, TradeObject, transform_media
 
 if TYPE_CHECKING:
     from django.db.models import Field, Model, QuerySet
@@ -72,6 +72,13 @@ class EconomyAdmin(admin.ModelAdmin):
         return mark_safe(f'<img src="/media/{transform_media(str(obj.icon))}" height=30px />')
 
 
+@admin.register(BallGroup)
+class BallGroupAdmin(admin.ModelAdmin):
+    list_display = ("name", "pk")
+    search_fields = ("name",)
+    filter_horizontal = ("balls",)
+
+
 @admin.register(Ball)
 class BallAdmin(admin.ModelAdmin):
     autocomplete_fields = ("regime", "economy")
@@ -102,7 +109,7 @@ class BallAdmin(admin.ModelAdmin):
 
     list_display = ["country", "pk", "emoji", "rarity", "capacity_name", "health", "attack", "enabled"]
     list_editable = ["enabled", "rarity"]
-    list_filter = ["enabled", "tradeable", "regime", "economy", "created_at"]
+    list_filter = ["enabled", "tradeable", "regime", "economy", "groups", "created_at"]
     ordering = ["-created_at"]
 
     search_fields = ["country", "capacity_name", "capacity_description", "catch_names", "translations", "credits", "pk"]
