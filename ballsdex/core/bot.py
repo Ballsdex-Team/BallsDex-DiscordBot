@@ -33,6 +33,7 @@ from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.utils.checks import check_perms
 from bd_models.models import (
     Ball,
+    BallGroup,
     BlacklistedGuild,
     BlacklistedID,
     Economy,
@@ -40,6 +41,7 @@ from bd_models.models import (
     Special,
     balls,
     economies,
+    group_balls,
     regimes,
     specials,
 )
@@ -311,6 +313,14 @@ class BallsDexBot(commands.AutoShardedBot):
         async for special in Special.objects.all():
             specials[special.pk] = special
         table.add_row("Special events", str(len(specials)))
+
+        group_balls.clear()
+        async for group in BallGroup.objects.all():
+            group_balls[group.pk] = set()
+        async for group_id, ball_id in BallGroup.objects.values_list("id", "balls__id"):
+            if ball_id is not None:
+                group_balls[group_id].add(ball_id)
+        table.add_row("Groups", str(len(group_balls)))
 
         self.blacklist = set()
         async for blacklisted_id in BlacklistedID.objects.all().only("discord_id"):
