@@ -14,7 +14,6 @@ from ballsdex.core.utils.menus import ChunkedListSource, Menu, SelectFormatter, 
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
-    BallGroupTransform,
     BallInstanceTransform,
     EconomyTransform,
     RegimeTransform,
@@ -23,7 +22,7 @@ from ballsdex.core.utils.transformers import (
 )
 from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
 from bd_models.enums import DonationPolicy
-from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls, group_balls
+from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls
 from settings.models import settings
 
 from .countryballs_paginator import CountryballsDuplicateSource, CountryballsViewer
@@ -120,7 +119,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
-        group: BallGroupTransform | None = None,
     ):
         """
         List your countryballs.
@@ -139,8 +137,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             Filter the list by a specific special event.
         filter: FilteringChoices
             Filter the list by a specific filter.
-        group: BallGroup
-            Filter the list by a specific group.
         """
         user_obj = user or interaction.user
         await interaction.response.defer(thinking=True)
@@ -177,8 +173,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             query = query.filter(ball=countryball)
         if special:
             query = query.filter(special=special)
-        if group:
-            query = query.filter(ball__groups=group)
         if sort:
             query = sort_balls(sort, query)
         else:
@@ -187,10 +181,17 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         if not await query.aexists():
             ball_txt = countryball.country if countryball else ""
-            special_txt = special.name if special else ""
-            group_txt = group.name if group else ""
+            special_txt = special if special else ""
 
-            combined = " ".join(x for x in (special_txt, group_txt, ball_txt) if x)
+            if special_txt and ball_txt:
+                combined = f"{special_txt} {ball_txt}"
+            elif special_txt:
+                combined = special_txt
+            elif ball_txt:
+                combined = ball_txt
+            else:
+                combined = ""
+
             combined_txt = f"{combined} " if combined else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
@@ -225,7 +226,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         filter: FilteringChoices | None = None,
         regime: RegimeTransform | None = None,
         economy: EconomyTransform | None = None,
-        group: BallGroupTransform | None = None,
         duplicates: bool = False,
     ):
         """
@@ -243,8 +243,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The regime you want to see the completion of
         economy: Economy
             The economy you want to see the completion of
-        group: BallGroup
-            The group you want to see the completion of
         duplicates: bool
             Show the completion of duplicates.
         """
@@ -255,8 +253,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             extra_text += f"{regime.name} "
         if economy:
             extra_text += f"{economy.name} "
-        if group:
-            extra_text += f"{group.name} "
         if user is not None:
             try:
                 player = await Player.objects.aget(discord_id=user_obj.id)
@@ -303,10 +299,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             filters["ball__economy"] = economy
             bot_countryballs = {x: y for x, y in bot_countryballs.items() if balls[x].economy_id == economy.pk}
 
-        if group:
-            filters["ball__groups"] = group
-            bot_countryballs = {x: y for x, y in bot_countryballs.items() if x in group_balls.get(group.pk, set())}
-
         if filter:
             query = filter_balls(filter, BallInstance.objects.filter(**filters), interaction.guild_id)
         else:
@@ -334,13 +326,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         special_str = f" ({special.name})" if special else ""
         regime_str = f" ({regime.name})" if regime else ""
         economy_str = f" ({economy.name})" if economy else ""
-        group_str = f" ({group.name})" if group else ""
         original_catcher_string = " " + filter.value.replace("_", " ") + " " if filter else ""
         duplicates_str = " duplicates" if duplicates else ""
         progression = round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)
         text = (
             f"## {settings.bot_name}{original_catcher_string}"
-            f"{special_str}{regime_str}{economy_str}{group_str}{duplicates_str} progression: "
+            f"{special_str}{regime_str}{economy_str}{duplicates_str} progression: "
             f"**{progression}%**\n"
         )
 
