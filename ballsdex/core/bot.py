@@ -6,6 +6,7 @@ import logging
 import math
 import time
 import types
+from collections import defaultdict
 from datetime import datetime
 from typing import TYPE_CHECKING, Self, Sequence
 
@@ -41,7 +42,7 @@ from bd_models.models import (
     Special,
     balls,
     economies,
-    group_balls,
+    groups,
     regimes,
     specials,
 )
@@ -314,13 +315,16 @@ class BallsDexBot(commands.AutoShardedBot):
             specials[special.pk] = special
         table.add_row("Special events", str(len(specials)))
 
-        group_balls.clear()
-        async for group in BallGroup.objects.all():
-            group_balls[group.pk] = set()
-        async for group_id, ball_id in BallGroup.objects.values_list("id", "balls__id"):
+        group_ball_ids: dict[int, set[int]] = defaultdict(set)
+        async for group_id, ball_id in BallGroup.objects.values_list("id", "countryballs__id"):
             if ball_id is not None:
-                group_balls[group_id].add(ball_id)
-        table.add_row("Groups", str(len(group_balls)))
+                group_ball_ids[group_id].add(ball_id)
+
+        groups.clear()
+        async for group in BallGroup.objects.all():
+            group._ball_ids = frozenset(group_ball_ids[group.pk])
+            groups[group.pk] = group
+        table.add_row("Groups", str(len(groups)))
 
         self.blacklist = set()
         async for blacklisted_id in BlacklistedID.objects.all().only("discord_id"):

@@ -76,7 +76,7 @@ class EconomyAdmin(admin.ModelAdmin):
 class BallGroupAdmin(admin.ModelAdmin):
     list_display = ("name", "pk")
     search_fields = ("name",)
-    filter_horizontal = ("balls",)
+    filter_horizontal = ("countryballs",)
 
 
 @admin.register(Ball)

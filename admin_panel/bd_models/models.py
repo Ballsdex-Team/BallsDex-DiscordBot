@@ -16,6 +16,7 @@ from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Cast
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
 
@@ -43,7 +44,7 @@ balls: dict[int, Ball] = {}
 regimes: dict[int, Regime] = {}
 economies: dict[int, Economy] = {}
 specials: dict[int, Special] = {}
-group_balls: dict[int, set[int]] = {}
+groups: dict[int, BallGroup] = {}
 
 
 class QuerySet[T: models.Model](models.QuerySet[T]):
@@ -347,9 +348,11 @@ class Ball(models.Model):
 
 class BallGroup(models.Model):
     name = models.CharField(max_length=64, unique=True)
-    balls = models.ManyToManyField(Ball, related_name="groups", blank=True)
+    countryballs = models.ManyToManyField(Ball, related_name="groups", blank=True)
 
     objects: Manager[Self] = Manager()
+
+    _ball_ids: frozenset[int] = frozenset()
 
     class Meta:
         managed = True
@@ -359,6 +362,10 @@ class BallGroup(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    @cached_property
+    def balls(self) -> list[Ball]:
+        return [balls[i] for i in self._ball_ids if i in balls]
 
 
 class BallInstance(models.Model):

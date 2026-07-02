@@ -23,7 +23,7 @@ from ballsdex.core.utils.transformers import (
 )
 from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
 from bd_models.enums import DonationPolicy
-from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls, group_balls
+from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls, groups
 from settings.models import settings
 
 from .countryballs_paginator import CountryballsDuplicateSource, CountryballsViewer
@@ -305,7 +305,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         if group:
             filters["ball__groups"] = group
-            bot_countryballs = {x: y for x, y in bot_countryballs.items() if x in group_balls.get(group.pk, set())}
+            group_ball_ids = {ball.pk for ball in groups[group.pk].balls} if group.pk in groups else set()
+            bot_countryballs = {x: y for x, y in bot_countryballs.items() if x in group_ball_ids}
 
         if filter:
             query = filter_balls(filter, BallInstance.objects.filter(**filters), interaction.guild_id)
