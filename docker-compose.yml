@@ -5,9 +5,8 @@ x-common-env-vars:
     POSTGRES_USER=ballsdex
   - &postgres-url
     "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
-  # if serving the admin panel online, copy the file "production.example.py" and set
-  # DJANGO_SETTINGS_MODULE=config.production via docker-compose.override.yml, see
-  # docs/selfhosting/admin-panel/exposing-to-internet.md
+  # if serving the admin panel online, copy the file "production.example.py" and replace with
+  # - DJANGO_SETTINGS_MODULE=config.production
   - &django-settings
     "DJANGO_SETTINGS_MODULE=admin_panel.settings"
 
