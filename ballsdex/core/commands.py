@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 import discord
 from asgiref.sync import sync_to_async
 from discord.ext import commands
+from django.core.exceptions import SuspiciousFileOperation
 from django.db import connection
 
 from ballsdex.core.dev import send_interactive
@@ -143,7 +144,7 @@ class Core(commands.Cog):
         Check collectible media filesizes and emoji ids
         """
 
-        lines = []
+        lines: list[str] = []
         lines.append("# Missing emojis:")
         balls = [ball async for ball in Ball.objects.all()]
 
@@ -155,12 +156,19 @@ class Core(commands.Cog):
 
         lines.append("# Broken media:")
         for ball in balls:
-            if not ball.wild_card.storage.exists(ball.wild_card.name):
-                lines.append(f" - Spawn image for `{ball.country}` is missing")
-            if not ball.collection_card.storage.exists(ball.collection_card.name):
-                lines.append(f" - Collection card for `{ball.country}` is missing")
-            if ball.wild_card.size > 8 * (10**6):
-                lines.append(f" - Spawn image for `{ball.country}` is {ball.wild_card.size // 10**6}MB")
+            try:
+                if not ball.wild_card.storage.exists(ball.wild_card.name):
+                    lines.append(f" - Spawn image for `{ball.country}` is missing")
+                if ball.wild_card.storage.exists(ball.wild_card.name) and ball.wild_card.size > 8 * (10**6):
+                    lines.append(f" - Spawn image for `{ball.country}` is {ball.wild_card.size // 10**6}MB")
+            except SuspiciousFileOperation:
+                lines.append(f" - Spawn image for `{ball.country}` is outside the media root and cannot be used")
+
+            try:
+                if not ball.collection_card.storage.exists(ball.collection_card.name):
+                    lines.append(f" - Collection card for `{ball.country}` is missing")
+            except SuspiciousFileOperation:
+                lines.append(f" - Collection card for `{ball.country}` is outside the media root and cannot be used")
 
         pages = pagify("\n".join(lines), delims=["###", "\n\n", "\n"], priority=True)
         await send_interactive(ctx, pages, block=None)
