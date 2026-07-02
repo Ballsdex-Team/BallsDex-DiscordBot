@@ -80,11 +80,35 @@ docker compose build
 docker compose up -d
 ```
 
-`docker-compose.override.yml` is loaded automatically and is dedicated to local development: it
-points the admin panel at `admin_panel.settings.dev`, and sets the `INSTALL_DEV_DEPS` build
-argument so the `Dockerfile` installs the `dev` extra (`ruff`, `pyright`, `pre-commit`,
-`django-debug-toolbar`, `pyinstrument`) inside the image. Production builds don't set this
-argument, so deployed images stay lean.
+`docker-compose.override.yml` is loaded automatically if present, and is dedicated to local
+development: it points the admin panel at `admin_panel.settings.dev`, and sets the
+`INSTALL_DEV_DEPS` build argument so the `Dockerfile` installs the `dev` extra (`ruff`, `pyright`,
+`pre-commit`, `django-debug-toolbar`, `pyinstrument`) inside the image. Production builds don't
+set this argument, so deployed images stay lean.
+
+This file is gitignored, so it won't be created for you — you need to add it yourself, with the
+following contents:
+
+```yaml
+services:
+  bot:
+    command: python3 -m ballsdex --dev --debug
+    environment:
+      - "DJANGO_SETTINGS_MODULE=admin_panel.settings.dev"
+    build:
+      args:
+        - "INSTALL_DEV_DEPS=1"
+  admin-panel:
+    environment:
+      - "DJANGO_SETTINGS_MODULE=admin_panel.settings.dev"
+    build:
+      args:
+        - "INSTALL_DEV_DEPS=1"
+  migration:
+    build:
+      args:
+        - "INSTALL_DEV_DEPS=1"
+```
 
 You can then run tooling inside the containers, for example:
 
