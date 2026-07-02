@@ -9,8 +9,32 @@ a development environment, with some tips on the code structure.
 
 Using Docker:
 1. Install Docker.
-2. Run `docker compose build` at the root of this repository.
-3. Run `docker compose up -d postgres-db`. This will start the database.
+2. Create a `docker-compose.override.yml` file at the root of the repository with the following
+   contents. This file is gitignored, so it won't be created for you — you need to add it yourself:
+
+   ```yaml
+   services:
+     bot:
+       command: python3 -m ballsdex --dev --debug
+       environment:
+         - "DJANGO_SETTINGS_MODULE=admin_panel.settings.dev"
+       build:
+         args:
+           - "INSTALL_DEV_DEPS=1"
+     admin-panel:
+       environment:
+         - "DJANGO_SETTINGS_MODULE=admin_panel.settings.dev"
+       build:
+         args:
+           - "INSTALL_DEV_DEPS=1"
+     migration:
+       build:
+         args:
+           - "INSTALL_DEV_DEPS=1"
+   ```
+
+3. Run `docker compose build` at the root of this repository.
+4. Run `docker compose up -d postgres-db`. This will start the database.
 
 Without docker, check how to install and setup PostgreSQL on your OS.
 Export the appropriate environment variables as described in the
