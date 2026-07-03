@@ -21,9 +21,7 @@ class BlacklistHistorySummaryFormatter(menus.Formatter[QuerySet[BlacklistHistory
             action = "Blacklisted" if entry.action_type == "blacklist" else "Unblacklisted"
             reason = entry.reason or "No reason given"
             self.item.add_option(
-                label=f"{action} - {entry.date:%Y-%m-%d %H:%M}"[:100],
-                description=reason[:100],
-                value=str(entry.pk),
+                label=f"{action} - {entry.date:%Y-%m-%d %H:%M}"[:100], description=reason[:100], value=str(entry.pk)
             )
 
 
