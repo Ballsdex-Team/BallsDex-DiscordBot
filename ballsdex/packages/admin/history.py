@@ -41,7 +41,8 @@ async def _build_history_view(
         await ctx.send("Trade cog unavailable.", ephemeral=True)
         return
 
-    if not await queryset.aexists():
+    total = await queryset.acount()
+    if total == 0:
         await ctx.send("No history found.", ephemeral=True)
         return
 
@@ -59,7 +60,7 @@ async def _build_history_view(
         await interaction.followup.send(view=view, ephemeral=True)
 
     view = LayoutView()
-    view.add_item(TextDisplay(f"## {title}"))
+    view.add_item(TextDisplay(f"## {title} ({total} trade{'s' if total != 1 else ''})"))
 
     if admin_url_path:
         view.add_item(ActionRow(Button(label="View online", url=f"{settings.site_base_url}{admin_url_path}")))

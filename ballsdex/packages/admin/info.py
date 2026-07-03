@@ -46,6 +46,20 @@ async def info(ctx: commands.Context[BallsDexBot]):
     await ctx.send_help(ctx.command)
 
 
+_DAYS_PRESETS = (7, 14, 30, 90)
+
+
+async def _days_autocomplete(
+    interaction: discord.Interaction[BallsDexBot], current: str
+) -> list[discord.app_commands.Choice[int]]:
+    choices = [discord.app_commands.Choice(name=f"{preset} days", value=preset) for preset in _DAYS_PRESETS]
+    if current.strip().isdigit():
+        custom = int(current.strip())
+        if custom not in _DAYS_PRESETS:
+            choices.insert(0, discord.app_commands.Choice(name=f"{custom} days", value=custom))
+    return choices[:25]
+
+
 @info.command()
 @checks.has_permissions("bd_models.view_guildconfig")
 async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7):
@@ -170,3 +184,7 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
     )
     embed.set_thumbnail(url=user.display_avatar)  # type: ignore
     await ctx.send(embed=embed, ephemeral=True, view=PlayerInfoView(player, user.name))
+
+
+guild.autocomplete("days")(_days_autocomplete)
+user.autocomplete("days")(_days_autocomplete)
