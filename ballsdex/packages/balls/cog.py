@@ -119,6 +119,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        ephemeral: bool = False,
     ):
         """
         List your countryballs.
@@ -137,9 +138,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             Filter the list by a specific special event.
         filter: FilteringChoices
             Filter the list by a specific filter.
+        ephemeral: bool
+            Whether or not to send the command ephemerally.
         """
         user_obj = user or interaction.user
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=ephemeral)
 
         try:
             player = await Player.objects.aget(discord_id=user_obj.id)
@@ -227,6 +230,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         regime: RegimeTransform | None = None,
         economy: EconomyTransform | None = None,
         duplicates: bool = False,
+        ephemeral: bool = False,
     ):
         """
         Show your current completion of the BallsDex.
@@ -245,9 +249,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The economy you want to see the completion of
         duplicates: bool
             Show the completion of duplicates.
+        ephemeral: bool
+            Whether or not to send the command ephemerally.
         """
         user_obj = user or interaction.user
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=ephemeral)
         extra_text = f"{special.name} " if special else ""
         if regime:
             extra_text += f"{regime.name} "
@@ -375,6 +381,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction: discord.Interaction["BallsDexBot"],
         countryball: BallInstanceTransform,
         special: SpecialEnabledTransform | None = None,
+        ephemeral: bool = False,
     ):
         """
         Display info from a specific countryball.
@@ -385,10 +392,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The countryball you want to inspect
         special: Special
             Filter the results of autocompletion to a special event. Ignored afterwards.
+        ephemeral: bool
+            Whether or not to send the command ephemerally.
         """
         if not countryball:
             return
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=ephemeral)
         content, file, view = await countryball.prepare_for_message(interaction)
         await interaction.followup.send(content=content, file=file, view=view)
         file.close()
@@ -660,6 +669,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
         current_server: bool = False,
+        filter: FilteringChoices | None = None,
     ):
         """
         Count how many countryballs you have.
@@ -672,6 +682,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The special you want to count
         current_server: bool
             Only count countryballs caught in the current server
+        filter: FilteringChoices
+            Filter the count by a specific filter
         """
         if interaction.response.is_done():
             return
@@ -688,7 +700,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        balls = await BallInstance.objects.filter(**filters).acount()
+        query = BallInstance.objects.filter(**filters)
+        if filter:
+            query = filter_balls(filter, query, interaction.guild_id)
+        balls = await query.acount()
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
