@@ -91,13 +91,7 @@ def add_view_all_button(
 
 
 class DonationRequest(View):
-    def __init__(
-        self,
-        bot: "BallsDexBot",
-        interaction: Interaction,
-        countryball: BallInstance,
-        new_player: Player,
-    ):
+    def __init__(self, bot: "BallsDexBot", interaction: Interaction, countryball: BallInstance, new_player: Player):
         super().__init__(timeout=120)
         self.bot = bot
         self.original_interaction = interaction

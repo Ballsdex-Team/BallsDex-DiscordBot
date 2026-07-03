@@ -57,8 +57,7 @@ class BulkGiveSelector(BaseBulkSelector):
 
     async def on_confirm(self, interaction: Interaction, selected_ids: set[int]):
         balls = [
-            ball
-            async for ball in BallInstance.objects.filter(id__in=selected_ids).select_related("ball", "special")
+            ball async for ball in BallInstance.objects.filter(id__in=selected_ids).select_related("ball", "special")
         ]
 
         valid: list[BallInstance] = []
@@ -72,8 +71,7 @@ class BulkGiveSelector(BaseBulkSelector):
 
         if not valid:
             await interaction.response.send_message(
-                f"Nothing was given, all {len(balls)} selected {settings.plural_collectible_name} "
-                "are no longer valid.",
+                f"Nothing was given, all {len(balls)} selected {settings.plural_collectible_name} are no longer valid.",
                 ephemeral=True,
             )
             return
