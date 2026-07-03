@@ -313,7 +313,9 @@ async def balls_transfer(ctx: commands.Context[BallsDexBot], countryball_id: str
 
 @balls.command(name="transferinv")
 @checks.has_permissions("bd_models.change_ballinstance")
-async def balls_transferinv(ctx: commands.Context[BallsDexBot], source: discord.User, dest: discord.User, currency: bool = False):
+async def balls_transferinv(
+    ctx: commands.Context[BallsDexBot], source: discord.User, dest: discord.User, currency: bool = False
+):
     """
     Transfer the full inventory of a user to another.
 
@@ -372,7 +374,7 @@ async def balls_transferinv(ctx: commands.Context[BallsDexBot], source: discord.
             dest_player.money += source_player.money
             source_player.money = 0
             dest_player.save(update_fields=("money",))
-            source_player.save(update_fields=("money"),)
+            source_player.save(update_fields=("money",))
         return updated
 
     updated = await sync_to_async(perform_transfer)()
@@ -388,7 +390,7 @@ async def balls_transferinv(ctx: commands.Context[BallsDexBot], source: discord.
     log.info(
         f"{ctx.author} transferred inventory of {source} ({source.id}, {updated} {settings.plural_collectible_name}, "
         f"{format_currency(source_player.money if currency else 0)}) to {dest} ({dest.id}).",
-        extra={"webhook": True}
+        extra={"webhook": True},
     )
 
 
