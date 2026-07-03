@@ -79,7 +79,15 @@ class BaseBulkSelector(Container):
             .select_related(*extract_select_related(self.queryset.query.select_related))
         ):
             text += f"- {ball.description(include_emoji=True, bot=self.bot)}\n"
-        self.display_menu = Menu(self.bot, self.view, TextSource(text, page_length=3800), TextFormatter(self.balls))
+
+        # discord.ui.View caps the whole view at 4000 display characters total across every
+        # TextDisplay, not just this one - leave room for the header/description/count texts
+        # (which vary with `settings.plural_collectible_name`) plus a safety margin
+        other_text_length = len(self.header.content) + len(self.description.content) + len(self.balls_count.content)
+        page_length = max(500, 4000 - other_text_length - 200)
+        self.display_menu = Menu(
+            self.bot, self.view, TextSource(text, page_length=page_length), TextFormatter(self.balls)
+        )
         await self.display_menu.init(position=3, container=self)
 
     header = TextDisplay("## Bulk selection")
