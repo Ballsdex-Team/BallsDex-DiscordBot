@@ -35,6 +35,17 @@ def mention_app_command(app_command: app_commands.Command | app_commands.Group) 
             return f"`/{app_command.name}`"
 
 
+def iter_public_app_commands(bot: "BallsDexBot"):
+    """
+    Walk every app command from every cog except Admin - the same set of commands `/help`
+    already lists in full, reused here for the per-command detail view and its autocomplete.
+    """
+    for cog in bot.cogs.values():
+        if cog.qualified_name == "Admin":
+            continue
+        yield from cog.walk_app_commands()
+
+
 class Info(commands.Cog):
     """
     Simple info commands.
@@ -145,12 +156,56 @@ class Info(commands.Cog):
             view.remove_item(view.children[-1])
         await interaction.response.send_message(embed=embed, view=view)
 
+    async def command_autocomplete(
+        self, interaction: discord.Interaction["BallsDexBot"], current: str
+    ) -> list[app_commands.Choice[str]]:
+        choices: list[app_commands.Choice[str]] = []
+        for app_command in iter_public_app_commands(self.bot):
+            name = app_command.qualified_name
+            if current.lower() in name.lower():
+                choices.append(app_commands.Choice(name=f"/{name}", value=name))
+                if len(choices) >= 25:
+                    break
+        return choices
+
     @app_commands.command()
-    async def help(self, interaction: discord.Interaction["BallsDexBot"]):
+    @app_commands.autocomplete(command=command_autocomplete)
+    async def help(self, interaction: discord.Interaction["BallsDexBot"], command: str | None = None):
         """
-        Show the list of commands from the bot.
+        Show the list of commands from the bot, or details about a specific one.
+
+        Parameters
+        ----------
+        command: str
+            Show detailed help for this specific command instead of the full list.
         """
         assert self.bot.user
+
+        if command is not None:
+            for app_command in iter_public_app_commands(self.bot):
+                if app_command.qualified_name != command:
+                    continue
+                translated_description = await self.bot.tree.translator.translate(  # type: ignore
+                    locale_str(app_command.description),
+                    interaction.locale,
+                    TranslationContext(TranslationContextLocation.other, None),
+                )
+                embed = discord.Embed(
+                    title=mention_app_command(app_command).strip("`"),
+                    description=translated_description,
+                    color=discord.Colour.blurple(),
+                )
+                if isinstance(app_command, app_commands.Command) and app_command.parameters:
+                    params_text = "\n".join(
+                        f"`{param.display_name}`{'' if param.required else ' (optional)'}: {param.description}"
+                        for param in app_command.parameters
+                    )
+                    embed.add_field(name="Parameters", value=params_text, inline=False)
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+            await interaction.response.send_message(f"Command `{command}` was not found.", ephemeral=True)
+            return
+
         embed = discord.Embed(title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple())
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
