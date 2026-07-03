@@ -260,10 +260,27 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str, 
         await ctx.send(f"The {settings.collectible_name} ID you gave is not valid.", ephemeral=True)
         return
     try:
-        ball = await BallInstance.objects.aget(id=ballIdConverted)
+        ball = await BallInstance.objects.prefetch_related("player").aget(id=ballIdConverted)
     except BallInstance.DoesNotExist:
         await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
         return
+
+    method = "soft" if soft_delete else "hard"
+    view = ConfirmChoiceView(
+        ctx,
+        accept_message=f"Confirmed, {method} deleting...",
+        cancel_message="Request cancelled.",
+    )
+    await ctx.send(
+        f"You are about to {method} delete {ball.description(include_emoji=True, bot=ctx.bot)} "
+        f"(ID: `{countryball_id}`) owned by `{ball.player}`. Are you sure?",
+        view=view,
+        ephemeral=True,
+    )
+    await view.wait()
+    if not view.value:
+        return
+
     if soft_delete:
         ball.deleted = True
         await ball.asave()
@@ -299,6 +316,22 @@ async def balls_transfer(ctx: commands.Context[BallsDexBot], countryball_id: str
     except BallInstance.DoesNotExist:
         await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
         return
+
+    view = ConfirmChoiceView(
+        ctx,
+        accept_message="Confirmed, transferring...",
+        cancel_message="Request cancelled.",
+    )
+    await ctx.send(
+        f"You are about to transfer {ball.description(include_emoji=True, bot=ctx.bot)} "
+        f"(ID: `{countryball_id}`) from `{original_player}` to `{user}`. Are you sure?",
+        view=view,
+        ephemeral=True,
+    )
+    await view.wait()
+    if not view.value:
+        return
+
     player, _ = await Player.objects.aget_or_create(discord_id=user.id)
     ball.player = player
     await ball.asave()
