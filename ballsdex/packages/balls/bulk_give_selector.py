@@ -142,9 +142,9 @@ class BulkGiveSelector(BaseBulkSelector):
             recipient_id=self.new_player.discord_id,
         )
         await interaction.followup.send(
-            f"You just gave {len(valid)} {settings.plural_collectible_name} to {self.target_user.mention}!"
-            f"{skip_txt}",
+            f"{interaction.user.mention} just gave {len(valid)} {settings.plural_collectible_name} "
+            f"to {self.target_user.mention}!{skip_txt}",
             view=result_view,
-            allowed_mentions=await can_mention([self.new_player]),
+            allowed_mentions=await can_mention([self.new_player, self.old_player]),
         )
         await self._finalize()
