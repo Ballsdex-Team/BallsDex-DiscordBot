@@ -83,7 +83,17 @@ def filter_balls(
         return queryset.filter(special=None)
     elif filter == FilteringChoices.self_caught:
         return queryset.filter(trade_player=None)
+    elif filter == FilteringChoices.traded_only:
+        return queryset.exclude(trade_player=None)
     elif filter == FilteringChoices.this_server and guild_id is not None:
         return queryset.filter(server_id=guild_id)
+    elif filter == FilteringChoices.favorites:
+        return queryset.filter(favorite=True)
+    elif filter == FilteringChoices.duplicates:
+        # distinct annotation name from the `duplicates` SortingChoices to avoid clashing when
+        # both are applied to the same queryset
+        return queryset.annotate(_duplicate_count=RawSQL("COUNT(*) OVER (PARTITION BY ball_id)", ())).filter(
+            _duplicate_count__gt=1
+        )
     else:
         return queryset
