@@ -267,9 +267,7 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str, 
 
     method = "soft" if soft_delete else "hard"
     view = ConfirmChoiceView(
-        ctx,
-        accept_message=f"Confirmed, {method} deleting...",
-        cancel_message="Request cancelled.",
+        ctx, accept_message=f"Confirmed, {method} deleting...", cancel_message="Request cancelled."
     )
     await ctx.send(
         f"You are about to {method} delete {ball.description(include_emoji=True, bot=ctx.bot)} "
@@ -317,11 +315,7 @@ async def balls_transfer(ctx: commands.Context[BallsDexBot], countryball_id: str
         await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
         return
 
-    view = ConfirmChoiceView(
-        ctx,
-        accept_message="Confirmed, transferring...",
-        cancel_message="Request cancelled.",
-    )
+    view = ConfirmChoiceView(ctx, accept_message="Confirmed, transferring...", cancel_message="Request cancelled.")
     await ctx.send(
         f"You are about to transfer {ball.description(include_emoji=True, bot=ctx.bot)} "
         f"(ID: `{countryball_id}`) from `{original_player}` to `{user}`. Are you sure?",
