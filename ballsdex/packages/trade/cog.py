@@ -232,19 +232,20 @@ class Trade(commands.GroupCog):
     async def history(
         self,
         interaction: Interaction,
-        sorting: Literal["Recent", "Oldest"] = "Recent",
+        sorting: Literal["Newest", "Oldest"] = "Newest",
         trade_user: discord.User | None = None,
         days: int | None = None,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
         currency: bool = False,
+        filter: FilteringChoices | None = None,
     ):
         """
         Show your trade history.
 
         Parameters
         ----------
-        sorting: Literal["Recent", "Oldest"]
+        sorting: Literal["Newest", "Oldest"]
             The sorting order of your trades.
         trade_user: discord.User | None
             The user you want to filter your trade history with.
@@ -256,11 +257,13 @@ class Trade(commands.GroupCog):
             The special you want to filter the trade history by.
         currency: bool
             Only show trades that included currency.
+        filter: FilteringChoices
+            Only show trades involving countryballs matching a specific filter.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         user = interaction.user
-        if sorting == "Recent":
+        if sorting == "Newest":
             sort_value = "-date"
         else:
             sort_value = "date"
@@ -302,6 +305,10 @@ class Trade(commands.GroupCog):
         if currency:
             queryset = queryset.filter(Q(player1_money__gt=0) | Q(player2_money__gt=0))
 
+        if filter:
+            matching_balls = filter_balls(filter, BallInstance.objects.all(), interaction.guild_id)
+            queryset = queryset.filter(tradeobject__ballinstance__in=matching_balls).distinct()
+
         if not await queryset.aexists():
             await interaction.followup.send("No history found.", ephemeral=True)
             return
@@ -320,14 +327,19 @@ class Trade(commands.GroupCog):
             await interaction.followup.send(view=view, ephemeral=True)
 
         view = LayoutView()
-        view.add_item(discord.ui.TextDisplay("## Trade history"))
+        header = discord.ui.TextDisplay("## Trade history")
+        view.add_item(header)
         action = discord.ui.ActionRow()
         select = discord.ui.Select(placeholder="Choose a trade to display")
         select.callback = callback
         action.add_item(select)
         view.add_item(action)
-        menu = Menu(self.bot, view, ModelSource(queryset), TradeListFormatter(select, self, interaction.user))
+        source = ModelSource(queryset)
+        menu = Menu(self.bot, view, source, TradeListFormatter(select, self, interaction.user))
         await menu.init()
+        total_pages = source.get_max_pages()
+        if total_pages > 1:
+            header.content = f"## Trade history (Page 1/{total_pages})"
         await interaction.followup.send(view=view, ephemeral=True)
 
     @app_commands.command()
