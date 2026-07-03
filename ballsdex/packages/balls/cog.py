@@ -1,14 +1,16 @@
 import enum
 import logging
+from datetime import timedelta
 from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button, Container, LayoutView, TextDisplay, button
+from discord.ui import Container, LayoutView, TextDisplay
 from django.db.models import Count, Exists, F, OuterRef, Q
+from django.utils import timezone
 
-from ballsdex.core.discord import View
+from ballsdex.core.discord import LayoutView as TrackedLayoutView
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import ChunkedListSource, Menu, SelectFormatter, TextFormatter, TextSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
@@ -25,74 +27,14 @@ from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls
 from settings.models import settings
 
+from .bulk_give_selector import BulkGiveSelector
 from .countryballs_paginator import CountryballsDuplicateSource, CountryballsViewer
+from .donation import DonationRequest, GiveSkipReason, check_giveable, check_recipient
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 log = logging.getLogger("ballsdex.packages.countryballs")
-
-
-class DonationRequest(View):
-    def __init__(
-        self,
-        bot: "BallsDexBot",
-        interaction: discord.Interaction["BallsDexBot"],
-        countryball: BallInstance,
-        new_player: Player,
-    ):
-        super().__init__(timeout=120)
-        self.bot = bot
-        self.original_interaction = interaction
-        self.countryball = countryball
-        self.new_player = new_player
-
-    async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
-        if interaction.user.id != self.new_player.discord_id:
-            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
-            return False
-        return True
-
-    async def on_timeout(self):
-        for item in self.children:
-            item.disabled = True  # type: ignore
-        try:
-            await self.original_interaction.edit_original_response(view=self)
-        except discord.NotFound:
-            pass
-        await self.countryball.unlock()
-
-    @button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
-    async def accept(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
-        self.stop()
-        for item in self.children:
-            item.disabled = True  # type: ignore
-        self.countryball.favorite = False
-        self.countryball.trade_player = self.countryball.player
-        self.countryball.player = self.new_player
-        await self.countryball.asave()
-        trade = await Trade.objects.acreate(player1=self.countryball.trade_player, player2=self.new_player)
-        await TradeObject.objects.acreate(
-            trade=trade, ballinstance=self.countryball, player=self.countryball.trade_player
-        )
-        await interaction.response.edit_message(
-            content=interaction.message.content  # type: ignore
-            + "\n\N{WHITE HEAVY CHECK MARK} The donation was accepted!",
-            view=self,
-        )
-        await self.countryball.unlock()
-
-    @button(style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}")
-    async def deny(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
-        self.stop()
-        for item in self.children:
-            item.disabled = True  # type: ignore
-        await interaction.response.edit_message(
-            content=interaction.message.content  # type: ignore
-            + "\n\N{CROSS MARK} The donation was denied.",
-            view=self,
-        )
-        await self.countryball.unlock()
 
 
 class DuplicateType(enum.StrEnum):
@@ -552,7 +494,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         """
         if not countryball:
             return
-        if not countryball.is_tradeable:
+        skip_reason = await check_giveable(countryball)
+        if skip_reason == GiveSkipReason.NOT_TRADEABLE:
             await interaction.response.send_message(
                 f"You cannot donate this {settings.collectible_name}.", ephemeral=True
             )
@@ -560,7 +503,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if user.bot:
             await interaction.response.send_message("You cannot donate to bots.", ephemeral=True)
             return
-        if await countryball.is_locked():
+        if skip_reason == GiveSkipReason.LOCKED:
             await interaction.response.send_message(
                 f"This {settings.collectible_name} is currently locked for a trade. Please try again later.",
                 ephemeral=True,
@@ -588,37 +531,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         new_player, _ = await Player.objects.aget_or_create(discord_id=user.id)
         old_player = countryball.player
 
-        if new_player == old_player:
-            await interaction.followup.send(
-                f"You cannot give a {settings.collectible_name} to yourself.", ephemeral=True
-            )
+        error = await check_recipient(self.bot, new_player, old_player)
+        if error:
+            await interaction.followup.send(error, ephemeral=True)
             await countryball.unlock()
             return
-        if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
-            await interaction.followup.send(
-                "This player does not accept donations. You can use trades instead.", ephemeral=True
-            )
-            await countryball.unlock()
-            return
-
-        friendship = await new_player.is_friend(old_player)
-        if new_player.donation_policy == DonationPolicy.FRIENDS_ONLY:
-            if not friendship:
-                await interaction.followup.send(
-                    "This player only accepts donations from friends, use trades instead.", ephemeral=True
-                )
-                await countryball.unlock()
-                return
-        blocked = await new_player.is_blocked(old_player)
-        if blocked:
-            await interaction.followup.send("You cannot interact with a user that has blocked you.", ephemeral=True)
-            await countryball.unlock()
-            return
-        if new_player.discord_id in self.bot.blacklist:
-            await interaction.followup.send("You cannot donate to a blacklisted user.", ephemeral=True)
-            await countryball.unlock()
-            return
-        elif new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
+        if new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             await interaction.followup.send(
                 f"Hey {user.mention}, {interaction.user.name} wants to give you "
                 f"{countryball.description(include_emoji=True, bot=self.bot, is_trade=True)}!\n"
@@ -652,6 +570,75 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 allowed_mentions=await can_mention([new_player]),
             )
         await countryball.unlock()
+
+    @app_commands.command()
+    async def bulk_give(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        user: discord.User,
+        countryball: BallEnabledTransform | None = None,
+        sort: SortingChoices | None = None,
+        special: SpecialEnabledTransform | None = None,
+        filter: FilteringChoices | None = None,
+    ):
+        """
+        Give multiple countryballs to a user at once.
+
+        Parameters
+        ----------
+        user: discord.User
+            The user you want to give countryballs to
+        countryball: Ball
+            Filter the selection to a specific countryball
+        sort: SortingChoices
+            Choose how countryballs are sorted. Can be used to show duplicates.
+        special: Special
+            Filter the selection to a specific special event
+        filter: FilteringChoices
+            Filter the selection by a specific filter
+        """
+        if user.bot:
+            await interaction.response.send_message("You cannot donate to bots.", ephemeral=True)
+            return
+
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        old_player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        new_player, _ = await Player.objects.aget_or_create(discord_id=user.id)
+
+        error = await check_recipient(self.bot, new_player, old_player)
+        if error:
+            await interaction.followup.send(error, ephemeral=True)
+            return
+
+        query = (
+            BallInstance.objects.filter(
+                Q(locked=None) | Q(locked__lt=timezone.now() - timedelta(seconds=60)),
+                player__discord_id=interaction.user.id,
+            )
+            .exclude(tradeable=False)
+            .exclude(ball__tradeable=False)
+            .exclude(special__tradeable=False)
+        )
+        if countryball:
+            query = query.filter(ball=countryball)
+        if special:
+            query = query.filter(special=special)
+        if sort:
+            query = sort_balls(sort, query)
+        if filter:
+            query = filter_balls(filter, query, interaction.guild_id)
+        query.query.add_ordering("-id")  # enforce a unique ordering to prevent mismatch during pagination
+        if not await query.aexists():
+            await interaction.followup.send(f"No {settings.plural_collectible_name} found.", ephemeral=True)
+            return
+
+        view = TrackedLayoutView()
+        selector = BulkGiveSelector()
+        view.add_item(selector)
+        await selector.configure(self.bot, query, user=user, new_player=new_player, old_player=old_player)
+        message = await interaction.followup.send(view=view, ephemeral=True, wait=True)
+        view.original_message = message
 
     @app_commands.command()
     async def count(
