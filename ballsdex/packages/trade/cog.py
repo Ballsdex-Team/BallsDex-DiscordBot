@@ -341,6 +341,7 @@ class Trade(commands.GroupCog):
         interaction: Interaction,
         countryball: BallEnabledTransform | None = None,
         sort: SortingChoices | None = None,
+        reverse: bool = False,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
         group: BallGroupTransform | None = None,
@@ -354,6 +355,8 @@ class Trade(commands.GroupCog):
             The countryball you would like to filter the results to
         sort: SortingChoices
             Choose how countryballs are sorted. Can be used to show duplicates.
+        reverse: bool
+            Reverse the sorted results.
         special: Special
             Filter the results to a special event
         filter: FilteringChoices
@@ -397,6 +400,8 @@ class Trade(commands.GroupCog):
         if not await query.aexists():
             await interaction.followup.send(f"No {settings.plural_collectible_name} found.", ephemeral=True)
             return
+        if reverse:
+            query = query.reverse()
 
         view = LayoutView()
         selector = BulkSelector()
