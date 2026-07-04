@@ -373,11 +373,7 @@ async def balls_transferinv(
         await ctx.send(f"{source}'s inventory is empty.", ephemeral=True)
         return
 
-    view = ConfirmChoiceView(
-        ctx,
-        accept_message="Confirmed, transferring...",
-        cancel_message="Request cancelled.",
-    )
+    view = ConfirmChoiceView(ctx, accept_message="Confirmed, transferring...", cancel_message="Request cancelled.")
     if currency:
         text = (
             f"Are you sure you want to transfer {balls_count} {settings.plural_collectible_name} and "
