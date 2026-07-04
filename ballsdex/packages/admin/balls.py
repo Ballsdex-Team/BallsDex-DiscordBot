@@ -338,7 +338,7 @@ async def balls_transferinv(
         return
     qs = BallInstance.objects.filter(player=source_player)
     balls_count = await qs.acount()
-    if balls_count == 0 and (currency and source_player.money == 0):
+    if balls_count == 0 and (not currency or source_player.money == 0):
         await ctx.send(f"{source}'s inventory is empty.", ephemeral=True)
         return
 
@@ -359,6 +359,7 @@ async def balls_transferinv(
         return
 
     dest_player, _ = await Player.objects.aget_or_create(discord_id=dest.id)
+    transferred_money = source_player.money
 
     @transaction.atomic
     def perform_transfer():
@@ -381,7 +382,7 @@ async def balls_transferinv(
 
     if currency:
         text = (
-            f"{updated} {settings.plural_collectible_name} and {format_currency(source_player.money)} "
+            f"{updated} {settings.plural_collectible_name} and {format_currency(transferred_money)} "
             f"transferred from {source} to {dest}."
         )
     else:
@@ -389,7 +390,7 @@ async def balls_transferinv(
     await ctx.send(text, ephemeral=True)
     log.info(
         f"{ctx.author} transferred inventory of {source} ({source.id}, {updated} {settings.plural_collectible_name}, "
-        f"{format_currency(source_player.money if currency else 0)}) to {dest} ({dest.id}).",
+        f"{format_currency(transferred_money if currency else 0)}) to {dest} ({dest.id}).",
         extra={"webhook": True},
     )
 
