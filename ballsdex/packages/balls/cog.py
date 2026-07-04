@@ -813,7 +813,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         entries = [
             discord.SelectOption(
                 label=item["name"],
-                emoji=self.bot.get_emoji(item["emoji"]) or item["emoji"],
+                emoji=item["emoji"] if is_special else self.bot.get_emoji(item["emoji"]),
                 description=f"Count: {item['count']}",
                 value=item["value_id"],
             )
