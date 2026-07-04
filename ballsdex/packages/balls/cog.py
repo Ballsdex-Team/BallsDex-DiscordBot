@@ -208,7 +208,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if reverse:
             query = query.reverse()
 
-        view = CountryballsViewer()
+        view = CountryballsViewer(ephemeral=ephemeral)
         view.restrict_author(interaction.user.id)
         menu = Menu.countryballs(self.bot, view, view.selected, query)
         await menu.init(position=2)
