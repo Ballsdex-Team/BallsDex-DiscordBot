@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from django.db.models import DurationField
+from django.db.models import Count, DurationField
 from django.db.models.expressions import ExpressionWrapper, F, RawSQL
 
 from .enums import FilteringChoices, SortingChoices
@@ -83,7 +83,18 @@ def filter_balls(
         return queryset.filter(special=None)
     elif filter == FilteringChoices.self_caught:
         return queryset.filter(trade_player=None)
+    elif filter == FilteringChoices.traded_only:
+        return queryset.exclude(trade_player=None)
     elif filter == FilteringChoices.this_server and guild_id is not None:
         return queryset.filter(server_id=guild_id)
+    elif filter == FilteringChoices.favorites:
+        return queryset.filter(favorite=True)
+    elif filter == FilteringChoices.duplicates:
+        # window functions cannot be referenced in a WHERE clause, so the duplicate ball_ids
+        # are computed with a GROUP BY subquery instead and used with __in
+        duplicate_ball_ids = (
+            queryset.values("ball_id").annotate(_duplicate_count=Count("ball_id")).filter(_duplicate_count__gt=1)
+        ).values("ball_id")
+        return queryset.filter(ball_id__in=duplicate_ball_ids)
     else:
         return queryset
