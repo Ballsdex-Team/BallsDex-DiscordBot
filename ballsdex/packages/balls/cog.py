@@ -659,7 +659,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         interaction: discord.Interaction["BallsDexBot"],
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
-        current_server: bool = False,
+        filter: FilteringChoices | None = None,
     ):
         """
         Count how many countryballs you have.
@@ -670,8 +670,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The countryball you want to count
         special: Special
             The special you want to count
-        current_server: bool
-            Only count countryballs caught in the current server
+        filter: FilteringChoices
+            Filter the count by a specific filter.
         """
         if interaction.response.is_done():
             return
@@ -682,21 +682,43 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             filters["ball"] = countryball
         if special:
             filters["special"] = special
-        if current_server:
-            filters["server_id"] = interaction.guild.id
         filters["player__discord_id"] = interaction.user.id
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        balls = await BallInstance.objects.filter(**filters).acount()
+        query = BallInstance.objects.filter(**filters)
+        if filter:
+            query = filter_balls(filter, query, interaction.guild.id)
+
+        balls = await query.acount()
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
-        guild = f" caught in {interaction.guild.name}" if current_server else ""
 
-        await interaction.followup.send(
-            f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural}{guild}."
-        )
+        prefix_filters = {
+            FilteringChoices.only_specials: "special",
+            FilteringChoices.non_specials: "non special",
+            FilteringChoices.self_caught: "self caught",
+        }
+        suffix_filters = {
+            FilteringChoices.this_server: f"caught in {interaction.guild.name}",
+        }
+
+        if filter:
+            if filter in prefix_filters:
+                filter_phrase = prefix_filters[filter]
+                await interaction.followup.send(
+                    f"You have {balls:,} {special_str}{filter_phrase} {country}{settings.collectible_name}{plural}."
+                )
+            else:
+                filter_phrase = suffix_filters.get(filter, filter.value.replace("_", " "))
+                await interaction.followup.send(
+                    f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural} {filter_phrase}."
+                )
+        else:
+            await interaction.followup.send(
+                f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural}."
+            )
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 20, key=lambda i: i.user.id)
