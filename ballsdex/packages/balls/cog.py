@@ -695,25 +695,19 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
 
-        prefix_filters = {
-            FilteringChoices.only_specials: "special",
-            FilteringChoices.non_specials: "non special",
-            FilteringChoices.self_caught: "self caught",
-        }
-        suffix_filters = {
-            FilteringChoices.this_server: f"caught in {interaction.guild.name}",
-        }
-
         if filter:
-            if filter in prefix_filters:
-                filter_phrase = prefix_filters[filter]
+            filter_value = filter.value
+            suffix_filters = {f.value for f in FilteringChoices if "server" in f.value}
+
+            if filter_value in suffix_filters:
+                filter_name = f"caught in {interaction.guild.name}"
                 await interaction.followup.send(
-                    f"You have {balls:,} {special_str}{filter_phrase} {country}{settings.collectible_name}{plural}."
+                    f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural} {filter_name}."
                 )
             else:
-                filter_phrase = suffix_filters.get(filter, filter.value.replace("_", " "))
+                filter_name = filter_value.replace("_", " ")
                 await interaction.followup.send(
-                    f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural} {filter_phrase}."
+                    f"You have {balls:,} {special_str}{filter_name} {country}{settings.collectible_name}{plural}."
                 )
         else:
             await interaction.followup.send(
