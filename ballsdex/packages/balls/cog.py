@@ -101,6 +101,15 @@ class DuplicateType(enum.StrEnum):
     specials = "specials"
 
 
+class DuplicateSort(enum.Enum):
+    count_desc = "-count"
+    count_asc = "count"
+    alphabetic = "name"
+    alphabetic_reverse = "-name"
+    rarity = "rarity"
+    rarity_reverse = "-rarity"
+
+
 class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
     """
     View and manage your countryballs collection.
@@ -743,6 +752,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         type: DuplicateType,
+        sort: DuplicateSort | None = None,
         limit: app_commands.Range[int, 1] | None = None,
         reverse: bool = False,
     ):
@@ -753,6 +763,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         ----------
         type: DuplicateType
             Type of duplicate to check (countryballs or specials).
+        sort: DuplicateSort
+            Choose how the results are sorted. Defaults to most duplicated first.
         limit: int | None
             The amount of countryballs to show (default: all), can only be used with `countryballs`.
         reverse: bool
@@ -766,17 +778,27 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
-            annotations = {"name": F("special__name"), "emoji": F("special__emoji"), "value_id": F("special_id")}
+            annotations = {
+                "name": F("special__name"),
+                "emoji": F("special__emoji"),
+                "value_id": F("special_id"),
+                "rarity": F("special__rarity"),
+            }
             apply_limit = False
         else:
             queryset = queryset.filter(ball__tradeable=True)
-            annotations = {"name": F("ball__country"), "emoji": F("ball__emoji_id"), "value_id": F("ball_id")}
+            annotations = {
+                "name": F("ball__country"),
+                "emoji": F("ball__emoji_id"),
+                "value_id": F("ball_id"),
+                "rarity": F("ball__rarity"),
+            }
             apply_limit = True
 
         query = (
             queryset.values(annotations["value_id"].name)
             .annotate(**annotations, count=Count("value_id"))
-            .order_by("count" if reverse else "-count")
+            .order_by(sort.value if sort else DuplicateSort.count_desc.value)
         )
 
         if apply_limit and limit is not None:
@@ -791,7 +813,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         entries = [
             discord.SelectOption(
                 label=item["name"],
-                emoji=self.bot.get_emoji(item["emoji"]) or item["emoji"],
+                emoji=item["emoji"] if is_special else self.bot.get_emoji(item["emoji"]),
                 description=f"Count: {item['count']}",
                 value=item["value_id"],
             )
