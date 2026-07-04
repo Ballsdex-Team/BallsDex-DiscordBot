@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from django.db.models import DurationField
+from django.db.models import Count, DurationField
 from django.db.models.expressions import ExpressionWrapper, F, RawSQL
 
 from .enums import FilteringChoices, SortingChoices
@@ -90,10 +90,11 @@ def filter_balls(
     elif filter == FilteringChoices.favorites:
         return queryset.filter(favorite=True)
     elif filter == FilteringChoices.duplicates:
-        # distinct annotation name from the `duplicates` SortingChoices to avoid clashing when
-        # both are applied to the same queryset
-        return queryset.annotate(_duplicate_count=RawSQL("COUNT(*) OVER (PARTITION BY ball_id)", ())).filter(
-            _duplicate_count__gt=1
-        )
+        # window functions cannot be referenced in a WHERE clause, so the duplicate ball_ids
+        # are computed with a GROUP BY subquery instead and used with __in
+        duplicate_ball_ids = (
+            queryset.values("ball_id").annotate(_duplicate_count=Count("ball_id")).filter(_duplicate_count__gt=1)
+        ).values("ball_id")
+        return queryset.filter(ball_id__in=duplicate_ball_ids)
     else:
         return queryset
