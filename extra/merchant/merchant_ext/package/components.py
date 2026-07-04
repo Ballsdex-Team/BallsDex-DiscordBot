@@ -3,7 +3,6 @@ import random
 from typing import TYPE_CHECKING
 
 import discord
-from currency_app.models import CurrencySettings, MoneyInstance
 from discord.ui import Select, select
 from django.utils import timezone
 from merchant_app.models import GlobalShop, MerchantItem
@@ -11,6 +10,7 @@ from merchant_app.models import GlobalShop, MerchantItem
 from ballsdex.core.utils.menus.old import ListPageSource, Pages
 from bd_models.models import BallInstance, Player
 from settings.models import settings
+from settings.utils import format_currency
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -54,12 +54,9 @@ class BuyItemView(Pages):
             return
         await interaction.response.defer(thinking=True, ephemeral=True)
 
-        currency_settings = await self.get_currency_settings()
-
         try:
             player = await Player.objects.aget(discord_id=interaction.user.id)
-            money_instance = await MoneyInstance.objects.aget(player=player)
-        except (Player.DoesNotExist, MoneyInstance.DoesNotExist):
+        except Player.DoesNotExist:
             await interaction.response.send_message("You're not registred in the economy system yet.")
             return
 
@@ -78,12 +75,11 @@ class BuyItemView(Pages):
             )
             return
 
-        if money_instance.amount < item.prize:
-            currency_emoji = self.bot.get_emoji(currency_settings.emoji_id) if currency_settings.emoji_id else ""
+        if player.money < item.prize:
             await interaction.followup.send(
-                f"You don't enough {currency_emoji} {currency_settings.name} to buy "
+                f"You don't enough {settings.currency_display_plural(self.bot)} to buy "
                 f"**{item.name}**\n"
-                f"Your actual balance: {await self.format_price(money_instance.amount)}"
+                f"Your actual balance: {format_currency(player.money, False, self.bot)}"
             )
             return
 
@@ -102,22 +98,9 @@ class BuyItemView(Pages):
             await interaction.followup.send("An error occurred while trying to buy the item.")
             return
         else:
-            money_instance.amount -= item.prize
-            await money_instance.asave(update_fields=("amount",))
+            await player.remove_money(item.prize)
             await interaction.followup.send(
-                f"You've bought {item.name} for **{await self.format_price(item.prize)}!**\n"
+                f"You've bought {item.name} for **{format_currency(player.money, False, self.bot)}!**\n"
                 f"{instance.description(include_emoji=True, bot=self.bot)}"
             )
             return
-
-    async def format_price(self, amount: int | None, include_emoji: bool = True):
-        currency_settings = await self.get_currency_settings()
-        text = f"{amount:,} {currency_settings.display_name(amount)}" if amount else "Free"
-        if include_emoji:
-            emoji = self.bot.get_emoji(currency_settings.emoji_id or 0)
-            if emoji:
-                text = f"{emoji} {text}"
-        return text
-
-    async def get_currency_settings(self):
-        return await CurrencySettings.aload()

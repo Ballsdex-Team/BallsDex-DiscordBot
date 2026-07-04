@@ -2,6 +2,8 @@
 
 from typing import TYPE_CHECKING, Literal, cast
 
+from django.apps import apps as global_apps
+from django.contrib.auth.management import create_permissions
 from django.db import migrations
 
 if TYPE_CHECKING:
@@ -35,6 +37,10 @@ def get_permissions(
 
 
 def create_default_groups(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
+    create_permissions(
+        app_config=global_apps.get_app_config("bd_models"), apps=apps, using=schema_editor.connection.alias
+    )
+
     group_model = cast(type["Group"], apps.get_model("auth", "Group"))
     permission_model = cast(type["Permission"], apps.get_model("auth", "Permission"))
     content_type_model = cast(type["ContentType"], apps.get_model("contenttypes", "ContentType"))

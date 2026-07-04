@@ -96,7 +96,7 @@ class GuildConfig(models.Model):
 
 class Player(models.Model):
     discord_id = models.BigIntegerField(unique=True, help_text="Discord user ID")
-    money = models.PositiveBigIntegerField(help_text="Money posessed by the player", default=0)
+    money = models.PositiveBigIntegerField(help_text="Money posessed by the player", db_default=0)
     donation_policy = models.SmallIntegerField(
         choices=DonationPolicy.choices,
         help_text="How you want to handle donations",

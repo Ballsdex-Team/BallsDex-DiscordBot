@@ -54,6 +54,11 @@ class Trade(commands.GroupCog):
         self.trades: dict[int, dict[int, TradeInstance]] = defaultdict(dict)
         self.user_cache: LRUCache[int, discord.User] = LRUCache(maxsize=2000)
 
+        if not settings.currency_enabled and self.__cog_app_commands_group__:
+            history_command = self.__cog_app_commands_group__.get_command("history")
+            if history_command:
+                del history_command._params["currency"]  # type: ignore
+
     async def fetch_user(self, discord_id: int) -> discord.User:
         if cached := self.user_cache.get(discord_id, None):
             return cached
@@ -148,11 +153,12 @@ class Trade(commands.GroupCog):
             trade.message = await interaction.channel.send(  # type: ignore
                 view=trade, allowed_mentions=await can_mention([player1, player2])
             )
-        except Exception:
+        except Exception as exc:
             # unregister the trade if something failed to avoid the 30 min timeout
             del self.trades[interaction.channel.id][interaction.user.id]
             del self.trades[interaction.channel.id][user.id]
             await trade.cleanup()
+            log.error(f"Failed to initialize trade between {interaction.user.id} and {user.id}", exc_info=exc)
             raise
         else:
             await interaction.followup.send("The trade has started.", ephemeral=True)
@@ -222,6 +228,7 @@ class Trade(commands.GroupCog):
             )
 
     @app_commands.command()
+    @app_commands.describe(currency=f"Only show trades that included {settings.currency_plural}")
     async def history(
         self,
         interaction: Interaction,
@@ -230,6 +237,7 @@ class Trade(commands.GroupCog):
         days: int | None = None,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        currency: bool = False,
     ):
         """
         Show your trade history.
@@ -246,6 +254,8 @@ class Trade(commands.GroupCog):
             The countryball you want to filter the trade history by.
         special: Special | None
             The special you want to filter the trade history by.
+        currency: bool
+            Only show trades that included currency.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -268,7 +278,8 @@ class Trade(commands.GroupCog):
             if trade_user:
                 p2 = await Player.objects.only("id").aget(discord_id=trade_user.id)
         except Player.DoesNotExist:
-            await interaction.response.send_message("One of the players does not exist.", ephemeral=True)
+            send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
+            await send("One of the players does not exist.", ephemeral=True)
             return
         if trade_user:
             queryset = queryset.filter((Q(player1=p1, player2=p2)) | (Q(player1=p2, player2=p1)))
@@ -287,6 +298,9 @@ class Trade(commands.GroupCog):
             queryset = queryset.filter(Q(tradeobject__ballinstance__ball=countryball)).distinct()
         elif special:
             queryset = queryset.filter(Q(tradeobject__ballinstance__special=special)).distinct()
+
+        if currency:
+            queryset = queryset.filter(Q(player1_money__gt=0) | Q(player2_money__gt=0))
 
         if not await queryset.aexists():
             await interaction.followup.send("No history found.", ephemeral=True)

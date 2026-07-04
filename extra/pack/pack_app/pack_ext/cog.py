@@ -4,15 +4,15 @@ from datetime import timedelta
 from typing import TYPE_CHECKING
 
 import discord
-from currency_app.models import CurrencySettings, MoneyInstance
 from currency_app.models import Item as ItemModel
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import format_dt
 from pack_models.models import PackResource, PackSettings
 
-from ballsdex.settings import settings
 from bd_models.models import Ball, BallInstance, Player
+from settings.models import settings
+from settings.utils import format_currency
 
 from .components import ShopMenuSource, ShopPages
 
@@ -170,14 +170,13 @@ class Pack(commands.GroupCog):
         Check available packs in the shop.
         """
         await interaction.response.defer(thinking=True)
-        currency_settings = await CurrencySettings.aload()
         packs = [x async for x in ItemModel.objects.order_by("prize").prefetch_related("balls", "special").all()]
 
         if not packs:
             await interaction.followup.send(f"{settings.bot_name} doesn't have any packs to buy.")
             return
 
-        source = ShopMenuSource(packs, self.bot, currency_settings)
+        source = ShopMenuSource(packs, self.bot)
         pages = ShopPages(source, interaction=interaction, compact=True)
         await pages.start()
 
@@ -188,18 +187,13 @@ class Pack(commands.GroupCog):
         Claim your daily payment.
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
-        currency_settings = await CurrencySettings.aload()
-        currency_emoji = self.bot.get_emoji(currency_settings.emoji_id) if currency_settings.emoji_id else ""
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        instance, _ = await MoneyInstance.objects.aget_or_create(player=player)
-
-        instance.amount += 1500
-        await instance.asave(update_fields=("amount",))
+        await player.add_money(1500)
 
         await interaction.followup.send(
             "You've claimed  "
-            f"**{currency_emoji} 1,500 {currency_settings.display_name(1500)}**! "
-            f"Now you have **{instance.amount:,}**. Come back tomorrow!"
+            f"**{format_currency(1500, False, self.bot)}**! "
+            f"Now you have **{player.money:,}**. Come back tomorrow!"
         )
 
     @app_commands.command()
@@ -208,14 +202,9 @@ class Pack(commands.GroupCog):
         Check your actual coin balance.
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
-        currency_settings = await CurrencySettings.aload()
-        currency_emoji = self.bot.get_emoji(currency_settings.emoji_id) if currency_settings.emoji_id else ""
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        instance, _ = await MoneyInstance.objects.aget_or_create(player=player)
 
-        await interaction.followup.send(
-            f"You have **{currency_emoji} {instance.amount:,} {currency_settings.display_name(instance.amount)}**"
-        )
+        await interaction.followup.send(f"You have {format_currency(player.money, False, self.bot)}")
         return
 
     async def _get_random_countryball(self, countryballs: list[Ball]) -> Ball:

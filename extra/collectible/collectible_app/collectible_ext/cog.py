@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 import discord
-from currency_app.models import CurrencySettings, MoneyInstance
+from currency_app.models import CurrencySettings
 from discord import app_commands
 from discord.ext import commands
 
@@ -11,6 +11,8 @@ from ballsdex.settings import settings
 from bd_models.models import BallInstance, Player
 from collectible_app.models import Collectible as CollectibleModel
 from collectible_app.models import CollectibleInstance
+from settings.models import settings
+from settings.utils import format_currency
 
 from .transformers import CollectibleTransform
 
@@ -28,27 +30,17 @@ class Collectible(commands.GroupCog):
         Check all available collectibles.
         """
         await interaction.response.defer(thinking=True)
-        currency_settings = await CurrencySettings.aload()
-        currency_emoji = self.bot.get_emoji(currency_settings.emoji_id) if currency_settings.emoji_id else ""
         entries: list[tuple[str, str]] = []
         collectibles = [x async for x in CollectibleModel.objects.order_by("name", "created_at").all()]
 
         for collectible in collectibles:
             emoji = self.bot.get_emoji(collectible.emoji_id) if collectible.emoji_id else ""
+            price = "Free" if collectible.price is None else format_currency(collectible.price, False, self.bot)
 
             if collectible.description:
-                desc = (
-                    f"{collectible.description}\n\n"
-                    f"Price: **{currency_emoji} {'Free' if collectible.price is None else collectible.price} "
-                    f"{currency_settings.display_name(collectible.price)}**\n"
-                    f"**__Requirements:__**\n"
-                )
+                desc = f"{collectible.description}\n\nPrice: {price}\n**__Requirements:__**\n"
             else:
-                desc = (
-                    f"Price: **{currency_emoji} {'Free' if collectible.price is None else collectible.price} "
-                    f"{currency_settings.display_name(collectible.price)}**\n"
-                    f"**__Requirements:__**\n"
-                )
+                desc = f"Price: {price}**__Requirements:__**\n"
 
             if not collectible.has_requirements:
                 desc += "You don't need any requirements to buy this collectible.\n"
@@ -81,8 +73,6 @@ class Collectible(commands.GroupCog):
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        money_instance, _ = await MoneyInstance.objects.aget_or_create(player=player)
-        currency_settings = await CurrencySettings.aload()
 
         if await CollectibleInstance.objects.filter(player=player, collectible=collectible).aexists():
             await interaction.followup.send("You already have this collectible.")
@@ -94,20 +84,16 @@ class Collectible(commands.GroupCog):
                 return
 
         if collectible.price:
-            if collectible.price > money_instance.amount:
+            if collectible.price > player.money:
                 emoji = self.bot.get_emoji(collectible.emoji_id) if collectible.emoji_id else ""
-                currency_emoji = self.bot.get_emoji(currency_settings.emoji_id) if currency_settings.emoji_id else ""
                 await interaction.followup.send(
-                    f"You don't enough {currency_emoji} {currency_settings.name} to buy "
+                    f"You don't enough {settings.currency_display_plural(self.bot)} to buy "
                     f"**{emoji} {collectible.name}**\n"
-                    f"Your actual balance: "
-                    f"**{currency_emoji} "
-                    f"{money_instance.amount:,} {currency_settings.display_name(money_instance.amount)}**"
+                    f"Your actual balance: **{format_currency(collectible.price, False, self.bot)}**"
                 )
                 return
             else:
-                money_instance.amount -= collectible.price
-                await money_instance.asave(update_fields=("amount",))
+                await player.remove_money(player.money)
 
         await CollectibleInstance.objects.acreate(player=player, collectible=collectible)
         await interaction.followup.send(f"You've claimed **{collectible.name}!** Congratulations!")

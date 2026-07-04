@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.http import HttpRequest
 
-from .models import CurrencySettings, Item, ItemBall, MoneyInstance
+from .models import CurrencySettings, Item, ItemBall
 
 
 @admin.register(Item)
@@ -40,7 +40,3 @@ class CurrencySettingsAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request: HttpRequest, obj: CurrencySettings | None = None) -> bool:
         return False
-
-
-@admin.register(MoneyInstance)
-class MoneyInstanceAdmin(admin.ModelAdmin): ...

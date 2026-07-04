@@ -82,6 +82,9 @@ class SetMoneyModal(Modal, title="Set money offering"):
         except ValueError:
             await interaction.response.send_message("This number could not be parsed.", ephemeral=True)
             return
+        if proposal_amount < 0:
+            await interaction.response.send_message("Amount cannot be negative.", ephemeral=True)
+            return
         await self.trading_user.player.arefresh_from_db(fields=["money"])
         if not self.trading_user.player.can_afford(proposal_amount):
             await interaction.response.send_message("You cannot afford that amount.", ephemeral=True)
@@ -227,7 +230,11 @@ class TradingUser(Container):
             button = Button(label="Change", style=discord.ButtonStyle.primary)
             button.callback = self.set_currency
             currency_section = Section(
-                TextDisplay(f"{settings.currency_name} proposed: {format_currency(self.money)}"), accessory=button
+                TextDisplay(
+                    f"{settings.currency_display_name(self.cog.bot)} proposed: "
+                    f"{format_currency(self.money, bot=self.cog.bot)}"
+                ),
+                accessory=button,
             )
             self.add_item(currency_section)
 
@@ -446,9 +453,9 @@ class TradeInstance(LayoutView):
         log.exception(f"Error in trade between {self.trader1} and {self.trader2}", exc_info=error)
         await self.cleanup()
         send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
-        await send("An error occured, the trade will be cancelled.", ephemeral=True)
+        await send("An error occurred, the trade will be cancelled.", ephemeral=True)
         self.add_item(
-            TextDisplay("An error occured and the trade has been cancelled! Contact support if this persists.")
+            TextDisplay("An error occurred and the trade has been cancelled! Contact support if this persists.")
         )
         await self.message.edit(view=self)
 
@@ -656,7 +663,12 @@ class TradeInstance(LayoutView):
         assert self.trader1.confirmed and self.trader2.confirmed
         trade_objects: list[TradeObject] = []
         balls: list[BallInstance] = []
-        trade = Trade.objects.create(player1=self.trader1.player, player2=self.trader2.player)
+        trade = Trade.objects.create(
+            player1=self.trader1.player,
+            player2=self.trader2.player,
+            player1_money=self.trader1.money,
+            player2_money=self.trader2.money,
+        )
 
         def money_check(trader: TradingUser) -> Player:
             player = Player.objects.select_for_update(nowait=True).get(id=trader.player.pk)

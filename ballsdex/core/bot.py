@@ -58,6 +58,7 @@ DEFAULT_PACKAGES = (
     ("guildconfig", "ballsdex.packages.guildconfig"),
     ("countryballs", "ballsdex.packages.countryballs"),
     ("info", "ballsdex.packages.info"),
+    ("money", "ballsdex.packages.money"),
     ("players", "ballsdex.packages.players"),
     ("trade", "ballsdex.packages.trade"),
 )
@@ -547,7 +548,7 @@ class BallsDexBot(commands.AutoShardedBot):
                     case _:
                         # still including traceback because it may be a programming error
                         await context.send(
-                            "An error occured when running the command. Contact support if this persists.",
+                            "An error occurred when running the command. Contact support if this persists.",
                             ephemeral=True,
                         )
                         log.error(
@@ -557,7 +558,7 @@ class BallsDexBot(commands.AutoShardedBot):
                         )
 
             case _:
-                await context.send("An unknown error occured, contact support if this persists.")
+                await context.send("An unknown error occurred, contact support if this persists.")
                 log.error("Unknown exception", exc_info=exception)
 
     async def on_application_command_error(
