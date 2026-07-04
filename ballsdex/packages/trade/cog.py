@@ -18,6 +18,7 @@ from ballsdex.core.utils.menus import Menu, ModelSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
+    BallGroupTransform,
     BallInstanceTransform,
     SpecialEnabledTransform,
     TradeCommandType,
@@ -237,6 +238,7 @@ class Trade(commands.GroupCog):
         days: int | None = None,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        group: BallGroupTransform | None = None,
         currency: bool = False,
     ):
         """
@@ -254,6 +256,8 @@ class Trade(commands.GroupCog):
             The countryball you want to filter the trade history by.
         special: Special | None
             The special you want to filter the trade history by.
+        group: BallGroup | None
+            The group you want to filter the trade history by.
         currency: bool
             Only show trades that included currency.
         """
@@ -290,14 +294,15 @@ class Trade(commands.GroupCog):
             start_date = timezone.now() - timedelta(days=days)
             queryset = queryset.filter(date__gte=start_date)
 
-        if countryball and special:
-            queryset = queryset.filter(
-                Q(tradeobject__ballinstance__ball=countryball) & Q(tradeobject__ballinstance__special=special)
-            ).distinct()
-        elif countryball:
-            queryset = queryset.filter(Q(tradeobject__ballinstance__ball=countryball)).distinct()
-        elif special:
-            queryset = queryset.filter(Q(tradeobject__ballinstance__special=special)).distinct()
+        if countryball or special or group:
+            object_filter = Q()
+            if countryball:
+                object_filter &= Q(tradeobject__ballinstance__ball=countryball)
+            if special:
+                object_filter &= Q(tradeobject__ballinstance__special=special)
+            if group:
+                object_filter &= Q(tradeobject__ballinstance__ball__groups=group)
+            queryset = queryset.filter(object_filter).distinct()
 
         if currency:
             queryset = queryset.filter(Q(player1_money__gt=0) | Q(player2_money__gt=0))
@@ -339,6 +344,7 @@ class Trade(commands.GroupCog):
         reverse: bool = False,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        group: BallGroupTransform | None = None,
     ):
         """
         Bulk add countryballs to the ongoing trade, with paramaters to aid with searching.
@@ -355,6 +361,8 @@ class Trade(commands.GroupCog):
             Filter the results to a special event
         filter: FilteringChoices
             Filter the results to a specific filter
+        group: BallGroup
+            Filter the results to a specific group
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
         result = await self.get_trade(interaction)
@@ -382,6 +390,8 @@ class Trade(commands.GroupCog):
             query = query.filter(ball=countryball)
         if special:
             query = query.filter(special=special)
+        if group:
+            query = query.filter(ball__groups=group)
         if sort:
             query = sort_balls(sort, query)
         if filter:
