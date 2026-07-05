@@ -721,14 +721,14 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if interaction.response.is_done():
             return
 
-        assert interaction.guild
+        guild = interaction.guild
         filters = {}
         if countryball:
             filters["ball"] = countryball
         if special:
             filters["special"] = special
-        if current_server:
-            filters["server_id"] = interaction.guild.id
+        if current_server and guild:
+            filters["server_id"] = guild.id
         filters["player__discord_id"] = interaction.user.id
 
         await interaction.response.defer(ephemeral=True, thinking=True)
@@ -740,10 +740,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
         special_str = f"{special.name} " if special else ""
-        guild = f" caught in {interaction.guild.name}" if current_server else ""
+        guild_text = f" caught in {guild.name}" if current_server and guild else ""
 
         await interaction.followup.send(
-            f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural}{guild}."
+            f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural}{guild_text}."
         )
 
     @app_commands.command()
