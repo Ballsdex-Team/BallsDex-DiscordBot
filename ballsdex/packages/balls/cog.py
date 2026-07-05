@@ -30,6 +30,7 @@ from .countryballs_paginator import CountryballsDuplicateSource, CountryballsVie
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+    from ballsdex.packages.countryballs.cog import CountryBallsSpawner
 
 log = logging.getLogger("ballsdex.packages.countryballs")
 
@@ -570,6 +571,68 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
                 f"isn't a favorite {settings.collectible_name} anymore.",
                 ephemeral=True,
+            )
+
+    @app_commands.command()
+    async def drop(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        countryball: BallInstanceTransform,
+        special: SpecialEnabledTransform | None = None,
+    ):
+        """
+        Drop one of your countryballs back into the wild, to be caught again.
+
+        Parameters
+        ----------
+        countryball: BallInstance
+            The countryball you want to drop
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        """
+        if not countryball:
+            return
+
+        cog = cast("CountryBallsSpawner | None", self.bot.get_cog("CountryBallsSpawner"))
+        if not cog or not interaction.guild_id or cog.cache.get(interaction.guild_id) != interaction.channel_id:
+            await interaction.response.send_message(
+                f"You can only drop a {settings.collectible_name} in the spawn channel.", ephemeral=True
+            )
+            return
+
+        if not countryball.is_tradeable:
+            await interaction.response.send_message(
+                f"You cannot drop this {settings.collectible_name}.", ephemeral=True
+            )
+            return
+
+        if await countryball.is_locked():
+            await interaction.response.send_message(
+                f"This {settings.collectible_name} is currently locked for a trade. Please try again later.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            ball = await cog.countryball_cls.from_existing(self.bot, countryball)
+        except RuntimeError:
+            await interaction.followup.send(
+                f"This {settings.collectible_name} is currently locked for a trade. Please try again later.",
+                ephemeral=True,
+            )
+            return
+
+        result = await ball.spawn(interaction.channel)  # type: ignore
+
+        if result:
+            await interaction.followup.send(f"{settings.collectible_name.title()} dropped.", ephemeral=True)
+            log.info(f"{interaction.user} dropped {countryball} (`{countryball.pk:0X}`) in {interaction.channel}.")
+        else:
+            await countryball.unlock()
+            await interaction.followup.send(
+                f"Failed to drop the {settings.collectible_name}, please try again later.", ephemeral=True
             )
 
     @app_commands.command(extras={"trade": TradeCommandType.PICK})
