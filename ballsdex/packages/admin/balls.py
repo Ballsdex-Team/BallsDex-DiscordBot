@@ -272,6 +272,9 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str, 
         await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
         return
 
+    if ball.player is None:
+        await ctx.send(f"This {settings.collectible_name} has no owner.", ephemeral=True)
+        return
     owner = await ctx.bot.fetch_user(ball.player.discord_id)
 
     method = "soft" if soft_delete else "hard"
@@ -322,6 +325,9 @@ async def balls_transfer(ctx: commands.Context[BallsDexBot], countryball_id: str
         original_player = ball.player
     except BallInstance.DoesNotExist:
         await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
+        return
+    if original_player is None:
+        await ctx.send(f"This {settings.collectible_name} has no owner.", ephemeral=True)
         return
 
     original_owner = await ctx.bot.fetch_user(original_player.discord_id)

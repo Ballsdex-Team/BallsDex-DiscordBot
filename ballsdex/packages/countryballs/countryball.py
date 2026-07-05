@@ -171,6 +171,7 @@ class BallSpawnView(View):
 
         view = cls(bot, ball_instance.ball)
         view.ballinstance = ball_instance
+        assert ball_instance.player is not None
         view.og_id = ball_instance.player.discord_id
         return view
 
