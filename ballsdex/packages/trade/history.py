@@ -67,9 +67,7 @@ class HistoryView(LayoutView):
                 )
             )
 
-    async def generate_container(
-        self, player: Player | None, user: discord.abc.User | None, *, is_player1: bool
-    ):
+    async def generate_container(self, player: Player | None, user: discord.abc.User | None, *, is_player1: bool):
         container = Container()
         display_name = user.display_name if user else "Deleted user"
         container.add_item(
