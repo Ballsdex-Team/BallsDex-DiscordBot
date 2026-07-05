@@ -122,16 +122,14 @@ CONFIRMATION_CODE_CHARS = "".join(c for c in string.ascii_uppercase + string.dig
 
 class DeleteDataModal(Modal, title="Confirm data deletion"):
     confirmation = Label(
-        text="Confirmation code",
-        component=TextInput(style=discord.TextStyle.short, placeholder="Confirmation code"),
+        text="Confirmation code", component=TextInput(style=discord.TextStyle.short, placeholder="Confirmation code")
     )
 
     def __init__(self, code: str):
         super().__init__()
         self.code = code
         self.confirmation.description = (
-            f"This will permanently delete all of your data and cannot be undone. "
-            f"Type {code} below to confirm."
+            f"This will permanently delete all of your data and cannot be undone. Type {code} below to confirm."
         )
 
     async def on_submit(self, interaction: Interaction):
