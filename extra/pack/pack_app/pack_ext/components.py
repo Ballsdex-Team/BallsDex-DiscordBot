@@ -3,13 +3,14 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING
 
 import discord
-from currency_app.models import CurrencySettings, Item, MoneyInstance
-from discord.ui import Button, View, button, select
+from currency_app.models import Item
+from discord.ui import Button, button, select
 
 from ballsdex.core.utils.menus.old import Pages, menus
 from ballsdex.packages.countryballs.countryball import BallSpawnView
-from ballsdex.settings import settings
 from bd_models.models import Ball, BallInstance, Player
+from settings.models import settings
+from settings.utils import format_currency
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -88,23 +89,18 @@ class ShopPages(Pages):
             await interaction.response.send_message("There isn't any item to buy.", ephemeral=True)
             return
         pack = self._current_item
-        currency_settings = await CurrencySettings.aload()
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        instance, _ = await MoneyInstance.objects.aget_or_create(player=player)
-        currency_emoji = self.bot.get_emoji(currency_settings.emoji_id) if currency_settings.emoji_id else ""
         if pack.prize:
-            if instance.amount < pack.prize:
+            if player.money < pack.prize:
                 emoji = self.bot.get_emoji(pack.emoji_id) if pack.emoji_id else ""
                 await interaction.response.send_message(
-                    f"You don't enough {currency_emoji} {currency_settings.name} to buy "
+                    f"You don't enough {settings.currency_display_plural(self.bot)} to buy "
                     f"**{emoji} {pack.name}**\n"
-                    f"Your actual balance: "
-                    f"**{currency_emoji} {instance.amount:,} {currency_settings.display_name(instance.amount)}**"
+                    f"Your actual balance: {format_currency(player.money, False, self.bot)}"
                 )
                 return
             else:
-                instance.amount -= pack.prize
-                await instance.asave(update_fields=("amount",))
+                await player.remove_money(pack.prize)
 
         balls = [x.cached_ball async for x in pack.balls.all()]
         if balls:
@@ -152,27 +148,25 @@ class ShopPages(Pages):
 
 
 class ShopMenuSource(menus.ListPageSource):
-    def __init__(self, entries: list[Item], bot: "BallsDexBot", currency_settings: CurrencySettings):
+    def __init__(self, entries: list[Item], bot: "BallsDexBot"):
         super().__init__(entries, per_page=1)
         self.bot = bot
-        self.currency_settings = currency_settings
 
     async def format_page(self, menu: ShopPages, page: Item) -> discord.Embed:
         menu._current_item = self.entries[menu.current_page]
         embed = discord.Embed(title=page.name, color=discord.Color.blurple())
         embed.set_footer(text=f"Item {menu.current_page + 1}/{menu.source.get_max_pages()}")
         emoji = str(self.bot.get_emoji(page.emoji_id)) if page.emoji_id else ""
-        currency_emoji = self.bot.get_emoji(self.currency_settings.emoji_id) if self.currency_settings.emoji_id else ""
 
         if page.description:
             description = (
                 f"{page.description}\n\n"
-                f"Price: **{currency_emoji} {page.prize:,} {self.currency_settings.display_name(page.prize)}**\n"
+                f"Price: **{format_currency(page.prize or 0, False, self.bot)}**\n"
                 f"Special: **{page.special.name if page.special else 'Any'}**\n"
             )
         else:
             description = (
-                f"Price: **{currency_emoji} {page.prize:,} {self.currency_settings.display_name(page.prize)}**\n"
+                f"Price: **{format_currency(page.prize or 0, False, self.bot)}**\n"
                 f"Special: **{page.special.name if page.special else 'Any'}**\n"
             )
 

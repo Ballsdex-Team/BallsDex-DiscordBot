@@ -24,10 +24,9 @@ SOFTWARE.
 
 from typing import TYPE_CHECKING
 
-from .drop import drop as drop_command
 from .leaderboard import leaderboard as leaderboard_command
 
 if TYPE_CHECKING:
     from discord.app_commands import Command
 
-commands: list["Command"] = [drop_command, leaderboard_command]
+commands: list["Command"] = [leaderboard_command]

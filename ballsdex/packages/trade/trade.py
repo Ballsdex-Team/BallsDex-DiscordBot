@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, cast
 import discord
 from asgiref.sync import sync_to_async
 from discord.ui import ActionRow, Button, Item, Section, Select, Separator, TextDisplay, TextInput, Thumbnail
-from discord.utils import format_dt
+from discord.utils import format_dt, utcnow
 from django.db import transaction
 from django.utils import timezone
 
@@ -81,6 +81,9 @@ class SetMoneyModal(Modal, title="Set money offering"):
             proposal_amount = int(self.proposal.value.strip())
         except ValueError:
             await interaction.response.send_message("This number could not be parsed.", ephemeral=True)
+            return
+        if proposal_amount < 0:
+            await interaction.response.send_message("Amount cannot be negative.", ephemeral=True)
             return
         await self.trading_user.player.arefresh_from_db(fields=["money"])
         if not self.trading_user.player.can_afford(proposal_amount):
@@ -227,7 +230,11 @@ class TradingUser(Container):
             button = Button(label="Change", style=discord.ButtonStyle.primary)
             button.callback = self.set_currency
             currency_section = Section(
-                TextDisplay(f"{settings.currency_name} proposed: {format_currency(self.money)}"), accessory=button
+                TextDisplay(
+                    f"{settings.currency_display_name(self.cog.bot)} proposed: "
+                    f"{format_currency(self.money, bot=self.cog.bot)}"
+                ),
+                accessory=button,
             )
             self.add_item(currency_section)
 
@@ -446,9 +453,9 @@ class TradeInstance(LayoutView):
         log.exception(f"Error in trade between {self.trader1} and {self.trader2}", exc_info=error)
         await self.cleanup()
         send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
-        await send("An error occured, the trade will be cancelled.", ephemeral=True)
+        await send("An error occurred, the trade will be cancelled.", ephemeral=True)
         self.add_item(
-            TextDisplay("An error occured and the trade has been cancelled! Contact support if this persists.")
+            TextDisplay("An error occurred and the trade has been cancelled! Contact support if this persists.")
         )
         await self.message.edit(view=self)
 
@@ -479,7 +486,7 @@ class TradeInstance(LayoutView):
             await interaction.followup.send(e.error_message, ephemeral=True)
         else:
             if self.confirmation_phase and self.confirmation_phase_start is None:
-                self.confirmation_phase_start = datetime.now()
+                self.confirmation_phase_start = utcnow()
             await self.edit_message(interaction)
 
     @buttons.button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
@@ -537,11 +544,10 @@ class TradeInstance(LayoutView):
             and self.trader2.player.trade_cooldown_policy == TradeCooldownPolicy.BYPASS
         )
         if not both_bypass and self.confirmation_phase_start is not None:
-            elapsed = (datetime.now() - self.confirmation_phase_start).total_seconds()
-            remaining = COOLDOWN_BYPASS_TIMEOUT - elapsed
-            if remaining > 0:
+            can_confirm_at = self.confirmation_phase_start + timedelta(seconds=COOLDOWN_BYPASS_TIMEOUT)
+            if utcnow() < can_confirm_at:
                 await interaction.response.send_message(
-                    f"Please wait {remaining:.0f} more second(s) before confirming.", ephemeral=True
+                    f"You can confirm the trade {format_dt(can_confirm_at, style='R')}.", ephemeral=True
                 )
                 return
         await interaction.response.defer()
@@ -565,7 +571,7 @@ class TradeInstance(LayoutView):
         trade.add_item(trade.trader2)
         trade.buttons.remove_item(trade.confirm_button)
         trade.add_item(trade.buttons)
-        timeout = datetime.now() + timedelta(seconds=TRADE_TIMEOUT)
+        timeout = utcnow() + timedelta(seconds=TRADE_TIMEOUT)
         trade.add_item(TextDisplay(f"-# This trade will timeout {format_dt(timeout, style='R')}."))
         return trade
 
@@ -656,7 +662,12 @@ class TradeInstance(LayoutView):
         assert self.trader1.confirmed and self.trader2.confirmed
         trade_objects: list[TradeObject] = []
         balls: list[BallInstance] = []
-        trade = Trade.objects.create(player1=self.trader1.player, player2=self.trader2.player)
+        trade = Trade.objects.create(
+            player1=self.trader1.player,
+            player2=self.trader2.player,
+            player1_money=self.trader1.money,
+            player2_money=self.trader2.money,
+        )
 
         def money_check(trader: TradingUser) -> Player:
             player = Player.objects.select_for_update(nowait=True).get(id=trader.player.pk)

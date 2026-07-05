@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
-from currency_app.models import CurrencySettings, MoneyInstance
+from currency_app.models import CurrencySettings
 from discord.ui import Button, TextInput, button
 from django.utils import timezone
 
@@ -17,6 +17,7 @@ from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.utils import can_mention
 from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls, specials
 from settings.models import PromptMessage, settings
+from settings.utils import format_currency
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -36,11 +37,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     async def on_error(self, interaction: discord.Interaction["BallsDexBot"], error: Exception) -> None:
         if isinstance(error, discord.NotFound) and error.code == 10062:
             return
-        log.exception("An error occured in countryball catching prompt", exc_info=error)
+        log.exception("An error occurred in countryball catching prompt", exc_info=error)
         if interaction.response.is_done():
-            await interaction.followup.send(f"An error occured with this {settings.collectible_name}.")
+            await interaction.followup.send(f"An error occurred with this {settings.collectible_name}.")
         else:
-            await interaction.response.send_message(f"An error occured with this {settings.collectible_name}.")
+            await interaction.response.send_message(f"An error occurred with this {settings.collectible_name}.")
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         await interaction.response.defer(thinking=True)
@@ -83,17 +84,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         if self.view.ballinstance is None:
             if random.random() < currency_settings.spawn_chance:
                 amount = currency_settings.spawn_amount
-                money_instance, created = await MoneyInstance.objects.aget_or_create(
-                    player=player, defaults={"amount": amount}
-                )
-                if not created:
-                    money_instance.amount += amount
-                    await money_instance.asave(update_fields=("amount",))
-                currency_emoji = interaction.client.get_emoji(currency_settings.emoji_id or 0)
-                if currency_emoji:
-                    text += f"You get {currency_emoji} **{amount}** {currency_settings.display_name(amount)}!"
-                else:
-                    text += f"You get **{amount}** {currency_settings.display_name(amount)}!"
+                await player.add_money(amount)
+                text += f"You get **{format_currency(amount, False, self.view.bot)}**"
 
         await interaction.followup.send(text, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned))
         await interaction.followup.edit_message(self.view.message.id, view=self.view)
@@ -344,6 +336,12 @@ class BallSpawnView(View):
         is_new = not await BallInstance.objects.filter(player=player, ball=self.model).aexists()
 
         if self.ballinstance:
+            if self.ballinstance.player_id == player.pk:
+                # the owner caught their own dropped countryball back, nothing changed hands
+                self.ballinstance.locked = None  # type: ignore
+                await self.ballinstance.asave(update_fields=("locked",))
+                return self.ballinstance, is_new
+
             # if specified, do not create a countryball but switch owner
             # it's important to register this as a trade to avoid bypass
             trade = await Trade.objects.acreate(player1=self.ballinstance.player, player2=player)

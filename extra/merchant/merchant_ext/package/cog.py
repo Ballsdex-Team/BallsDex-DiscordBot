@@ -1,12 +1,9 @@
 import logging
-import os
 import random
-import tomllib
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import discord
-from currency_app.models import CurrencySettings, MoneyInstance
+from currency_app.models import CurrencySettings
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import format_dt
@@ -22,8 +19,9 @@ from merchant_app.models import (
 
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus.old import FieldPageSource, Pages
-from bd_models.models import Ball, BallInstance, Player
+from bd_models.models import BallInstance, Player
 from settings.models import settings
+from settings.utils import format_currency
 
 from .components import BuyItemView
 from .transformers import GlobalShopTransform
@@ -41,7 +39,6 @@ class Merchant(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
-        self._currency_settings: CurrencySettings | None = None
         self._merchant_settings: MerchantSettings | None = None
 
     rotation = app_commands.Group(name="rotation", description="Merchant rotation commands.")
@@ -98,7 +95,9 @@ class Merchant(commands.GroupCog):
         else:
             items = instance.items
 
-        entries: list[tuple[str, str]] = [(x.name, await self.format_price(x.prize)) for x in items if x.enabled]
+        entries: list[tuple[str, str]] = [
+            (x.name, format_currency(x.prize or 0, False, self.bot)) for x in items if x.enabled
+        ]
         source = FieldPageSource(entries, per_page=merchant_settings.items, inline=True, clear_description=False)
         source.embed.title = f"{settings.bot_name} shop"
         source.embed.description = (
@@ -121,7 +120,6 @@ class Merchant(commands.GroupCog):
         item_id: int
             The item that you want to
         """
-        currency_settings = await self.get_curreny_settings()
         try:
             item = await MerchantItem.objects.aget(pk=item_id)
         except MerchantItem.DoesNotExist:
@@ -129,9 +127,8 @@ class Merchant(commands.GroupCog):
             return
         try:
             player = await Player.objects.aget(discord_id=interaction.user.id)
-            money_instance = await MoneyInstance.objects.aget(player=player)
             instance = await MerchantInstance.objects.aget(player=player)
-        except (Player.DoesNotExist, MoneyInstance.DoesNotExist, MerchantInstance.DoesNotExist):
+        except (Player.DoesNotExist, MerchantInstance.DoesNotExist):
             await interaction.response.send_message("You're not registred in the economy system yet.")
             return
 
@@ -159,12 +156,11 @@ class Merchant(commands.GroupCog):
             )
             return
 
-        if money_instance.amount < item.prize:
-            currency_emoji = self.bot.get_emoji(currency_settings.emoji_id) if currency_settings.emoji_id else ""
+        if player.money < item.prize:
             await interaction.followup.send(
-                f"You don't enough {currency_emoji} {currency_settings.name} to buy "
+                f"You don't enough {settings.currency_display_plural(self.bot)} to buy "
                 f"**{item.name}**\n"
-                f"Your actual balance: {await self.format_price(money_instance.amount)}"
+                f"Your actual balance: {format_currency(player.money, False, self.bot)}"
             )
             return
 
@@ -183,10 +179,9 @@ class Merchant(commands.GroupCog):
             await interaction.followup.send("An error occurred while trying to buy the item.")
             return
         else:
-            money_instance.amount -= item.prize
-            await money_instance.asave(update_fields=("amount",))
+            await player.remove_money(item.prize)
             await interaction.followup.send(
-                f"You've bought {item.name} for **{await self.format_price(item.prize)}!**\n"
+                f"You've bought {item.name} for **{format_currency(player.money, False, self.bot)}!**\n"
                 f"{instance.description(include_emoji=True, bot=self.bot)}"
             )
             return
@@ -202,7 +197,9 @@ class Merchant(commands.GroupCog):
             The shop you want to visit
         """
         await interaction.response.defer(thinking=True)
-        entries: list[tuple[str, str]] = [(x.name, await self.format_price(x.prize)) async for x in shop.items.all()]
+        entries: list[tuple[str, str]] = [
+            (x.name, format_currency(x.prize, False, self.bot)) async for x in shop.items.all()
+        ]
         source = FieldPageSource(entries, per_page=3, inline=True)
         source.embed.title = f"{settings.bot_name} {shop.name}"
         pages = Pages(source, interaction=interaction, compact=True)
@@ -257,7 +254,6 @@ class Merchant(commands.GroupCog):
             return
         query = query.order_by("-catch_date")[:amount]
 
-        currency_settings = await self.get_curreny_settings()
         grammar = "token" if amount == 1 else "tokens"
         view = ConfirmChoiceView(
             interaction,
@@ -266,7 +262,7 @@ class Merchant(commands.GroupCog):
         )
         await interaction.followup.send(
             f"Are you sure you want to convert **{amount} {grammar}** into "
-            f"**{await self.format_price(merchant_settings.token_conversion_rate * amount)}**?",
+            f"**{format_currency(merchant_settings.token_conversion_rate * amount, False, self.bot)}**?",
             view=view,
             ephemeral=True,
         )
@@ -282,18 +278,13 @@ class Merchant(commands.GroupCog):
             await interaction.followup.send("An error occurred while trying to convert tokens.")
             return
         else:
-            money_instance, created = await MoneyInstance.objects.aget_or_create(
-                player=player, defaults={"amount": merchant_settings.token_conversion_rate * amount}
-            )
-            if not created:
-                money_instance.amount += merchant_settings.token_conversion_rate * amount
-                await money_instance.asave(update_fields=("amount",))
-
+            await player.add_money(merchant_settings.token_conversion_rate * amount)
             await interaction.followup.send(
-                f"Converted! All tokens successfully converted into {currency_settings.plural_name}.\n"
+                f"Converted! All tokens successfully converted into {settings.currency_plural}.\n"
                 f"Converted tokens: **{amount}**\n"
-                f"Given amount: **{await self.format_price(merchant_settings.token_conversion_rate * amount)}**\n"
-                f"Actual balance: **{await self.format_price(money_instance.amount)}**",
+                "Given amount: "
+                f"**{format_currency(merchant_settings.token_conversion_rate * amount, False, self.bot)}**\n"
+                f"Actual balance: **{format_currency(player.money, False, self.bot)}**",
                 ephemeral=True,
             )
 
@@ -323,19 +314,10 @@ class Merchant(commands.GroupCog):
             items = instance.items
 
         return [
-            app_commands.Choice(name=f"#{x.pk:0X} {x.name} ({await self.format_price(x.prize, False)})", value=x.pk)
+            app_commands.Choice(name=f"#{x.pk:0X} {x.name} ({format_currency(x.prize or 0)})", value=x.pk)
             for x in items
             if current.lower() in x.name.lower()
         ]
-
-    async def format_price(self, amount: int | None, include_emoji: bool = True):
-        currency_settings = await self.get_curreny_settings()
-        text = f"{amount:,} {currency_settings.display_name(amount)}" if amount else "Free"
-        if include_emoji:
-            emoji = self.bot.get_emoji(currency_settings.emoji_id or 0)
-            if emoji:
-                text = f"{emoji} {text}"
-        return text
 
     def _get_random_items(self, amount: int) -> list[MerchantItem] | None:
         population = [x for x in merchant_items.values() if x.enabled]
@@ -353,13 +335,6 @@ class Merchant(commands.GroupCog):
             population.remove(choice)
 
         return selected
-
-    async def get_curreny_settings(self, refresh: bool = True):
-        if not self._currency_settings:
-            self._currency_settings = await CurrencySettings.aload()
-        if refresh:
-            await self._currency_settings.arefresh_from_db()
-        return self._currency_settings
 
     async def get_merchant_settings(self, refresh: bool = True):
         if not self._merchant_settings:

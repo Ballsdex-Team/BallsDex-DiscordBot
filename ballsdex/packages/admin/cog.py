@@ -163,7 +163,7 @@ class Admin(commands.Cog):
             if not view.value:
                 return
             async with ctx.typing():
-                self.bot.tree.add_command(self.admin.app_command, guild=ctx.guild)
+                self.bot.tree.add_command(self.admin.app_command, guild=ctx.guild, override=True)
                 await self.bot.tree.sync(guild=ctx.guild)
                 log.info(f"Admin commands added to guild {ctx.guild.id} by {ctx.author}")
                 await ctx.send(
@@ -325,34 +325,29 @@ class Admin(commands.Cog):
             else:
                 spawn_enabled = False
 
-            text = f"## {guild.name} - `{guild.id}`\n"
-
             # highlight suspicious server names
             if any(x in guild.name.lower() for x in ("farm", "grind", "spam")):
-                text += f"- :warning: **{guild.name}**\n"
+                name_part = f":warning: **{guild.name}**"
             else:
-                text += f"- {guild.name}\n"
+                name_part = f"**{guild.name}**"
 
             # highlight low member count
             if guild.member_count <= 3:  # type: ignore
-                text += f"- :warning: **{guild.member_count} members**\n"
+                members_part = f":warning: **{guild.member_count} members**"
             else:
-                text += f"- {guild.member_count} members\n"
+                members_part = f"{guild.member_count} members"
 
             # highlight if spawning is enabled
-            if spawn_enabled:
-                text += "- :warning: **Spawn is enabled**"
-            else:
-                text += "- Spawn is disabled"
+            spawn_part = ":warning: **spawn enabled**" if spawn_enabled else "spawn disabled"
 
-            entries.append(TextDisplay(text))
+            entries.append(TextDisplay(f"`{guild.id}` {name_part} • {members_part} • {spawn_part}"))
 
         view = LayoutView()
         container = Container()
         view.add_item(container)
         section = Section(
             TextDisplay(f"## {len(guilds)} servers shared"),
-            TextDisplay(f"{user.mention} ({user.id})"),
+            TextDisplay(f"{user.mention} - {user.global_name} ({user.id})"),
             accessory=Button(
                 style=discord.ButtonStyle.link,
                 label="View profile",

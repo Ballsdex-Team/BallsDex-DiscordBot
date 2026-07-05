@@ -8,32 +8,24 @@ from bd_models.models import Ball, Player, Special, balls
 
 
 class CurrencySettings(models.Model):
-    name = models.CharField(max_length=64)
-    plural_name = models.CharField(max_length=64)
-    emoji_id = models.BigIntegerField(help_text="Emoji id of the currency", null=True, blank=True)
     spawn_chance = models.FloatField(default=0.2, help_text="Value between 0 and 1, chances to spawn currency.")
     spawn_amount = models.PositiveIntegerField(default=500, help_text="The amount of currency to give from a spawn.")
 
     @classmethod
     def load(cls):
-        obj, _ = cls.objects.get_or_create(pk=1, defaults={"name": "Coin", "plural_name": "Coins"})
+        obj, _ = cls.objects.get_or_create(pk=1)
         return obj
 
     @classmethod
     async def aload(cls):
         return await sync_to_async(cls.load)()
 
-    def display_name(self, amount: int | None) -> str:
-        if not amount:
-            return ""
-        return self.name if amount == 1 else self.plural_name
-
     class Meta:
         managed = True
         db_table = "currencysettings"
 
     def __str__(self) -> str:
-        return self.name
+        return "Currency Settings"
 
 
 class Item(models.Model):
@@ -107,12 +99,3 @@ class ItemBall(models.Model):
     class Meta:
         managed = True
         db_table = "itemball"
-
-
-class MoneyInstance(models.Model):
-    player = models.OneToOneField(Player, on_delete=models.CASCADE)
-    amount = models.BigIntegerField(default=0)
-
-    class Meta:
-        managed = True
-        db_table = "moneyinstance"
