@@ -39,15 +39,7 @@ class BallInstanceAdmin(admin.ModelAdmin):
             "Advanced",
             {
                 "classes": ("collapse",),
-                "fields": (
-                    "tradeable",
-                    "server_id",
-                    "catch_date",
-                    "spawned_time",
-                    "locked",
-                    "extra_data",
-                    "deleted",
-                ),
+                "fields": ("tradeable", "server_id", "catch_date", "spawned_time", "locked", "extra_data", "deleted"),
             },
         ),
     ]
