@@ -42,14 +42,19 @@ class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Cont
         )
         container.add_item(section)
         if blacklist.moderator_id:
-            moderator = await self.menu.bot.fetch_user(blacklist.moderator_id)
+            try:
+                moderator = await self.menu.bot.fetch_user(blacklist.moderator_id)
+            except discord.NotFound:
+                moderator = None
             container.add_item(Separator())
             action_type = "Blacklisted" if blacklist.action_type == "blacklist" else "Unblacklisted"
+            moderator_display = moderator.mention if moderator else f"Unknown user ({blacklist.moderator_id})"
+            avatar_url = moderator.display_avatar.url if moderator else self.user.display_avatar.url
             container.add_item(
                 Section(
-                    TextDisplay(f"### {action_type} by {moderator.mention}"),
+                    TextDisplay(f"### {action_type} by {moderator_display}"),
                     TextDisplay(f"### Reason\n{blacklist.reason}"),
-                    accessory=Thumbnail(moderator.display_avatar.url),
+                    accessory=Thumbnail(avatar_url),
                 )
             )
         if player := await Player.objects.aget_or_none(discord_id=self.user.id):
