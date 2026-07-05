@@ -19,11 +19,13 @@ def default_migrate_coins_forward(apps: "Apps", schema_editor: "BaseDatabaseSche
     settings = Settings.objects.first()
     currency_settings = CurrencySettings.objects.first()
     if settings is not None and currency_settings is not None:
+        update_fields = ["currency_name", "currency_plural_name"]
         settings.currency_name = currency_settings.name
         settings.currency_plural_name = currency_settings.plural_name
-        if currency_settings.emoji_id is not None:
+        if currency_settings.emoji_id is not None and hasattr(settings, "currency_emoji_id"):
             settings.currency_emoji_id = currency_settings.emoji_id
-        settings.save(update_fields=("currency_name", "currency_plural_name", "currency_emoji_id"))
+            update_fields.append("currency_emoji_id")
+        settings.save(update_fields=update_fields)
 
     amounts = dict(MoneyInstance.objects.values_list("player_id", "amount"))
     players = list(Player.objects.filter(pk__in=amounts.keys()))
