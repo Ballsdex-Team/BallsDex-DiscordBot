@@ -1,5 +1,5 @@
 import discord
-from discord.ui import ActionRow, Button, Container, Section, Separator, TextDisplay, Thumbnail
+from discord.ui import ActionRow, Button, Container, Section, Select, Separator, TextDisplay, Thumbnail
 from discord.utils import format_dt
 from django.db.models import QuerySet
 from django.urls import reverse
@@ -7,6 +7,22 @@ from django.urls import reverse
 from ballsdex.core.utils import menus
 from bd_models.models import BlacklistHistory, Player
 from settings.models import settings
+
+
+class BlacklistHistorySummaryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Select]):
+    """
+    Renders a page of BlacklistHistory entries as one-line select options, for quickly scanning a
+    long history before drilling into a single entry's full detail (see BlacklistHistoryFormatter).
+    """
+
+    async def format_page(self, page):
+        self.item.options.clear()
+        async for entry in page:
+            action = "Blacklisted" if entry.action_type == "blacklist" else "Unblacklisted"
+            reason = entry.reason or "No reason given"
+            self.item.add_option(
+                label=f"{action} - {entry.date:%Y-%m-%d %H:%M}"[:100], description=reason[:100], value=str(entry.pk)
+            )
 
 
 class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Container]):
@@ -26,14 +42,19 @@ class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Cont
         )
         container.add_item(section)
         if blacklist.moderator_id:
-            moderator = await self.menu.bot.fetch_user(blacklist.moderator_id)
+            try:
+                moderator = await self.menu.bot.fetch_user(blacklist.moderator_id)
+            except discord.NotFound:
+                moderator = None
             container.add_item(Separator())
             action_type = "Blacklisted" if blacklist.action_type == "blacklist" else "Unblacklisted"
+            moderator_display = moderator.mention if moderator else f"Unknown user ({blacklist.moderator_id})"
+            avatar_url = moderator.display_avatar.url if moderator else self.user.display_avatar.url
             container.add_item(
                 Section(
-                    TextDisplay(f"### {action_type} by {moderator.mention}"),
+                    TextDisplay(f"### {action_type} by {moderator_display}"),
                     TextDisplay(f"### Reason\n{blacklist.reason}"),
-                    accessory=Thumbnail(moderator.display_avatar.url),
+                    accessory=Thumbnail(avatar_url),
                 )
             )
         if player := await Player.objects.aget_or_none(discord_id=self.user.id):

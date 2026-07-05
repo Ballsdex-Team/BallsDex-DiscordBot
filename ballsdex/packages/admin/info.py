@@ -1,4 +1,5 @@
 import datetime
+from typing import TYPE_CHECKING
 
 import discord
 from discord.ext import commands
@@ -7,10 +8,15 @@ from django.urls import reverse
 from django.utils.timezone import get_current_timezone
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
+from ballsdex.core.utils.menus import Menu, TextFormatter, TextSource
 from bd_models.models import BallInstance, GuildConfig, Player
 from settings.models import settings
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 
 class PlayerInfoView(discord.ui.View):
@@ -37,6 +43,42 @@ class PlayerInfoView(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
+class GuildInfoView(discord.ui.View):
+    def __init__(self, queryset: "QuerySet[BallInstance]", days: int):
+        super().__init__()
+        self.queryset = queryset
+        self.days = days
+
+    @discord.ui.button(label="List catchers", style=discord.ButtonStyle.primary)
+    async def list_catchers(self, interaction: discord.Interaction[BallsDexBot], button: discord.ui.Button):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        counts: dict[int, int] = {}
+        async for instance in self.queryset:
+            counts[instance.player.discord_id] = counts.get(instance.player.discord_id, 0) + 1
+        if not counts:
+            await interaction.followup.send("No catches found for this period.", ephemeral=True)
+            return
+
+        lines: list[str] = []
+        for discord_id, count in sorted(counts.items(), key=lambda item: item[1], reverse=True):
+            user = interaction.client.get_user(discord_id)
+            if not user:
+                try:
+                    user = await interaction.client.fetch_user(discord_id)
+                except discord.NotFound:
+                    user = None
+            name = (user.global_name or user.name) if user else "Unknown user"
+            mention = user.mention if user else f"<@{discord_id}>"
+            lines.append(f"{mention} - {name} ({discord_id}) - {count}")
+
+        view = LayoutView()
+        text_item = discord.ui.TextDisplay("")
+        view.add_item(text_item)
+        menu = Menu(interaction.client, view, TextSource("\n".join(lines)), TextFormatter(text_item))
+        await menu.init()
+        await interaction.followup.send(view=view, ephemeral=True)
+
+
 @commands.hybrid_group()
 @checks.has_permissions("bd_models.view_guildconfig", "bd_models.view_player")
 async def info(ctx: commands.Context[BallsDexBot]):
@@ -44,6 +86,20 @@ async def info(ctx: commands.Context[BallsDexBot]):
     Information commands
     """
     await ctx.send_help(ctx.command)
+
+
+_DAYS_PRESETS = (7, 14, 30, 90)
+
+
+async def _days_autocomplete(
+    interaction: discord.Interaction[BallsDexBot], current: str
+) -> list[discord.app_commands.Choice[int]]:
+    choices = [discord.app_commands.Choice(name=f"{preset} days", value=preset) for preset in _DAYS_PRESETS]
+    if current.strip().isdigit():
+        custom = int(current.strip())
+        if custom not in _DAYS_PRESETS:
+            choices.insert(0, discord.app_commands.Choice(name=f"{custom} days", value=custom))
+    return choices[:25]
 
 
 @info.command()
@@ -109,7 +165,7 @@ async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7
 
     if guild.icon:
         embed.set_thumbnail(url=guild.icon.url)
-    await ctx.send(embed=embed, ephemeral=True)
+    await ctx.send(embed=embed, ephemeral=True, view=GuildInfoView(total_server_balls, days))
 
 
 @info.command()
@@ -170,3 +226,7 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
     )
     embed.set_thumbnail(url=user.display_avatar)  # type: ignore
     await ctx.send(embed=embed, ephemeral=True, view=PlayerInfoView(player, user.name))
+
+
+guild.autocomplete("days")(_days_autocomplete)
+user.autocomplete("days")(_days_autocomplete)
