@@ -33,13 +33,24 @@ class BallInstanceGuildTabular(InlinePaginated, NonrelatedInlineMixin, admin.Tab
     can_delete = False
 
     def get_form_queryset(self, obj: GuildConfig):
-        return BallInstance.objects.filter(server_id=obj.guild_id).prefetch_related("player", "ball", "special")
+        return (
+            BallInstance.objects.filter(server_id=obj.guild_id)
+            .prefetch_related("player", "ball", "special")
+            .order_by("-catch_date")
+        )
 
     @admin.display(description="Time to catch")
     def catch_time(self, obj: BallInstance):
         if obj.spawned_time:
             return str(obj.spawned_time - obj.catch_date)
         return "-"
+
+    @admin.display(description="Countryball")
+    def description(self, obj: BallInstance):
+        text = obj.description()
+        if obj.trade_player_id:
+            text += " 🔄"
+        return text
 
     # adding a countryball cannot work from here since all fields are readonly
     def has_add_permission(  # pyright: ignore [reportIncompatibleMethodOverride]
