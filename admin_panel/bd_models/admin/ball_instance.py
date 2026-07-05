@@ -31,6 +31,7 @@ class PlayerFilter(AutocompleteFilter):
 class BallInstanceAdmin(admin.ModelAdmin):
     autocomplete_fields = ("player", "trade_player", "ball", "special")
     save_on_top = True
+    readonly_fields = ("catch_date",)
     fieldsets = [
         (None, {"fields": ("ball", "health_bonus", "attack_bonus", "special")}),
         ("Ownership", {"fields": ("player", "favorite", "trade_player")}),
@@ -38,7 +39,15 @@ class BallInstanceAdmin(admin.ModelAdmin):
             "Advanced",
             {
                 "classes": ("collapse",),
-                "fields": ("tradeable", "server_id", "spawned_time", "locked", "extra_data", "deleted"),
+                "fields": (
+                    "tradeable",
+                    "server_id",
+                    "catch_date",
+                    "spawned_time",
+                    "locked",
+                    "extra_data",
+                    "deleted",
+                ),
             },
         ),
     ]
@@ -55,7 +64,7 @@ class BallInstanceAdmin(admin.ModelAdmin):
     search_help_text = "Search by hexadecimal ID or Discord ID"
     search_fields = ("id",)  # field is ignored, but required for the text area to show up
 
-    actions = ("soft_delete",)
+    actions = ("soft_delete", "unlock_instances")
 
     def get_search_results(
         self, request: "HttpRequest", queryset: "QuerySet[BallInstance]", search_term: str
@@ -102,6 +111,11 @@ class BallInstanceAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context["trades"] = list(_get_trades())
         return super().change_view(request, object_id, form_url, extra_context)
+
+    @admin.action(description="Unlock selected instances", permissions=("change",))
+    def unlock_instances(self, request: "HttpRequest", queryset: "QuerySet[BallInstance]"):
+        count = queryset.filter(locked__isnull=False).update(locked=None)
+        self.message_user(request, f"{count} instance{'s' if count != 1 else ''} were unlocked.", messages.SUCCESS)
 
     @admin.action(description="Soft delete/undo selected instances", permissions=("change",))
     def soft_delete(self, request: "HttpRequest", queryset: "QuerySet[BallInstance]"):
