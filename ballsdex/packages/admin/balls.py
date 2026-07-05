@@ -219,6 +219,10 @@ async def balls_info(ctx: commands.Context[BallsDexBot], countryball_id: str):
     except BallInstance.DoesNotExist:
         await ctx.send(f"The {settings.collectible_name} ID you gave does not exist.", ephemeral=True)
         return
+    first_trade_object = (
+        await TradeObject.objects.filter(ballinstance=ball).select_related("player").order_by("trade__date").afirst()
+    )
+    first_owner = first_trade_object.player if first_trade_object else ball.player
     spawned_time = format_dt(ball.spawned_time, style="R") if ball.spawned_time else "N/A"
     catch_time = (
         (ball.catch_date - ball.spawned_time).total_seconds() if ball.catch_date and ball.spawned_time else "N/A"
@@ -227,6 +231,7 @@ async def balls_info(ctx: commands.Context[BallsDexBot], countryball_id: str):
     await ctx.send(
         f"**{settings.collectible_name.title()} ID:** {ball.pk}\n"
         f"**Player:** {ball.player}\n"
+        f"**First owner:** {first_owner}\n"
         f"**Name:** {ball.countryball}\n"
         f"**Attack:** {ball.attack}\n"
         f"**Attack bonus:** {ball.attack_bonus}\n"
