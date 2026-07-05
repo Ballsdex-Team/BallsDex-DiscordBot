@@ -346,7 +346,7 @@ class Admin(commands.Cog):
         view.add_item(container)
         section = Section(
             TextDisplay(f"## {len(guilds)} servers shared"),
-            TextDisplay(f"{user.mention} ({user.id})"),
+            TextDisplay(f"{user.mention} - {user.global_name} ({user.id})"),
             accessory=Button(
                 style=discord.ButtonStyle.link,
                 label="View profile",
