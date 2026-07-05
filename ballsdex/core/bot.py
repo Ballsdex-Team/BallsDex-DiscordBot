@@ -6,6 +6,7 @@ import logging
 import math
 import time
 import types
+from collections import defaultdict
 from datetime import datetime
 from typing import TYPE_CHECKING, Self, Sequence
 
@@ -33,6 +34,7 @@ from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.utils.checks import check_perms
 from bd_models.models import (
     Ball,
+    BallGroup,
     BlacklistedGuild,
     BlacklistedID,
     Economy,
@@ -40,6 +42,7 @@ from bd_models.models import (
     Special,
     balls,
     economies,
+    groups,
     regimes,
     specials,
 )
@@ -311,6 +314,17 @@ class BallsDexBot(commands.AutoShardedBot):
         async for special in Special.objects.all():
             specials[special.pk] = special
         table.add_row("Special events", str(len(specials)))
+
+        group_ball_ids: dict[int, set[int]] = defaultdict(set)
+        async for group_id, ball_id in BallGroup.objects.values_list("id", "countryballs__id"):
+            if ball_id is not None:
+                group_ball_ids[group_id].add(ball_id)
+
+        groups.clear()
+        async for group in BallGroup.objects.all():
+            group._ball_ids = frozenset(group_ball_ids[group.pk])
+            groups[group.pk] = group
+        table.add_row("Groups", str(len(groups)))
 
         self.blacklist = set()
         async for blacklisted_id in BlacklistedID.objects.all().only("discord_id"):

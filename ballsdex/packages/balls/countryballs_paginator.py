@@ -18,12 +18,16 @@ class CountryballsViewer(LayoutView):
     header = TextDisplay("")
     select_row = ActionRow()
 
+    def __init__(self, ephemeral: bool = False, *, timeout: float | None = 180) -> None:
+        super().__init__(timeout=timeout)
+        self.ephemeral = ephemeral
+
     @select_row.select()
     async def selected(self, interaction: discord.Interaction["BallsDexBot"], select: Select):
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(thinking=True, ephemeral=self.ephemeral)
         ball = await BallInstance.objects.prefetch_related("trade_player").aget(pk=select.values[0])
         content, file, view = await ball.prepare_for_message(interaction)
-        await interaction.followup.send(content=content, file=file, view=view)
+        await interaction.followup.send(content=content, file=file, view=view, ephemeral=self.ephemeral)
         file.close()
 
 

@@ -336,6 +336,12 @@ class BallSpawnView(View):
         is_new = not await BallInstance.objects.filter(player=player, ball=self.model).aexists()
 
         if self.ballinstance:
+            if self.ballinstance.player_id == player.pk:
+                # the owner caught their own dropped countryball back, nothing changed hands
+                self.ballinstance.locked = None  # type: ignore
+                await self.ballinstance.asave(update_fields=("locked",))
+                return self.ballinstance, is_new
+
             # if specified, do not create a countryball but switch owner
             # it's important to register this as a trade to avoid bypass
             trade = await Trade.objects.acreate(player1=self.ballinstance.player, player2=player)

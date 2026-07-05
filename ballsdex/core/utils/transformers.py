@@ -16,7 +16,7 @@ from django.db.models import Model, Q
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
-from bd_models.models import Ball, BallInstance, Economy, Regime, Special
+from bd_models.models import Ball, BallGroup, BallInstance, Economy, Regime, Special
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -26,7 +26,14 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.core.utils.transformers")
 
-__all__ = ("BallTransform", "BallInstanceTransform", "SpecialTransform", "RegimeTransform", "EconomyTransform")
+__all__ = (
+    "BallTransform",
+    "BallInstanceTransform",
+    "SpecialTransform",
+    "RegimeTransform",
+    "EconomyTransform",
+    "BallGroupTransform",
+)
 
 
 class TradeCommandType(Enum):
@@ -164,7 +171,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         return super().get_queryset().prefetch_related("player")
 
     async def get_from_pk(self, value: int) -> BallInstance:
-        return await self.get_queryset().prefetch_related("player", "trade_player").aget(pk=value)
+        return await self.get_queryset().prefetch_related("player", "trade_player", "ball").aget(pk=value)
 
     async def get_from_text(self, value: str) -> BallInstance:
         return await self.get_queryset().aget(pk=int(value, 16))
@@ -294,10 +301,16 @@ class EconomyTransformer(TTLModelTransformer[Economy]):
     model = Economy
 
 
+class BallGroupTransformer(TTLModelTransformer[BallGroup]):
+    name = "group"
+    model = BallGroup
+
+
 BallTransform = app_commands.Transform[Ball, BallTransformer]
 BallInstanceTransform = app_commands.Transform[BallInstance, BallInstanceTransformer]
 SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
 RegimeTransform = app_commands.Transform[Regime, RegimeTransformer]
 EconomyTransform = app_commands.Transform[Economy, EconomyTransformer]
+BallGroupTransform = app_commands.Transform[BallGroup, BallGroupTransformer]
 SpecialEnabledTransform = app_commands.Transform[Special, SpecialTransformer(hidden=False)]
 BallEnabledTransform = app_commands.Transform[Ball, BallTransformer(enabled=True)]
