@@ -46,18 +46,42 @@ async def _build_history_view(
         await ctx.send("No history found.", ephemeral=True)
         return
 
-    async def callback(interaction: discord.Interaction["BallsDexBot"]):
-        await interaction.response.defer(thinking=True, ephemeral=True)
-        data = cast("discord.types.interactions.SelectMessageComponentInteractionData", interaction.data)
-        trade = await Trade.objects.prefetch_related("player1", "player2").aget(pk=data["values"][0])
-        view = cog.history_view_cls(interaction.client, trade, admin_view=True)
+    async def build_detail_view(pks: list[int], index: int) -> LayoutView:
+        trade = await Trade.objects.prefetch_related("player1", "player2").aget(pk=pks[index])
+        view = cog.history_view_cls(ctx.bot, trade, admin_view=True)
         await view.initialize(
             trade.player1,
             await cog.fetch_user(trade.player1.discord_id) if trade.player1 else None,
             trade.player2,
             await cog.fetch_user(trade.player2.discord_id) if trade.player2 else None,
         )
-        await interaction.followup.send(view=view, ephemeral=True)
+
+        prev_button = Button(label="◀ Previous", style=discord.ButtonStyle.grey, disabled=index <= 0)
+        next_button = Button(label="Next ▶", style=discord.ButtonStyle.grey, disabled=index >= len(pks) - 1)
+
+        async def go_to_prev(interaction: discord.Interaction["BallsDexBot"]):
+            await interaction.response.defer()
+            await interaction.edit_original_response(view=await build_detail_view(pks, index - 1))
+
+        async def go_to_next(interaction: discord.Interaction["BallsDexBot"]):
+            await interaction.response.defer()
+            await interaction.edit_original_response(view=await build_detail_view(pks, index + 1))
+
+        prev_button.callback = go_to_prev
+        next_button.callback = go_to_next
+        view.add_item(ActionRow(prev_button, next_button))
+        return view
+
+    async def callback(interaction: discord.Interaction["BallsDexBot"]):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        data = cast("discord.types.interactions.SelectMessageComponentInteractionData", interaction.data)
+        pk = int(data["values"][0])
+        pks = [p async for p in queryset.values_list("pk", flat=True)]
+        try:
+            index = pks.index(pk)
+        except ValueError:
+            index = 0
+        await interaction.followup.send(view=await build_detail_view(pks, index), ephemeral=True)
 
     view = LayoutView()
     view.add_item(TextDisplay(f"## {title} ({total} trade{'s' if total != 1 else ''})"))
