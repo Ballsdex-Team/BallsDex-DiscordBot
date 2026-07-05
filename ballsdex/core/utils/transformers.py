@@ -164,7 +164,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         return super().get_queryset().prefetch_related("player")
 
     async def get_from_pk(self, value: int) -> BallInstance:
-        return await self.get_queryset().prefetch_related("player", "trade_player").aget(pk=value)
+        return await self.get_queryset().prefetch_related("player", "trade_player", "ball").aget(pk=value)
 
     async def get_from_text(self, value: str) -> BallInstance:
         return await self.get_queryset().aget(pk=int(value, 16))
