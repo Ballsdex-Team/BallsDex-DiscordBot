@@ -25,6 +25,7 @@ from discord.ui import (
 from ballsdex.core.discord import Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from bd_models.models import (
+    BallInstance,
     Block,
     DonationPolicy,
     FriendPolicy,
@@ -142,6 +143,9 @@ class DeleteDataModal(Modal, title="Confirm data deletion"):
         await interaction.response.defer(ephemeral=True)
         player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
         if player:
+            # soft-delete rather than hard-delete: this keeps trade history intact for the
+            # other party involved, instead of ripping their items out of past trades too
+            await BallInstance.all_objects.filter(player=player).aupdate(deleted=True)
             await player.adelete()
         await interaction.followup.send("Your player data has been permanently deleted.", ephemeral=True)
 

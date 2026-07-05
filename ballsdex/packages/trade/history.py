@@ -30,10 +30,12 @@ class TradeListFormatter(Formatter[QuerySet[Trade], Select]):
             p1_items=Count("tradeobject", filter=Q(tradeobject__player=F("player1"))),
             p2_items=Count("tradeobject", filter=Q(tradeobject__player=F("player2"))),
         ):
+            p1_label = trade.player1.discord_id if trade.player1 else "Deleted user"
+            p2_label = trade.player2.discord_id if trade.player2 else "Deleted user"
             self.item.add_option(
                 label=f"Trade #{trade.pk:0X} - {trade.date:%Y-%m-%d %H:%M}",
-                description=f"{trade.player1.discord_id} ({trade.p1_items} items) • "  # pyright: ignore[reportAttributeAccessIssue]
-                f"{trade.player2.discord_id} ({trade.p2_items} items)",  # pyright: ignore[reportAttributeAccessIssue]
+                description=f"{p1_label} ({trade.p1_items} items) • "  # pyright: ignore[reportAttributeAccessIssue]
+                f"{p2_label} ({trade.p2_items} items)",  # pyright: ignore[reportAttributeAccessIssue]
                 value=trade.pk,
             )
 
@@ -45,10 +47,16 @@ class HistoryView(LayoutView):
         self.trade = trade
         self.admin_view = admin_view
 
-    async def initialize(self, player1: Player, user1: discord.abc.User, player2: Player, user2: discord.abc.User):
+    async def initialize(
+        self,
+        player1: Player | None,
+        user1: discord.abc.User | None,
+        player2: Player | None,
+        user2: discord.abc.User | None,
+    ):
         self.add_item(TextDisplay(f"## Trade #{self.trade.pk:0X} history\n\nDate: {format_dt(self.trade.date, 'F')}"))
-        self.add_item(await self.generate_container(player1, user1))
-        self.add_item(await self.generate_container(player2, user2))
+        self.add_item(await self.generate_container(player1, user1, is_player1=True))
+        self.add_item(await self.generate_container(player2, user2, is_player1=False))
         if self.admin_view:
             self.add_item(
                 ActionRow(
@@ -59,18 +67,21 @@ class HistoryView(LayoutView):
                 )
             )
 
-    async def generate_container(self, player: Player, user: discord.abc.User):
+    async def generate_container(
+        self, player: Player | None, user: discord.abc.User | None, *, is_player1: bool
+    ):
         container = Container()
+        display_name = user.display_name if user else "Deleted user"
         container.add_item(
             Section(
-                TextDisplay(f"## {user.display_name}'s proposal"),
+                TextDisplay(f"## {display_name}'s proposal"),
                 TextDisplay("These items were traded away and no longer theirs."),
-                accessory=Thumbnail(user.display_avatar.url),
+                accessory=Thumbnail(user.display_avatar.url if user else ""),
             )
         )
         container.add_item(Separator())
 
-        if player.pk == self.trade.player1_id:
+        if is_player1:
             money_given, money_received = self.trade.player1_money, self.trade.player2_money
         else:
             money_given, money_received = self.trade.player2_money, self.trade.player1_money
