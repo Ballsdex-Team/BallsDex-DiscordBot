@@ -1,3 +1,5 @@
+import random
+import string
 import zipfile
 from collections.abc import AsyncIterable
 from enum import StrEnum
@@ -6,7 +8,19 @@ from typing import TYPE_CHECKING, NamedTuple, cast
 
 import discord
 from discord import ButtonStyle, SeparatorSpacing
-from discord.ui import ActionRow, Button, Container, Label, Section, Select, Separator, TextDisplay, Thumbnail, button
+from discord.ui import (
+    ActionRow,
+    Button,
+    Container,
+    Label,
+    Section,
+    Select,
+    Separator,
+    TextDisplay,
+    TextInput,
+    Thumbnail,
+    button,
+)
 
 from ballsdex.core.discord import Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
@@ -103,6 +117,35 @@ class ExportModal(Modal, title="Data export"):
             )
 
 
+CONFIRMATION_CODE_CHARS = "".join(c for c in string.ascii_uppercase + string.digits if c not in "0O1IL")
+
+
+class DeleteDataModal(Modal, title="Confirm data deletion"):
+    confirmation = Label(
+        text="Confirmation code", component=TextInput(style=discord.TextStyle.short, placeholder="Confirmation code")
+    )
+
+    def __init__(self, code: str):
+        super().__init__()
+        self.code = code
+        self.confirmation.description = (
+            f"This will permanently delete all of your data and cannot be undone. Type {code} below to confirm."
+        )
+
+    async def on_submit(self, interaction: Interaction):
+        value = cast(TextInput, self.confirmation.component).value.strip().upper()
+        if value != self.code:
+            await interaction.response.send_message(
+                "The code you entered did not match. Your data was **not** deleted.", ephemeral=True
+            )
+            return
+        await interaction.response.defer(ephemeral=True)
+        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
+        if player:
+            await player.adelete()
+        await interaction.followup.send("Your player data has been permanently deleted.", ephemeral=True)
+
+
 class DataActionRow(ActionRow):
     @button(label="Export")
     async def export(self, interaction: Interaction, button: Button):
@@ -113,16 +156,8 @@ class DataActionRow(ActionRow):
 
     @button(label="Delete all data")
     async def delete(self, interaction: Interaction, button: Button):
-        view = ConfirmChoiceView(interaction)
-        await interaction.response.send_message(
-            "Are you sure you want to delete your player data?", view=view, ephemeral=True
-        )
-        await view.wait()
-        if view.value is None or not view.value:
-            return
-        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
-        if player:
-            await player.adelete()
+        code = "".join(random.choices(CONFIRMATION_CODE_CHARS, k=6))
+        await interaction.response.send_modal(DeleteDataModal(code))
 
 
 class SettingsContainer(Container):
