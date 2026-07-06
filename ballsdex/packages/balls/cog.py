@@ -712,9 +712,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if user.bot:
             await interaction.response.send_message("You cannot donate to bots.", ephemeral=True)
             return
-        if user.id in self.bot.blacklist:
-            await interaction.response.send_message("You cannot donate to a blacklisted user.", ephemeral=True)
-            return
 
         await interaction.response.defer(thinking=True, ephemeral=True)
 
