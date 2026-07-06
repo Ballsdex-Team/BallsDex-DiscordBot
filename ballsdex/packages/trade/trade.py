@@ -143,6 +143,8 @@ class TradingUser(Container):
         return f"<TradingUser player_id={self.player.pk} discord_id={self.user.id}>"
 
     async def interaction_check(self, interaction: Interaction) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         if interaction.user.id not in (self.trade.trader1.user.id, self.trade.trader2.user.id):
             await interaction.response.send_message("You are not part of this trade!", ephemeral=True)
             return False
@@ -465,6 +467,8 @@ class TradeInstance(LayoutView):
             await self._cleanup()
 
     async def interaction_check(self, interaction: Interaction) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         if interaction.user.id not in (self.trader1.user.id, self.trader2.user.id):
             await interaction.response.send_message("You are not part of this trade!", ephemeral=True)
             return False

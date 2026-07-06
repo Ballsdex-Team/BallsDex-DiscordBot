@@ -99,6 +99,8 @@ class DonationRequest(View):
         self.new_player = new_player
 
     async def interaction_check(self, interaction: Interaction, /) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         if interaction.user.id != self.new_player.discord_id:
             await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
             return False
@@ -163,6 +165,8 @@ class BulkDonationRequest(View):
         self.old_player = old_player
 
     async def interaction_check(self, interaction: Interaction, /) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         if interaction.data and interaction.data.get("custom_id") == VIEW_ALL_CUSTOM_ID:
             return True
         if interaction.user.id != self.new_player.discord_id:
