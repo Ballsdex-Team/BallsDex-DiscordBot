@@ -1,5 +1,6 @@
 import logging
 
+from ballsdex.core.translation import t
 from settings.models import settings
 
 log = logging.getLogger("ballsdex.packages.trade")
@@ -14,10 +15,14 @@ class TradeError(RuntimeError):
 
     @property
     def error_message(self) -> str:
+        # translated (and, for some subclasses, formatted with the collectible name) here, at
+        # access time, rather than where `msg` is set on each subclass - a class-level attribute
+        # resolved once at import time, when `settings.collectible_name` may not even reflect
+        # the operator's configured value yet, and no interaction locale is known
         if self.msg is None:
             log.error("Unknown error during trade", exc_info=self)
-            return "An unknown exception occurred. Contact support if this persists."
-        return self.msg
+            return t("An unknown exception occurred. Contact support if this persists.")
+        return t(self.msg).format(collectible=settings.collectible_name)
 
 
 class LockedError(TradeError):
@@ -41,7 +46,7 @@ class NotTradeableError(TradeError):
     The countryball is not tradeable (ball, ballinstance or special)
     """
 
-    msg = f"This {settings.collectible_name} is not tradeable."
+    msg = "This {collectible} is not tradeable."
 
 
 class AlreadyLockedError(TradeError):
@@ -50,7 +55,7 @@ class AlreadyLockedError(TradeError):
     """
 
     msg = (
-        f"This {settings.collectible_name} has been locked in a different trade. "
+        "This {collectible} has been locked in a different trade. "
         "Remove it from your other trade or wait for it to timeout (30 min)"
     )
 
@@ -60,7 +65,7 @@ class NotProposedError(TradeError):
     A countryball was attempted to be removed when it was not part of the proposal.
     """
 
-    msg = f"This {settings.collectible_name} is not part of your proposal and cannot be removed."
+    msg = "This {collectible} is not part of your proposal and cannot be removed."
 
 
 class OwnershipError(TradeError):
@@ -68,7 +73,7 @@ class OwnershipError(TradeError):
     A countryball is attempting to be traded, but it's not owned by the player.
     """
 
-    msg = f"You do not own this {settings.collectible_name}."
+    msg = "You do not own this {collectible}."
 
 
 class IntegrityError(TradeError):

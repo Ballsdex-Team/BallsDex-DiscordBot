@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Literal
 import discord
 from discord.utils import format_dt
 
+from ballsdex.core.translation import t
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -188,12 +189,12 @@ class SpawnManager(BaseSpawnManager):
         cooldown = self.cooldowns.get(guild.id)
         if not cooldown:
             await ctx.send(
-                "No spawn manager could be found for that guild. Spawn may have been disabled.", ephemeral=True
+                t("No spawn manager could be found for that guild. Spawn may have been disabled."), ephemeral=True
             )
             return
 
         if not guild.member_count:
-            await ctx.send("`member_count` data not returned for this guild, spawn cannot work.")
+            await ctx.send(t("`member_count` data not returned for this guild, spawn cannot work."))
             return
 
         embed = discord.Embed()
@@ -219,9 +220,9 @@ class SpawnManager(BaseSpawnManager):
 
         penalities: list[str] = []
         if guild.member_count < 5 or guild.member_count > 1000:
-            penalities.append("Server has less than 5 or more than 1000 members")
+            penalities.append(t("Server has less than 5 or more than 1000 members"))
         if any(len(x.content) < 5 for x in cooldown.message_cache):
-            penalities.append("Some cached messages are less than 5 characters long")
+            penalities.append(t("Some cached messages are less than 5 characters long"))
 
         authors_set = set(x.author_id for x in cooldown.message_cache)
         low_chatters = len(authors_set) < 4
@@ -237,47 +238,58 @@ class SpawnManager(BaseSpawnManager):
         # this mess is needed since either conditions make up to a single penality
         if low_chatters:
             if not major_chatter:
-                penalities.append("Message cache has less than 4 chatters")
+                penalities.append(t("Message cache has less than 4 chatters"))
             else:
                 penalities.append(
-                    "Message cache has less than 4 chatters **and** "
-                    "one user has more than 40% of messages within message cache"
+                    t(
+                        "Message cache has less than 4 chatters **and** "
+                        "one user has more than 40% of messages within message cache"
+                    )
                 )
         elif major_chatter:
             if not low_chatters:
-                penalities.append("One user has more than 40% of messages within cache")
+                penalities.append(t("One user has more than 40% of messages within cache"))
 
         penality_multiplier = 0.5 ** len(penalities)
         if penalities:
             embed.add_field(
-                name="\N{WARNING SIGN}\N{VARIATION SELECTOR-16} Penalities",
-                value="Each penality divides the progress by 2\n\n- " + "\n- ".join(penalities),
+                name=t("\N{WARNING SIGN}\N{VARIATION SELECTOR-16} Penalities"),
+                value=t("Each penality divides the progress by 2") + "\n\n- " + "\n- ".join(penalities),
             )
 
         chance = cooldown.threshold - multiplier * (delta // 60)
 
-        embed.description = (
-            f"Manager initiated **{format_dt(cooldown.time, style='R')}**\n"
-            f"Initial number of points to reach: **{cooldown.threshold}**\n"
-            f"Message cache length: **{len(cooldown.message_cache)}**\n\n"
-            f"Time-based multiplier: **x{multiplier}** *({range} members)*\n"
+        embed.description = t(
+            "Manager initiated **{time}**\n"
+            "Initial number of points to reach: **{threshold}**\n"
+            "Message cache length: **{cache_length}**\n\n"
+            "Time-based multiplier: **x{multiplier}** *({member_range} members)*\n"
             "*This affects how much the number of points to reach reduces over time*\n"
-            f"Penality multiplier: **x{penality_multiplier}**\n"
+            "Penality multiplier: **x{penality_multiplier}**\n"
             "*This affects how much a message sent increases the number of points*\n\n"
-            f"__Current count: **{cooldown.threshold}/{chance}**__\n\n"
+            "__Current count: **{threshold}/{chance}**__\n\n"
+        ).format(
+            time=format_dt(cooldown.time, style="R"),
+            threshold=cooldown.threshold,
+            cache_length=len(cooldown.message_cache),
+            multiplier=multiplier,
+            member_range=range,
+            penality_multiplier=penality_multiplier,
+            chance=chance,
         )
 
         informations: list[str] = []
         if cooldown.lock.locked():
-            informations.append("The manager is currently on cooldown.")
+            informations.append(t("The manager is currently on cooldown."))
         if delta < 600:
             informations.append(
-                f"The manager is less than 10 minutes old, {settings.plural_collectible_name} "
-                "cannot spawn at the moment."
+                t("The manager is less than 10 minutes old, {collectibles} cannot spawn at the moment.").format(
+                    collectibles=settings.plural_collectible_name
+                )
             )
         if informations:
             embed.add_field(
-                name="\N{INFORMATION SOURCE}\N{VARIATION SELECTOR-16} Informations",
+                name=t("\N{INFORMATION SOURCE}\N{VARIATION SELECTOR-16} Informations"),
                 value="- " + "\n- ".join(informations),
             )
 

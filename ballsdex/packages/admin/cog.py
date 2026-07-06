@@ -8,6 +8,7 @@ from discord.ext import commands
 from discord.ui import ActionRow, Button, Container, Section, TextDisplay
 
 from ballsdex.core.discord import LayoutView
+from ballsdex.core.translation import t
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import (
@@ -43,6 +44,12 @@ class SyncView(LayoutView):
     def __init__(self, cog: "Admin", *, timeout: float | None = 180) -> None:
         super().__init__(timeout=timeout)
         self.cog = cog
+        # class-level TextDisplay content and @action_row.button() labels above are resolved
+        # once at import time - override them here so t() sees the locale of whoever ran the
+        # command that creates this view
+        self.text.content = t("Admin commands are already synced here. What would you like to do?")
+        self.sync.label = t("Synchronize")
+        self.remove.label = t("Remove")
 
     text = TextDisplay("Admin commands are already synced here. What would you like to do?")
     action_row = ActionRow()
@@ -64,8 +71,8 @@ class SyncView(LayoutView):
         )
         self.sync.disabled = True
         self.remove.disabled = True
-        self.text.content += (
-            "\n\nCommands have been refreshed. You may need to reload your Discord client to see the changes applied."
+        self.text.content += "\n\n" + t(
+            "Commands have been refreshed. You may need to reload your Discord client to see the changes applied."
         )
         await interaction.edit_original_response(view=self)
 
@@ -81,8 +88,8 @@ class SyncView(LayoutView):
         await GuildConfig.objects.filter(guild_id=interaction.guild.id).aupdate(admin_command_synced=True)
         self.sync.disabled = True
         self.remove.disabled = True
-        self.text.content += (
-            "\n\nCommands have been removed. You may need to reload your Discord client to see the changes applied."
+        self.text.content += "\n\n" + t(
+            "Commands have been removed. You may need to reload your Discord client to see the changes applied."
         )
         await interaction.edit_original_response(view=self)
         log.info(f"Admin commands removed from guild {interaction.guild.id} by {interaction.user}")
@@ -113,8 +120,10 @@ class Admin(commands.Cog):
         if isinstance(error, app_commands.CommandSignatureMismatch):
             assert self.bot.user
             await interaction.response.send_message(
-                "Admin commands are desynchronized and needs to be re-synced. "
-                f"Run `{self.bot.user.mention} admin syncslash` to fix this.",
+                t(
+                    "Admin commands are desynchronized and needs to be re-synced. "
+                    "Run `{bot_mention} admin syncslash` to fix this."
+                ).format(bot_mention=self.bot.user.mention),
                 ephemeral=True,
             )
             interaction.extras["handled"] = True
@@ -152,10 +161,12 @@ class Admin(commands.Cog):
             view = SyncView(self)
             await ctx.send(view=view)
         else:
-            view = ConfirmChoiceView(ctx, accept_message="Registering commands...")
+            view = ConfirmChoiceView(ctx, accept_message=t("Registering commands..."))
             await ctx.send(
-                "Would you like to add admin slash commands in this server? "
-                "They can only be used with the appropriate Django permissions",
+                t(
+                    "Would you like to add admin slash commands in this server? "
+                    "They can only be used with the appropriate Django permissions"
+                ),
                 view=view,
             )
             await view.wait()
@@ -166,9 +177,11 @@ class Admin(commands.Cog):
                 await self.bot.tree.sync(guild=ctx.guild)
                 log.info(f"Admin commands added to guild {ctx.guild.id} by {ctx.author}")
                 await ctx.send(
-                    "Admin slash commands added.\nYou need admin permissions in this server to view them "
-                    f"(this can be changed [here](discord://-/guilds/{ctx.guild.id}/settings/integrations)). You might "
-                    "need to refresh your Discord client to view them."
+                    t(
+                        "Admin slash commands added.\nYou need admin permissions in this server to view them "
+                        "(this can be changed [here](discord://-/guilds/{guild_id}/settings/integrations)). You "
+                        "might need to refresh your Discord client to view them."
+                    ).format(guild_id=ctx.guild.id)
                 )
                 await GuildConfig.objects.aupdate_or_create(
                     guild_id=ctx.guild.id, defaults={"guild_id": ctx.guild.id, "admin_command_synced": True}
@@ -181,20 +194,20 @@ class Admin(commands.Cog):
         Change the status of the bot. Provide at least status or text.
         """
         if not flags.status and not flags.name and not flags.state:
-            await ctx.send("You must provide at least `status`, `name` or `state`.", ephemeral=True)
+            await ctx.send(t("You must provide at least `status`, `name` or `state`."), ephemeral=True)
             return
 
         activity: discord.Activity | None = None
         if flags.activity_type == discord.ActivityType.custom and flags.name and not flags.state:
-            await ctx.send("You must provide `state` for custom activities. `name` is unused.", ephemeral=True)
+            await ctx.send(t("You must provide `state` for custom activities. `name` is unused."), ephemeral=True)
             return
         if flags.activity_type != discord.ActivityType.custom and not flags.name:
-            await ctx.send("You must provide `name` for pre-defined activities.", ephemeral=True)
+            await ctx.send(t("You must provide `name` for pre-defined activities."), ephemeral=True)
             return
         if flags.name or flags.state:
             activity = discord.Activity(name=flags.name or flags.state, state=flags.state, type=flags.activity_type)
         await self.bot.change_presence(status=flags.status, activity=activity)
-        await ctx.send("Status updated.", ephemeral=True)
+        await ctx.send(t("Status updated."), ephemeral=True)
 
     @admin.command()
     @checks.is_superuser()
@@ -209,7 +222,7 @@ class Admin(commands.Cog):
         """
         cog = cast("Trade | None", self.bot.get_cog("Trade"))
         if not cog:
-            await ctx.send("The trade cog is not loaded.", ephemeral=True)
+            await ctx.send(t("The trade cog is not loaded."), ephemeral=True)
             return
 
         await ctx.defer()
@@ -220,16 +233,18 @@ class Admin(commands.Cog):
 
         if not result:
             await ctx.send(
-                "All trades were successfully cancelled, and further trades cannot be started "
-                f'anymore.\nTo enable trades again, the bot owner must use the "{prefix}reload '
-                'trade" command.'
+                t(
+                    "All trades were successfully cancelled, and further trades cannot be started "
+                    'anymore.\nTo enable trades again, the bot owner must use the "{prefix}reload trade" command.'
+                ).format(prefix=prefix)
             )
         else:
             await ctx.send(
-                "Lockdown mode enabled, trades can no longer be started. "
-                f"While cancelling ongoing trades, {len(result)} failed to cancel, check your "
-                "logs for info.\nTo enable trades again, the bot owner must use the "
-                f'"{prefix}reload trade" command.'
+                t(
+                    "Lockdown mode enabled, trades can no longer be started. "
+                    "While cancelling ongoing trades, {failed} failed to cancel, check your "
+                    'logs for info.\nTo enable trades again, the bot owner must use the "{prefix}reload trade" command.'
+                ).format(failed=len(result), prefix=prefix)
             )
 
     @admin.command()
@@ -279,12 +294,12 @@ class Admin(commands.Cog):
             try:
                 guild = self.bot.get_guild(int(guild_id))
             except ValueError:
-                await ctx.send("Invalid guild ID. Please make sure it's a number.", ephemeral=True)
+                await ctx.send(t("Invalid guild ID. Please make sure it's a number."), ephemeral=True)
                 return
         else:
             guild = ctx.guild
         if not guild:
-            await ctx.send("The given guild could not be found.", ephemeral=True)
+            await ctx.send(t("The given guild could not be found."), ephemeral=True)
             return
 
         spawn_manager = cast("CountryBallsSpawner", self.bot.get_cog("CountryBallsSpawner")).spawn_manager
@@ -307,12 +322,17 @@ class Admin(commands.Cog):
 
         if not guilds:
             if self.bot.intents.members:
-                await ctx.send(f"The user does not own any server with {settings.bot_name}.", ephemeral=True)
+                await ctx.send(
+                    t("The user does not own any server with {bot_name}.").format(bot_name=settings.bot_name),
+                    ephemeral=True,
+                )
             else:
                 await ctx.send(
-                    f"The user does not own any server with {settings.bot_name}.\n"
-                    ":warning: *The bot cannot be aware of the member's presence in servers, "
-                    "it is only aware of server ownerships.*",
+                    t(
+                        "The user does not own any server with {bot_name}.\n"
+                        ":warning: *The bot cannot be aware of the member's presence in servers, "
+                        "it is only aware of server ownerships.*"
+                    ).format(bot_name=settings.bot_name),
                     ephemeral=True,
                 )
             return
@@ -332,12 +352,12 @@ class Admin(commands.Cog):
 
             # highlight low member count
             if guild.member_count <= 3:  # type: ignore
-                members_part = f":warning: **{guild.member_count} members**"
+                members_part = t(":warning: **{count} members**").format(count=guild.member_count)
             else:
-                members_part = f"{guild.member_count} members"
+                members_part = t("{count} members").format(count=guild.member_count)
 
             # highlight if spawning is enabled
-            spawn_part = ":warning: **spawn enabled**" if spawn_enabled else "spawn disabled"
+            spawn_part = t(":warning: **spawn enabled**") if spawn_enabled else t("spawn disabled")
 
             entries.append(TextDisplay(f"`{guild.id}` {name_part} • {members_part} • {spawn_part}"))
 
@@ -345,11 +365,11 @@ class Admin(commands.Cog):
         container = Container()
         view.add_item(container)
         section = Section(
-            TextDisplay(f"## {len(guilds)} servers shared"),
+            TextDisplay(t("## {count} servers shared").format(count=len(guilds))),
             TextDisplay(f"{user.mention} - {user.global_name} ({user.id})"),
             accessory=Button(
                 style=discord.ButtonStyle.link,
-                label="View profile",
+                label=t("View profile"),
                 url=f"discord://-/users/{user.id}",
                 emoji="\N{LEFT-POINTING MAGNIFYING GLASS}",
             ),
@@ -359,8 +379,11 @@ class Admin(commands.Cog):
         if not self.bot.intents.members:
             section.add_item(
                 TextDisplay(
-                    "\N{WARNING SIGN} The bot cannot be aware of the member's "
-                    "presence in servers, it is only aware of server ownerships."
+                    "\N{WARNING SIGN} "
+                    + t(
+                        "The bot cannot be aware of the member's "
+                        "presence in servers, it is only aware of server ownerships."
+                    )
                 )
             )
 
@@ -388,12 +411,14 @@ class Admin(commands.Cog):
                 await ctx.send_help(ctx.command)
                 return
             del self.bot.impersonations[ctx.author.id]
-            await ctx.send("You are not impersonating anymore.")
+            await ctx.send(t("You are not impersonating anymore."))
         else:
             self.bot.impersonations[ctx.author.id] = user
             await ctx.send(
-                f"Your next commands will be run as if {user.display_name} ran it.\n"
-                "Avoid running the commands in a different server, this can lead to weird issues.\n"
-                f"To clear impersonation, run `{ctx.prefix}admin impersonate` again.",
+                t(
+                    "Your next commands will be run as if {user} ran it.\n"
+                    "Avoid running the commands in a different server, this can lead to weird issues.\n"
+                    "To clear impersonation, run `{prefix}admin impersonate` again."
+                ).format(user=user.display_name, prefix=ctx.prefix),
                 ephemeral=True,
             )

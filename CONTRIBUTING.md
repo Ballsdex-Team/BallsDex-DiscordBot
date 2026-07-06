@@ -139,6 +139,78 @@ commit it.
 You can read more about migrations
 [here](https://docs.djangoproject.com/en/6.0/topics/migrations/), the engine is very extensive!
 
+## Translations (i18n)
+
+Two things are localized, both following the requesting user's Discord client locale, and both
+backed by the same gettext catalogs - but through different mechanisms:
+
+- Command names, descriptions, parameters and choices, via `discord.py`'s `Translator`/`locale_str`
+  mechanism (`ballsdex.core.bot.Translator`).
+- Runtime UI strings (embeds, messages, view/button labels), via `ballsdex.core.translation.t(...)`.
+  Wrap any user-facing string with `t(...)`, and use `.format(...)` for dynamic values (channel
+  mentions, counts, brand names, etc.) rather than f-strings, so the translated text isn't baked
+  around a value from one specific invocation:
+
+  ```python
+  await interaction.response.send_message(
+      t("Spawning is now enabled in {channel}.").format(channel=channel.mention)
+  )
+  ```
+
+  `t` isn't called `_` on purpose: this codebase uses `_` pervasively as a throwaway variable
+  (e.g. `player, _ = await Player.objects.aget_or_create(...)`), which would turn every such
+  function into an `UnboundLocalError` trap if `_` were also a module-level import there.
+  Avoid calling `t(...)` at import/class-definition time (e.g. as a module-level constant, or
+  inside an `@app_commands.command`/`@button` decorator's `description`/`label` kwarg) - at that
+  point there's no interaction yet, so it always resolves to English. Build such values inside a
+  function instead, called per-interaction.
+
+Both are unrelated to the language a player or server can pick for countryball display
+(`ballsdex.core.i18n.resolve_locale`), which is only ever a language explicitly configured for
+that purpose, never an arbitrary client locale. That third mechanism is backed by data, not
+gettext catalogs: a `BallTranslation` row per (ball, language), editable as an inline on the
+`Ball` admin page. `Ball.localized_name(language)` (and `localized_short_name`/
+`localized_capacity_name`/`localized_capacity_description`) fall back to the base field when
+`language` is `None` or no translation is configured. Translations are attached to the in-memory
+`balls` cache at `load_cache()` time, so looking one up never costs an extra query.
+
+Catalogs live under `ballsdex/locales/<discord-locale>/LC_MESSAGES/ballsdex.po` (the directory
+name must match a [`discord.Locale`](https://discordpy.readthedocs.io/en/latest/api.html#discord.Locale)
+value, e.g. `fr`, `de`, `es-ES`).
+
+If you added/changed a command's name, description, parameter, or choice, or added/changed a
+`t(...)` call, regenerate the template (requires a database connection, but not a bot token):
+
+```sh
+cd admin_panel
+uv run python manage.py extract_command_strings
+```
+
+This extracts from two sources into the same `.pot`: the live command tree (walked directly,
+since discord.py resolves descriptions from docstrings - parsing and shortening them - before
+they ever reach the translator, so re-deriving those strings via static analysis would mean
+duplicating that parsing logic), and a static scan of the `ballsdex` package for `t(...)` calls.
+
+To add a new language, or pull in new/changed strings for an existing one:
+
+```sh
+# new language
+uv run pybabel init -i ballsdex/locales/ballsdex.pot -d ballsdex/locales -D ballsdex -l <locale>
+
+# update an existing one after the .pot changed
+uv run pybabel update -i ballsdex/locales/ballsdex.pot -d ballsdex/locales -D ballsdex -l <locale>
+```
+
+Edit the resulting `.po` file's `msgstr` entries, then compile it and commit both the `.po` and
+the compiled `.mo`:
+
+```sh
+uv run pybabel compile -d ballsdex/locales -D ballsdex
+```
+
+`pybabel` is part of the `dev` extra (`Babel`). The bot only needs `gettext` from the standard
+library at runtime, so compiled `.mo` files must be committed for translations to take effect.
+
 ## Coding style
 
 The code is formatted and linted by `ruff`, and static checked by `pyright`.

@@ -13,6 +13,8 @@ def import_settings_from_yaml(content: dict, s: Settings) -> None:
     s.plural_collectible_name = content.get("plural-collectible-name") or s.plural_collectible_name
     s.bot_name = content.get("bot-name") or s.bot_name
     s.balls_slash_name = content.get("players-group-cog-name") or s.balls_slash_name
+    if languages := content.get("languages"):
+        s.enabled_languages = ";".join(str(x) for x in languages)
     s.favorited_collectible_emoji = content.get("favorited-collectible-emoji") or s.favorited_collectible_emoji
     s.max_favorites = content.get("max-favorites") or s.max_favorites
     s.max_attack_bonus = content.get("max-attack-bonus") or s.max_attack_bonus

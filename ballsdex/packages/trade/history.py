@@ -7,6 +7,7 @@ from django.db.models import Count, F, Q, QuerySet
 from django.urls import reverse
 
 from ballsdex.core.discord import LayoutView
+from ballsdex.core.translation import t
 from ballsdex.core.utils.menus import Formatter, Menu, TextFormatter, TextSource
 from bd_models.models import BallInstance, Player, Trade
 from settings.models import settings
@@ -46,14 +47,20 @@ class HistoryView(LayoutView):
         self.admin_view = admin_view
 
     async def initialize(self, player1: Player, user1: discord.abc.User, player2: Player, user2: discord.abc.User):
-        self.add_item(TextDisplay(f"## Trade #{self.trade.pk:0X} history\n\nDate: {format_dt(self.trade.date, 'F')}"))
+        self.add_item(
+            TextDisplay(
+                t("## Trade #{trade_id:0X} history\n\nDate: {date}").format(
+                    trade_id=self.trade.pk, date=format_dt(self.trade.date, "F")
+                )
+            )
+        )
         self.add_item(await self.generate_container(player1, user1))
         self.add_item(await self.generate_container(player2, user2))
         if self.admin_view:
             self.add_item(
                 ActionRow(
                     Button(
-                        label="View online",
+                        label=t("View online"),
                         url=f"{settings.site_base_url}{reverse('admin:bd_models_trade_change', args=(self.trade.pk,))}",
                     )
                 )
@@ -63,8 +70,8 @@ class HistoryView(LayoutView):
         container = Container()
         container.add_item(
             Section(
-                TextDisplay(f"## {user.display_name}'s proposal"),
-                TextDisplay("These items were traded away and no longer theirs."),
+                TextDisplay(t("## {user}'s proposal").format(user=user.display_name)),
+                TextDisplay(t("These items were traded away and no longer theirs.")),
                 accessory=Thumbnail(user.display_avatar.url),
             )
         )
@@ -76,11 +83,19 @@ class HistoryView(LayoutView):
             money_given, money_received = self.trade.player2_money, self.trade.player1_money
         if money_given:
             container.add_item(
-                TextDisplay(f"Money traded: {format_currency(money_given, shortened=False, bot=self.bot)}")
+                TextDisplay(
+                    t("Money traded: {amount}").format(
+                        amount=format_currency(money_given, shortened=False, bot=self.bot)
+                    )
+                )
             )
         if money_received:
             container.add_item(
-                TextDisplay(f"Money received: {format_currency(money_received, shortened=False, bot=self.bot)}")
+                TextDisplay(
+                    t("Money received: {amount}").format(
+                        amount=format_currency(money_received, shortened=False, bot=self.bot)
+                    )
+                )
             )
 
         text = ""
@@ -99,5 +114,5 @@ class HistoryView(LayoutView):
             menu = Menu(self.bot, self, TextSource(text, page_length=1900), TextFormatter(item))
             await menu.init(container=container)
         else:
-            item.content = "Nothing traded."
+            item.content = t("Nothing traded.")
         return container

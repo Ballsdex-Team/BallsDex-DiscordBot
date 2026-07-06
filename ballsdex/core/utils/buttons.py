@@ -5,6 +5,7 @@ from discord.ext import commands
 from discord.ui import Button
 
 from ballsdex.core.discord import View
+from ballsdex.core.translation import current_locale, t
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -48,8 +49,8 @@ class ConfirmChoiceView(View):
         self,
         ctx: discord.Interaction["BallsDexBot"] | commands.Context["BallsDexBot"],
         user: Optional[discord.User] = None,
-        accept_message: str = "Confirmed",
-        cancel_message: str = "Cancelled",
+        accept_message: Optional[str] = None,
+        cancel_message: Optional[str] = None,
     ):
         super().__init__(timeout=90)
         self.value = None
@@ -60,19 +61,22 @@ class ConfirmChoiceView(View):
             self.interaction = ctx.interaction
             self.user = user or ctx.author
         self.interaction_response: discord.Interaction["BallsDexBot"]
-        self.accept_message = accept_message
-        self.cancel_message = cancel_message
+        # resolved here rather than as default parameter values, since those are evaluated once
+        # at import time and would always resolve to English
+        self.accept_message = accept_message if accept_message is not None else t("Confirmed")
+        self.cancel_message = cancel_message if cancel_message is not None else t("Cancelled")
         self.message: discord.Message | None = None
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"]) -> bool:
+        current_locale.set(interaction.locale.value)
         self.interaction_response = interaction
 
         if interaction.user != self.user:
-            await interaction.response.send_message("You cannot interact with this view.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot interact with this view."), ephemeral=True)
             return False
 
         if self.value is not None:
-            await interaction.response.send_message("You've already made a choice.", ephemeral=True)
+            await interaction.response.send_message(t("You've already made a choice."), ephemeral=True)
             return False
         return True
 

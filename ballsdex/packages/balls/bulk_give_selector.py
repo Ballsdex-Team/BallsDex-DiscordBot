@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import discord
 
 from ballsdex.core.discord import View
+from ballsdex.core.translation import t
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus.bulk_selector import BaseBulkSelector
 from ballsdex.core.utils.utils import can_mention
@@ -37,10 +38,12 @@ class BulkGiveSelector(BaseBulkSelector):
         await super().configure(
             bot,
             queryset,
-            header=f"## Bulk Give selection\nYour selected {settings.plural_collectible_name} are shown below.",
-            description="-# Use the drop-down menu below to select your items to give.",
-            select_placeholder=f"Select {settings.plural_collectible_name} to give",
-            confirm_label="Give selected",
+            header=t("## Bulk Give selection\nYour selected {collectibles} are shown below.").format(
+                collectibles=settings.plural_collectible_name
+            ),
+            description=t("-# Use the drop-down menu below to select your items to give."),
+            select_placeholder=t("Select {collectibles} to give").format(collectibles=settings.plural_collectible_name),
+            confirm_label=t("Give selected"),
         )
 
     async def _finalize(self):
@@ -71,7 +74,9 @@ class BulkGiveSelector(BaseBulkSelector):
 
         if not valid:
             await interaction.response.send_message(
-                f"Nothing was given, all {len(balls)} selected {settings.plural_collectible_name} are no longer valid.",
+                t("Nothing was given, all {count} selected {collectibles} are no longer valid.").format(
+                    count=len(balls), collectibles=settings.plural_collectible_name
+                ),
                 ephemeral=True,
             )
             return
@@ -80,12 +85,13 @@ class BulkGiveSelector(BaseBulkSelector):
         if favorites:
             confirm_view = ConfirmChoiceView(
                 interaction,
-                accept_message="Continuing with the donation.",
-                cancel_message="This request has been cancelled.",
+                accept_message=t("Continuing with the donation."),
+                cancel_message=t("This request has been cancelled."),
             )
             await interaction.response.send_message(
-                f"{len(favorites)} of your selected {settings.plural_collectible_name} are favorites. "
-                "Are you sure you want to donate them?",
+                t(
+                    "{count} of your selected {collectibles} are favorites. Are you sure you want to donate them?"
+                ).format(count=len(favorites), collectibles=settings.plural_collectible_name),
                 view=confirm_view,
                 ephemeral=True,
             )
@@ -102,18 +108,30 @@ class BulkGiveSelector(BaseBulkSelector):
         skip_txt = ""
         if skipped:
             counts = Counter(skipped)
-            reasons = ", ".join(f"{count} {reason.value}" for reason, count in counts.items())
-            skip_txt = f"\n{len(skipped)} were skipped: {reasons}."
+            reasons = ", ".join(f"{count} {t(reason.value)}" for reason, count in counts.items())
+            skip_txt = t("\n{count} were skipped: {reasons}.").format(count=len(skipped), reasons=reasons)
 
         if self.new_player.donation_policy == DonationPolicy.REQUEST_APPROVAL:
             lines = [ball.description(include_emoji=True, bot=self.bot, is_trade=True) for ball in valid]
             if len(lines) > 15:
-                listing = "\n".join(f"- {line}" for line in lines[:15]) + f"\n… and {len(lines) - 15} more"
+                listing = (
+                    "\n".join(f"- {line}" for line in lines[:15])
+                    + "\n"
+                    + t("… and {more} more").format(more=len(lines) - 15)
+                )
             else:
                 listing = "\n".join(f"- {line}" for line in lines)
             await interaction.followup.send(
-                f"Hey {self.target_user.mention}, {interaction.user.name} wants to give you "
-                f"{len(valid)} {settings.plural_collectible_name}:\n{listing}\nDo you accept this donation?",
+                t(
+                    "Hey {user}, {donor} wants to give you {count} {collectibles}:\n"
+                    "{listing}\nDo you accept this donation?"
+                ).format(
+                    user=self.target_user.mention,
+                    donor=interaction.user.name,
+                    count=len(valid),
+                    collectibles=settings.plural_collectible_name,
+                    listing=listing,
+                ),
                 view=BulkDonationRequest(self.bot, interaction, valid, self.new_player, self.old_player),
                 allowed_mentions=await can_mention([self.new_player, self.old_player]),
             )
@@ -140,8 +158,13 @@ class BulkGiveSelector(BaseBulkSelector):
             recipient_id=self.new_player.discord_id,
         )
         await interaction.followup.send(
-            f"{interaction.user.mention} just gave {len(valid)} {settings.plural_collectible_name} "
-            f"to {self.target_user.mention}!{skip_txt}",
+            t("{user} just gave {count} {collectibles} to {recipient}!{skip}").format(
+                user=interaction.user.mention,
+                count=len(valid),
+                collectibles=settings.plural_collectible_name,
+                recipient=self.target_user.mention,
+                skip=skip_txt,
+            ),
             view=result_view,
             allowed_mentions=await can_mention([self.new_player, self.old_player]),
         )

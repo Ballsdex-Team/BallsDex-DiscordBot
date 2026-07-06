@@ -6,6 +6,7 @@ from discord.ext import commands
 from django.db.models import Q
 
 from ballsdex.core.discord import LayoutView
+from ballsdex.core.translation import t
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
@@ -65,16 +66,16 @@ class Player(commands.GroupCog):
         player2, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
 
         if player1 == player2:
-            await interaction.response.send_message("You cannot add yourself as a friend.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot add yourself as a friend."), ephemeral=True)
             return
         if user.bot:
-            await interaction.response.send_message("You cannot add a bot.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot add a bot."), ephemeral=True)
             return
         if player2.discord_id in self.bot.blacklist:
-            await interaction.response.send_message("You cannot add a blacklisted user as a friend.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot add a blacklisted user as a friend."), ephemeral=True)
             return
         if player2.friend_policy == FriendPolicy.DENY:
-            await interaction.response.send_message("This user isn't accepting friend requests.", ephemeral=True)
+            await interaction.response.send_message(t("This user isn't accepting friend requests."), ephemeral=True)
             return
 
         blocked = await player1.is_blocked(player2)
@@ -83,40 +84,48 @@ class Player(commands.GroupCog):
         if blocked:
             player_unblock = self.block_remove.extras.get("mention", "/player block remove")
             await interaction.response.send_message(
-                f"You cannot add a blocked user. To unblock, use {player_unblock}.", ephemeral=True
+                t("You cannot add a blocked user. To unblock, use {command}.").format(command=player_unblock),
+                ephemeral=True,
             )
             return
         if player2_blocked:
             await interaction.response.send_message(
-                "This user has blocked you, you cannot add them as a friend.", ephemeral=True
+                t("This user has blocked you, you cannot add them as a friend."), ephemeral=True
             )
             return
 
         friended = await player1.is_friend(player2)
         if friended:
-            await interaction.response.send_message("You are already friends with this user!", ephemeral=True)
+            await interaction.response.send_message(t("You are already friends with this user!"), ephemeral=True)
             return
 
         if self.active_friend_requests.get((player2.discord_id, player1.discord_id), False):
             await interaction.response.send_message(
-                "That user has already sent you a friend request! "
-                "Please accept or decline it before sending a new request.",
+                t(
+                    "That user has already sent you a friend request! "
+                    "Please accept or decline it before sending a new request."
+                ),
                 ephemeral=True,
             )
             return
 
         if self.active_friend_requests.get((player1.discord_id, player2.discord_id), False):
             await interaction.response.send_message(
-                "You already have an active friend request to this user!", ephemeral=True
+                t("You already have an active friend request to this user!"), ephemeral=True
             )
             return
 
         await interaction.response.defer(thinking=True)
         view = ConfirmChoiceView(
-            interaction, user=user, accept_message="Friend request accepted!", cancel_message="Friend request declined."
+            interaction,
+            user=user,
+            accept_message=t("Friend request accepted!"),
+            cancel_message=t("Friend request declined."),
         )
         await interaction.followup.send(
-            f"{user.mention}, {interaction.user} has sent you a friend request!",
+            t("{user}, {requester} has sent you a friend request!").format(
+                user=user.mention, requester=interaction.user
+            ),
             view=view,
             allowed_mentions=discord.AllowedMentions(users=player2.can_be_mentioned),
         )
@@ -144,21 +153,23 @@ class Player(commands.GroupCog):
         player2, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
 
         if player1 == player2:
-            await interaction.response.send_message("You cannot remove yourself.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot remove yourself."), ephemeral=True)
             return
         if user.bot:
-            await interaction.response.send_message("You cannot remove a bot.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot remove a bot."), ephemeral=True)
             return
 
         friendship_exists = await player1.is_friend(player2)
         if not friendship_exists:
-            await interaction.response.send_message("You are not friends with this user.", ephemeral=True)
+            await interaction.response.send_message(t("You are not friends with this user."), ephemeral=True)
             return
         else:
             await Friendship.objects.filter(
                 (Q(player1=player1) & Q(player2=player2)) | (Q(player1=player2) & Q(player2=player1))
             ).adelete()
-            await interaction.response.send_message(f"{user.name} has been removed as a friend.", ephemeral=True)
+            await interaction.response.send_message(
+                t("{user} has been removed as a friend.").format(user=user.name), ephemeral=True
+            )
 
     @friend.command(name="list")
     async def friend_list(self, interaction: discord.Interaction["BallsDexBot"]):
@@ -173,13 +184,13 @@ class Player(commands.GroupCog):
         )
 
         if not await qs.aexists():
-            await interaction.response.send_message("You currently do not have any friends added.", ephemeral=True)
+            await interaction.response.send_message(t("You currently do not have any friends added."), ephemeral=True)
             return
 
         view = LayoutView()
         container = RelationContainer()
-        container.title.content = "# Your friend list\nAdd friends with {cmd}".format(
-            cmd=self.friend_add.extras.get("mention", "`/player friend add`")
+        container.title.content = t("# Your friend list\nAdd friends with {command}").format(
+            command=self.friend_add.extras.get("mention", "`/player friend add`")
         )
         view.add_item(container)
         menu = Menu(
@@ -207,19 +218,19 @@ class Player(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         if player1 == player2:
-            await interaction.followup.send("You cannot block yourself.", ephemeral=True)
+            await interaction.followup.send(t("You cannot block yourself."), ephemeral=True)
             return
         if user.bot:
-            await interaction.followup.send("You cannot block a bot.", ephemeral=True)
+            await interaction.followup.send(t("You cannot block a bot."), ephemeral=True)
             return
 
         blocked = await player1.is_blocked(player2)
         if blocked:
-            await interaction.followup.send("You have already blocked this user.", ephemeral=True)
+            await interaction.followup.send(t("You have already blocked this user."), ephemeral=True)
             return
         if self.active_friend_requests.get((player1.discord_id, player2.discord_id)):
             await interaction.followup.send(
-                "You cannot block a user to whom you have sent an active friend request.", ephemeral=True
+                t("You cannot block a user to whom you have sent an active friend request."), ephemeral=True
             )
             return
 
@@ -227,11 +238,11 @@ class Player(commands.GroupCog):
         if friended:
             view = ConfirmChoiceView(
                 interaction,
-                accept_message="User has been blocked.",
-                cancel_message=f"Request cancelled, {user.name} is still your friend.",
+                accept_message=t("User has been blocked."),
+                cancel_message=t("Request cancelled, {user} is still your friend.").format(user=user.name),
             )
             await interaction.followup.send(
-                "This user is your friend, are you sure you want to block them?", view=view, ephemeral=True
+                t("This user is your friend, are you sure you want to block them?"), view=view, ephemeral=True
             )
             await view.wait()
 
@@ -243,7 +254,7 @@ class Player(commands.GroupCog):
                 ).adelete()
 
         await Block.objects.acreate(player1=player1, player2=player2)
-        await interaction.followup.send(f"You have now blocked {user.name}.", ephemeral=True)
+        await interaction.followup.send(t("You have now blocked {user}.").format(user=user.name), ephemeral=True)
 
     @blocked.command(name="remove")
     async def block_remove(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
@@ -259,20 +270,22 @@ class Player(commands.GroupCog):
         player2, _ = await PlayerModel.objects.aget_or_create(discord_id=user.id)
 
         if player1 == player2:
-            await interaction.response.send_message("You cannot unblock yourself.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot unblock yourself."), ephemeral=True)
             return
         if user.bot:
-            await interaction.response.send_message("You cannot unblock a bot.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot unblock a bot."), ephemeral=True)
             return
 
         blocked = await player1.is_blocked(player2)
 
         if not blocked:
-            await interaction.response.send_message("This user isn't blocked.", ephemeral=True)
+            await interaction.response.send_message(t("This user isn't blocked."), ephemeral=True)
             return
         else:
             await Block.objects.filter((Q(player1=player1) & Q(player2=player2))).adelete()
-            await interaction.response.send_message(f"{user.name} has been unblocked.", ephemeral=True)
+            await interaction.response.send_message(
+                t("{user} has been unblocked.").format(user=user.name), ephemeral=True
+            )
 
     @blocked.command(name="list")
     async def blocked_list(self, interaction: discord.Interaction["BallsDexBot"]):
@@ -283,13 +296,13 @@ class Player(commands.GroupCog):
         qs = Block.objects.filter(player1=player).select_related("player1", "player2").order_by("date")
 
         if not await qs.aexists():
-            await interaction.response.send_message("You haven't blocked any users!", ephemeral=True)
+            await interaction.response.send_message(t("You haven't blocked any users!"), ephemeral=True)
             return
 
         view = LayoutView()
         container = RelationContainer()
-        container.title.content = "# Your block list\nBlock users with {cmd}".format(
-            cmd=self.block_add.extras.get("mention", "`/player block add`")
+        container.title.content = t("# Your block list\nBlock users with {command}").format(
+            command=self.block_add.extras.get("mention", "`/player block add`")
         )
         view.add_item(container)
         menu = Menu(
@@ -310,7 +323,7 @@ class Player(commands.GroupCog):
         try:
             player = await PlayerModel.objects.prefetch_related("balls").aget(discord_id=interaction.user.id)
         except PlayerModel.DoesNotExist:
-            await interaction.followup.send("You haven't got any info to show!", ephemeral=True)
+            await interaction.followup.send(t("You haven't got any info to show!"), ephemeral=True)
             return
         ball = await BallInstance.objects.prefetch_related("special", "trade_player").filter(player=player).aall()
 
@@ -346,27 +359,44 @@ class Player(commands.GroupCog):
         blocks = await Block.objects.filter(player1__discord_id=interaction.user.id).acount()
 
         embed = discord.Embed(
-            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=discord.Color.blurple()
+            title=t("**{user}'s {bot_name} Info**").format(
+                user=user.display_name.title(), bot_name=settings.bot_name.title()
+            ),
+            color=discord.Color.blurple(),
         )
-        embed.description = (
+        embed.description = t(
             "Here are your statistics and settings in the bot!\n"
             "## Player Info\n"
-            f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
-            f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
-            f"**Mention Policy:** {MENTION_POLICY_MAP[player.mention_policy]}\n"
-            f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}\n"
-            f"**Trade Cooldown Policy:** {TRADE_POLICY_MAP[player.trade_cooldown_policy]}\n"
-            f"**Amount of Friends:** {friends}\n"
-            f"**Amount of Blocked Users:** {blocks}\n"
+            "**Privacy Policy:** {privacy_policy}\n"
+            "**Donation Policy:** {donation_policy}\n"
+            "**Mention Policy:** {mention_policy}\n"
+            "**Friend Policy:** {friend_policy}\n"
+            "**Trade Cooldown Policy:** {trade_cooldown_policy}\n"
+            "**Amount of Friends:** {friends}\n"
+            "**Amount of Blocked Users:** {blocks}\n"
             "## Player Stats\n"
-            f"**Completion:** {completion_percentage}\n"
-            f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned):,}\n"
-            f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned):,}\n"
-            f"**Special {settings.collectible_name.title()}s:** {len(special):,}\n"
-            f"**Trades Completed:** {len(trades):,}\n"
-            f"**Amount of Users Traded With:** {len(trade_partners):,}\n"
-            # f"**Current Balance:** {player.money:,}"
+            "**Completion:** {completion}\n"
+            "**{collectible}s Owned:** {balls_owned}\n"
+            "**Caught {collectible}s Owned**: {caught_owned}\n"
+            "**Special {collectible}s:** {special}\n"
+            "**Trades Completed:** {trades}\n"
+            "**Amount of Users Traded With:** {trade_partners}\n"
+        ).format(
+            privacy_policy=t(PRIVATE_POLICY_MAP[player.privacy_policy]),
+            donation_policy=t(DONATION_POLICY_MAP[player.donation_policy]),
+            mention_policy=t(MENTION_POLICY_MAP[player.mention_policy]),
+            friend_policy=t(FRIEND_POLICY_MAP[player.friend_policy]),
+            trade_cooldown_policy=t(TRADE_POLICY_MAP[player.trade_cooldown_policy]),
+            friends=friends,
+            blocks=blocks,
+            completion=completion_percentage,
+            collectible=settings.collectible_name.title(),
+            balls_owned=f"{len(balls_owned):,}",
+            caught_owned=f"{len(caught_owned):,}",
+            special=f"{len(special):,}",
+            trades=f"{len(trades):,}",
+            trade_partners=f"{len(trade_partners):,}",
         )
-        embed.set_footer(text="Keep collecting and trading to improve your stats!")
+        embed.set_footer(text=t("Keep collecting and trading to improve your stats!"))
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
         await interaction.followup.send(embed=embed, ephemeral=True)

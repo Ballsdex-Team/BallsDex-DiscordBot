@@ -1,0 +1,3907 @@
+# French translations for BallsDex.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the BallsDex project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BallsDex VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-06 10:00+0000\n"
+"PO-Revision-Date: 2026-07-06 09:35+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: fr\n"
+"Language-Team: fr <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#. Name of /admin
+msgid "admin"
+msgstr ""
+
+#. Description of /admin
+msgid "Bot admin commands."
+msgstr ""
+
+#. Name of /admin status
+msgid "status"
+msgstr ""
+
+#. Description of /admin status
+msgid "Change the status of the bot. Provide at least status or text."
+msgstr ""
+
+#. Parameter description of /admin status
+msgid "The status you want to set"
+msgstr ""
+
+#. Choice of /admin status status
+msgid "online"
+msgstr ""
+
+#. Choice of /admin status status
+msgid "offline"
+msgstr ""
+
+#. Choice of /admin status status
+msgid "idle"
+msgstr ""
+
+#. Choice of /admin status status
+msgid "dnd"
+msgstr ""
+
+#. Choice of /admin status status
+msgid "invisible"
+msgstr ""
+
+#. Parameter of /admin status
+msgid "name"
+msgstr ""
+
+#. Parameter description of /admin status
+msgid "Title of the activity, if not custom"
+msgstr ""
+
+#. Parameter of /admin status
+msgid "state"
+msgstr ""
+
+#. Parameter description of /admin status
+msgid "Custom status or subtitle of the activity"
+msgstr ""
+
+#. Parameter of /admin status
+msgid "activity_type"
+msgstr ""
+
+#. Parameter description of /admin status
+msgid "The type of activity"
+msgstr ""
+
+#. Choice of /admin status activity_type
+msgid "unknown"
+msgstr ""
+
+#. Choice of /admin status activity_type
+msgid "playing"
+msgstr ""
+
+#. Choice of /admin status activity_type
+msgid "streaming"
+msgstr ""
+
+#. Choice of /admin status activity_type
+msgid "listening"
+msgstr ""
+
+#. Choice of /admin status activity_type
+msgid "watching"
+msgstr ""
+
+#. Choice of /admin status activity_type
+msgid "custom"
+msgstr ""
+
+#. Choice of /admin status activity_type
+msgid "competing"
+msgstr ""
+
+#. Name of /admin trade_lockdown
+msgid "trade_lockdown"
+msgstr ""
+
+#. Description of /admin trade_lockdown
+msgid "Cancel all ongoing trades and lock down further trades from being started."
+msgstr ""
+
+#. Parameter of /admin trade_lockdown
+msgid "reason"
+msgstr ""
+
+#. Parameter description of /admin trade_lockdown
+msgid "The reason of the lockdown. This will be displayed to all trading users."
+msgstr ""
+
+#. Name of /admin rarity
+msgid "rarity"
+msgstr ""
+
+#. Description of /admin rarity
+msgid "Generate a list of countryballs ranked by rarity."
+msgstr ""
+
+#. Parameter of /admin rarity
+msgid "chunked"
+msgstr ""
+
+#. Parameter description of /admin rarity
+msgid "Group together countryballs with the same rarity."
+msgstr ""
+
+#. Parameter of /admin rarity
+msgid "include_disabled"
+msgstr ""
+
+#. Parameter description of /admin rarity
+msgid "Include the countryballs that are disabled or with a rarity of 0."
+msgstr ""
+
+#. Name of /admin cooldown
+msgid "cooldown"
+msgstr ""
+
+#. Description of /admin cooldown
+msgid "Show the details of the spawn cooldown system for the given server"
+msgstr ""
+
+#. Parameter of /admin cooldown
+msgid "guild_id"
+msgstr ""
+
+#. Parameter description of /admin cooldown
+msgid ""
+"ID of the server you want to inspect. If not given, inspect the current "
+"server."
+msgstr ""
+
+#. Name of /admin guilds
+msgid "guilds"
+msgstr ""
+
+#. Description of /admin guilds
+msgid ""
+"Shows the guilds shared with the specified user. Provide either user or "
+"user_id."
+msgstr ""
+
+#. Parameter of /admin guilds
+msgid "user"
+msgstr ""
+
+#. Parameter description of /admin guilds
+msgid "The user you want to check, if available in the current server."
+msgstr ""
+
+#. Name of /admin impersonate
+msgid "impersonate"
+msgstr ""
+
+#. Description of /admin impersonate
+msgid "Impersonate a user on your next slash commands."
+msgstr ""
+
+#. Parameter description of /admin impersonate
+msgid "The user to impersonate"
+msgstr ""
+
+#. Name of /admin info
+msgid "info"
+msgstr ""
+
+#. Description of /admin info
+msgid "Information commands"
+msgstr ""
+
+#. Name of /admin info guild
+msgid "guild"
+msgstr ""
+
+#. Description of /admin info guild
+msgid "Show information about the server provided"
+msgstr ""
+
+#. Parameter description of /admin info guild
+msgid "The ID of the guild you want to get information about."
+msgstr ""
+
+#. Parameter of /admin info guild
+msgid "days"
+msgstr ""
+
+#. Parameter description of /admin info guild
+msgid "The amount of days to look back for the amount of countryballs caught."
+msgstr ""
+
+#. Description of /admin info user
+msgid "Show information about the user provided"
+msgstr ""
+
+#. Parameter description of /admin info user
+msgid "The user you want to get information about."
+msgstr ""
+
+#. Name of /admin balls
+msgid "balls"
+msgstr ""
+
+#. Description of /admin balls
+msgid "Countryballs management"
+msgstr ""
+
+#. Name of /admin balls spawn
+msgid "spawn"
+msgstr ""
+
+#. Description of /admin balls spawn
+msgid "Force spawn a random or specified countryball."
+msgstr ""
+
+#. Parameter of /admin balls spawn
+msgid "countryball"
+msgstr ""
+
+#. Parameter description of /admin balls spawn
+msgid ""
+"The countryball you want to spawn. Random according to rarities if not "
+"specified."
+msgstr ""
+
+#. Parameter of /admin balls spawn
+msgid "channel"
+msgstr ""
+
+#. Parameter description of /admin balls spawn
+msgid ""
+"The channel you want to spawn the countryball in. Current channel if not "
+"specified."
+msgstr ""
+
+#. Parameter of /admin balls spawn
+msgid "n"
+msgstr ""
+
+#. Parameter description of /admin balls spawn
+msgid ""
+"The number of countryballs to spawn. If no countryball was specified, "
+"it's random every time."
+msgstr ""
+
+#. Parameter of /admin balls spawn
+msgid "special"
+msgstr ""
+
+#. Parameter description of /admin balls spawn
+msgid "Force the countryball to have a special attribute when caught."
+msgstr ""
+
+#. Parameter of /admin balls spawn
+msgid "atk_bonus"
+msgstr ""
+
+#. Parameter description of /admin balls spawn
+msgid "Force the countryball to have a specific attack bonus when caught."
+msgstr ""
+
+#. Parameter of /admin balls spawn
+msgid "hp_bonus"
+msgstr ""
+
+#. Parameter description of /admin balls spawn
+msgid "Force the countryball to have a specific health bonus when caught."
+msgstr ""
+
+#. Name of /admin balls give
+msgid "give"
+msgstr ""
+
+#. Description of /admin balls give
+msgid "Give the specified countryball to a player."
+msgstr ""
+
+#. Parameter description of /admin balls give
+msgid "The user you want to give a countryball to"
+msgstr ""
+
+#. Parameter description of /admin balls give
+msgid "The countryball you want to give"
+msgstr ""
+
+#. Parameter description of /admin balls give
+msgid "A special event to set to this card"
+msgstr ""
+
+#. Parameter of /admin balls give
+msgid "health_bonus"
+msgstr ""
+
+#. Parameter description of /admin balls give
+msgid "Force a specific health bonus percentage"
+msgstr ""
+
+#. Parameter of /admin balls give
+msgid "attack_bonus"
+msgstr ""
+
+#. Parameter description of /admin balls give
+msgid "Force a specific attack bonus percentage"
+msgstr ""
+
+#. Description of /admin balls info
+msgid "Show information about a countryball."
+msgstr ""
+
+#. Parameter of /admin balls info
+msgid "countryball_id"
+msgstr ""
+
+#. Parameter description of /admin balls info
+msgid "The ID of the countryball you want to get information about."
+msgstr ""
+
+#. Name of /admin balls delete
+msgid "delete"
+msgstr ""
+
+#. Description of /admin balls delete
+msgid "Delete a countryball."
+msgstr ""
+
+#. Parameter description of /admin balls delete
+msgid "The ID of the countryball you want to delete."
+msgstr ""
+
+#. Parameter of /admin balls delete
+msgid "soft_delete"
+msgstr ""
+
+#. Parameter description of /admin balls delete
+msgid "Whether the countryball should be kept in database or fully wiped."
+msgstr ""
+
+#. Name of /admin balls transfer
+msgid "transfer"
+msgstr ""
+
+#. Description of /admin balls transfer
+msgid "Transfer a countryball to another user."
+msgstr ""
+
+#. Parameter description of /admin balls transfer
+msgid "The ID of the countryball you want to transfer."
+msgstr ""
+
+#. Parameter description of /admin balls transfer
+msgid "The user you want to transfer the countryball to."
+msgstr ""
+
+#. Name of /admin balls transferinv
+msgid "transferinv"
+msgstr ""
+
+#. Description of /admin balls transferinv
+msgid "Transfer the full inventory of a user to another."
+msgstr ""
+
+#. Parameter of /admin balls transferinv
+msgid "source"
+msgstr ""
+
+#. Parameter description of /admin balls transferinv
+msgid "The user whose inventory you want to transfer"
+msgstr ""
+
+#. Parameter of /admin balls transferinv
+msgid "dest"
+msgstr ""
+
+#. Parameter description of /admin balls transferinv
+msgid "The user who should receive the inventory"
+msgstr ""
+
+#. Parameter of /admin balls transferinv
+msgid "currency"
+msgstr ""
+
+#. Parameter description of /admin balls transferinv
+msgid "Whether the player's balance should also be transferred."
+msgstr ""
+
+#. Name of /admin balls reset
+msgid "reset"
+msgstr ""
+
+#. Description of /admin balls reset
+msgid "Reset a player's countryballs."
+msgstr ""
+
+#. Parameter description of /admin balls reset
+msgid "The user you want to reset the countryballs of."
+msgstr ""
+
+#. Parameter of /admin balls reset
+msgid "percentage"
+msgstr ""
+
+#. Parameter description of /admin balls reset
+msgid "The percentage of countryballs to delete, if not all. Used for sanctions."
+msgstr ""
+
+#. Parameter description of /admin balls reset
+msgid ""
+"If true, the countryballs will be marked as deleted instead of being "
+"removed from the database."
+msgstr ""
+
+#. Name of /admin balls count
+msgid "count"
+msgstr ""
+
+#. Description of /admin balls count
+msgid ""
+"Count the number of countryballs that a player has or how many exist in "
+"total."
+msgstr ""
+
+#. Parameter description of /admin balls count
+msgid "The player whose countryballs you are counting"
+msgstr ""
+
+#. Parameter description of /admin balls count
+msgid "Restrict countring to a specific countryball"
+msgstr ""
+
+#. Parameter description of /admin balls count
+msgid "Restrict counting to a special event"
+msgstr ""
+
+#. Parameter of /admin balls count
+msgid "deleted"
+msgstr ""
+
+#. Parameter description of /admin balls count
+msgid "Count the deleted countryballs too"
+msgstr ""
+
+#. Name of /admin balls create
+msgid "create"
+msgstr ""
+
+#. Description of /admin balls create
+msgid "Create a countryball."
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "wild_card"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Image used to spawn the countryball"
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "collection_card"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Image used when displaying countryballs"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "The name of the countryball"
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "health"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "The health of the countryball"
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "attack"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "The attack of the countryball"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "The rarity of the countryball, if enabled"
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "emoji_id"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Emoji ID of this countryball."
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "credits"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Authors of wild card and collection card"
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "capacity_name"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Name of the countryball's capacity"
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "capacity_description"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Description of the countryball's capacity"
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "regime"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Political regime of this countryball"
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "enabled"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Type 'no' if you don't want this countryball to spawn."
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "tradeable"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Type 'no' if you don't want this countryball to be traded with others."
+msgstr ""
+
+#. Parameter of /admin balls create
+msgid "economy"
+msgstr ""
+
+#. Parameter description of /admin balls create
+msgid "Economical regime of this countryball"
+msgstr ""
+
+#. Name of /admin blacklist
+msgid "blacklist"
+msgstr ""
+
+#. Description of /admin blacklist
+msgid "Bot blacklist management"
+msgstr ""
+
+#. Name of /admin blacklist add
+msgid "add"
+msgstr ""
+
+#. Description of /admin blacklist add
+msgid "Add a user to the blacklist. No reload is needed."
+msgstr ""
+
+#. Parameter description of /admin blacklist add
+msgid "The user you want to blacklist, if available in the current server."
+msgstr ""
+
+#. Parameter description of /admin blacklist add
+msgid "The reason for blacklisting the user."
+msgstr ""
+
+#. Name of /admin blacklist remove
+msgid "remove"
+msgstr ""
+
+#. Description of /admin blacklist remove
+msgid "Remove a user from the blacklist. No reload is needed."
+msgstr ""
+
+#. Parameter description of /admin blacklist remove
+msgid "The user you want to unblacklist, if available in the current server."
+msgstr ""
+
+#. Parameter description of /admin blacklist remove
+msgid "The reason for unblacklisting the user."
+msgstr ""
+
+#. Description of /admin blacklist info
+msgid "Check if a user is blacklisted and show the corresponding reason."
+msgstr ""
+
+#. Name of /admin blacklist history
+msgid "history"
+msgstr ""
+
+#. Description of /admin blacklist history
+msgid "Show the history of a blacklisted user or guild."
+msgstr ""
+
+#. Parameter of /admin blacklist history
+msgid "user_id"
+msgstr ""
+
+#. Parameter description of /admin blacklist history
+msgid "…"
+msgstr ""
+
+#. Name of /admin blacklistguild
+msgid "blacklistguild"
+msgstr ""
+
+#. Description of /admin blacklistguild
+msgid "Guild blacklist management"
+msgstr ""
+
+#. Description of /admin blacklistguild add
+msgid "Add a guild to the blacklist. No reload is needed."
+msgstr ""
+
+#. Parameter description of /admin blacklistguild add
+msgid "The ID of the guild you want to blacklist."
+msgstr ""
+
+#. Parameter description of /admin blacklistguild add
+msgid "The reason for blacklisting the guild."
+msgstr ""
+
+#. Description of /admin blacklistguild remove
+msgid "Remove a guild from the blacklist. No reload is needed."
+msgstr ""
+
+#. Parameter description of /admin blacklistguild remove
+msgid "The ID of the guild you want to unblacklist."
+msgstr ""
+
+#. Parameter description of /admin blacklistguild remove
+msgid "The reason for unblacklisting the guild."
+msgstr ""
+
+#. Description of /admin blacklistguild info
+msgid "Check if a guild is blacklisted and show the corresponding reason."
+msgstr ""
+
+#. Parameter description of /admin blacklistguild info
+msgid "The ID of the guild you want to check."
+msgstr ""
+
+#. Description of /admin history
+msgid "Trade history management"
+msgstr ""
+
+#. Description of /admin history user
+msgid "Show your trade history."
+msgstr ""
+
+#. Parameter description of /admin history user
+msgid "The user you want to check the history of."
+msgstr ""
+
+#. Parameter of /admin history user
+msgid "sort_oldest"
+msgstr ""
+
+#. Parameter description of /admin history user
+msgid "\"yes\" to have oldest trades first"
+msgstr ""
+
+#. Parameter description of /admin history user
+msgid "Retrieve entries from the last n days"
+msgstr ""
+
+#. Parameter description of /admin history user
+msgid "The countryball you want to filter the history by"
+msgstr ""
+
+#. Parameter of /admin history user
+msgid "user2"
+msgstr ""
+
+#. Parameter description of /admin history user
+msgid "The second user you want to check the history of"
+msgstr ""
+
+#. Parameter description of /admin history user
+msgid "The special you want to filter the history by"
+msgstr ""
+
+#. Description of /admin history countryball
+msgid "Show the trade history of a countryball."
+msgstr ""
+
+#. Parameter description of /admin history countryball
+msgid "The ID of the countryball you want to check the history of."
+msgstr ""
+
+#. Name of /admin history trade
+msgid "trade"
+msgstr ""
+
+#. Description of /admin history trade
+msgid "Show the contents of a certain trade."
+msgstr ""
+
+#. Parameter of /admin history trade
+msgid "trade_id"
+msgstr ""
+
+#. Parameter description of /admin history trade
+msgid "The ID of the trade you want to check the history of."
+msgstr ""
+
+#. Name of /admin logs
+msgid "logs"
+msgstr ""
+
+#. Description of /admin logs
+msgid "Bot logs management"
+msgstr ""
+
+#. Name of /admin logs catchlogs
+msgid "catchlogs"
+msgstr ""
+
+#. Description of /admin logs catchlogs
+msgid "Add or remove a user from catch logs."
+msgstr ""
+
+#. Parameter description of /admin logs catchlogs
+msgid "The user you want to add or remove to the logs."
+msgstr ""
+
+#. Name of /admin logs commandlogs
+msgid "commandlogs"
+msgstr ""
+
+#. Description of /admin logs commandlogs
+msgid "Add or remove a user from command logs."
+msgstr ""
+
+#. Name of /admin money
+msgid "money"
+msgstr ""
+
+#. Description of /admin money
+msgid "Currency management tools"
+msgstr ""
+
+#. Name of /admin money balance
+msgid "balance"
+msgstr ""
+
+#. Description of /admin money balance
+msgid "Show the balance of the user provided"
+msgstr ""
+
+#. Description of /admin money add
+msgid "Add coins to the user provided"
+msgstr ""
+
+#. Parameter description of /admin money add
+msgid "The user you want to add coins to."
+msgstr ""
+
+#. Parameter of /admin money add
+msgid "amount"
+msgstr ""
+
+#. Parameter description of /admin money add
+msgid "The amount of coins to add."
+msgstr ""
+
+#. Description of /admin money remove
+msgid "Remove coins from the user provided"
+msgstr ""
+
+#. Parameter description of /admin money remove
+msgid "The user you want to remove coins from."
+msgstr ""
+
+#. Parameter description of /admin money remove
+msgid "The amount of coins to remove."
+msgstr ""
+
+#. Name of /admin money set
+msgid "set"
+msgstr ""
+
+#. Description of /admin money set
+msgid "Set the balance of the user provided"
+msgstr ""
+
+#. Parameter description of /admin money set
+msgid "The user you want to set the balance of."
+msgstr ""
+
+#. Parameter description of /admin money set
+msgid "The amount of coins to set."
+msgstr ""
+
+#. Name of /admin money setdefault
+msgid "setdefault"
+msgstr ""
+
+#. Description of /admin money setdefault
+msgid "Set the default amount of currency provided to new users."
+msgstr ""
+
+#. Parameter description of /admin money setdefault
+msgid "The new default amount to set."
+msgstr ""
+
+#. Parameter of /admin money setdefault
+msgid "force"
+msgstr ""
+
+#. Parameter description of /admin money setdefault
+msgid "If true, then ALL users will have their balance reset to the default!"
+msgstr ""
+
+#. Description of /balls
+msgid "View and manage your countryballs collection."
+msgstr ""
+
+#. Name of /balls list
+msgid "list"
+msgstr ""
+
+#. Description of /balls list
+msgid "List your countryballs."
+msgstr ""
+
+#. Parameter description of /balls list
+msgid "The user whose collection you want to view, if not yours."
+msgstr ""
+
+#. Parameter of /balls list
+msgid "sort"
+msgstr ""
+
+#. Parameter description of /balls list
+msgid "Choose how countryballs are sorted. Can be used to show duplicates."
+msgstr ""
+
+#. Choice of /balls list sort
+msgid "alphabetic"
+msgstr ""
+
+#. Choice of /balls list sort
+msgid "catch_date"
+msgstr ""
+
+#. Choice of /balls list sort
+msgid "stats_bonus"
+msgstr ""
+
+#. Choice of /balls list sort
+msgid "total_stats"
+msgstr ""
+
+#. Choice of /balls list sort
+msgid "catch_time"
+msgstr ""
+
+#. Choice of /balls list sort
+msgid "duplicates"
+msgstr ""
+
+#. Parameter of /balls list
+msgid "reverse"
+msgstr ""
+
+#. Parameter description of /balls list
+msgid "Reverse the output of the list."
+msgstr ""
+
+#. Parameter description of /balls list
+msgid "Filter the list by a specific countryball."
+msgstr ""
+
+#. Parameter description of /balls list
+msgid "Filter the list by a specific special event."
+msgstr ""
+
+#. Parameter of /balls list
+msgid "filter"
+msgstr ""
+
+#. Parameter description of /balls list
+msgid "Filter the list by a specific filter."
+msgstr ""
+
+#. Choice of /balls list filter
+msgid "only_specials"
+msgstr ""
+
+#. Choice of /balls list filter
+msgid "non_specials"
+msgstr ""
+
+#. Choice of /balls list filter
+msgid "self_caught"
+msgstr ""
+
+#. Choice of /balls list filter
+msgid "traded_only"
+msgstr ""
+
+#. Choice of /balls list filter
+msgid "this_server"
+msgstr ""
+
+#. Choice of /balls list filter
+msgid "favorites"
+msgstr ""
+
+#. Parameter of /balls list
+msgid "group"
+msgstr ""
+
+#. Parameter description of /balls list
+msgid "Filter the list by a specific group."
+msgstr ""
+
+#. Parameter of /balls list
+msgid "ephemeral"
+msgstr ""
+
+#. Parameter description of /balls list
+msgid "Whether or not to send the command ephemerally."
+msgstr ""
+
+#. Name of /balls completion
+msgid "completion"
+msgstr ""
+
+#. Description of /balls completion
+msgid "Show your current completion of the BallsDex."
+msgstr ""
+
+#. Parameter description of /balls completion
+msgid "The user whose completion you want to view, if not yours."
+msgstr ""
+
+#. Parameter description of /balls completion
+msgid "The special you want to see the completion of"
+msgstr ""
+
+#. Parameter description of /balls completion
+msgid "The regime you want to see the completion of"
+msgstr ""
+
+#. Parameter description of /balls completion
+msgid "The economy you want to see the completion of"
+msgstr ""
+
+#. Parameter description of /balls completion
+msgid "The group you want to see the completion of"
+msgstr ""
+
+#. Parameter description of /balls completion
+msgid "Show the completion of duplicates."
+msgstr ""
+
+#. Description of /balls info
+msgid "Display info from a specific countryball."
+msgstr ""
+
+#. Parameter description of /balls info
+msgid "The countryball you want to inspect"
+msgstr ""
+
+#. Parameter description of /balls info
+msgid ""
+"Filter the results of autocompletion to a special event. Ignored "
+"afterwards."
+msgstr ""
+
+#. Name of /balls last
+msgid "last"
+msgstr ""
+
+#. Description of /balls last
+msgid "Display info of your or another users last caught countryball."
+msgstr ""
+
+#. Parameter description of /balls last
+msgid "The user you would like to see"
+msgstr ""
+
+#. Parameter description of /balls last
+msgid ""
+"Filter the last caught countryball by a specific filter. Only works if "
+"the user has caught at least…"
+msgstr ""
+
+#. Parameter of /balls last
+msgid "index"
+msgstr ""
+
+#. Parameter description of /balls last
+msgid ""
+"How far back to look. 1 is the most recent catch, 2 the one before that, "
+"and so on."
+msgstr ""
+
+#. Name of /balls favorite
+msgid "favorite"
+msgstr ""
+
+#. Description of /balls favorite
+msgid "Set favorite countryballs."
+msgstr ""
+
+#. Parameter description of /balls favorite
+msgid "The countryball you want to set/unset as favorite"
+msgstr ""
+
+#. Name of /balls drop
+msgid "drop"
+msgstr ""
+
+#. Description of /balls drop
+msgid "Drop one of your countryballs back into the wild, to be caught again."
+msgstr ""
+
+#. Parameter description of /balls drop
+msgid "The countryball you want to drop"
+msgstr ""
+
+#. Description of /balls give
+msgid "Give a countryball to a user."
+msgstr ""
+
+#. Parameter description of /balls give
+msgid "The countryball you're giving away"
+msgstr ""
+
+#. Name of /balls bulk_give
+msgid "bulk_give"
+msgstr ""
+
+#. Description of /balls bulk_give
+msgid "Give multiple countryballs to a user at once."
+msgstr ""
+
+#. Parameter description of /balls bulk_give
+msgid "The user you want to give countryballs to"
+msgstr ""
+
+#. Parameter description of /balls bulk_give
+msgid "Filter the selection to a specific countryball"
+msgstr ""
+
+#. Parameter description of /balls bulk_give
+msgid "Filter the selection to a specific special event"
+msgstr ""
+
+#. Parameter description of /balls bulk_give
+msgid "Filter the selection by a specific filter"
+msgstr ""
+
+#. Description of /balls count
+msgid "Count how many countryballs you have."
+msgstr ""
+
+#. Parameter description of /balls count
+msgid "The countryball you want to count"
+msgstr ""
+
+#. Parameter description of /balls count
+msgid "The special you want to count"
+msgstr ""
+
+#. Parameter description of /balls count
+msgid "Filter the count by a specific filter"
+msgstr ""
+
+#. Name of /balls duplicate
+msgid "duplicate"
+msgstr ""
+
+#. Description of /balls duplicate
+msgid "Shows your most duplicated countryballs or specials."
+msgstr ""
+
+#. Parameter of /balls duplicate
+msgid "type"
+msgstr ""
+
+#. Parameter description of /balls duplicate
+msgid "Type of duplicate to check (countryballs or specials)."
+msgstr ""
+
+#. Choice of /balls duplicate type
+msgid "countryballs"
+msgstr ""
+
+#. Choice of /balls duplicate type
+msgid "specials"
+msgstr ""
+
+#. Parameter description of /balls duplicate
+msgid "Choose how the results are sorted. Defaults to most duplicated first."
+msgstr ""
+
+#. Choice of /balls duplicate sort
+msgid "count_desc"
+msgstr ""
+
+#. Choice of /balls duplicate sort
+msgid "count_asc"
+msgstr ""
+
+#. Choice of /balls duplicate sort
+msgid "alphabetic_reverse"
+msgstr ""
+
+#. Choice of /balls duplicate sort
+msgid "rarity_reverse"
+msgstr ""
+
+#. Parameter of /balls duplicate
+msgid "limit"
+msgstr ""
+
+#. Parameter description of /balls duplicate
+msgid ""
+"The amount of countryballs to show (default: all), can only be used with "
+"`countryballs`."
+msgstr ""
+
+#. Parameter description of /balls duplicate
+msgid "Show your least duplicated countryballs or specials first instead."
+msgstr ""
+
+#. Name of /balls compare
+msgid "compare"
+msgstr ""
+
+#. Description of /balls compare
+msgid "Compare your countryballs with another user."
+msgstr ""
+
+#. Parameter description of /balls compare
+msgid "The user you want to compare with"
+msgstr ""
+
+#. Parameter description of /balls compare
+msgid "Filter the results of the comparison to a special event."
+msgstr ""
+
+#. Parameter description of /balls compare
+msgid "Whether to compare duplicates."
+msgstr ""
+
+#. Parameter description of /balls compare
+msgid "Filter the compared countryballs by a specific filter."
+msgstr ""
+
+#. Parameter of /balls compare
+msgid "diff_only"
+msgstr ""
+
+#. Parameter description of /balls compare
+msgid ""
+"Only show what's different between you and the other user, hiding \"Both "
+"have\" and \"Neither have\" -…"
+msgstr ""
+
+#. Name of /balls collection
+msgid "collection"
+msgstr ""
+
+#. Description of /balls collection
+msgid "Show the collection of a specific countryball."
+msgstr ""
+
+#. Parameter description of /balls collection
+msgid "The countryball you want to see the collection of"
+msgstr ""
+
+#. Name of /config
+msgid "config"
+msgstr ""
+
+#. Description of /config channel
+msgid "Set or change the channel where countryballs will spawn."
+msgstr ""
+
+#. Parameter description of /config channel
+msgid "The channel you want to set, current one if not specified."
+msgstr ""
+
+#. Name of /config disable
+msgid "disable"
+msgstr ""
+
+#. Description of /config disable
+msgid "Disable or enable countryballs spawning."
+msgstr ""
+
+#. Name of /config language
+msgid "language"
+msgstr "langue"
+
+#. Description of /config language
+msgid ""
+"Set or reset the default language used to display countryballs in this "
+"server."
+msgstr ""
+"Définit ou réinitialise la langue par défaut utilisée pour afficher les "
+"countryballs sur ce serveur."
+
+#. Parameter description of /config language
+msgid "The language to use, leave empty to reset to the bot's default language."
+msgstr ""
+"La langue à utiliser, laissez vide pour réinitialiser à la langue par "
+"défaut du bot."
+
+#. Description of /config status
+msgid "Check the server configuration status."
+msgstr ""
+
+#. Name of /about
+msgid "about"
+msgstr "à-propos"
+
+#. Description of /about
+msgid "Get information about this bot."
+msgstr "Obtenir des informations sur ce bot."
+
+#. Name of /help
+msgid "help"
+msgstr "aide"
+
+#. Description of /help
+msgid "Show the list of commands from the bot."
+msgstr "Afficher la liste des commandes du bot."
+
+#. Name of /player
+msgid "player"
+msgstr ""
+
+#. Description of /player
+msgid "Manage your account settings."
+msgstr ""
+
+#. Name of /player friend
+msgid "friend"
+msgstr ""
+
+#. Description of /player friend
+msgid "Friend commands"
+msgstr ""
+
+#. Description of /player friend add
+msgid "Add another user as a friend."
+msgstr ""
+
+#. Parameter description of /player friend add
+msgid "The user you want to add as a friend."
+msgstr ""
+
+#. Description of /player friend remove
+msgid "Remove a friend."
+msgstr ""
+
+#. Parameter description of /player friend remove
+msgid "The user you want to remove as a friend."
+msgstr ""
+
+#. Description of /player friend list
+msgid "View all your friends."
+msgstr ""
+
+#. Name of /player block
+msgid "block"
+msgstr ""
+
+#. Description of /player block
+msgid "Block commands"
+msgstr ""
+
+#. Description of /player block add
+msgid "Block another user."
+msgstr ""
+
+#. Parameter description of /player block add
+msgid "The user you want to block."
+msgstr ""
+
+#. Description of /player block remove
+msgid "Unblock a user."
+msgstr ""
+
+#. Parameter description of /player block remove
+msgid "The user you want to unblock."
+msgstr ""
+
+#. Description of /player block list
+msgid "View all the users you have blocked."
+msgstr ""
+
+#. Name of /player policy
+msgid "policy"
+msgstr ""
+
+#. Description of /player policy
+msgid "Policy commands"
+msgstr ""
+
+#. Name of /player settings
+msgid "settings"
+msgstr ""
+
+#. Description of /player settings
+msgid "Edit your player settings"
+msgstr ""
+
+#. Description of /player info
+msgid "Display some of your info in the bot!"
+msgstr ""
+
+#. Name of /trade start
+msgid "start"
+msgstr ""
+
+#. Description of /trade start
+msgid "Start trading with someone."
+msgstr ""
+
+#. Parameter description of /trade start
+msgid "The user you want to trade with."
+msgstr ""
+
+#. Description of /trade add
+msgid "Add a countryball to your trade proposal. You must have a trade open."
+msgstr ""
+
+#. Parameter description of /trade add
+msgid "The countryball you are adding to your trade."
+msgstr ""
+
+#. Parameter description of /trade add
+msgid "The special you want to filter the countryball by."
+msgstr ""
+
+#. Description of /trade remove
+msgid "Remove a countryball from your trade proposal. You must have a trade open."
+msgstr ""
+
+#. Parameter description of /trade remove
+msgid "The countryball you are removing from your trade."
+msgstr ""
+
+#. Parameter of /trade history
+msgid "sorting"
+msgstr ""
+
+#. Parameter description of /trade history
+msgid "The sorting order of your trades."
+msgstr ""
+
+#. Choice of /trade history sorting
+msgid "Newest"
+msgstr ""
+
+#. Choice of /trade history sorting
+msgid "Oldest"
+msgstr ""
+
+#. Parameter of /trade history
+msgid "trade_user"
+msgstr ""
+
+#. Parameter description of /trade history
+msgid "The user you want to filter your trade history with."
+msgstr ""
+
+#. Parameter description of /trade history
+msgid "Retrieve trade history from the last x days at most."
+msgstr ""
+
+#. Parameter description of /trade history
+msgid "The countryball you want to filter the trade history by."
+msgstr ""
+
+#. Parameter description of /trade history
+msgid "The special you want to filter the trade history by."
+msgstr ""
+
+#. Parameter description of /trade history
+msgid "The group you want to filter the trade history by."
+msgstr ""
+
+#. Parameter description of /trade history
+msgid "Only show trades involving countryballs matching a specific filter."
+msgstr ""
+
+#. Name of /trade bulk_add
+msgid "bulk_add"
+msgstr ""
+
+#. Description of /trade bulk_add
+msgid ""
+"Bulk add countryballs to the ongoing trade, with paramaters to aid with "
+"searching."
+msgstr ""
+
+#. Parameter description of /trade bulk_add
+msgid "The countryball you would like to filter the results to"
+msgstr ""
+
+#. Parameter description of /trade bulk_add
+msgid "Reverse the sorted results."
+msgstr ""
+
+#. Parameter description of /trade bulk_add
+msgid "Filter the results to a special event"
+msgstr ""
+
+#. Parameter description of /trade bulk_add
+msgid "Filter the results to a specific filter"
+msgstr ""
+
+#. Parameter description of /trade bulk_add
+msgid "Filter the results to a specific group"
+msgstr ""
+
+#. Name of /trade cancel
+msgid "cancel"
+msgstr ""
+
+#. Description of /trade cancel
+msgid "Cancel your active trade."
+msgstr ""
+
+#: ballsdex/core/bot.py:174
+#, python-brace-format
+msgid ""
+"The bot is currently starting, please wait for a few minutes... "
+"({percent}%)"
+msgstr ""
+"Le bot est en cours de démarrage, veuillez patienter quelques minutes... "
+"({percent}%)"
+
+#: ballsdex/core/discord.py:29
+msgid "An error occurred. Contact support if this persists."
+msgstr "Une erreur est survenue. Contactez le support si cela persiste."
+
+#: ballsdex/core/discord.py:63
+msgid "You are not allowed to interact with this."
+msgstr "Vous n'êtes pas autorisé à interagir avec ceci."
+
+#: ballsdex/core/utils/buttons.py:66
+msgid "Confirmed"
+msgstr ""
+
+#: ballsdex/core/utils/buttons.py:67
+#, fuzzy
+msgid "Cancelled"
+msgstr "Salon"
+
+#: ballsdex/core/utils/buttons.py:75
+#, fuzzy
+msgid "You cannot interact with this view."
+msgstr "Vous n'êtes pas autorisé à interagir avec ceci."
+
+#: ballsdex/core/utils/buttons.py:79
+msgid "You've already made a choice."
+msgstr ""
+
+#: ballsdex/core/utils/menus/bulk_selector.py:57
+msgid "Select page"
+msgstr ""
+
+#: ballsdex/core/utils/menus/bulk_selector.py:58
+msgid "Clear"
+msgstr ""
+
+#: ballsdex/core/utils/menus/bulk_selector.py:74
+#, python-brace-format
+msgid "-# {count} {collectibles} selected"
+msgstr ""
+
+#: ballsdex/core/utils/menus/bulk_selector.py:78
+msgid "Nothing selected yet"
+msgstr ""
+
+#: ballsdex/core/utils/menus/bulk_selector.py:147
+msgid "Nothing was selected!"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:51
+#, python-brace-format
+msgid ""
+"Spawn bomb in progress in {channel}, {collectible}: {countryball}\n"
+"{spawned}/{n} spawned ({percent}%)"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:63
+msgid "Spawn bomb seems to have timed out."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:65
+#, python-brace-format
+msgid "Starting spawn bomb in {channel}..."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:82
+#, python-brace-format
+msgid ""
+"A {collectible} failed to spawn, probably indicating a lack of "
+"permissions to send messages or upload files in {channel}."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:90
+#, python-brace-format
+msgid "Successfully spawned {spawned} {collectibles} in {channel}!"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:119
+#, python-brace-format
+msgid ""
+"The `countryballs` package is not loaded, this command is unavailable.\n"
+"Please resolve the errors preventing this package from loading. Use "
+"\"{prefix}reload countryballs\" to try reloading it."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:165
+#, python-brace-format
+msgid "{collectible} spawned."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:205
+#, python-brace-format
+msgid ""
+"`{country}` (`{id:0X}`) {collectible} was successfully given to `{user}`."
+"\n"
+"Special: `{special}` • ATK: `{atk:+d}` • HP:`{hp:+d}` "
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:240
+#, python-brace-format
+msgid "The {collectible} ID you gave is not valid."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:248
+#, python-brace-format
+msgid "The {collectible} ID you gave does not exist."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:263
+#, python-brace-format
+msgid ""
+"**{collectible} ID:** {id}\n"
+"**Player:** {player}\n"
+"**First owner:** {first_owner}\n"
+"**Name:** {name}\n"
+"**Attack:** {attack}\n"
+"**Attack bonus:** {atk_bonus}\n"
+"**Health bonus:** {hp_bonus}\n"
+"**Health:** {health}\n"
+"**Special:** {special}\n"
+"**Caught at:** {catch_date}\n"
+"**Spawned at:** {spawned_time}\n"
+"**Catch time:** {catch_time} seconds\n"
+"**Caught in:** {server_id}\n"
+"**Traded:** {trade_player}\n"
+"{admin_url}"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:332
+msgid "soft"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:332
+msgid "hard"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:335
+#, python-brace-format
+msgid "Confirmed, {method} deleting..."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:336
+msgid "Request cancelled."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:339
+#, python-brace-format
+msgid ""
+"You are about to {method} delete {countryball} (ID: `{id}`) owned by "
+"`{owner}`. Are you sure?"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:356
+#, python-brace-format
+msgid "{collectible} {id} soft deleted."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:365
+#, python-brace-format
+msgid "{collectible} {id} hard deleted."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:407
+msgid "Confirmed, transferring..."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:411
+#, python-brace-format
+msgid ""
+"You are about to transfer {countryball} (ID: `{id}`) from "
+"`{original_owner}` to `{user}`. Are you sure?"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:432
+#, python-brace-format
+msgid "Transfered {countryball}({id}) from {original} to {user}."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:458
+msgid "You specified the same source and destination."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:463
+#, python-brace-format
+msgid "User {source} does not have a player profile."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:468
+#, python-brace-format
+msgid "{source}'s inventory is empty."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:476
+#, python-brace-format
+msgid ""
+"Are you sure you want to transfer {count} {collectibles} and {amount} "
+"from {source} to {dest}?"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:485
+#, python-brace-format
+msgid ""
+"Are you sure you want to transfer {count} {collectibles} from {source} to"
+" {dest}?"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:516
+#, python-brace-format
+msgid "{count} {collectibles} and {amount} transferred from {source} to {dest}."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:524
+#, python-brace-format
+msgid "{count} {collectibles} transferred from {source} to {dest}."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:555
+msgid "The user you gave does not exist."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:558
+msgid "The percentage must be between 1 and 99."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:564
+#, python-brace-format
+msgid "Are you sure you want to {method} delete {user}'s {collectibles}?"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:568
+#, python-brace-format, python-format
+msgid ""
+"Are you sure you want to {method} delete {percentage}% of {user}'s "
+"{collectibles}?"
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:573
+#, python-brace-format
+msgid "Confirmed, {method} deleting the {collectibles}..."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:598
+#, python-brace-format
+msgid "{count} {collectibles} from {user} have been deleted."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:632
+#, python-brace-format
+msgid "{user} has {count} {special}{country}{collectible}{plural}."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:644
+#, python-brace-format
+msgid "There {verb} {count} {special}{country}{collectible}{plural}."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:676
+msgid "The emoji ID isn't a valid number."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:681
+msgid ""
+"The bot couldn't find the given emoji. Maybe it doesn't exist or the bot "
+"doesn't have access to it."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:715
+#, python-brace-format
+msgid ""
+"An error occurred while creating the {collectible}. Check the error in "
+"bot logs."
+msgstr ""
+
+#: ballsdex/packages/admin/balls.py:737
+#, python-brace-format
+msgid ""
+"A new {collectible} has been created! The internal cache was reloaded.\n"
+"{admin_url}\n"
+"{details}"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:48
+msgid "You cannot blacklist yourself!"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:57
+msgid "That user was already blacklisted."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:60
+msgid "User is now blacklisted."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:82
+msgid "That user isn't blacklisted."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:89
+msgid "User is now removed from blacklist."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:112
+#, python-brace-format
+msgid "Moderator: {moderator} ({moderator_id})"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:116
+msgid "Moderator: Unknown"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:118
+#, python-brace-format
+msgid "[View history online](<{url}>)"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:126
+#, python-brace-format
+msgid ""
+"`{user}` (`{id}`) was blacklisted on {date}({date_relative}) for the "
+"following reason:\n"
+"{reason}\n"
+"{moderator_msg}{admin_url}"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:142
+#, python-brace-format
+msgid ""
+"`{user}` (`{id}`) is currently blacklisted (date unknown) for the "
+"following reason:\n"
+"{reason}\n"
+"{moderator_msg}{admin_url}"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:165
+msgid "The ID you gave is not valid."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:172
+msgid "No history found for that ID."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:178
+msgid "User was not found from Discord."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:201
+#, python-brace-format
+msgid "## Blacklist history for {user} ({total} entries)"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:205
+msgid "Select an entry to view its full detail"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:240
+msgid "The guild ID you gave is not valid."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:243
+msgid "The given guild ID could not be found."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:254
+msgid "That guild was already blacklisted."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:257
+msgid "Guild is now blacklisted."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:290
+msgid "That guild isn't blacklisted."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:297
+msgid "Guild is now removed from blacklist."
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:330
+#, python-brace-format
+msgid "Moderator: {moderator}({moderator_id})"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:344
+#, python-brace-format
+msgid ""
+"`{guild}` (`{id}`) was blacklisted on {date}({date_relative}) for the "
+"following reason:\n"
+"{reason}\n"
+"{moderator_msg}{admin_url}"
+msgstr ""
+
+#: ballsdex/packages/admin/blacklist.py:360
+#, python-brace-format
+msgid ""
+"`{guild}` (`{id}`) is currently blacklisted (date unknown) for the "
+"following reason:\n"
+"{reason}\n"
+"{moderator_msg}{admin_url}"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:50
+msgid "Admin commands are already synced here. What would you like to do?"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:51
+msgid "Synchronize"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:52
+msgid "Remove"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:75
+msgid ""
+"Commands have been refreshed. You may need to reload your Discord client "
+"to see the changes applied."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:92
+msgid ""
+"Commands have been removed. You may need to reload your Discord client to"
+" see the changes applied."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:124
+#, python-brace-format
+msgid ""
+"Admin commands are desynchronized and needs to be re-synced. Run "
+"`{bot_mention} admin syncslash` to fix this."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:164
+msgid "Registering commands..."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:167
+msgid ""
+"Would you like to add admin slash commands in this server? They can only "
+"be used with the appropriate Django permissions"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:181
+#, python-brace-format
+msgid ""
+"Admin slash commands added.\n"
+"You need admin permissions in this server to view them (this can be "
+"changed [here](discord://-/guilds/{guild_id}/settings/integrations)). You"
+" might need to refresh your Discord client to view them."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:197
+msgid "You must provide at least `status`, `name` or `state`."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:202
+msgid "You must provide `state` for custom activities. `name` is unused."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:205
+msgid "You must provide `name` for pre-defined activities."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:210
+msgid "Status updated."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:225
+msgid "The trade cog is not loaded."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:237
+#, python-brace-format
+msgid ""
+"All trades were successfully cancelled, and further trades cannot be "
+"started anymore.\n"
+"To enable trades again, the bot owner must use the \"{prefix}reload "
+"trade\" command."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:244
+#, python-brace-format
+msgid ""
+"Lockdown mode enabled, trades can no longer be started. While cancelling "
+"ongoing trades, {failed} failed to cancel, check your logs for info.\n"
+"To enable trades again, the bot owner must use the \"{prefix}reload "
+"trade\" command."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:297
+msgid "Invalid guild ID. Please make sure it's a number."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:302
+msgid "The given guild could not be found."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:326
+#, python-brace-format
+msgid "The user does not own any server with {bot_name}."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:332
+#, python-brace-format
+msgid ""
+"The user does not own any server with {bot_name}.\n"
+":warning: *The bot cannot be aware of the member's presence in servers, "
+"it is only aware of server ownerships.*"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:355
+#, python-brace-format
+msgid ":warning: **{count} members**"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:357
+#, python-brace-format
+msgid "{count} members"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:360
+msgid ":warning: **spawn enabled**"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:360
+#, fuzzy
+msgid "spawn disabled"
+msgstr "Désactivé"
+
+#: ballsdex/packages/admin/cog.py:368
+#, python-brace-format
+msgid "## {count} servers shared"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:372
+msgid "View profile"
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:384
+msgid ""
+"The bot cannot be aware of the member's presence in servers, it is only "
+"aware of server ownerships."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:414
+msgid "You are not impersonating anymore."
+msgstr ""
+
+#: ballsdex/packages/admin/cog.py:419
+#, python-brace-format
+msgid ""
+"Your next commands will be run as if {user} ran it.\n"
+"Avoid running the commands in a different server, this can lead to weird "
+"issues.\n"
+"To clear impersonation, run `{prefix}admin impersonate` again."
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:42
+msgid "Trade cog unavailable."
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:47
+msgid "No history found."
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:60
+msgid "◀ Previous"
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:61
+msgid "Next ▶"
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:91
+#, python-brace-format
+msgid "## {title} ({total} trade{plural})"
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:96
+msgid "View online"
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:99
+msgid "Choose a trade to display"
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:133
+#, python-brace-format
+msgid "Trade history of {user}"
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:137
+#, python-brace-format
+msgid " and {user}"
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:193
+#, python-brace-format
+msgid "Trade history for {countryball}"
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:219
+msgid "The trade ID you gave is not valid."
+msgstr ""
+
+#: ballsdex/packages/admin/history.py:223
+msgid "The trade ID you gave does not exist."
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:30
+msgid "Recent Catches"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:45
+#, python-brace-format
+msgid "Last {count} catches for {user}"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:51
+#, python-brace-format
+msgid "{time:.3f}s in {server}"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:64
+msgid "List catchers"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:76
+msgid "No catches found for this period."
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:87
+msgid "Unknown user"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:115
+#, python-brace-format
+msgid "{days} days"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:168
+#, python-brace-format
+msgid "**Owner:** {owner} ({owner_id})"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:173
+msgid "Members:"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:174
+#, fuzzy
+msgid "Spawn enabled:"
+msgstr "Activé"
+
+#: ballsdex/packages/admin/info.py:175
+msgid "Created at:"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:177
+#, python-brace-format
+msgid "{collectibles} caught ({days} days):"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:183
+#, python-brace-format
+msgid ""
+"Amount of users who caught\n"
+"{collectibles} ({days} days):"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:220
+#, python-brace-format
+msgid ""
+"**Privacy Policy:** {privacy}\n"
+"**Donation Policy:** {donation}\n"
+"**Mention Policy:** {mention}\n"
+"**Friend Policy:** {friend}"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:237
+#, python-brace-format
+msgid "Unique {collectibles} caught ({days} days):"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:243
+#, python-brace-format
+msgid "Total servers with {collectibles} caught ({days} days):"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:249
+#, python-brace-format
+msgid "Total {collectibles} caught:"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:253
+#, python-brace-format
+msgid "Total unique {collectibles} caught:"
+msgstr ""
+
+#: ballsdex/packages/admin/info.py:257
+#, python-brace-format
+msgid "Total servers with {collectibles} caught:"
+msgstr ""
+
+#: ballsdex/packages/admin/logs.py:31
+#, python-brace-format
+msgid "{user} removed from catch logs."
+msgstr ""
+
+#: ballsdex/packages/admin/logs.py:34
+#, python-brace-format
+msgid "{user} added to catch logs."
+msgstr ""
+
+#: ballsdex/packages/admin/logs.py:50
+#, python-brace-format
+msgid "{user} removed from command logs."
+msgstr ""
+
+#: ballsdex/packages/admin/logs.py:53
+#, python-brace-format
+msgid "{user} added to command logs."
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:22
+msgid "Blacklisted"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:22
+msgid "Unblacklisted"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:23
+msgid "No reason given"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:39
+#, python-brace-format
+msgid "# Blacklist history for {user}"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:40
+#, python-brace-format
+msgid "Type: {action_type}"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:41
+#, python-brace-format
+msgid "Action Time: {time}"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:55
+#, python-brace-format
+msgid "Unknown user ({moderator_id})"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:61
+#, python-brace-format
+msgid "### {action_type} by {moderator}"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:65
+#, python-brace-format
+msgid ""
+"### Reason\n"
+"{reason}"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:74
+msgid "View history online"
+msgstr ""
+
+#: ballsdex/packages/admin/menu.py:80
+#, python-brace-format
+msgid "-# Blacklist history {current}/{total}"
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:41
+#, python-brace-format
+msgid "This user does not have a {bot_name} account."
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:46
+#, python-brace-format
+msgid "{user} currently has {amount} coins."
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:71
+msgid "The amount must be greater than zero."
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:76
+#, python-brace-format
+msgid "{amount} coins have been added to {user}."
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:106
+#, python-brace-format
+msgid "This user does not have enough coins to remove (balance={balance})."
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:114
+#, python-brace-format
+msgid "{amount} coins have been removed from {user}."
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:138
+#, python-brace-format
+msgid "This user has does not have a {bot_name} account."
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:143
+msgid "The amount must be greater than or equal to zero."
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:148
+#, python-brace-format
+msgid "{user} now has {amount} coins."
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:169
+#, python-brace-format
+msgid "You are about to set the new default balance to {amount}.\n"
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:172
+msgid ""
+":warning: You have chosen to reset ALL PLAYERS balance and set it to the "
+"new amount. This operation cannot be undone, all existing balances will "
+"be lost.\n"
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:175
+msgid ""
+"\n"
+"Do you want to continue?"
+msgstr ""
+
+#: ballsdex/packages/admin/money.py:190
+msgid "New default set."
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:41
+#, python-brace-format
+msgid ""
+"## Bulk Give selection\n"
+"Your selected {collectibles} are shown below."
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:44
+msgid "-# Use the drop-down menu below to select your items to give."
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:45
+#, python-brace-format
+msgid "Select {collectibles} to give"
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:46
+msgid "Give selected"
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:77
+#, python-brace-format
+msgid ""
+"Nothing was given, all {count} selected {collectibles} are no longer "
+"valid."
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:88
+msgid "Continuing with the donation."
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:89
+msgid "This request has been cancelled."
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:93
+#, python-brace-format
+msgid ""
+"{count} of your selected {collectibles} are favorites. Are you sure you "
+"want to donate them?"
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:112
+#, python-brace-format
+msgid ""
+"\n"
+"{count} were skipped: {reasons}."
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:120
+#, python-brace-format
+msgid "… and {more} more"
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:126
+#, python-brace-format
+msgid ""
+"Hey {user}, {donor} wants to give you {count} {collectibles}:\n"
+"{listing}\n"
+"Do you accept this donation?"
+msgstr ""
+
+#: ballsdex/packages/balls/bulk_give_selector.py:161
+#, python-brace-format
+msgid "{user} just gave {count} {collectibles} to {recipient}!{skip}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:109
+#, python-brace-format
+msgid "You don't have any {collectibles} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:113
+#, python-brace-format
+msgid "{user} doesn't have any {collectibles} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:122
+msgid "You cannot view the inventory of a blacklisted user."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:133
+msgid "You cannot view the list of a user that has you blocked."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:161
+#, python-brace-format
+msgid "You don't have any {combined}{collectibles} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:167
+#, python-brace-format
+msgid "{user} doesn't have any {combined}{collectibles} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:180
+#, python-brace-format
+msgid "Viewing {user}'s {collectibles}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:184
+#, python-brace-format
+msgid "Viewing your {collectibles}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:238
+#, python-brace-format
+msgid "{user} doesn't have any {extra}{collectibles} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:246
+msgid "You cannot view the completion of a blacklisted user."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:255
+msgid "You cannot view the completion of a user that has blocked you."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:295
+#, python-brace-format
+msgid "There are no {extra}{collectibles} registered on this bot yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:322
+#, python-brace-format
+msgid ""
+"## {bot_name}{catcher}{special}{regime}{economy}{group}{duplicates} "
+"progression: **{progression}%**\n"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:338
+msgid "Nothing yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:349
+#, python-brace-format
+msgid "Owned {collectibles}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:354
+#, python-brace-format
+msgid "Missing {collectibles}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:356
+#, python-brace-format
+msgid "### :tada: No missing {collectibles}, congratulations! :tada:"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:363
+#, python-brace-format
+msgid "Viewing {user}'s completion"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:428
+#, python-brace-format
+msgid "You do not have any {collectibles} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:432
+#, python-brace-format
+msgid "{user} does not have any {collectibles} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:442
+#, python-brace-format
+msgid "You cannot view the last caught {collectible} of a blacklisted user."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:456
+#, python-brace-format
+msgid ""
+"You cannot view the last caught {collectible} of a user that has blocked "
+"you."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:466
+#, python-brace-format
+msgid " with the `{filter}` filter"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:482
+#, python-brace-format
+msgid "You don't have {index} caught {collectibles}{filter} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:486
+#, python-brace-format
+msgid "{user} doesn't have {index} caught {collectibles}{filter} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:495
+#, python-brace-format
+msgid " ({index} catches back)"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:498
+#, python-brace-format
+msgid ""
+"You are viewing {user}'s last caught {collectible}{filter}{index}.\n"
+"{content}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:506
+#, python-brace-format
+msgid ""
+"You are viewing your last caught {collectible}{filter}{index}.\n"
+"{content}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:534
+#, python-brace-format
+msgid "You cannot set favorite {collectibles} in this bot."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:555
+#, python-brace-format
+msgid "You cannot set more than {max} favorite {collectible}."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:566
+#, python-brace-format
+msgid "{emoji} `#{id:0X}` {country} is now a favorite {collectible}!"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:580
+#, python-brace-format
+msgid "{emoji} `#{id:0X}` {country} isn't a favorite {collectible} anymore."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:612
+#, python-brace-format
+msgid "You can only drop a {collectible} in the spawn channel."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:621
+#, python-brace-format
+msgid "You cannot drop this {collectible}."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:627
+#, python-brace-format
+msgid ""
+"This {collectible} is currently locked for a trade. Please try again "
+"later."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:651
+#, python-brace-format
+msgid "{collectible} dropped."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:657
+#, python-brace-format
+msgid "Failed to drop the {collectible}, please try again later."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:688
+#, python-brace-format
+msgid "You cannot donate this {collectible}."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:692
+msgid "You cannot donate to bots."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:706
+#, python-brace-format
+msgid "{collectible} donated."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:710
+#, python-brace-format
+msgid "This {collectible} is a favorite, are you sure you want to donate it?"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:733
+#, python-brace-format
+msgid ""
+"Hey {user}, {donor} wants to give you {countryball}!\n"
+"Do you accept this donation?"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:757
+#, python-brace-format
+msgid "{user}, you just gave the {collectible} {countryball} to {recipient}!"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:767
+#, python-brace-format
+msgid "You just gave the {collectible} {countryball} to {recipient}!"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:834
+#, python-brace-format
+msgid "No {collectibles} found."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:887
+#, python-brace-format
+msgid " caught in {guild}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:891
+#, python-brace-format
+msgid "You have {count} {special}{country}{collectible}{plural}{guild}."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:961
+#, python-brace-format
+msgid "You don't have any {type} duplicates in your inventory."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:969
+#, python-brace-format
+msgid "Count: {count}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:977
+msgid " (least duplicated first)"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:978
+#, python-brace-format
+msgid "View your duplicate {type}{order}."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1014
+msgid "You cannot compare with yourself."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1030
+msgid "You cannot compare the inventory of a blacklisted user."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1050
+msgid "You cannot compare with a user that has you blocked."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1072
+msgid "Duplicates Comparison"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1072
+msgid "Comparison"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1073
+#, python-brace-format
+msgid "## {comparison_type} of {user1} and {user2}'s {collectibles}{special}\n"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1083
+msgid " duplicates"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1085
+msgid "None"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1099
+msgid "Both have"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1100
+#, python-brace-format
+msgid "Only {user} has"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1103
+msgid "Neither have"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1164
+#, python-brace-format
+msgid "You don't have any {country} {collectibles} yet."
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1177
+#, python-brace-format
+msgid ""
+"**Total**: {total} ({caught} caught, {traded} received from trade)\n"
+"**Total Specials**: {specials}\n"
+"\n"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1185
+msgid "**Specials**:"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1191
+#, python-brace-format
+msgid "Collection of {country}"
+msgstr ""
+
+#: ballsdex/packages/balls/cog.py:1193
+msgid "Total Collection"
+msgstr ""
+
+#: ballsdex/packages/balls/countryballs_paginator.py:27
+msgid "Quit"
+msgstr ""
+
+#: ballsdex/packages/balls/countryballs_paginator.py:109
+#, python-brace-format
+msgid "**Total**: {total} ({caught} caught, {traded} received from trade)\n"
+msgstr ""
+
+#: ballsdex/packages/balls/countryballs_paginator.py:115
+#, python-brace-format
+msgid "**{collectibles}**: (Top 15)\n"
+msgstr ""
+
+#: ballsdex/packages/balls/countryballs_paginator.py:120
+#, python-brace-format
+msgid "**Total Specials**: {specials}\n"
+msgstr ""
+
+#: ballsdex/packages/balls/countryballs_paginator.py:128
+#, python-brace-format
+msgid "{name} Collection"
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:44
+#, python-brace-format
+msgid "You cannot give a {collectible} to yourself."
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:46
+msgid "This player does not accept donations. You can use trades instead."
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:49
+msgid "This player only accepts donations from friends, use trades instead."
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:51
+#, fuzzy
+msgid "You cannot interact with a user that has blocked you."
+msgstr "Vous n'êtes pas autorisé à interagir avec ceci."
+
+#: ballsdex/packages/balls/donation.py:53
+msgid "You cannot donate to a blacklisted user."
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:78
+#, fuzzy
+msgid "You are not allowed to interact with this menu."
+msgstr "Vous n'êtes pas autorisé à interagir avec ceci."
+
+#: ballsdex/packages/balls/donation.py:87
+msgid "Viewing what you received"
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:87
+msgid "Viewing what you gave"
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:91
+msgid "View All"
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:138
+msgid "The donation was accepted!"
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:151
+msgid "The donation was denied."
+msgstr ""
+
+#: ballsdex/packages/balls/donation.py:217
+#, python-brace-format
+msgid "The donation of {count} {collectibles} was accepted!"
+msgstr ""
+
+#: ballsdex/packages/countryballs/ab_spawn.py:86
+#, python-brace-format, python-format
+msgid ""
+"[AB Spawner] Server {guild_name} ({guild_id}) has been assigned to spawn "
+"manager {a_or_b} (`{manager_class}`) ({percentage}% chance)"
+msgstr ""
+
+#: ballsdex/packages/countryballs/countryball.py:37
+#, python-brace-format
+msgid "Catch this {collectible}!"
+msgstr ""
+
+#: ballsdex/packages/countryballs/countryball.py:38
+#, python-brace-format
+msgid "Name of this {collectible}"
+msgstr ""
+
+#: ballsdex/packages/countryballs/countryball.py:39
+msgid "Your guess"
+msgstr ""
+
+#: ballsdex/packages/countryballs/countryball.py:45
+#, python-brace-format
+msgid "An error occurred with this {collectible}."
+msgstr ""
+
+#: ballsdex/packages/countryballs/countryball.py:414
+#, python-brace-format
+msgid "This is a **new {collectible}** that has been added to your completion!"
+msgstr ""
+
+#: ballsdex/packages/countryballs/countryball.py:418
+#, python-brace-format
+msgid "This {collectible} was dropped by <@{user_id}>\n"
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:192
+msgid ""
+"No spawn manager could be found for that guild. Spawn may have been "
+"disabled."
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:197
+msgid "`member_count` data not returned for this guild, spawn cannot work."
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:223
+msgid "Server has less than 5 or more than 1000 members"
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:225
+msgid "Some cached messages are less than 5 characters long"
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:241
+msgid "Message cache has less than 4 chatters"
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:245
+#, python-format
+msgid ""
+"Message cache has less than 4 chatters **and** one user has more than 40%"
+" of messages within message cache"
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:251
+#, python-format
+msgid "One user has more than 40% of messages within cache"
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:256
+msgid "⚠️ Penalities"
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:257
+msgid "Each penality divides the progress by 2"
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:263
+#, python-brace-format
+msgid ""
+"Manager initiated **{time}**\n"
+"Initial number of points to reach: **{threshold}**\n"
+"Message cache length: **{cache_length}**\n"
+"\n"
+"Time-based multiplier: **x{multiplier}** *({member_range} members)*\n"
+"*This affects how much the number of points to reach reduces over time*\n"
+"Penality multiplier: **x{penality_multiplier}**\n"
+"*This affects how much a message sent increases the number of points*\n"
+"\n"
+"__Current count: **{threshold}/{chance}**__\n"
+"\n"
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:283
+msgid "The manager is currently on cooldown."
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:286
+#, python-brace-format
+msgid ""
+"The manager is less than 10 minutes old, {collectibles} cannot spawn at "
+"the moment."
+msgstr ""
+
+#: ballsdex/packages/countryballs/spawn.py:292
+msgid "ℹ️ Informations"
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:23
+#, python-brace-format
+msgid "{bot_name} activation"
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:25
+#, python-brace-format
+msgid ""
+"To enable {bot_name} in your server, you must read and accept the [Terms "
+"of Service]({tos_url}).\n"
+"\n"
+"As a summary, these are the rules of the bot:\n"
+"- No farming (spamming or creating servers for {collectibles})\n"
+"- Selling or exchanging {collectibles} against money or other goods is "
+"forbidden\n"
+"- Do not attempt to abuse the bot's internals\n"
+"**Not respecting these rules will lead to a blacklist**"
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:70
+msgid "The current channel is not a valid text channel."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:79
+msgid ""
+"The server is unavailable to the bot and will not work properly. Kicking "
+"and readding the bot may fix this."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:99
+#, python-brace-format
+msgid ""
+"{bot_name} is missing the following permission(s) in {channel}: "
+"**{perms}**. Please grant them, then try again."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:112
+msgid "⚠️ Warning"
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:114
+#, python-brace-format
+msgid ""
+"This server has {total} channels, but {bot_name} can only read {readable}"
+" channels.\n"
+"Spawn is based on message activity, too few readable channels will result"
+" in fewer spawns. It is recommended that you inspect your permissions."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:124
+#, python-brace-format
+msgid ""
+"The activation embed has been sent in {channel}. Once accepted, "
+"{collectibles} will start spawning there based on message activity - send"
+" a few messages to trigger a test spawn."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:146
+#, python-brace-format
+msgid ""
+"Spawning is now **disabled** in this server. Commands will still be "
+"available, but the spawn of new {collectibles} is suspended.\n"
+"To re-enable the spawn, use the same command."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:159
+#, python-brace-format
+msgid ""
+"Spawning is now **enabled** in this server, {collectibles} will start "
+"spawning soon in {channel}."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:165
+msgid "The spawning channel specified in the configuration is not available."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:171
+#, python-brace-format
+msgid ""
+"Spawning is now **enabled** in this server, however there is no spawning "
+"channel set. Please configure one with {config_cmd}."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:195
+#, python-brace-format
+msgid ""
+"{collectibles} will now be displayed in **{language}** in this server, "
+"unless a player has set their own language."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:203
+#, python-brace-format
+msgid ""
+"This server's language has been reset, {collectibles} will now be "
+"displayed in the bot's default language (**{default_language}**), unless "
+"a player has set their own language."
+msgstr ""
+
+#: ballsdex/packages/guildconfig/cog.py:219
+#, python-brace-format
+msgid "{bot_name} configuration status"
+msgstr "Statut de configuration de {bot_name}"
+
+#: ballsdex/packages/guildconfig/cog.py:224
+#, python-brace-format
+msgid "{bot_name} is not configured in this server yet."
+msgstr "{bot_name} n'est pas encore configuré sur ce serveur."
+
+#: ballsdex/packages/guildconfig/cog.py:226
+msgid "Channel"
+msgstr "Salon"
+
+#: ballsdex/packages/guildconfig/cog.py:226
+#, python-brace-format
+msgid "Not set - use {config_cmd}"
+msgstr "Non défini - utilisez {config_cmd}"
+
+#: ballsdex/packages/guildconfig/cog.py:234
+msgid "Your server is unavailable to the bot. Readding it may fix this."
+msgstr ""
+"Votre serveur est inaccessible pour le bot. Le réajouter peut résoudre ce"
+" problème."
+
+#: ballsdex/packages/guildconfig/cog.py:240
+#, python-brace-format
+msgid "{bot_name} is configured, but the specified channel could not be found."
+msgstr "{bot_name} est configuré, mais le salon spécifié est introuvable."
+
+#: ballsdex/packages/guildconfig/cog.py:245
+#, python-brace-format
+msgid "Not found - use {config_cmd} to set it again"
+msgstr "Introuvable - utilisez {config_cmd} pour le redéfinir"
+
+#: ballsdex/packages/guildconfig/cog.py:252
+msgid "Status"
+msgstr "Statut"
+
+#: ballsdex/packages/guildconfig/cog.py:252
+msgid "Enabled"
+msgstr "Activé"
+
+#: ballsdex/packages/guildconfig/cog.py:252
+msgid "Disabled"
+msgstr "Désactivé"
+
+#: ballsdex/packages/guildconfig/cog.py:259
+msgid "Read Messages"
+msgstr "Lire les messages"
+
+#: ballsdex/packages/guildconfig/cog.py:260
+msgid "Send Messages"
+msgstr "Envoyer des messages"
+
+#: ballsdex/packages/guildconfig/cog.py:261
+msgid "Embed Links"
+msgstr "Intégrer des liens"
+
+#: ballsdex/packages/guildconfig/cog.py:262
+msgid "Attach Files"
+msgstr "Joindre des fichiers"
+
+#: ballsdex/packages/guildconfig/cog.py:265
+msgid "Permissions"
+msgstr "Permissions"
+
+#: ballsdex/packages/guildconfig/components.py:30
+msgid "Terms of Service"
+msgstr "Conditions d'utilisation"
+
+#: ballsdex/packages/guildconfig/components.py:32
+msgid "Privacy policy"
+msgstr "Politique de confidentialité"
+
+#: ballsdex/packages/guildconfig/components.py:36
+msgid "Accept"
+msgstr "Accepter"
+
+#: ballsdex/packages/guildconfig/components.py:63
+#, python-brace-format
+msgid ""
+"The new spawn channel was successfully set to {channel}.\n"
+"{collectibles} will start spawning as users talk unless the bot is "
+"disabled."
+msgstr ""
+
+#: ballsdex/packages/info/cog.py:65
+#, python-brace-format
+msgid "{bot_name} Discord bot"
+msgstr ""
+
+#: ballsdex/packages/info/cog.py:113
+#, python-brace-format
+msgid ""
+"This instance is owned by the team {owner}.\n"
+"An instance of [Ballsdex]({repo}) by El Laggron and maintained by the "
+"Ballsdex Team and community of "
+"[contributors]({repo}/graphs/contributors)."
+msgstr ""
+
+#: ballsdex/packages/info/cog.py:119
+#, python-brace-format
+msgid ""
+"This instance is owned by {owner}.\n"
+"An instance of [Ballsdex]({repo}) by El Laggron and maintained by the "
+"Ballsdex Team and community of "
+"[contributors]({repo}/graphs/contributors)."
+msgstr ""
+
+#: ballsdex/packages/info/cog.py:124
+#, python-brace-format
+msgid ""
+"{balls_emojis}\n"
+"{about_description}\n"
+"*Running version **[{version}]({repo}/releases)***\n"
+"The bot has been online for **{uptime}**.\n"
+"\n"
+"**{balls_count}** {collectibles} to collect\n"
+"**{players_count}** players that caught **{instances_count}** "
+"{collectibles}\n"
+"**{guilds_count}** servers playing\n"
+"\n"
+"{dex_credits}\n"
+"\n"
+"Consider supporting El Laggron on [Patreon](https://patreon.com/retke) "
+":heart:\n"
+"\n"
+"[Discord server]({invite}) • [Invite me]({invite_link}) • [Source code "
+"and issues]({repo})\n"
+"[Terms of Service]({tos}) • [Privacy policy]({privacy})"
+msgstr ""
+
+#: ballsdex/packages/info/cog.py:173
+#, python-brace-format
+msgid "{bot_name} Discord bot - help menu"
+msgstr ""
+
+#: ballsdex/packages/info/license.py:61
+msgid ""
+"This instance of Ballsdex is powered by 3rd-party packages whose "
+"information can be found below."
+msgstr ""
+
+#: ballsdex/packages/info/license.py:71
+#, python-brace-format
+msgid ""
+"Authors: {authors}\n"
+"Author: {authors}\n"
+msgstr ""
+
+#: ballsdex/packages/info/license.py:76
+msgid "Licenses:License:"
+msgstr ""
+
+#: ballsdex/packages/info/license.py:95
+msgid "License info"
+msgstr ""
+
+#: ballsdex/packages/info/license.py:96
+msgid "3rd party packages"
+msgstr ""
+
+#: ballsdex/packages/info/license.py:102
+msgid ""
+"This bot is an instance of BallsDex-DiscordBot (hereinafter referred to "
+"as Ballsdex).\n"
+"Ballsdex is a free and open source application made available to the "
+"public and licensed under the MIT license. The full text of this license "
+"is attached below.\n"
+msgstr ""
+
+#: ballsdex/packages/money/cog.py:40
+#, python-brace-format
+msgid "You have {balance}."
+msgstr ""
+
+#: ballsdex/packages/money/cog.py:70
+msgid "Amount must be strictly positive."
+msgstr ""
+
+#: ballsdex/packages/money/cog.py:77
+#, python-brace-format
+msgid "You cannot give {currency} to yourself."
+msgstr ""
+
+#: ballsdex/packages/money/cog.py:88
+#, python-brace-format
+msgid "You do not have enough {currency}."
+msgstr ""
+
+#: ballsdex/packages/money/cog.py:104
+#, python-brace-format
+msgid "You just gave {amount} to {user}!"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:69
+msgid "You cannot add yourself as a friend."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:72
+msgid "You cannot add a bot."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:75
+msgid "You cannot add a blacklisted user as a friend."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:78
+msgid "This user isn't accepting friend requests."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:87
+#, python-brace-format
+msgid "You cannot add a blocked user. To unblock, use {command}."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:93
+msgid "This user has blocked you, you cannot add them as a friend."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:99
+#, fuzzy
+msgid "You are already friends with this user!"
+msgstr "Vous n'êtes pas autorisé à interagir avec ceci."
+
+#: ballsdex/packages/players/cog.py:105
+msgid ""
+"That user has already sent you a friend request! Please accept or decline"
+" it before sending a new request."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:114
+msgid "You already have an active friend request to this user!"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:122
+msgid "Friend request accepted!"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:123
+msgid "Friend request declined."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:126
+#, python-brace-format
+msgid "{user}, {requester} has sent you a friend request!"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:156
+msgid "You cannot remove yourself."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:159
+msgid "You cannot remove a bot."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:164
+#, fuzzy
+msgid "You are not friends with this user."
+msgstr "Vous n'êtes pas autorisé à interagir avec ceci."
+
+#: ballsdex/packages/players/cog.py:171
+#, python-brace-format
+msgid "{user} has been removed as a friend."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:187
+msgid "You currently do not have any friends added."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:192
+#, python-brace-format
+msgid ""
+"# Your friend list\n"
+"Add friends with {command}"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:221
+msgid "You cannot block yourself."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:224
+msgid "You cannot block a bot."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:229
+msgid "You have already blocked this user."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:233
+msgid "You cannot block a user to whom you have sent an active friend request."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:241
+msgid "User has been blocked."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:242
+#, python-brace-format
+msgid "Request cancelled, {user} is still your friend."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:245
+msgid "This user is your friend, are you sure you want to block them?"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:257
+#, python-brace-format
+msgid "You have now blocked {user}."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:273
+msgid "You cannot unblock yourself."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:276
+msgid "You cannot unblock a bot."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:282
+msgid "This user isn't blocked."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:287
+#, python-brace-format
+msgid "{user} has been unblocked."
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:299
+msgid "You haven't blocked any users!"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:304
+#, python-brace-format
+msgid ""
+"# Your block list\n"
+"Block users with {command}"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:326
+msgid "You haven't got any info to show!"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:362
+#, python-brace-format
+msgid "**{user}'s {bot_name} Info**"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:368
+#, python-brace-format
+msgid ""
+"Here are your statistics and settings in the bot!\n"
+"## Player Info\n"
+"**Privacy Policy:** {privacy_policy}\n"
+"**Donation Policy:** {donation_policy}\n"
+"**Mention Policy:** {mention_policy}\n"
+"**Friend Policy:** {friend_policy}\n"
+"**Trade Cooldown Policy:** {trade_cooldown_policy}\n"
+"**Amount of Friends:** {friends}\n"
+"**Amount of Blocked Users:** {blocks}\n"
+"## Player Stats\n"
+"**Completion:** {completion}\n"
+"**{collectible}s Owned:** {balls_owned}\n"
+"**Caught {collectible}s Owned**: {caught_owned}\n"
+"**Special {collectible}s:** {special}\n"
+"**Trades Completed:** {trades}\n"
+"**Amount of Users Traded With:** {trade_partners}\n"
+msgstr ""
+
+#: ballsdex/packages/players/cog.py:400
+msgid "Keep collecting and trading to improve your stats!"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:88
+msgid "Data export"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:89
+msgid "Category"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:90
+msgid "Choose the type of data you want to export."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:93
+#, python-brace-format
+msgid "Export all of your {collectibles}."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:96
+msgid "Trades"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:97
+msgid "Export your trade history."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:98
+msgid "All"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:99
+msgid "Export everything."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:100
+#, python-brace-format
+msgid ""
+"-# Check the [privacy policy]({url}) for more informations about your "
+"data."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:107
+msgid "You don't have any player data to export."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:127
+msgid ""
+"Your data is too large to export. Please contact the bot support for more"
+" information."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:132
+msgid "Here is your player data:"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:133
+msgid "Your player data has been sent via DMs."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:137
+msgid ""
+"I couldn't send the player data to your DMs. Either you blocked me or you"
+" disabled DMs in this server."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:157
+msgid "Confirm data deletion"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:158
+msgid "Confirmation code"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:161
+#, python-brace-format
+msgid ""
+"This will permanently delete all of your data and cannot be undone. Type "
+"{code} below to confirm."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:168
+msgid "The code you entered did not match. Your data was **not** deleted."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:175
+msgid "Your player data has been permanently deleted."
+msgstr ""
+
+#: ballsdex/packages/players/views.py:240
+#, fuzzy
+msgid "You are not allowed to interact with this!"
+msgstr "Vous n'êtes pas autorisé à interagir avec ceci."
+
+#: ballsdex/packages/players/views.py:249
+msgid "# Player settings"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:250
+msgid "Configure your personal settings here"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:251
+msgid ""
+"### Inventory privacy\n"
+"-# Who should be able to view your inventory"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:252
+#, python-brace-format
+msgid ""
+"### Donation policy\n"
+"-# Who should be able to donate {collectibles}"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:255
+msgid ""
+"### Friend requests\n"
+"-# You can open or close all friend requests"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:257
+msgid ""
+"### Trade cooldown\n"
+"-# Skip all cooldowns in trades if the other player also has this off"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:259
+msgid ""
+"### Mention policy\n"
+"-# Choose if you want to be mentioned by the bot or not"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:260
+#, python-brace-format
+msgid ""
+"### Language\n"
+"-# Choose the language {collectibles} are displayed in"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:263
+msgid "## Your data"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:264
+msgid "Export"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:265
+msgid "Delete all data"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:287
+msgid "Open"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:288
+msgid "Private"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:289
+msgid "Friends only"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:290
+msgid "Same server"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:297
+#, fuzzy
+msgid "Always accept"
+msgstr "Accepter"
+
+#: ballsdex/packages/players/views.py:298
+msgid "Needs approval"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:300
+msgid "Closed"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:312
+msgid "Wait 10s"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:313
+msgid "Bypass"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:319
+msgid "Mentions"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:319
+msgid "No mentions"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:332
+#, fuzzy
+msgid "Select a language"
+msgstr "langue"
+
+#: ballsdex/packages/players/views.py:335
+msgid "Server / bot default"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:379
+msgid "Are you sure you want to remove this friend?"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:381
+msgid "Are you sure you want to remove this block?"
+msgstr ""
+
+#: ballsdex/packages/players/views.py:389
+msgid "-# Removed"
+msgstr ""
+
+#: ballsdex/packages/trade/bulk_selector.py:28
+#, python-brace-format
+msgid ""
+"## Trade bulk selection\n"
+"Your selected {collectibles} are shown below."
+msgstr ""
+
+#: ballsdex/packages/trade/bulk_selector.py:31
+msgid "-# Use the drop-down menu below to select your items."
+msgstr ""
+
+#: ballsdex/packages/trade/bulk_selector.py:32
+#, python-brace-format
+msgid "Select {collectibles} to add"
+msgstr ""
+
+#: ballsdex/packages/trade/bulk_selector.py:33
+msgid "Add to trade"
+msgstr ""
+
+#: ballsdex/packages/trade/bulk_selector.py:40
+msgid ""
+"Your trade was not found, it may have ended before you finished your bulk"
+" trade."
+msgstr ""
+
+#: ballsdex/packages/trade/bulk_selector.py:59
+#, python-brace-format
+msgid "{count} {collectibles} added."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:111
+#, python-brace-format
+msgid ""
+"Trading has been globally disabled by the admins for the following "
+"reason: {reason}"
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:119
+#, fuzzy
+msgid "You cannot trade with bots."
+msgstr "Vous n'êtes pas autorisé à interagir avec ceci."
+
+#: ballsdex/packages/trade/cog.py:122
+msgid "You cannot trade with yourself."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:130
+msgid "You cannot begin a trade with a user that you have blocked."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:136
+msgid "You cannot begin a trade with a user that has blocked you."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:140
+msgid "You already have an active trade."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:144
+#, python-brace-format
+msgid "{user} already has an active trade."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:170
+msgid "The trade has started."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:191
+msgid "You do not have any active trade."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:201
+#, python-brace-format
+msgid "{countryball} added."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:236
+#, python-brace-format
+msgid "{countryball} removed."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:288
+msgid "Invalid number of days. Please provide a strictly positive value."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:300
+msgid "One of the players does not exist."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:346
+msgid "## Trade history"
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:358
+#, python-brace-format
+msgid "## Trade history (Page 1/{total_pages})"
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:399
+msgid ""
+"You have locked your proposal, it cannot be edited! You can click the "
+"cancel button to stop the trade instead."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:451
+msgid "You can't cancel now; the trade has already gone through."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:455
+msgid "Cancelling the trade..."
+msgstr ""
+
+#: ballsdex/packages/trade/cog.py:458
+msgid "Are you sure you want to cancel this trade?"
+msgstr ""
+
+#: ballsdex/packages/trade/errors.py:24
+#, fuzzy
+msgid "An unknown exception occurred. Contact support if this persists."
+msgstr "Une erreur est survenue. Contactez le support si cela persiste."
+
+#: ballsdex/packages/trade/history.py:52
+#, python-brace-format
+msgid ""
+"## Trade #{trade_id:0X} history\n"
+"\n"
+"Date: {date}"
+msgstr ""
+
+#: ballsdex/packages/trade/history.py:73
+#, python-brace-format
+msgid "## {user}'s proposal"
+msgstr ""
+
+#: ballsdex/packages/trade/history.py:74
+msgid "These items were traded away and no longer theirs."
+msgstr ""
+
+#: ballsdex/packages/trade/history.py:87
+#, python-brace-format
+msgid "Money traded: {amount}"
+msgstr ""
+
+#: ballsdex/packages/trade/history.py:95
+#, python-brace-format
+msgid "Money received: {amount}"
+msgstr ""
+
+#: ballsdex/packages/trade/history.py:117
+msgid "Nothing traded."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:70
+msgid "Set money offering"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:71
+#, python-brace-format
+msgid "How much {currency} to propose?"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:77
+#, fuzzy
+msgid "You are not allowed to do this, edit your own trade."
+msgstr "Vous n'êtes pas autorisé à interagir avec ceci."
+
+#: ballsdex/packages/trade/trade.py:84
+msgid "You have already locked your proposal!"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:89
+msgid "This number could not be parsed."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:92
+msgid "Amount cannot be negative."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:96
+msgid "You cannot afford that amount."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:150
+msgid "Click to remove an item"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:158
+msgid "You are not part of this trade!"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:211
+msgid "You have cancelled the trade."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:213
+msgid "The trade has been cancelled."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:216
+msgid "You have confirmed your trade proposal."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:219
+msgid "You have both locked your proposals, review and confirm the trade."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:225
+msgid ""
+"You have locked your proposal. Wait for the other player to lock their "
+"proposal before finishing the trade."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:236
+#, python-brace-format
+msgid "You can edit your proposal with {add_command} and {remove_command}."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:256
+#, fuzzy
+msgid "Change"
+msgstr "Salon"
+
+#: ballsdex/packages/trade/trade.py:260
+#, python-brace-format
+msgid "{currency} proposed: {amount}"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:278
+msgid "Nothing yet"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:377
+msgid "Nothing proposed"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:386
+msgid ""
+"Both of you have locked without proposing anything, the trade is "
+"cancelled."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:479
+msgid "Lock proposal"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:480
+msgid "Reset"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:481
+msgid "Cancel trade"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:482
+msgid "Confirm"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:491
+msgid "An error occurred, the trade will be cancelled."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:493
+#, fuzzy
+msgid ""
+"An error occurred and the trade has been cancelled! Contact support if "
+"this persists."
+msgstr "Une erreur est survenue. Contactez le support si cela persiste."
+
+#: ballsdex/packages/trade/trade.py:534
+msgid "Clearing your proposal..."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:536
+msgid "Are you sure you want to clear your proposal?"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:588
+#, python-brace-format
+msgid "You can confirm the trade {time}."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:610
+#, python-brace-format
+msgid "Hey {invited}, {inviter} is proposing a trade!"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:620
+#, python-brace-format
+msgid "-# This trade will timeout {time}."
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:769
+#, python-brace-format
+msgid ""
+"## The trade has been completed!\n"
+"-# ID: `#{trade_id:0X}`"
+msgstr ""
+
+#: ballsdex/packages/trade/trade.py:788
+#, python-brace-format
+msgid ""
+"Trading has been globally disabled by administrators for the following "
+"reason: {reason}"
+msgstr ""
+

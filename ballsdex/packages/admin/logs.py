@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.translation import t
 from ballsdex.core.utils import checks
 
 
@@ -27,10 +28,10 @@ async def logs_add(ctx: commands.Context[BallsDexBot], user: discord.User):
     """
     if user.id in ctx.bot.catch_log:
         ctx.bot.catch_log.remove(user.id)
-        await ctx.send(f"{user} removed from catch logs.", ephemeral=True)
+        await ctx.send(t("{user} removed from catch logs.").format(user=user), ephemeral=True)
     else:
         ctx.bot.catch_log.add(user.id)
-        await ctx.send(f"{user} added to catch logs.", ephemeral=True)
+        await ctx.send(t("{user} added to catch logs.").format(user=user), ephemeral=True)
 
 
 @logs.command(name="commandlogs")
@@ -46,7 +47,7 @@ async def commandlogs_add(ctx: commands.Context[BallsDexBot], user: discord.User
     """
     if user.id in ctx.bot.command_log:
         ctx.bot.command_log.remove(user.id)
-        await ctx.send(f"{user} removed from command logs.", ephemeral=True)
+        await ctx.send(t("{user} removed from command logs.").format(user=user), ephemeral=True)
     else:
         ctx.bot.command_log.add(user.id)
-        await ctx.send(f"{user} added to command logs.", ephemeral=True)
+        await ctx.send(t("{user} added to command logs.").format(user=user), ephemeral=True)

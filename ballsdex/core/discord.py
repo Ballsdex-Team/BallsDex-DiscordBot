@@ -7,7 +7,7 @@ import discord
 from discord.ui import Item
 from discord.ui.view import BaseView as DiscordBaseView
 
-from ballsdex.core import tracing
+from ballsdex.core import tracing, translation
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -26,7 +26,7 @@ async def _error_handler(interaction: Interaction, error: Exception) -> bool:
         return True
     if not interaction.is_expired() and interaction.type != discord.InteractionType.autocomplete:
         send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
-        await send("An error occurred. Contact support if this persists.", ephemeral=True)
+        await send(translation.t("An error occurred. Contact support if this persists."), ephemeral=True)
     return False
 
 
@@ -51,6 +51,7 @@ class BaseView(DiscordBaseView):
             return await super().on_error(interaction, error, item)
 
     async def interaction_check(self, interaction: Interaction, /) -> bool:
+        translation.current_locale.set(interaction.locale.value)
         if not await interaction.client.blacklist_check(interaction):
             return False
         if impersonated := interaction.client.impersonations.get(interaction.user.id, None):
@@ -58,11 +59,14 @@ class BaseView(DiscordBaseView):
             interaction._permissions = impersonated._permissions or 0
         if author := getattr(self, "discord_id", None):
             if author != interaction.user.id:
-                await interaction.response.send_message("You are not allowed to interact with this.", ephemeral=True)
+                await interaction.response.send_message(
+                    translation.t("You are not allowed to interact with this."), ephemeral=True
+                )
                 return False
         return await super().interaction_check(interaction)
 
     async def _scheduled_task(self, item: Item[Self], interaction: Interaction):
+        translation.current_locale.set(interaction.locale.value)
         try:
             callback = item.callback.__name__
         except AttributeError:
@@ -107,6 +111,7 @@ class LayoutView(discord.ui.LayoutView, BaseView):
 
 class Container(discord.ui.Container[LayoutView]):
     async def interaction_check(self, interaction: Interaction, /) -> bool:
+        translation.current_locale.set(interaction.locale.value)
         if not await interaction.client.blacklist_check(interaction):
             return False
         return await super().interaction_check(interaction)
@@ -118,6 +123,7 @@ class Modal(discord.ui.Modal):
             return await super().on_error(interaction, error)
 
     async def interaction_check(self, interaction: Interaction) -> bool:
+        translation.current_locale.set(interaction.locale.value)
         if not await interaction.client.blacklist_check(interaction):
             return False
         if impersonated := interaction.client.impersonations.get(interaction.user.id, None):
@@ -126,6 +132,7 @@ class Modal(discord.ui.Modal):
         return await super().interaction_check(interaction)
 
     async def _scheduled_task(self, interaction: Interaction, components, resolved):
+        translation.current_locale.set(interaction.locale.value)
         with tracing.span(
             "discord.modal_submit",
             resource=f"{type(self).__name__}.on_submit",

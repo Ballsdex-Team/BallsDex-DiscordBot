@@ -70,6 +70,14 @@ class SettingsAdmin(admin.ModelAdmin):
             },
         ),
         (
+            "Localization",
+            {
+                "description": "Languages available for players and servers to select for countryball display. "
+                "The first language in the list is used as the fallback when nothing is configured.",
+                "fields": ("enabled_languages",),
+            },
+        ),
+        (
             "Currency support",
             {
                 "description": "The bot provides a basic currency feature but is disabled by default, "

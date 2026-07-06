@@ -4,6 +4,7 @@ import discord
 from discord.ui import ActionRow, Button, Select, Separator, TextDisplay
 
 from ballsdex.core.discord import Container
+from ballsdex.core.translation import t
 from ballsdex.core.utils.menus.formatter import CountryballFormatter, TextFormatter
 from ballsdex.core.utils.menus.menus import Menu
 from ballsdex.core.utils.menus.source import ModelSource, TextSource
@@ -51,6 +52,10 @@ class BaseBulkSelector(Container):
         self.description.content = description
         self.select.placeholder = select_placeholder
         self.validate.label = confirm_label
+        # @control_row.button() labels are resolved once at class-body (import) time - override
+        # them here, in a method that's always called per-interaction by subclasses
+        self.select_all.label = t("Select page")
+        self.clear.label = t("Clear")
 
         self.formatter = CountryballFormatter(self.select, max_values=25)
         self.source = ModelSource(queryset)
@@ -66,9 +71,11 @@ class BaseBulkSelector(Container):
         if self.display_menu and self.display_menu.source.get_max_pages() > 1:
             self.remove_item(self.display_menu.controls)
 
-        self.balls_count.content = f"-# {len(self.formatter.defaulted)} {settings.plural_collectible_name} selected"
+        self.balls_count.content = t("-# {count} {collectibles} selected").format(
+            count=len(self.formatter.defaulted), collectibles=settings.plural_collectible_name
+        )
         if not self.formatter.defaulted:
-            self.balls.content = "Nothing selected yet"
+            self.balls.content = t("Nothing selected yet")
             return
         text = ""
         # reuse the ordering given in the original queryset
@@ -137,7 +144,7 @@ class BaseBulkSelector(Container):
     @control_row.button(label="Confirm", style=discord.ButtonStyle.success)
     async def validate(self, interaction: Interaction, button: Button):
         if not self.formatter.defaulted:
-            await interaction.response.send_message("Nothing was selected!", ephemeral=True)
+            await interaction.response.send_message(t("Nothing was selected!"), ephemeral=True)
             return
         await self.on_confirm(interaction, set(self.formatter.defaulted))
 

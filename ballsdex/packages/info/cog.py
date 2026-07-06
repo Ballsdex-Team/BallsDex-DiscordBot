@@ -11,6 +11,7 @@ from discord.app_commands.translator import TranslationContext, TranslationConte
 from discord.ext import commands
 
 from ballsdex import __version__ as ballsdex_version
+from ballsdex.core.translation import t
 from ballsdex.core.utils.django import row_count_estimate
 from ballsdex.core.utils.formatting import pagify
 from bd_models.models import Ball
@@ -60,7 +61,9 @@ class Info(commands.Cog):
         """
         Get information about this bot.
         """
-        embed = discord.Embed(title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple())
+        embed = discord.Embed(
+            title=t("{bot_name} Discord bot").format(bot_name=settings.bot_name), color=discord.Colour.blurple()
+        )
 
         try:
             balls = await self._get_10_balls_emojis()
@@ -106,31 +109,46 @@ class Info(commands.Cog):
 
         bot_info = await self.bot.application_info()
         if bot_info.team:
-            owner = bot_info.team.name
+            dex_credits = t(
+                "This instance is owned by the team {owner}.\nAn instance of [Ballsdex]({repo}) by El "
+                "Laggron and maintained by the Ballsdex Team and community of "
+                "[contributors]({repo}/graphs/contributors)."
+            ).format(owner=bot_info.team.name, repo=settings.repository)
         else:
-            owner = bot_info.owner
-        owner_credits = "by the team" if bot_info.team else "by"
-        dex_credits = (
-            f"This instance is owned {owner_credits} {owner}.\nAn instance of [Ballsdex]"
-            f"({settings.repository}) by El Laggron and maintained by the Ballsdex Team "
-            f"and community of [contributors]({settings.repository}/graphs/contributors)."
-        )
-        embed.description = (
-            f"{' '.join(str(x) for x in balls)}\n"
-            f"{settings.about_description}\n"
-            f"*Running version **[{ballsdex_version}]({settings.repository}/releases)***\n"
-            f"The bot has been online for **{formatted_uptime}**.\n\n"
-            f"**{balls_count:,}** {settings.plural_collectible_name} to collect\n"
-            f"**{players_count:,}** players that caught "
-            f"**{balls_instances_count:,}** {settings.plural_collectible_name}\n"
-            f"**{len(self.bot.guilds):,}** servers playing\n\n"
-            f"{dex_credits}\n\n"
-            "Consider supporting El Laggron on "
-            "[Patreon](https://patreon.com/retke) :heart:\n\n"
-            f"[Discord server]({settings.discord_invite}) • [Invite me]({invite_link}) • "
-            f"[Source code and issues]({settings.repository})\n"
-            f"[Terms of Service]({settings.terms_of_service}) • "
-            f"[Privacy policy]({settings.privacy_policy})"
+            dex_credits = t(
+                "This instance is owned by {owner}.\nAn instance of [Ballsdex]({repo}) by El "
+                "Laggron and maintained by the Ballsdex Team and community of "
+                "[contributors]({repo}/graphs/contributors)."
+            ).format(owner=bot_info.owner, repo=settings.repository)
+        embed.description = t(
+            "{balls_emojis}\n"
+            "{about_description}\n"
+            "*Running version **[{version}]({repo}/releases)***\n"
+            "The bot has been online for **{uptime}**.\n\n"
+            "**{balls_count}** {collectibles} to collect\n"
+            "**{players_count}** players that caught **{instances_count}** {collectibles}\n"
+            "**{guilds_count}** servers playing\n\n"
+            "{dex_credits}\n\n"
+            "Consider supporting El Laggron on [Patreon](https://patreon.com/retke) :heart:\n\n"
+            "[Discord server]({invite}) • [Invite me]({invite_link}) • "
+            "[Source code and issues]({repo})\n"
+            "[Terms of Service]({tos}) • [Privacy policy]({privacy})"
+        ).format(
+            balls_emojis=" ".join(str(x) for x in balls),
+            about_description=settings.about_description,
+            version=ballsdex_version,
+            repo=settings.repository,
+            uptime=formatted_uptime,
+            balls_count=f"{balls_count:,}",
+            collectibles=settings.plural_collectible_name,
+            players_count=f"{players_count:,}",
+            instances_count=f"{balls_instances_count:,}",
+            guilds_count=f"{len(self.bot.guilds):,}",
+            dex_credits=dex_credits,
+            invite=settings.discord_invite,
+            invite_link=invite_link,
+            tos=settings.terms_of_service,
+            privacy=settings.privacy_policy,
         )
 
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
@@ -151,7 +169,10 @@ class Info(commands.Cog):
         Show the list of commands from the bot.
         """
         assert self.bot.user
-        embed = discord.Embed(title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple())
+        embed = discord.Embed(
+            title=t("{bot_name} Discord bot - help menu").format(bot_name=settings.bot_name),
+            color=discord.Colour.blurple(),
+        )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
         for cog in self.bot.cogs.values():

@@ -6,6 +6,7 @@ from discord.ui import ActionRow, Button, Select, TextDisplay, button
 from django.conf import settings
 
 from ballsdex.core.discord import LayoutView, View
+from ballsdex.core.translation import t
 from ballsdex.core.utils.menus import ChunkedListSource, Menu, SelectFormatter
 
 if TYPE_CHECKING:
@@ -52,6 +53,14 @@ class ExtraLicenseView(LayoutView):
     )
     row = ActionRow()
 
+    def __init__(self):
+        super().__init__()
+        # class-level TextDisplay content is resolved once at import time, before any
+        # interaction exists - override it here so t() sees the viewing user's locale
+        self.header.content = t(
+            "This instance of Ballsdex is powered by 3rd-party packages whose information can be found below."
+        )
+
     @row.select()
     async def extra_package_select(self, interaction: discord.Interaction["BallsDexBot"], select: Select):
         dist = extra_apps_dist[select.values[0]]
@@ -59,10 +68,12 @@ class ExtraLicenseView(LayoutView):
         if summary := dist.metadata.get("Summary"):
             text += f"{summary}\n"
         if authors := dist.metadata.get_all("Author") or dist.metadata.get_all("Author-email"):
-            text += f"Author{'s' if len(authors) > 1 else ''}: {', '.join(authors)}\n"
+            text += t("Authors: {authors}\n" if len(authors) > 1 else "Author: {authors}\n").format(
+                authors=", ".join(authors)
+            )
         licenses = get_license_files(dist)
         if licenses:
-            text += f"License{'s' if len(licenses) > 1 else ''}:"
+            text += t("Licenses:" if len(licenses) > 1 else "License:")
 
         view = View()
         for item in (dist.metadata.get_all("Project-URL") or [])[:25]:
@@ -77,13 +88,22 @@ class ExtraLicenseView(LayoutView):
 
 
 class LicenseInfo(View):
+    def __init__(self):
+        super().__init__()
+        # @button() labels are resolved once at class-body (import) time - override them here
+        # so t() can see the locale of whoever ran the command that creates this view (/about)
+        self.license_info.label = t("License info")
+        self.extra_packages.label = t("3rd party packages")
+
     @button(label="License info")
     async def license_info(self, interaction: discord.Interaction["BallsDexBot"], _: Button):
         await interaction.response.send_message(
-            "This bot is an instance of BallsDex-DiscordBot "
-            "(hereinafter referred to as Ballsdex).\n"
-            "Ballsdex is a free and open source application made available to the public and "
-            "licensed under the MIT license. The full text of this license is attached below.\n",
+            t(
+                "This bot is an instance of BallsDex-DiscordBot "
+                "(hereinafter referred to as Ballsdex).\n"
+                "Ballsdex is a free and open source application made available to the public and "
+                "licensed under the MIT license. The full text of this license is attached below.\n"
+            ),
             ephemeral=True,
             file=discord.File(
                 get_license_files(importlib.metadata.distribution("ballsdex"))[0].locate(), filename="LICENSE.txt"

@@ -33,6 +33,7 @@ __all__ = (
     "RegimeTransform",
     "EconomyTransform",
     "BallGroupTransform",
+    "LanguageTransform",
 )
 
 
@@ -314,3 +315,29 @@ EconomyTransform = app_commands.Transform[Economy, EconomyTransformer]
 BallGroupTransform = app_commands.Transform[BallGroup, BallGroupTransformer]
 SpecialEnabledTransform = app_commands.Transform[Special, SpecialTransformer(hidden=False)]
 BallEnabledTransform = app_commands.Transform[Ball, BallTransformer(enabled=True)]
+
+
+class LanguageTransformer(app_commands.Transformer):
+    """
+    Validates and autocompletes against the languages enabled in the bot's settings
+    (`Settings.available_languages`), rather than a hardcoded list.
+    """
+
+    async def autocomplete(  # type: ignore
+        self, interaction: discord.Interaction["BallsDexBot"], value: str
+    ) -> list[app_commands.Choice[str]]:
+        return [
+            app_commands.Choice(name=language, value=language)
+            for language in settings.available_languages
+            if value.lower() in language.lower()
+        ][:25]
+
+    async def transform(self, interaction: discord.Interaction["BallsDexBot"], value: str) -> str:
+        if value not in settings.available_languages:
+            raise commands.BadArgument(
+                f"'{value}' is not an enabled language. Available languages: {', '.join(settings.available_languages)}"
+            )
+        return value
+
+
+LanguageTransform = app_commands.Transform[str, LanguageTransformer]

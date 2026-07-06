@@ -4,6 +4,7 @@ from discord.utils import format_dt
 from django.db.models import QuerySet
 from django.urls import reverse
 
+from ballsdex.core.translation import t
 from ballsdex.core.utils import menus
 from bd_models.models import BlacklistHistory, Player
 from settings.models import settings
@@ -18,8 +19,8 @@ class BlacklistHistorySummaryFormatter(menus.Formatter[QuerySet[BlacklistHistory
     async def format_page(self, page):
         self.item.options.clear()
         async for entry in page:
-            action = "Blacklisted" if entry.action_type == "blacklist" else "Unblacklisted"
-            reason = entry.reason or "No reason given"
+            action = t("Blacklisted") if entry.action_type == "blacklist" else t("Unblacklisted")
+            reason = entry.reason or t("No reason given")
             self.item.add_option(
                 label=f"{action} - {entry.date:%Y-%m-%d %H:%M}"[:100], description=reason[:100], value=str(entry.pk)
             )
@@ -35,9 +36,9 @@ class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Cont
         container = self.item
         container.clear_items()
         section = Section(
-            TextDisplay(f"# Blacklist history for {self.user.mention}"),
-            TextDisplay(f"Type: {blacklist.action_type}"),
-            TextDisplay(f"Action Time: {format_dt(blacklist.date, 'R')}"),
+            TextDisplay(t("# Blacklist history for {user}").format(user=self.user.mention)),
+            TextDisplay(t("Type: {action_type}").format(action_type=blacklist.action_type)),
+            TextDisplay(t("Action Time: {time}").format(time=format_dt(blacklist.date, "R"))),
             accessory=Thumbnail(self.user.display_avatar.url),
         )
         container.add_item(section)
@@ -47,13 +48,21 @@ class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Cont
             except discord.NotFound:
                 moderator = None
             container.add_item(Separator())
-            action_type = "Blacklisted" if blacklist.action_type == "blacklist" else "Unblacklisted"
-            moderator_display = moderator.mention if moderator else f"Unknown user ({blacklist.moderator_id})"
+            action_type = t("Blacklisted") if blacklist.action_type == "blacklist" else t("Unblacklisted")
+            moderator_display = (
+                moderator.mention
+                if moderator
+                else t("Unknown user ({moderator_id})").format(moderator_id=blacklist.moderator_id)
+            )
             avatar_url = moderator.display_avatar.url if moderator else self.user.display_avatar.url
             container.add_item(
                 Section(
-                    TextDisplay(f"### {action_type} by {moderator_display}"),
-                    TextDisplay(f"### Reason\n{blacklist.reason}"),
+                    TextDisplay(
+                        t("### {action_type} by {moderator}").format(
+                            action_type=action_type, moderator=moderator_display
+                        )
+                    ),
+                    TextDisplay(t("### Reason\n{reason}").format(reason=blacklist.reason)),
                     accessory=Thumbnail(avatar_url),
                 )
             )
@@ -62,10 +71,14 @@ class BlacklistHistoryFormatter(menus.Formatter[QuerySet[BlacklistHistory], Cont
                 ActionRow(
                     Button(
                         url=f"{settings.site_base_url}{reverse('admin:bd_models_player_change', args=(player.pk,))}",
-                        label="View history online",
+                        label=t("View history online"),
                     )
                 )
             )
         container.add_item(
-            TextDisplay(f"-# Blacklist history {self.menu.current_page + 1}/{self.menu.source.get_max_pages()}")
+            TextDisplay(
+                t("-# Blacklist history {current}/{total}").format(
+                    current=self.menu.current_page + 1, total=self.menu.source.get_max_pages()
+                )
+            )
         )

@@ -26,7 +26,7 @@ from rich import box, print
 from rich.console import Console
 from rich.table import Table
 
-from ballsdex.core import tracing
+from ballsdex.core import tracing, translation
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.help import HelpCommand
@@ -71,9 +71,17 @@ def owner_check(ctx: commands.Context[BallsDexBot]):
 
 
 class Translator(app_commands.Translator):
+    async def load(self) -> None:
+        translation.load_catalogs()
+
     async def translate(self, string: locale_str, locale: Locale, context: TranslationContextTypes) -> str | None:
+        # command/parameter names and descriptions follow the requesting user's Discord client
+        # locale, translated from the gettext catalogs under ballsdex/locales/. This is unrelated
+        # to countryball display language, which is only ever a player/server-configured language
+        # (see ballsdex.core.i18n.resolve_locale).
+        text = translation.gettext_translate(string.message, locale.value) or string.message
         text = (
-            string.message.replace("countryballs", settings.plural_collectible_name)
+            text.replace("countryballs", settings.plural_collectible_name)
             .replace("countryball", settings.collectible_name)
             .replace("/balls", f"/{settings.balls_slash_name}")
             .replace("BallsDex", settings.bot_name)
@@ -125,6 +133,7 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
     disable_time_check: bool = False
 
     async def _call(self, interaction: discord.Interaction[Bot]) -> None:
+        translation.current_locale.set(interaction.locale.value)
         with tracing.span(
             "discord.app_command",
             tags={
@@ -146,6 +155,7 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
                     span.set_attribute("discord.command.name", name)
 
     async def interaction_check(self, interaction: discord.Interaction[Bot], /) -> bool:
+        translation.current_locale.set(interaction.locale.value)
         # checking if the moment we receive this interaction isn't too late already
         # there is a 3 seconds limit for initial response, taking a little margin into account
         # https://discord.com/developers/docs/interactions/receiving-and-responding#responding-to-an-interaction
@@ -160,8 +170,9 @@ class CommandTree[Bot: BallsDexBot](app_commands.CommandTree[Bot]):
             if interaction.type != discord.InteractionType.autocomplete:
                 try:
                     await interaction.response.send_message(
-                        "The bot is currently starting, please wait for a few minutes... "
-                        f"({round((len(bot.shards) / bot.shard_count) * 100)}%)",
+                        translation.t(
+                            "The bot is currently starting, please wait for a few minutes... ({percent}%)"
+                        ).format(percent=round((len(bot.shards) / bot.shard_count) * 100)),
                         ephemeral=True,
                     )
                 except discord.NotFound:
@@ -296,7 +307,8 @@ class BallsDexBot(commands.AutoShardedBot):
             self.application_emojis[emoji.id] = emoji
 
         balls.clear()
-        async for ball in Ball.objects.all():
+        async for ball in Ball.objects.all().prefetch_related("localizations"):
+            ball._translations = {tr.language: tr async for tr in ball.localizations.all()}
             balls[ball.pk] = ball
         table.add_row(settings.collectible_name.title() + "s", str(len(balls)))
 

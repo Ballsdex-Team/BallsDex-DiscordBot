@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import discord
 
+from ballsdex.core.translation import t
 from ballsdex.core.utils.menus.bulk_selector import BaseBulkSelector
 from bd_models.models import BallInstance
 from settings.models import settings
@@ -24,17 +25,19 @@ class BulkSelector(BaseBulkSelector):
         await super().configure(
             bot,
             queryset,
-            header=f"## Trade bulk selection\nYour selected {settings.plural_collectible_name} are shown below.",
-            description="-# Use the drop-down menu below to select your items.",
-            select_placeholder=f"Select {settings.plural_collectible_name} to add",
-            confirm_label="Add to trade",
+            header=t("## Trade bulk selection\nYour selected {collectibles} are shown below.").format(
+                collectibles=settings.plural_collectible_name
+            ),
+            description=t("-# Use the drop-down menu below to select your items."),
+            select_placeholder=t("Select {collectibles} to add").format(collectibles=settings.plural_collectible_name),
+            confirm_label=t("Add to trade"),
         )
 
     async def on_confirm(self, interaction: Interaction, selected_ids: set[int]):
         result = await self.cog.get_trade(interaction)
         if result is None:
             await interaction.response.send_message(
-                "Your trade was not found, it may have ended before you finished your bulk trade.", ephemeral=True
+                t("Your trade was not found, it may have ended before you finished your bulk trade."), ephemeral=True
             )
             return
         trade, trader = result
@@ -53,5 +56,8 @@ class BulkSelector(BaseBulkSelector):
             await interaction.edit_original_response(view=self.view)
             await trade.edit_message(None)
             await interaction.followup.send(
-                f"{len(selected_ids)} {settings.plural_collectible_name} added.", ephemeral=True
+                t("{count} {collectibles} added.").format(
+                    count=len(selected_ids), collectibles=settings.plural_collectible_name
+                ),
+                ephemeral=True,
             )
