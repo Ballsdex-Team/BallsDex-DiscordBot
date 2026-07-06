@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("bd_models", "0018_guildconfig_language_player_language")]
+    dependencies = [("bd_models", "0019_guildconfig_language_player_language")]
 
     operations = [
         migrations.CreateModel(

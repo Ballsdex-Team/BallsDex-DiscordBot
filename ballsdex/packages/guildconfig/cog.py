@@ -209,6 +209,29 @@ class Config(commands.GroupCog):
 
     @app_commands.command()
     @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.checks.bot_has_permissions(send_messages=True)
+    async def toggledrop(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Allow or disallow players from using the drop command in this server.
+        """
+        config, created = await GuildConfig.objects.aget_or_create(guild_id=interaction.guild_id)
+        config.manual_drop_enabled = not config.manual_drop_enabled  # type: ignore
+        await config.asave()
+        if config.manual_drop_enabled:
+            await interaction.response.send_message(
+                t("Players can now use the drop command to manually spawn {collectibles}.").format(
+                    collectibles=settings.plural_collectible_name
+                )
+            )
+        else:
+            await interaction.response.send_message(
+                t("Players can no longer use the drop command to manually spawn {collectibles}.").format(
+                    collectibles=settings.plural_collectible_name
+                )
+            )
+
+    @app_commands.command()
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def status(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Check the server configuration status.
@@ -250,6 +273,9 @@ class Config(commands.GroupCog):
 
         embed.add_field(name=t("Channel"), value=channel.mention, inline=True)
         embed.add_field(name=t("Status"), value=t("Enabled") if config.enabled else t("Disabled"), inline=True)
+        embed.add_field(
+            name=t("Drop command"), value=t("Enabled") if config.manual_drop_enabled else t("Disabled"), inline=True
+        )
 
         def tick(granted: bool) -> str:
             return "\N{WHITE HEAVY CHECK MARK}" if granted else "\N{CROSS MARK}"

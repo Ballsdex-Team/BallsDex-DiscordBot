@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("bd_models", "0017_ballgroup")]
+    dependencies = [("bd_models", "0018_guildconfig_manual_drop_enabled")]
 
     operations = [
         migrations.AddField(

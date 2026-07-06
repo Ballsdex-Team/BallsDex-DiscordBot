@@ -26,7 +26,7 @@ from ballsdex.core.utils.transformers import (
 )
 from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
 from bd_models.enums import DonationPolicy
-from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls, groups
+from bd_models.models import BallInstance, GuildConfig, Player, Special, Trade, TradeObject, balls, groups
 from settings.models import settings
 
 from .bulk_give_selector import BulkGiveSelector
@@ -606,6 +606,13 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if not countryball:
             return
 
+        config = await GuildConfig.objects.aget_or_none(guild_id=interaction.guild_id)
+        if config and not config.manual_drop_enabled:
+            await interaction.response.send_message(
+                t("The drop command is currently disabled in this server."), ephemeral=True
+            )
+            return
+
         cog = cast("CountryBallsSpawner | None", self.bot.get_cog("CountryBallsSpawner"))
         if not cog or not interaction.guild_id or cog.cache.get(interaction.guild_id) != interaction.channel_id:
             await interaction.response.send_message(
@@ -953,6 +960,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             .order_by(sort.value if sort else DuplicateSort.count_desc.value)
         )
 
+        if reverse:
+            query = query.reverse()
         if apply_limit and limit is not None:
             query = query[:limit]
 
