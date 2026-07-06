@@ -846,6 +846,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             .order_by(sort.value if sort else DuplicateSort.count_desc.value)
         )
 
+        if reverse:
+            query = query.reverse()
         if apply_limit and limit is not None:
             query = query[:limit]
 
