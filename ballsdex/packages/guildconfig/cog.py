@@ -154,7 +154,7 @@ class Config(commands.GroupCog):
     @app_commands.command()
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.checks.bot_has_permissions(send_messages=True)
-    async def managedrop(self, interaction: discord.Interaction["BallsDexBot"]):
+    async def toggledrop(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Allow or disallow players from using the drop command in this server.
         """
