@@ -25,7 +25,7 @@ from ballsdex.core.utils.transformers import (
 )
 from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
 from bd_models.enums import DonationPolicy
-from bd_models.models import BallInstance, Player, Special, Trade, TradeObject, balls, groups
+from bd_models.models import BallInstance, GuildConfig, Player, Special, Trade, TradeObject, balls, groups
 from settings.models import settings
 
 from .bulk_give_selector import BulkGiveSelector
@@ -533,6 +533,13 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             Filter the results of autocompletion to a special event. Ignored afterwards.
         """
         if not countryball:
+            return
+
+        config = await GuildConfig.objects.aget_or_none(guild_id=interaction.guild_id)
+        if config and not config.manual_drop_enabled:
+            await interaction.response.send_message(
+                "The drop command is currently disabled in this server.", ephemeral=True
+            )
             return
 
         cog = cast("CountryBallsSpawner | None", self.bot.get_cog("CountryBallsSpawner"))
