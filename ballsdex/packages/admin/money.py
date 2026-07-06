@@ -6,6 +6,7 @@ from discord.ext import commands
 from django.db import connection
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.translation import t
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from bd_models.models import Player
@@ -36,10 +37,14 @@ async def balance(ctx: commands.Context[BallsDexBot], user: discord.User):
     """
     player = await Player.objects.aget_or_none(discord_id=user.id)
     if not player:
-        await ctx.send(f"This user does not have a {settings.bot_name} account.", ephemeral=True)
+        await ctx.send(
+            t("This user does not have a {bot_name} account.").format(bot_name=settings.bot_name), ephemeral=True
+        )
         return
 
-    await ctx.send(f"{user.mention} currently has {player.money:,} coins.", ephemeral=True)
+    await ctx.send(
+        t("{user} currently has {amount} coins.").format(user=user.mention, amount=f"{player.money:,}"), ephemeral=True
+    )
 
 
 @money.command()
@@ -57,15 +62,19 @@ async def add(ctx: commands.Context[BallsDexBot], user: discord.User, amount: in
     """
     player = await Player.objects.aget_or_none(discord_id=user.id)
     if not player:
-        await ctx.send(f"This user does not have a {settings.bot_name} account.", ephemeral=True)
+        await ctx.send(
+            t("This user does not have a {bot_name} account.").format(bot_name=settings.bot_name), ephemeral=True
+        )
         return
 
     if amount <= 0:
-        await ctx.send("The amount must be greater than zero.", ephemeral=True)
+        await ctx.send(t("The amount must be greater than zero."), ephemeral=True)
         return
 
     await player.add_money(amount)
-    await ctx.send(f"{amount:,} coins have been added to {user.mention}.", ephemeral=True)
+    await ctx.send(
+        t("{amount} coins have been added to {user}.").format(amount=f"{amount:,}", user=user.mention), ephemeral=True
+    )
     log.info(f"{ctx.author} ({ctx.author.id}) added {amount:,} coins to {user} ({user.id})", extra={"webhook": True})
 
 
@@ -84,17 +93,27 @@ async def remove(ctx: commands.Context[BallsDexBot], user: discord.User, amount:
     """
     player = await Player.objects.aget_or_none(discord_id=user.id)
     if not player:
-        await ctx.send(f"This user does not have a {settings.bot_name} account.", ephemeral=True)
+        await ctx.send(
+            t("This user does not have a {bot_name} account.").format(bot_name=settings.bot_name), ephemeral=True
+        )
         return
 
     if amount <= 0:
-        await ctx.send("The amount must be greater than zero.", ephemeral=True)
+        await ctx.send(t("The amount must be greater than zero."), ephemeral=True)
         return
     if not player.can_afford(amount):
-        await ctx.send(f"This user does not have enough coins to remove (balance={player.money:,}).", ephemeral=True)
+        await ctx.send(
+            t("This user does not have enough coins to remove (balance={balance}).").format(
+                balance=f"{player.money:,}"
+            ),
+            ephemeral=True,
+        )
         return
     await player.remove_money(amount)
-    await ctx.send(f"{amount:,} coins have been removed from {user.mention}.", ephemeral=True)
+    await ctx.send(
+        t("{amount} coins have been removed from {user}.").format(amount=f"{amount:,}", user=user.mention),
+        ephemeral=True,
+    )
     log.info(
         f"{ctx.author} ({ctx.author.id}) removed {amount:,} coins from {user} ({user.id})", extra={"webhook": True}
     )
@@ -115,16 +134,18 @@ async def set(ctx: commands.Context[BallsDexBot], user: discord.User, amount: in
     """
     player = await Player.objects.aget_or_none(discord_id=user.id)
     if not player:
-        await ctx.send(f"This user has does not have a {settings.bot_name} account.", ephemeral=True)
+        await ctx.send(
+            t("This user has does not have a {bot_name} account.").format(bot_name=settings.bot_name), ephemeral=True
+        )
         return
 
     if amount < 0:
-        await ctx.send("The amount must be greater than or equal to zero.", ephemeral=True)
+        await ctx.send(t("The amount must be greater than or equal to zero."), ephemeral=True)
         return
 
     player.money = amount
     await player.asave()
-    await ctx.send(f"{user.mention} now has {amount:,} coins.", ephemeral=True)
+    await ctx.send(t("{user} now has {amount} coins.").format(user=user.mention, amount=f"{amount:,}"), ephemeral=True)
     log.info(
         f"{ctx.author} ({ctx.author.id}) set the balance of {user} ({user.id}) to {amount:,} coins",
         extra={"webhook": True},
@@ -145,13 +166,13 @@ async def setdefault(ctx: commands.Context[BallsDexBot], amount: int, force: boo
         If true, then ALL users will have their balance reset to the default!
     """
     view = ConfirmChoiceView(ctx)
-    msg = f"You are about to set the new default balance to {amount}.\n"
+    msg = t("You are about to set the new default balance to {amount}.\n").format(amount=amount)
     if force:
-        msg += (
+        msg += t(
             ":warning: You have chosen to reset ALL PLAYERS balance and set it to the new amount. "
             "This operation cannot be undone, all existing balances will be lost.\n"
         )
-    msg += "\nDo you want to continue?"
+    msg += t("\nDo you want to continue?")
     await ctx.send(msg, view=view)
     await view.wait()
     if not view.value:
@@ -166,4 +187,4 @@ async def setdefault(ctx: commands.Context[BallsDexBot], amount: int, force: boo
     if force:
         await Player.objects.all().aupdate(money=amount)
 
-    await ctx.send("New default set.")
+    await ctx.send(t("New default set."))

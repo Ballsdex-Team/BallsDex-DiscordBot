@@ -5,6 +5,7 @@ import discord
 from discord.ui import Button, button
 
 from ballsdex.core.discord import View
+from ballsdex.core.translation import current_locale, t
 from ballsdex.core.utils.menus import Menu
 from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
@@ -40,16 +41,16 @@ async def check_recipient(bot: "BallsDexBot", new_player: Player, old_player: Pl
     are involved. Returns a user-facing error message, or None if the donation is allowed.
     """
     if new_player == old_player:
-        return f"You cannot give a {settings.collectible_name} to yourself."
+        return t("You cannot give a {collectible} to yourself.").format(collectible=settings.collectible_name)
     if new_player.donation_policy == DonationPolicy.ALWAYS_DENY:
-        return "This player does not accept donations. You can use trades instead."
+        return t("This player does not accept donations. You can use trades instead.")
     if new_player.donation_policy == DonationPolicy.FRIENDS_ONLY:
         if not await new_player.is_friend(old_player):
-            return "This player only accepts donations from friends, use trades instead."
+            return t("This player only accepts donations from friends, use trades instead.")
     if await new_player.is_blocked(old_player):
-        return "You cannot interact with a user that has blocked you."
+        return t("You cannot interact with a user that has blocked you.")
     if new_player.discord_id in bot.blacklist:
-        return "You cannot donate to a blacklisted user."
+        return t("You cannot donate to a blacklisted user.")
     return None
 
 
@@ -73,7 +74,9 @@ def add_view_all_button(
 
     async def callback(interaction: Interaction):
         if interaction.user.id not in (sender_id, recipient_id):
-            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
+            await interaction.response.send_message(
+                t("You are not allowed to interact with this menu."), ephemeral=True
+            )
             return
         queryset = BallInstance.objects.filter(id__in=ball_ids).order_by("-id")
         viewer = CountryballsViewer()
@@ -81,11 +84,11 @@ def add_view_all_button(
         menu = Menu.countryballs(bot, viewer, viewer.selected, queryset)
         await menu.init(position=2)
         viewer.header.content = (
-            "Viewing what you received" if interaction.user.id == recipient_id else "Viewing what you gave"
+            t("Viewing what you received") if interaction.user.id == recipient_id else t("Viewing what you gave")
         )
         await interaction.response.send_message(view=viewer, ephemeral=True)
 
-    item = Button(label="View All", style=discord.ButtonStyle.blurple, custom_id=VIEW_ALL_CUSTOM_ID)
+    item = Button(label=t("View All"), style=discord.ButtonStyle.blurple, custom_id=VIEW_ALL_CUSTOM_ID)
     item.callback = callback
     view.add_item(item)
 
@@ -99,8 +102,11 @@ class DonationRequest(View):
         self.new_player = new_player
 
     async def interaction_check(self, interaction: Interaction, /) -> bool:
+        current_locale.set(interaction.locale.value)
         if interaction.user.id != self.new_player.discord_id:
-            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
+            await interaction.response.send_message(
+                t("You are not allowed to interact with this menu."), ephemeral=True
+            )
             return False
         return True
 
@@ -128,7 +134,8 @@ class DonationRequest(View):
         )
         await interaction.response.edit_message(
             content=interaction.message.content  # type: ignore
-            + "\n\N{WHITE HEAVY CHECK MARK} The donation was accepted!",
+            + "\n\N{WHITE HEAVY CHECK MARK} "
+            + t("The donation was accepted!"),
             view=self,
         )
         await self.countryball.unlock()
@@ -140,7 +147,8 @@ class DonationRequest(View):
             item.disabled = True  # type: ignore
         await interaction.response.edit_message(
             content=interaction.message.content  # type: ignore
-            + "\n\N{CROSS MARK} The donation was denied.",
+            + "\n\N{CROSS MARK} "
+            + t("The donation was denied."),
             view=self,
         )
         await self.countryball.unlock()
@@ -163,10 +171,13 @@ class BulkDonationRequest(View):
         self.old_player = old_player
 
     async def interaction_check(self, interaction: Interaction, /) -> bool:
+        current_locale.set(interaction.locale.value)
         if interaction.data and interaction.data.get("custom_id") == VIEW_ALL_CUSTOM_ID:
             return True
         if interaction.user.id != self.new_player.discord_id:
-            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
+            await interaction.response.send_message(
+                t("You are not allowed to interact with this menu."), ephemeral=True
+            )
             return False
         return True
 
@@ -202,8 +213,10 @@ class BulkDonationRequest(View):
         )
         await interaction.response.edit_message(
             content=(interaction.message.content if interaction.message else "")
-            + f"\n\N{WHITE HEAVY CHECK MARK} The donation of {len(self.countryballs)} "
-            f"{settings.plural_collectible_name} was accepted!",
+            + "\n\N{WHITE HEAVY CHECK MARK} "
+            + t("The donation of {count} {collectibles} was accepted!").format(
+                count=len(self.countryballs), collectibles=settings.plural_collectible_name
+            ),
             view=self,
         )
 
@@ -214,7 +227,8 @@ class BulkDonationRequest(View):
             item.disabled = True  # type: ignore
         await interaction.response.edit_message(
             content=(interaction.message.content if interaction.message else "")
-            + "\n\N{CROSS MARK} The donation was denied.",
+            + "\n\N{CROSS MARK} "
+            + t("The donation was denied."),
             view=self,
         )
         for countryball in self.countryballs:

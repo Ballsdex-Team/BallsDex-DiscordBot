@@ -12,9 +12,11 @@ from discord.ui import Button, TextInput, button
 from django.utils import timezone
 
 from ballsdex.core.discord import Modal, View
+from ballsdex.core.i18n import resolve_locale
 from ballsdex.core.metrics import caught_balls
+from ballsdex.core.translation import t
 from ballsdex.core.utils.utils import can_mention
-from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls, specials
+from bd_models.models import Ball, BallInstance, GuildConfig, Player, Special, Trade, TradeObject, balls, specials
 from settings.models import PromptMessage, settings
 
 if TYPE_CHECKING:
@@ -31,26 +33,34 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
     def __init__(self, view: BallSpawnView):
         super().__init__()
         self.view = view
+        # the class-level `title=`/`label=` kwargs above are resolved once at import time -
+        # override them here so t() sees the locale of whoever opened this modal
+        self.title = t("Catch this {collectible}!").format(collectible=settings.collectible_name)
+        self.name.label = t("Name of this {collectible}").format(collectible=settings.collectible_name)
+        self.name.placeholder = t("Your guess")
 
     async def on_error(self, interaction: discord.Interaction["BallsDexBot"], error: Exception) -> None:
         if isinstance(error, discord.NotFound) and error.code == 10062:
             return
         log.exception("An error occurred in countryball catching prompt", exc_info=error)
+        message = t("An error occurred with this {collectible}.").format(collectible=settings.collectible_name)
         if interaction.response.is_done():
-            await interaction.followup.send(f"An error occurred with this {settings.collectible_name}.")
+            await interaction.followup.send(message)
         else:
-            await interaction.response.send_message(f"An error occurred with this {settings.collectible_name}.")
+            await interaction.response.send_message(message)
 
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         await interaction.response.defer(thinking=True)
 
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        language = await resolve_locale(interaction, player=player)
         if self.view.caught:
             slow_message = settings.get_formatted_message(
                 category=PromptMessage.PromptType.SLOW,
                 mention=interaction.user.mention,
                 model=self.view.model,
                 bot=interaction.client,
+                language=language,
             )
 
             await interaction.followup.send(slow_message, ephemeral=True, allowed_mentions=await can_mention([player]))
@@ -68,6 +78,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 model=self.view.model,
                 bot=interaction.client,
                 wrong=wrong_name,
+                language=language,
             )
             await interaction.followup.send(
                 wrong_message, allowed_mentions=await can_mention([player]), ephemeral=False
@@ -77,7 +88,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         ball, has_caught_before = await self.view.catch_ball(interaction.user, player=player, guild=interaction.guild)
 
         await interaction.followup.send(
-            self.view.get_catch_message(ball, has_caught_before, interaction.user.mention),
+            self.view.get_catch_message(ball, has_caught_before, interaction.user.mention, language=language),
             allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
         )
         await interaction.followup.edit_message(self.view.message.id, view=self.view)
@@ -149,6 +160,7 @@ class BallSpawnView(View):
                 mention=interaction.user.mention,
                 model=self.model,
                 bot=interaction.client,
+                language=await resolve_locale(interaction),
             )
             await interaction.response.send_message(slow_message, ephemeral=True)
         else:
@@ -241,8 +253,16 @@ class BallSpawnView(View):
         try:
             permissions = channel.permissions_for(channel.guild.me)
             if permissions.attach_files and permissions.send_messages:
+                # no single player to resolve a language for at spawn time (broadcast to the
+                # whole channel) - fall back to the server's configured language, if any
+                guild_config = await GuildConfig.objects.only("language").aget_or_none(guild_id=channel.guild.id)
+                language = (guild_config and guild_config.language) or settings.default_language
                 spawn_message = settings.get_formatted_message(
-                    category=PromptMessage.PromptType.SPAWN, mention="", model=self.model, bot=self.bot
+                    category=PromptMessage.PromptType.SPAWN,
+                    mention="",
+                    model=self.model,
+                    bot=self.bot,
+                    language=language,
                 )
 
                 self.message = await channel.send(
@@ -388,7 +408,9 @@ class BallSpawnView(View):
 
         return ball, is_new
 
-    def get_catch_message(self, ball: BallInstance, new_ball: bool, mention: str) -> str:
+    def get_catch_message(
+        self, ball: BallInstance, new_ball: bool, mention: str, *, language: str | None = None
+    ) -> str:
         """
         Generate a user-facing message after a ball has been caught.
 
@@ -399,18 +421,29 @@ class BallSpawnView(View):
         new_ball: bool
             Boolean indicating if this is a new countryball in completion
             (as returned by `catch_ball`)
+        language: str | None
+            If given, the countryball's name is displayed in this language when a translation
+            is configured for it (see `Ball.localized_name`). Defaults to the base name.
         """
         text = ""
         if ball.specialcard and ball.specialcard.catch_phrase:
             text += f"*{ball.specialcard.catch_phrase}*\n"
         if new_ball:
-            text += f"This is a **new {settings.collectible_name}** that has been added to your completion!"
+            text += t("This is a **new {collectible}** that has been added to your completion!").format(
+                collectible=settings.collectible_name
+            )
         if self.ballinstance:
-            text += f"This {settings.collectible_name} was dropped by <@{self.og_id}>\n"
+            text += t("This {collectible} was dropped by <@{user_id}>\n").format(
+                collectible=settings.collectible_name, user_id=self.og_id
+            )
 
         caught_message = (
             settings.get_formatted_message(
-                category=PromptMessage.PromptType.CATCH, mention=mention, model=self.model, bot=self.bot
+                category=PromptMessage.PromptType.CATCH,
+                mention=mention,
+                model=self.model,
+                bot=self.bot,
+                language=language,
             )
             + " "
         )

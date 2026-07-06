@@ -8,6 +8,7 @@ from django.db import IntegrityError
 from django.urls import reverse
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.translation import t
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.menus import Menu, ModelSource
 from bd_models.models import BlacklistedGuild, BlacklistedID, BlacklistHistory, GuildConfig, Player
@@ -44,7 +45,7 @@ async def blacklist_add(ctx: commands.Context[BallsDexBot], user: discord.User, 
         The reason for blacklisting the user.
     """
     if user == ctx.author:
-        await ctx.send("You cannot blacklist yourself!", ephemeral=True)
+        await ctx.send(t("You cannot blacklist yourself!"), ephemeral=True)
         return
 
     try:
@@ -53,10 +54,10 @@ async def blacklist_add(ctx: commands.Context[BallsDexBot], user: discord.User, 
             discord_id=user.id, reason=reason, moderator_id=ctx.author.id, id_type="user"
         )
     except IntegrityError:
-        await ctx.send("That user was already blacklisted.", ephemeral=True)
+        await ctx.send(t("That user was already blacklisted."), ephemeral=True)
     else:
         ctx.bot.blacklist.add(user.id)
-        await ctx.send("User is now blacklisted.", ephemeral=True)
+        await ctx.send(t("User is now blacklisted."), ephemeral=True)
         log.info(
             f"{ctx.author} blacklisted {user} ({user.id}) for the following reason: {reason}.", extra={"webhook": True}
         )
@@ -78,14 +79,14 @@ async def blacklist_remove(ctx: commands.Context[BallsDexBot], user: discord.Use
     try:
         blacklisted = await BlacklistedID.objects.aget(discord_id=user.id)
     except BlacklistedID.DoesNotExist:
-        await ctx.send("That user isn't blacklisted.", ephemeral=True)
+        await ctx.send(t("That user isn't blacklisted."), ephemeral=True)
     else:
         await blacklisted.adelete()
         await BlacklistHistory.objects.acreate(
             discord_id=user.id, reason=reason, moderator_id=ctx.author.id, id_type="user", action_type="unblacklist"
         )
         ctx.bot.blacklist.remove(user.id)
-        await ctx.send("User is now removed from blacklist.", ephemeral=True)
+        await ctx.send(t("User is now removed from blacklist."), ephemeral=True)
         log.info(
             f"{ctx.author} removed blacklist for user {user} ({user.id}).\nReason: {reason}", extra={"webhook": True}
         )
@@ -105,56 +106,46 @@ async def blacklist_info(ctx: commands.Context[BallsDexBot], user: discord.User)
     try:
         blacklisted = await BlacklistedID.objects.aget(discord_id=user.id)
     except BlacklistedID.DoesNotExist:
-        await ctx.send("That user isn't blacklisted.", ephemeral=True)
+        await ctx.send(t("That user isn't blacklisted."), ephemeral=True)
     else:
         if blacklisted.moderator_id:
-            moderator_msg = (
-                f"Moderator: {await ctx.bot.fetch_user(blacklisted.moderator_id)} ({blacklisted.moderator_id})"
+            moderator_msg = t("Moderator: {moderator} ({moderator_id})").format(
+                moderator=await ctx.bot.fetch_user(blacklisted.moderator_id), moderator_id=blacklisted.moderator_id
             )
         else:
-            moderator_msg = "Moderator: Unknown"
+            moderator_msg = t("Moderator: Unknown")
         if player := await Player.objects.aget_or_none(discord_id=user.id):
-            admin_url = (
-                f"\n[View history online](<{settings.site_base_url}"
-                f"{reverse('admin:bd_models_player_change', args=(player.pk,))}>)"
+            admin_url = "\n" + t("[View history online](<{url}>)").format(
+                url=f"{settings.site_base_url}{reverse('admin:bd_models_player_change', args=(player.pk,))}"
             )
         else:
             admin_url = ""
         if blacklisted.date:
             await ctx.send(
-                f"`{user}` (`{user.id}`) was blacklisted on {format_dt(blacklisted.date)}"
-                f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
-                f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
+                t(
+                    "`{user}` (`{id}`) was blacklisted on {date}({date_relative}) for the following reason:\n"
+                    "{reason}\n{moderator_msg}{admin_url}"
+                ).format(
+                    user=user,
+                    id=user.id,
+                    date=format_dt(blacklisted.date),
+                    date_relative=format_dt(blacklisted.date, style="R"),
+                    reason=blacklisted.reason,
+                    moderator_msg=moderator_msg,
+                    admin_url=admin_url,
+                ),
                 ephemeral=True,
             )
         else:
-            if blacklisted.moderator_id:
-                moderator_msg = (
-                    f"Moderator: {await ctx.bot.fetch_user(blacklisted.moderator_id)} ({blacklisted.moderator_id})"
-                )
-            else:
-                moderator_msg = "Moderator: Unknown"
-            if player := await Player.objects.aget_or_none(discord_id=user.id):
-                admin_url = (
-                    f"\n[View history online](<{settings.site_base_url}"
-                    f"{reverse('admin:bd_models_player_change', args=(player.pk,))}>)"
-                )
-            else:
-                admin_url = ""
-            if blacklisted.date:
-                await ctx.send(
-                    f"`{user}` (`{user.id}`) was blacklisted on {format_dt(blacklisted.date)}"
-                    f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
-                    f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
-                    ephemeral=True,
-                )
-            else:
-                await ctx.send(
-                    f"`{user}` (`{user.id}`) is currently blacklisted (date unknown)"
-                    " for the following reason:\n"
-                    f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
-                    ephemeral=True,
-                )
+            await ctx.send(
+                t(
+                    "`{user}` (`{id}`) is currently blacklisted (date unknown) for the following reason:\n"
+                    "{reason}\n{moderator_msg}{admin_url}"
+                ).format(
+                    user=user, id=user.id, reason=blacklisted.reason, moderator_msg=moderator_msg, admin_url=admin_url
+                ),
+                ephemeral=True,
+            )
 
 
 @blacklist.command(name="history")
@@ -171,20 +162,20 @@ async def blacklist_history(ctx: commands.Context[BallsDexBot], user_id: str):
     try:
         _id = int(user_id)
     except ValueError:
-        await ctx.send("The ID you gave is not valid.", ephemeral=True)
+        await ctx.send(t("The ID you gave is not valid."), ephemeral=True)
         return
 
     history = BlacklistHistory.objects.filter(discord_id=_id).order_by("-date")
 
     total = await history.acount()
     if total == 0:
-        await ctx.send("No history found for that ID.", ephemeral=True)
+        await ctx.send(t("No history found for that ID."), ephemeral=True)
         return
 
     try:
         user = await ctx.bot.fetch_user(_id)
     except discord.NotFound:
-        await ctx.send("User was not found from Discord.", ephemeral=True)
+        await ctx.send(t("User was not found from Discord."), ephemeral=True)
         return
 
     async def select_callback(interaction: discord.Interaction[BallsDexBot]):
@@ -205,9 +196,13 @@ async def blacklist_history(ctx: commands.Context[BallsDexBot], user_id: str):
         await interaction.followup.send(view=detail_view, ephemeral=True)
 
     view = discord.ui.LayoutView()
-    view.add_item(discord.ui.TextDisplay(f"## Blacklist history for {user.mention} ({total} entries)"))
+    view.add_item(
+        discord.ui.TextDisplay(
+            t("## Blacklist history for {user} ({total} entries)").format(user=user.mention, total=total)
+        )
+    )
     action_row = discord.ui.ActionRow()
-    select = discord.ui.Select(placeholder="Select an entry to view its full detail")
+    select = discord.ui.Select(placeholder=t("Select an entry to view its full detail"))
     select.callback = select_callback
     action_row.add_item(select)
     view.add_item(action_row)
@@ -242,10 +237,10 @@ async def blacklist_add_guild(ctx: commands.Context[BallsDexBot], guild_id: str,
     try:
         guild = await ctx.bot.fetch_guild(int(guild_id))
     except ValueError:
-        await ctx.send("The guild ID you gave is not valid.", ephemeral=True)
+        await ctx.send(t("The guild ID you gave is not valid."), ephemeral=True)
         return
     except discord.NotFound:
-        await ctx.send("The given guild ID could not be found.", ephemeral=True)
+        await ctx.send(t("The given guild ID could not be found."), ephemeral=True)
         return
 
     final_reason = f"{reason}\nBy: {ctx.author} ({ctx.author.id})"
@@ -256,10 +251,10 @@ async def blacklist_add_guild(ctx: commands.Context[BallsDexBot], guild_id: str,
             discord_id=guild.id, reason=final_reason, moderator_id=ctx.author.id, id_type="guild"
         )
     except IntegrityError:
-        await ctx.send("That guild was already blacklisted.", ephemeral=True)
+        await ctx.send(t("That guild was already blacklisted."), ephemeral=True)
     else:
         ctx.bot.blacklist_guild.add(guild.id)
-        await ctx.send("Guild is now blacklisted.", ephemeral=True)
+        await ctx.send(t("Guild is now blacklisted."), ephemeral=True)
         log.info(
             f"{ctx.author} blacklisted the guild {guild}({guild.id}) for the following reason: {reason}.",
             extra={"webhook": True},
@@ -283,23 +278,23 @@ async def blacklist_remove_guild(ctx: commands.Context[BallsDexBot], guild_id: s
     try:
         guild = await ctx.bot.fetch_guild(int(guild_id))
     except ValueError:
-        await ctx.send("The guild ID you gave is not valid.", ephemeral=True)
+        await ctx.send(t("The guild ID you gave is not valid."), ephemeral=True)
         return
     except discord.NotFound:
-        await ctx.send("The given guild ID could not be found.", ephemeral=True)
+        await ctx.send(t("The given guild ID could not be found."), ephemeral=True)
         return
 
     try:
         blacklisted = await BlacklistedGuild.objects.aget(discord_id=guild.id)
     except BlacklistedGuild.DoesNotExist:
-        await ctx.send("That guild isn't blacklisted.", ephemeral=True)
+        await ctx.send(t("That guild isn't blacklisted."), ephemeral=True)
     else:
         await blacklisted.adelete()
         await BlacklistHistory.objects.acreate(
             discord_id=guild.id, reason=reason, moderator_id=ctx.author.id, id_type="guild", action_type="unblacklist"
         )
         ctx.bot.blacklist_guild.remove(guild.id)
-        await ctx.send("Guild is now removed from blacklist.", ephemeral=True)
+        await ctx.send(t("Guild is now removed from blacklist."), ephemeral=True)
         log.info(
             f"{ctx.author} removed blacklist for guild {guild} ({guild.id}).\nReason: {reason}", extra={"webhook": True}
         )
@@ -320,41 +315,56 @@ async def blacklist_info_guild(ctx: commands.Context[BallsDexBot], guild_id: str
     try:
         guild = await ctx.bot.fetch_guild(int(guild_id))
     except ValueError:
-        await ctx.send("The guild ID you gave is not valid.", ephemeral=True)
+        await ctx.send(t("The guild ID you gave is not valid."), ephemeral=True)
         return
     except discord.NotFound:
-        await ctx.send("The given guild ID could not be found.", ephemeral=True)
+        await ctx.send(t("The given guild ID could not be found."), ephemeral=True)
         return
 
     try:
         blacklisted = await BlacklistedGuild.objects.aget(discord_id=guild.id)
     except BlacklistedGuild.DoesNotExist:
-        await ctx.send("That guild isn't blacklisted.", ephemeral=True)
+        await ctx.send(t("That guild isn't blacklisted."), ephemeral=True)
     else:
         if blacklisted.moderator_id:
-            moderator_msg = (
-                f"Moderator: {await ctx.bot.fetch_user(blacklisted.moderator_id)}({blacklisted.moderator_id})"
+            moderator_msg = t("Moderator: {moderator}({moderator_id})").format(
+                moderator=await ctx.bot.fetch_user(blacklisted.moderator_id), moderator_id=blacklisted.moderator_id
             )
         else:
-            moderator_msg = "Moderator: Unknown"
+            moderator_msg = t("Moderator: Unknown")
         if gconf := await GuildConfig.objects.aget_or_none(guild_id=guild.id):
-            admin_url = (
-                f"\n[View history online](<{settings.site_base_url}"
-                f"{reverse('admin:bd_models_guildconfig_change', args=(gconf.pk,))}>)"
+            admin_url = "\n" + t("[View history online](<{url}>)").format(
+                url=f"{settings.site_base_url}{reverse('admin:bd_models_guildconfig_change', args=(gconf.pk,))}"
             )
         else:
             admin_url = ""
         if blacklisted.date:
             await ctx.send(
-                f"`{guild}` (`{guild.id}`) was blacklisted on {format_dt(blacklisted.date)}"
-                f"({format_dt(blacklisted.date, style='R')}) for the following reason:\n"
-                f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
+                t(
+                    "`{guild}` (`{id}`) was blacklisted on {date}({date_relative}) for the following reason:\n"
+                    "{reason}\n{moderator_msg}{admin_url}"
+                ).format(
+                    guild=guild,
+                    id=guild.id,
+                    date=format_dt(blacklisted.date),
+                    date_relative=format_dt(blacklisted.date, style="R"),
+                    reason=blacklisted.reason,
+                    moderator_msg=moderator_msg,
+                    admin_url=admin_url,
+                ),
                 ephemeral=True,
             )
         else:
             await ctx.send(
-                f"`{guild}` (`{guild.id}`) is currently blacklisted (date unknown)"
-                " for the following reason:\n"
-                f"{blacklisted.reason}\n{moderator_msg}{admin_url}",
+                t(
+                    "`{guild}` (`{id}`) is currently blacklisted (date unknown) for the following reason:\n"
+                    "{reason}\n{moderator_msg}{admin_url}"
+                ).format(
+                    guild=guild,
+                    id=guild.id,
+                    reason=blacklisted.reason,
+                    moderator_msg=moderator_msg,
+                    admin_url=admin_url,
+                ),
                 ephemeral=True,
             )

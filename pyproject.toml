@@ -54,6 +54,7 @@ dev = [
     "django-debug-toolbar==6.0.0",
     "pyinstrument==5.1.1",
     "django-types",
+    "Babel==2.18.0",
 ]
 docs = [
     "griffe-generics>=1.0.13",

@@ -9,6 +9,7 @@ from django.utils.timezone import get_current_timezone
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.discord import LayoutView
+from ballsdex.core.translation import current_locale, t
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.menus import Menu, TextFormatter, TextSource
@@ -24,9 +25,15 @@ class PlayerInfoView(discord.ui.View):
         super().__init__()
         self.player = player
         self.username = username
+        # @discord.ui.button() label is resolved once at class-body (import) time - override it
+        # here so t() sees the locale of whoever ran the command that creates this view
+        self.recently_caught.label = t("Recent Catches")
 
     @discord.ui.button(label="Recent Catches", style=discord.ButtonStyle.primary)
     async def recently_caught(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # this view does not extend ballsdex.core.discord.View, so the locale isn't set
+        # automatically - set it here, at the top of the only entry point into this view
+        current_locale.set(interaction.locale.value)
         # Display the last 10 catches of the user, and how long it took for each catch
         recent_balls = (
             await BallInstance.objects.filter(player=self.player, spawned_time__isnull=False, trade_player=None)
@@ -34,11 +41,15 @@ class PlayerInfoView(discord.ui.View):
             .order_by("-catch_date")[:10]
             .aall()
         )
-        embed = discord.Embed(title=f"Last {len(recent_balls)} catches for {self.username}")
+        embed = discord.Embed(
+            title=t("Last {count} catches for {user}").format(count=len(recent_balls), user=self.username)
+        )
         for ball in recent_balls:
             catch_time = (ball.catch_date - ball.spawned_time).total_seconds()  # type: ignore
             embed.add_field(
-                name=ball.description(short=True), value=f"{catch_time:.3f}s in {ball.server_id}", inline=False
+                name=ball.description(short=True),
+                value=t("{time:.3f}s in {server}").format(time=catch_time, server=ball.server_id),
+                inline=False,
             )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -48,15 +59,21 @@ class GuildInfoView(discord.ui.View):
         super().__init__()
         self.queryset = queryset
         self.days = days
+        # @discord.ui.button() label is resolved once at class-body (import) time - override it
+        # here so t() sees the locale of whoever ran the command that creates this view
+        self.list_catchers.label = t("List catchers")
 
     @discord.ui.button(label="List catchers", style=discord.ButtonStyle.primary)
     async def list_catchers(self, interaction: discord.Interaction[BallsDexBot], button: discord.ui.Button):
+        # this view does not extend ballsdex.core.discord.View, so the locale isn't set
+        # automatically - set it here, at the top of the only entry point into this view
+        current_locale.set(interaction.locale.value)
         await interaction.response.defer(thinking=True, ephemeral=True)
         counts: dict[int, int] = {}
         async for instance in self.queryset:
             counts[instance.player.discord_id] = counts.get(instance.player.discord_id, 0) + 1
         if not counts:
-            await interaction.followup.send("No catches found for this period.", ephemeral=True)
+            await interaction.followup.send(t("No catches found for this period."), ephemeral=True)
             return
 
         lines: list[str] = []
@@ -67,7 +84,7 @@ class GuildInfoView(discord.ui.View):
                     user = await interaction.client.fetch_user(discord_id)
                 except discord.NotFound:
                     user = None
-            name = (user.global_name or user.name) if user else "Unknown user"
+            name = (user.global_name or user.name) if user else t("Unknown user")
             mention = user.mention if user else f"<@{discord_id}>"
             lines.append(f"{mention} - {name} ({discord_id}) - {count}")
 
@@ -94,11 +111,13 @@ _DAYS_PRESETS = (7, 14, 30, 90)
 async def _days_autocomplete(
     interaction: discord.Interaction[BallsDexBot], current: str
 ) -> list[discord.app_commands.Choice[int]]:
-    choices = [discord.app_commands.Choice(name=f"{preset} days", value=preset) for preset in _DAYS_PRESETS]
+    choices = [
+        discord.app_commands.Choice(name=t("{days} days").format(days=preset), value=preset) for preset in _DAYS_PRESETS
+    ]
     if current.strip().isdigit():
         custom = int(current.strip())
         if custom not in _DAYS_PRESETS:
-            choices.insert(0, discord.app_commands.Choice(name=f"{custom} days", value=custom))
+            choices.insert(0, discord.app_commands.Choice(name=t("{days} days").format(days=custom), value=custom))
     return choices[:25]
 
 
@@ -124,10 +143,10 @@ async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7
         try:
             guild = await ctx.bot.fetch_guild(int(guild_id))  # type: ignore
         except ValueError:
-            await ctx.send("The guild ID you gave is not valid.", ephemeral=True)
+            await ctx.send(t("The guild ID you gave is not valid."), ephemeral=True)
             return
         except discord.NotFound:
-            await ctx.send("The given guild ID could not be found.", ephemeral=True)
+            await ctx.send(t("The given guild ID could not be found."), ephemeral=True)
             return
 
     url = None
@@ -146,20 +165,24 @@ async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7
         embed = discord.Embed(
             title=f"{guild.name} ({guild.id})",
             url=url,
-            description=f"**Owner:** {owner} ({guild.owner_id})",
+            description=t("**Owner:** {owner} ({owner_id})").format(owner=owner, owner_id=guild.owner_id),
             color=discord.Color.blurple(),
         )
     else:
         embed = discord.Embed(title=f"{guild.name} ({guild.id})", url=url, color=discord.Color.blurple())
-    embed.add_field(name="Members:", value=guild.member_count)
-    embed.add_field(name="Spawn enabled:", value=spawn_enabled)
-    embed.add_field(name="Created at:", value=format_dt(guild.created_at, style="F"))
+    embed.add_field(name=t("Members:"), value=guild.member_count)
+    embed.add_field(name=t("Spawn enabled:"), value=spawn_enabled)
+    embed.add_field(name=t("Created at:"), value=format_dt(guild.created_at, style="F"))
     embed.add_field(
-        name=f"{settings.plural_collectible_name.title()} caught ({days} days):",
+        name=t("{collectibles} caught ({days} days):").format(
+            collectibles=settings.plural_collectible_name.title(), days=days
+        ),
         value=await total_server_balls.acount(),
     )
     embed.add_field(
-        name=f"Amount of users who caught\n{settings.plural_collectible_name} ({days} days):",
+        name=t("Amount of users who caught\n{collectibles} ({days} days):").format(
+            collectibles=settings.plural_collectible_name, days=days
+        ),
         value=len(set([x.player.discord_id async for x in total_server_balls])),
     )
 
@@ -184,7 +207,7 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
     await ctx.defer(ephemeral=True)
     player = await Player.objects.aget_or_none(discord_id=user.id)
     if not player:
-        await ctx.send("The user you gave does not exist.", ephemeral=True)
+        await ctx.send(t("The user you gave does not exist."), ephemeral=True)
         return
     url = f"{settings.site_base_url}{reverse('admin:bd_models_player_change', args=(player.pk,))}"
     total_user_balls = await BallInstance.objects.filter(
@@ -193,35 +216,45 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
     embed = discord.Embed(
         title=f"{user} ({user.id})",
         url=url,
-        description=(
-            f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
-            f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
-            f"**Mention Policy:** {MENTION_POLICY_MAP[player.mention_policy]}\n"
-            f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}"
+        description=t(
+            "**Privacy Policy:** {privacy}\n**Donation Policy:** {donation}\n"
+            "**Mention Policy:** {mention}\n**Friend Policy:** {friend}"
+        ).format(
+            privacy=t(PRIVATE_POLICY_MAP[player.privacy_policy]),
+            donation=t(DONATION_POLICY_MAP[player.donation_policy]),
+            mention=t(MENTION_POLICY_MAP[player.mention_policy]),
+            friend=t(FRIEND_POLICY_MAP[player.friend_policy]),
         ),
         color=discord.Color.blurple(),
     )
     embed.add_field(
-        name=f"{settings.plural_collectible_name.title()} caught ({days} days):", value=len(total_user_balls)
+        name=t("{collectibles} caught ({days} days):").format(
+            collectibles=settings.plural_collectible_name.title(), days=days
+        ),
+        value=len(total_user_balls),
     )
     embed.add_field(
-        name=f"Unique {settings.plural_collectible_name} caught ({days} days):",
+        name=t("Unique {collectibles} caught ({days} days):").format(
+            collectibles=settings.plural_collectible_name, days=days
+        ),
         value=len(set([ball.countryball for ball in total_user_balls])),
     )
     embed.add_field(
-        name=f"Total servers with {settings.plural_collectible_name} caught ({days} days):",
+        name=t("Total servers with {collectibles} caught ({days} days):").format(
+            collectibles=settings.plural_collectible_name, days=days
+        ),
         value=len(set([x.server_id for x in total_user_balls])),
     )
     embed.add_field(
-        name=f"Total {settings.plural_collectible_name} caught:",
+        name=t("Total {collectibles} caught:").format(collectibles=settings.plural_collectible_name),
         value=await BallInstance.objects.filter(player__discord_id=user.id).acount(),
     )
     embed.add_field(
-        name=f"Total unique {settings.plural_collectible_name} caught:",
+        name=t("Total unique {collectibles} caught:").format(collectibles=settings.plural_collectible_name),
         value=len(set([x.countryball for x in total_user_balls])),
     )
     embed.add_field(
-        name=f"Total servers with {settings.plural_collectible_name} caught:",
+        name=t("Total servers with {collectibles} caught:").format(collectibles=settings.plural_collectible_name),
         value=len(set([x.server_id for x in total_user_balls])),
     )
     embed.set_thumbnail(url=user.display_avatar)  # type: ignore

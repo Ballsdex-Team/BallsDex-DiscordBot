@@ -20,6 +20,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView, Modal
+from ballsdex.core.translation import current_locale, t
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
 from bd_models.enums import TradeCooldownPolicy
@@ -64,30 +65,35 @@ class SetMoneyModal(Modal, title="Set money offering"):
         # Mirror trade correlation attrs so the Modal span picks them up.
         self.trade_id = trading_user.trade.trade_id
         self.trade_origin_context = trading_user.trade.trade_origin_context
+        # class-level `title=`/TextInput label above is resolved once at import time -
+        # override it here so t() sees the locale of whoever opened this modal
+        self.title = t("Set money offering")
+        self.proposal.label = t("How much {currency} to propose?").format(currency=settings.currency_name)
 
     async def interaction_check(self, interaction: Interaction) -> bool:
+        current_locale.set(interaction.locale.value)
         if not interaction.user.id == self.trading_user.user.id:
             await interaction.response.send_message(
-                "You are not allowed to do this, edit your own trade.", ephemeral=True
+                t("You are not allowed to do this, edit your own trade."), ephemeral=True
             )
             return False
         return await super().interaction_check(interaction)
 
     async def on_submit(self, interaction: Interaction):
         if self.trading_user.locked:
-            await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
+            await interaction.response.send_message(t("You have already locked your proposal!"), ephemeral=True)
             return
         try:
             proposal_amount = int(self.proposal.value.strip())
         except ValueError:
-            await interaction.response.send_message("This number could not be parsed.", ephemeral=True)
+            await interaction.response.send_message(t("This number could not be parsed."), ephemeral=True)
             return
         if proposal_amount < 0:
-            await interaction.response.send_message("Amount cannot be negative.", ephemeral=True)
+            await interaction.response.send_message(t("Amount cannot be negative."), ephemeral=True)
             return
         await self.trading_user.player.arefresh_from_db(fields=["money"])
         if not self.trading_user.player.can_afford(proposal_amount):
-            await interaction.response.send_message("You cannot afford that amount.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot afford that amount."), ephemeral=True)
             return
         await interaction.response.defer()
         self.trading_user.money = proposal_amount
@@ -139,12 +145,17 @@ class TradingUser(Container):
 
         self.view: TradeInstance
 
+        # @select_row.select() placeholder is resolved once at import time - override it here
+        # so t() sees the locale of whoever started this trade
+        self.select_menu.placeholder = t("Click to remove an item")
+
     def __repr__(self) -> str:
         return f"<TradingUser player_id={self.player.pk} discord_id={self.user.id}>"
 
     async def interaction_check(self, interaction: Interaction) -> bool:
+        current_locale.set(interaction.locale.value)
         if interaction.user.id not in (self.trade.trader1.user.id, self.trade.trader2.user.id):
-            await interaction.response.send_message("You are not part of this trade!", ephemeral=True)
+            await interaction.response.send_message(t("You are not part of this trade!"), ephemeral=True)
             return False
         return True
 
@@ -171,7 +182,7 @@ class TradingUser(Container):
     async def select_menu(self, interaction: Interaction, select: Select):
         if not interaction.user.id == self.user.id:
             await interaction.response.send_message(
-                "You are not allowed to do this, edit your own trade.", ephemeral=True
+                t("You are not allowed to do this, edit your own trade."), ephemeral=True
             )
             return
         await interaction.response.defer()
@@ -191,35 +202,50 @@ class TradingUser(Container):
         self.clear_items()
 
         section = Section(
-            TextDisplay(f"## {self.user.display_name}'s proposal"), accessory=Thumbnail(self.user.display_avatar.url)
+            TextDisplay(t("## {user}'s proposal").format(user=self.user.display_name)),
+            accessory=Thumbnail(self.user.display_avatar.url),
         )
         if self.view.cancelled:
             if self.cancelled:
                 self.accent_colour = discord.Colour.red()
-                section.add_item(TextDisplay("You have cancelled the trade."))
+                section.add_item(TextDisplay(t("You have cancelled the trade.")))
             else:
-                section.add_item(TextDisplay("The trade has been cancelled."))
+                section.add_item(TextDisplay(t("The trade has been cancelled.")))
         elif self.confirmed:
             self.accent_colour = discord.Colour.green()
-            section.add_item(TextDisplay("You have confirmed your trade proposal."))
+            section.add_item(TextDisplay(t("You have confirmed your trade proposal.")))
         elif self.view.confirmation_phase:
             self.accent_colour = discord.Colour.gold()
-            section.add_item(TextDisplay("You have both locked your proposals, review and confirm the trade."))
+            section.add_item(TextDisplay(t("You have both locked your proposals, review and confirm the trade.")))
         elif self.locked:
             self.accent_colour = discord.Colour.yellow()
             section.add_item(
                 TextDisplay(
-                    "You have locked your proposal. "
-                    "Wait for the other player to lock their proposal before finishing the trade."
+                    t(
+                        "You have locked your proposal. "
+                        "Wait for the other player to lock their proposal before finishing the trade."
+                    )
                 )
             )
         else:
             self.accent_colour = discord.Colour.blue()
             add_cmd = self.cog.add.extras.get("mention", "`/trade add`")
             del_cmd = self.cog.remove.extras.get("mention", "`/trade remove`")
-            section.add_item(TextDisplay(f"You can edit your proposal with {add_cmd} and {del_cmd}."))
+            section.add_item(
+                TextDisplay(
+                    t("You can edit your proposal with {add_command} and {remove_command}.").format(
+                        add_command=add_cmd, remove_command=del_cmd
+                    )
+                )
+            )
 
-        section.add_item(TextDisplay(f"-# {len(self.proposal)} {settings.plural_collectible_name} selected"))
+        section.add_item(
+            TextDisplay(
+                t("-# {count} {collectibles} selected").format(
+                    count=len(self.proposal), collectibles=settings.plural_collectible_name
+                )
+            )
+        )
         self.add_item(section)
         self.add_item(Separator())
 
@@ -227,12 +253,14 @@ class TradingUser(Container):
         self.select_menu.disabled = self.locked or self.trade.cancelled
 
         if settings.currency_enabled:
-            button = Button(label="Change", style=discord.ButtonStyle.primary)
+            button = Button(label=t("Change"), style=discord.ButtonStyle.primary)
             button.callback = self.set_currency
             currency_section = Section(
                 TextDisplay(
-                    f"{settings.currency_display_name(self.cog.bot)} proposed: "
-                    f"{format_currency(self.money, bot=self.cog.bot)}"
+                    t("{currency} proposed: {amount}").format(
+                        currency=settings.currency_display_name(self.cog.bot),
+                        amount=format_currency(self.money, bot=self.cog.bot),
+                    )
                 ),
                 accessory=button,
             )
@@ -247,7 +275,7 @@ class TradingUser(Container):
                 # this will insert the controls right beneath the select menu
                 await self.menu.init(container=self)
             else:
-                self.select_menu.add_option(label="Nothing yet")
+                self.select_menu.add_option(label=t("Nothing yet"))
                 self.select_menu.disabled = True
                 self.select_menu.max_values = 1
         else:
@@ -346,7 +374,7 @@ class TradingUser(Container):
         self.locked = True
 
         if not self.proposal:
-            self.proposal_list.content = "Nothing proposed"
+            self.proposal_list.content = t("Nothing proposed")
             return
         if (
             (not self.view.trader1.proposal and not self.view.trader1.money)
@@ -355,7 +383,7 @@ class TradingUser(Container):
         ):
             await self.view.cleanup()
             self.view.add_item(
-                TextDisplay("Both of you have locked without proposing anything, the trade is cancelled.")
+                TextDisplay(t("Both of you have locked without proposing anything, the trade is cancelled."))
             )
 
         # replace the select menu with immutable text
@@ -446,6 +474,13 @@ class TradeInstance(LayoutView):
 
         self.timeout_task = asyncio.create_task(self._timeout(), name=f"trade-timeout-{id(self)}")
 
+        # @buttons.button() labels are resolved once at class-body (import) time - override them
+        # here so t() sees the locale of whoever ran /trade start, which created this view
+        self.lock_button.label = t("Lock proposal")
+        self.clear_button.label = t("Reset")
+        self.cancel_button.label = t("Cancel trade")
+        self.confirm_button.label = t("Confirm")
+
     async def on_error(self, interaction: Interaction, error: Exception, item: Item) -> None:
         if isinstance(error, discord.NotFound) and error.code in UNKNOWN_INTERACTION:
             log.warning("Expired interaction", exc_info=error)
@@ -453,9 +488,9 @@ class TradeInstance(LayoutView):
         log.exception(f"Error in trade between {self.trader1} and {self.trader2}", exc_info=error)
         await self.cleanup()
         send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
-        await send("An error occurred, the trade will be cancelled.", ephemeral=True)
+        await send(t("An error occurred, the trade will be cancelled."), ephemeral=True)
         self.add_item(
-            TextDisplay("An error occurred and the trade has been cancelled! Contact support if this persists.")
+            TextDisplay(t("An error occurred and the trade has been cancelled! Contact support if this persists."))
         )
         await self.message.edit(view=self)
 
@@ -465,8 +500,9 @@ class TradeInstance(LayoutView):
             await self._cleanup()
 
     async def interaction_check(self, interaction: Interaction) -> bool:
+        current_locale.set(interaction.locale.value)
         if interaction.user.id not in (self.trader1.user.id, self.trader2.user.id):
-            await interaction.response.send_message("You are not part of this trade!", ephemeral=True)
+            await interaction.response.send_message(t("You are not part of this trade!"), ephemeral=True)
             return False
         return True
 
@@ -476,7 +512,7 @@ class TradeInstance(LayoutView):
     async def lock_button(self, interaction: Interaction, button: Button):
         trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
         if trader.locked:
-            await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
+            await interaction.response.send_message(t("You have already locked your proposal!"), ephemeral=True)
             return
 
         await interaction.response.defer()
@@ -493,11 +529,11 @@ class TradeInstance(LayoutView):
     async def clear_button(self, interaction: Interaction, button: Button):
         trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
         if trader.locked:
-            await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
+            await interaction.response.send_message(t("You have already locked your proposal!"), ephemeral=True)
             return
-        view = ConfirmChoiceView(interaction, accept_message="Clearing your proposal...")
+        view = ConfirmChoiceView(interaction, accept_message=t("Clearing your proposal..."))
         await interaction.response.send_message(
-            "Are you sure you want to clear your proposal?", view=view, ephemeral=True
+            t("Are you sure you want to clear your proposal?"), view=view, ephemeral=True
         )
         await view.wait()
         if not view.value:
@@ -518,10 +554,12 @@ class TradeInstance(LayoutView):
     async def cancel_button(self, interaction: Interaction, button: Button):
         trader = {self.trader1.user.id: self.trader1, self.trader2.user.id: self.trader2}[interaction.user.id]
         view = ConfirmChoiceView(
-            interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
+            interaction,
+            accept_message=t("Cancelling the trade..."),
+            cancel_message=t("This request has been cancelled."),
         )
         await interaction.response.send_message(
-            "Are you sure you want to cancel this trade?", view=view, ephemeral=True
+            t("Are you sure you want to cancel this trade?"), view=view, ephemeral=True
         )
         await view.wait()
         if not view.value:
@@ -547,7 +585,8 @@ class TradeInstance(LayoutView):
             can_confirm_at = self.confirmation_phase_start + timedelta(seconds=COOLDOWN_BYPASS_TIMEOUT)
             if utcnow() < can_confirm_at:
                 await interaction.response.send_message(
-                    f"You can confirm the trade {format_dt(can_confirm_at, style='R')}.", ephemeral=True
+                    t("You can confirm the trade {time}.").format(time=format_dt(can_confirm_at, style="R")),
+                    ephemeral=True,
                 )
                 return
         await interaction.response.defer()
@@ -566,13 +605,19 @@ class TradeInstance(LayoutView):
         trade.trader1 = TradingUser(trade, *trader1)
         trade.trader2 = TradingUser(trade, *trader2)
         trade.clear_items()
-        trade.add_item(TextDisplay(f"Hey {trader2[1].mention}, {trader1[1].mention} is proposing a trade!"))
+        trade.add_item(
+            TextDisplay(
+                t("Hey {invited}, {inviter} is proposing a trade!").format(
+                    invited=trader2[1].mention, inviter=trader1[1].mention
+                )
+            )
+        )
         trade.add_item(trade.trader1)
         trade.add_item(trade.trader2)
         trade.buttons.remove_item(trade.confirm_button)
         trade.add_item(trade.buttons)
         timeout = utcnow() + timedelta(seconds=TRADE_TIMEOUT)
-        trade.add_item(TextDisplay(f"-# This trade will timeout {format_dt(timeout, style='R')}."))
+        trade.add_item(TextDisplay(t("-# This trade will timeout {time}.").format(time=format_dt(timeout, style="R"))))
         return trade
 
     @property
@@ -720,7 +765,9 @@ class TradeInstance(LayoutView):
         trade = await sync_to_async(self.perform_trade_operation)()
         self.stop()
         # edition of the message will be triggered by the caller
-        self.add_item(TextDisplay(f"## The trade has been completed!\n-# ID: `#{trade.pk:0X}`"))
+        self.add_item(
+            TextDisplay(t("## The trade has been completed!\n-# ID: `#{trade_id:0X}`").format(trade_id=trade.pk))
+        )
 
     async def _cleanup(self):
         self.stop()
@@ -737,6 +784,10 @@ class TradeInstance(LayoutView):
         await self.cleanup()
         self.clear_items()
         self.add_item(
-            TextDisplay(f"Trading has been globally disabled by administrators for the following reason: {reason}")
+            TextDisplay(
+                t("Trading has been globally disabled by administrators for the following reason: {reason}").format(
+                    reason=reason
+                )
+            )
         )
         await self.message.edit(view=self)

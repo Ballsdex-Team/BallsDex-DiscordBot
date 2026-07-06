@@ -12,6 +12,7 @@ import discord
 from discord.utils import format_dt
 from django.contrib import admin
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Cast
@@ -88,11 +89,25 @@ class GuildConfig(models.Model):
     admin_command_synced = models.BooleanField(
         help_text="True if slash admin commands are present in this server", default=False, editable=False
     )
+    language = models.CharField(
+        max_length=8,
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Default language used to display countryballs in this server. "
+        "Leave empty to use the bot's default language.",
+    )
 
     objects: Manager[Self] = Manager()
 
     def __str__(self) -> str:
         return str(self.guild_id)
+
+    def clean(self) -> None:
+        if self.language and self.language not in settings.available_languages:
+            raise ValidationError(
+                f"'{self.language}' is not one of the enabled languages: {settings.available_languages}"
+            )
 
     class Meta:
         managed = True
@@ -121,6 +136,14 @@ class Player(models.Model):
         help_text="To bypass or not the trade cooldown",
         default=TradeCooldownPolicy.COOLDOWN,
     )
+    language = models.CharField(
+        max_length=8,
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Preferred language used to display countryballs. "
+        "Leave empty to use the server's or bot's default language.",
+    )
     extra_data = models.JSONField(blank=True, default=dict)
 
     objects: Manager[Self] = Manager()
@@ -133,6 +156,12 @@ class Player(models.Model):
 
     def __str__(self) -> str:
         return f"{'\N{NO MOBILE PHONES} ' if self.is_blacklisted() else ''}#{self.pk} ({self.discord_id})"
+
+    def clean(self) -> None:
+        if self.language and self.language not in settings.available_languages:
+            raise ValidationError(
+                f"'{self.language}' is not one of the enabled languages: {settings.available_languages}"
+            )
 
     def is_blacklisted(self) -> bool:
         # this should only be used for the admin panel
@@ -312,6 +341,10 @@ class Ball(models.Model):
     enabled_objects: EnabledManager[Self] = EnabledManager()
     tradeable_objects: TradeableManager[Self] = TradeableManager()
 
+    localizations: models.QuerySet["BallTranslation"]
+    # populated in BallsDexBot.load_cache(), maps a language code to its BallTranslation
+    _translations: dict[str, "BallTranslation"]
+
     class Meta:
         managed = True
         db_table = "ball"
@@ -330,6 +363,31 @@ class Ball(models.Model):
     def __str__(self) -> str:
         return self.country
 
+    def _localization(self, language: str | None) -> "BallTranslation | None":
+        if not language:
+            return None
+        return getattr(self, "_translations", {}).get(language)
+
+    def localized_name(self, language: str | None = None) -> str:
+        """
+        Return this ball's name in `language`, falling back to the base name if no
+        translation is configured for it (or `language` is `None`).
+        """
+        localization = self._localization(language)
+        return (localization and localization.name) or self.country
+
+    def localized_short_name(self, language: str | None = None) -> str | None:
+        localization = self._localization(language)
+        return (localization and localization.short_name) or self.short_name
+
+    def localized_capacity_name(self, language: str | None = None) -> str:
+        localization = self._localization(language)
+        return (localization and localization.capacity_name) or self.capacity_name
+
+    def localized_capacity_description(self, language: str | None = None) -> str:
+        localization = self._localization(language)
+        return (localization and localization.capacity_description) or self.capacity_description
+
     @admin.display(description="Current collection card")
     def collection_image(self) -> SafeText:
         return image_display(str(self.collection_card))
@@ -347,6 +405,49 @@ class Ball(models.Model):
         self.translations = lower_catch_names(self.translations)
 
         return super().save(**kwargs)
+
+
+class BallTranslation(models.Model):
+    """
+    A translated display name/capacity for a Ball in a specific language. Distinct from
+    `Ball.catch_names`/`Ball.translations`, which only affect catch matching, not display.
+    """
+
+    ball = models.ForeignKey(Ball, on_delete=models.CASCADE, related_name="localizations")
+    language = models.CharField(max_length=8, help_text="Language code, must be one of the bot's enabled languages")
+    name = models.CharField(
+        max_length=48, blank=True, null=True, help_text="Translated name. Leave empty to fall back to the base name."
+    )
+    short_name = models.CharField(
+        max_length=24,
+        blank=True,
+        null=True,
+        help_text="Translated short name, used only when generating the card if the translated name is too long.",
+    )
+    capacity_name = models.CharField(
+        max_length=64, blank=True, null=True, help_text="Translated name of the countryball's capacity."
+    )
+    capacity_description = models.CharField(
+        max_length=256, blank=True, null=True, help_text="Translated description of the countryball's capacity."
+    )
+
+    objects: Manager[Self] = Manager()
+
+    class Meta:
+        managed = True
+        db_table = "ball_translation"
+        unique_together = (("ball", "language"),)
+        verbose_name = "translation"
+        verbose_name_plural = "translations"
+
+    def __str__(self) -> str:
+        return f"{self.ball} ({self.language})"
+
+    def clean(self) -> None:
+        if self.language and self.language not in settings.available_languages:
+            raise ValidationError(
+                f"'{self.language}' is not one of the enabled languages: {settings.available_languages}"
+            )
 
 
 class BallGroup(models.Model):
@@ -415,9 +516,15 @@ class BallInstance(models.Model):
             models.Index(fields=("server_id", "catch_date")),
         )
 
-    def short_description(self, *, is_trade: bool = False) -> str:
+    def short_description(self, *, is_trade: bool = False, language: str | None = None) -> str:
         """
         Return a short string representation. Similar to str(x) without arguments.
+
+        Parameters
+        ----------
+        language: str | None
+            If given, the countryball's name is displayed in this language when a translation
+            is configured for it (see `Ball.localized_name`). Defaults to the base name.
         """
         text = ""
         if self.deleted:
@@ -430,7 +537,7 @@ class BallInstance(models.Model):
             text += " "
         if self.specialcard:
             text += self.specialcard.emoji or ""
-        return f"{text}#{self.pk:0X} {self.countryball.country}"
+        return f"{text}#{self.pk:0X} {self.countryball.localized_name(language)}"
 
     def __str__(self) -> str:
         return self.short_description()
@@ -481,8 +588,9 @@ class BallInstance(models.Model):
         include_emoji: bool = False,
         bot: "BallsDexBot | None" = None,
         is_trade: bool = False,
+        language: str | None = None,
     ) -> str:
-        text = self.short_description(is_trade=is_trade)
+        text = self.short_description(is_trade=is_trade, language=language)
         if not short:
             text += f" ATK:{self.attack_bonus:+d}% HP:{self.health_bonus:+d}%"
         if include_emoji:

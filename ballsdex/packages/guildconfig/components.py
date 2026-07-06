@@ -4,6 +4,7 @@ import discord
 from discord.ui import Button, button
 
 from ballsdex.core.discord import View
+from ballsdex.core.translation import current_locale, t
 from bd_models.models import GuildConfig
 from settings.models import settings
 
@@ -25,12 +26,21 @@ class AcceptTOSView(View):
         self.new_player = new_player
         self.message: Optional[discord.Message] = None
 
-        self.add_item(Button(style=discord.ButtonStyle.link, label="Terms of Service", url=settings.terms_of_service))
-        self.add_item(Button(style=discord.ButtonStyle.link, label="Privacy policy", url=settings.privacy_policy))
+        self.add_item(
+            Button(style=discord.ButtonStyle.link, label=t("Terms of Service"), url=settings.terms_of_service)
+        )
+        self.add_item(Button(style=discord.ButtonStyle.link, label=t("Privacy policy"), url=settings.privacy_policy))
+        # `@button()` labels are resolved once at class-body (import) time, so the decorator
+        # below keeps a static English default - override it here instead, where `t()` can see
+        # the locale of whoever is running the /config channel command that creates this view.
+        self.accept_button.label = t("Accept")
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"]) -> bool:
+        current_locale.set(interaction.locale.value)
         if interaction.user.id != self.new_player.id:
-            await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
+            await interaction.response.send_message(
+                t("You are not allowed to interact with this menu."), ephemeral=True
+            )
             return False
         return True
 
@@ -49,9 +59,10 @@ class AcceptTOSView(View):
             except discord.HTTPException:
                 pass
         await interaction.response.send_message(
-            f"The new spawn channel was successfully set to {self.channel.mention}.\n"
-            f"{settings.collectible_name.title()}s will start spawning as"
-            " users talk unless the bot is disabled."
+            t(
+                "The new spawn channel was successfully set to {channel}.\n"
+                "{collectibles} will start spawning as users talk unless the bot is disabled."
+            ).format(channel=self.channel.mention, collectibles=settings.collectible_name.title() + "s")
         )
 
     async def on_timeout(self) -> None:

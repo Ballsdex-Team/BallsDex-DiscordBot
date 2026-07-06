@@ -2,13 +2,15 @@ from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
 from django.contrib.admin.utils import quote
-from django.forms import Textarea
+from django.forms import Select, Textarea
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 
-from ..models import Ball, BallGroup, BallInstance, Economy, Regime, TradeObject, transform_media
+from settings.models import settings
+
+from ..models import Ball, BallGroup, BallInstance, BallTranslation, Economy, Regime, TradeObject, transform_media
 
 if TYPE_CHECKING:
     from django.db.models import Field, Model, QuerySet
@@ -79,10 +81,24 @@ class BallGroupAdmin(admin.ModelAdmin):
     filter_horizontal = ("countryballs",)
 
 
+class BallTranslationInline(admin.TabularInline):
+    model = BallTranslation
+    extra = 0
+    fields = ("language", "name", "short_name", "capacity_name", "capacity_description")
+
+    def formfield_for_dbfield(
+        self, db_field: "Field[Any, Any]", request: "HttpRequest | None", **kwargs: Any
+    ) -> "Field[Any, Any] | None":
+        if db_field.name == "language":
+            kwargs["widget"] = Select(choices=[(code, code) for code in settings.available_languages])
+        return super().formfield_for_dbfield(db_field, request, **kwargs)  # type: ignore
+
+
 @admin.register(Ball)
 class BallAdmin(admin.ModelAdmin):
     autocomplete_fields = ("regime", "economy")
     readonly_fields = ("collection_image", "spawn_image")
+    inlines = (BallTranslationInline,)
     save_on_top = True
     fieldsets = [
         (None, {"fields": ["country", "health", "attack", "rarity", "emoji_id", "economy", "regime"]}),

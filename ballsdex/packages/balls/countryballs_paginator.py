@@ -7,6 +7,7 @@ from discord.ui import ActionRow, Button, Select, TextDisplay
 from django.db.models import Count, Exists, OuterRef, Q, Value
 
 from ballsdex.core.discord import LayoutView
+from ballsdex.core.translation import t
 from bd_models.models import Ball, BallInstance, Player, Special
 from settings.models import settings
 
@@ -21,6 +22,9 @@ class CountryballsViewer(LayoutView):
     def __init__(self, ephemeral: bool = False, *, timeout: float | None = 180) -> None:
         super().__init__(timeout=timeout)
         self.ephemeral = ephemeral
+        # @quit_row.button() label is resolved once at class-body (import) time - override it
+        # here so t() sees the locale of whoever ran the command that creates this view
+        self.quit_button.label = t("Quit")
 
     @select_row.select()
     async def selected(self, interaction: discord.Interaction["BallsDexBot"], select: Select):
@@ -45,6 +49,9 @@ class CountryballsDuplicateSource(LayoutView):
     def __init__(self, is_special: bool, *, timeout: float | None = 180) -> None:
         super().__init__(timeout=timeout)
         self.is_special = is_special
+        # @quit_row.button() label is resolved once at class-body (import) time - override it
+        # here so t() sees the locale of whoever ran the command that creates this view
+        self.quit_button.label = t("Quit")
 
     header = TextDisplay("")
     select_row = ActionRow()
@@ -93,28 +100,33 @@ class CountryballsDuplicateSource(LayoutView):
         counts = await balls_query.values("total", "traded", "specials").aget()
 
         if not counts:
-            await interaction.followup.send(f"You don't have any {settings.plural_collectible_name} yet.")
+            await interaction.followup.send(
+                t("You don't have any {collectibles} yet.").format(collectibles=settings.plural_collectible_name)
+            )
             return
         special_emojis = {x.name: x.emoji async for x in Special.objects.filter(hidden=False)}
 
-        desc = (
-            f"**Total**: {counts['total']:,} ({counts['total'] - counts['traded']:,} caught, "
-            f"{counts['traded']:,} received from trade)\n"
+        desc = t("**Total**: {total} ({caught} caught, {traded} received from trade)\n").format(
+            total=f"{counts['total']:,}",
+            caught=f"{counts['total'] - counts['traded']:,}",
+            traded=f"{counts['traded']:,}",
         )
         if self.is_special:
-            desc = f"**{settings.plural_collectible_name.title()}**: (Top 15)\n"
+            desc = t("**{collectibles}**: (Top 15)\n").format(collectibles=settings.plural_collectible_name.title())
             async for country in grouped_query.values("ball__country", "ball__emoji_id", "count")[:15]:
                 emoji = interaction.client.get_emoji(country["ball__emoji_id"])
                 desc += f"{emoji} {country['ball__country']}: {country['count']:,}\n"
         else:
-            desc += f"**Total Specials**: {counts['specials']:,}\n"
+            desc += t("**Total Specials**: {specials}\n").format(specials=f"{counts['specials']:,}")
             if counts["specials"]:
-                desc += "**Specials**:\n"
+                desc += t("**Specials**:") + "\n"
             async for special in grouped_query.values("special__name", "count"):
                 emoji = special_emojis.get(special["special__name"], "")
                 desc += f"{emoji} {special['special__name']}: {special['count']:,}\n"
 
-        embed = discord.Embed(title=f"{name} Collection", description=desc, color=discord.Color.blurple())
+        embed = discord.Embed(
+            title=t("{name} Collection").format(name=name), description=desc, color=discord.Color.blurple()
+        )
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         if countryball:
             file_location = countryball.wild_card.path

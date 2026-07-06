@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Literal
 
+from ballsdex.core.translation import t
 from ballsdex.packages.countryballs.spawn import BaseSpawnManager
 
 if TYPE_CHECKING:
@@ -81,7 +82,15 @@ class ABSpawner(BaseSpawnManager):
             a_or_b = "B"
             percentage = 100 - self.percentage
         await ctx.send(
-            f"[AB Spawner] Server {guild.name} ({guild.id}) has been assigned to spawn manager "
-            f"{a_or_b} (`{manager.__class__.__name__}`) ({percentage}% chance)",
+            t(
+                "[AB Spawner] Server {guild_name} ({guild_id}) has been assigned to spawn manager "
+                "{a_or_b} (`{manager_class}`) ({percentage}% chance)"
+            ).format(
+                guild_name=guild.name,
+                guild_id=guild.id,
+                a_or_b=a_or_b,
+                manager_class=manager.__class__.__name__,
+                percentage=percentage,
+            ),
             ephemeral=True,
         )

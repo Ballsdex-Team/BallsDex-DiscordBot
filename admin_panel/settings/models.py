@@ -24,6 +24,7 @@ DISCORD_INVITE_RE = re.compile(r"^https?://(discord.gg|discord(app)?.com/invite)
 DISCORD_WEBHOOK_RE = re.compile(r"^https://discord.com/api/webhooks/[0-9]{17,22}/[a-zA-Z0-9-_]{68}$")
 SENTRY_ENV_RE = re.compile(r"^(?!None$)[^\s/]{,64}$")
 PYTHON_PATH_RE = re.compile(r"^[a-zA-Z_][\\.a-zA-Z0-9_]+$")
+LANGUAGE_LIST_RE = re.compile(r"^[a-z]{2,3}(-[A-Za-z]{2,8})?(;[a-z]{2,3}(-[A-Za-z]{2,8})?)*$")
 
 
 class Settings(models.Model):
@@ -50,6 +51,23 @@ class Settings(models.Model):
     site_base_url = models.URLField(
         default="http://localhost:8000", help_text="Base URL of this website, accessible with admin commands."
     )
+
+    # localization
+    enabled_languages = models.TextField(
+        help_text="Semicolon-separated list of language codes players and servers can select from "
+        "(e.g. 'en;fr;es'). The first code is used as the fallback/default language.",
+        default="en",
+        validators=(RegexValidator(LANGUAGE_LIST_RE, message="Invalid language list."),),
+    )
+
+    @cached_property
+    def available_languages(self) -> list[str]:
+        return [x for x in self.enabled_languages.split(";") if x]
+
+    @cached_property
+    def default_language(self) -> str:
+        languages = self.available_languages
+        return languages[0] if languages else "en"
 
     # currency stuff
     currency_name = models.CharField(
@@ -251,13 +269,20 @@ class Settings(models.Model):
                 )[0]
 
     def get_formatted_message(
-        self, category: PromptMessage.PromptType, model: Ball, mention: str, bot: BallsDexBot, **kwargs: str
+        self,
+        category: PromptMessage.PromptType,
+        model: Ball,
+        mention: str,
+        bot: BallsDexBot,
+        *,
+        language: str | None = None,
+        **kwargs: str,
     ):
         message = self.get_random_message(category)
         try:
             return message.format(
                 user=mention,
-                ball=model.country,
+                ball=model.localized_name(language),
                 emoji=str(bot.get_emoji(model.emoji_id)),
                 collectible=self.collectible_name,
                 collectibles=self.plural_collectible_name,

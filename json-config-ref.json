@@ -102,6 +102,14 @@
             "description": "Enables the display of rarity in the top right hand corner of a card. Should not be used with economies.",
             "default": false
         },
+        "languages": {
+            "type": "array",
+            "description": "List of language codes (e.g. 'en', 'fr') available for players and servers to select for countryball display. The first entry is used as the fallback/default language.",
+            "items": {
+                "type": "string"
+            },
+            "default": ["en"]
+        },
         "bot-name": {
             "type": "string",
             "description": "The name of the bot, used in places such as the /completion command",

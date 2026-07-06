@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from ballsdex.core import tracing
 from ballsdex.core.discord import LayoutView
+from ballsdex.core.translation import t
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import Menu, ModelSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
@@ -107,16 +108,18 @@ class Trade(commands.GroupCog):
         assert interaction.channel
         if self.lockdown is not None:
             await interaction.response.send_message(
-                f"Trading has been globally disabled by the admins for the following reason: {self.lockdown}",
+                t("Trading has been globally disabled by the admins for the following reason: {reason}").format(
+                    reason=self.lockdown
+                ),
                 ephemeral=True,
             )
             return
 
         if user.bot:
-            await interaction.response.send_message("You cannot trade with bots.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot trade with bots."), ephemeral=True)
             return
         if user.id == interaction.user.id:
-            await interaction.response.send_message("You cannot trade with yourself.", ephemeral=True)
+            await interaction.response.send_message(t("You cannot trade with yourself."), ephemeral=True)
             return
 
         player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
@@ -124,20 +127,22 @@ class Trade(commands.GroupCog):
         blocked = await player1.is_blocked(player2)
         if blocked:
             await interaction.response.send_message(
-                "You cannot begin a trade with a user that you have blocked.", ephemeral=True
+                t("You cannot begin a trade with a user that you have blocked."), ephemeral=True
             )
             return
         blocked2 = await player2.is_blocked(player1)
         if blocked2:
             await interaction.response.send_message(
-                "You cannot begin a trade with a user that has blocked you.", ephemeral=True
+                t("You cannot begin a trade with a user that has blocked you."), ephemeral=True
             )
             return
         if await self.get_trade(interaction) is not None:
-            await interaction.response.send_message("You already have an active trade.", ephemeral=True)
+            await interaction.response.send_message(t("You already have an active trade."), ephemeral=True)
             return
         if await self.get_trade(interaction, user) is not None:
-            await interaction.response.send_message(f"{user.mention} already has an active trade.", ephemeral=True)
+            await interaction.response.send_message(
+                t("{user} already has an active trade.").format(user=user.mention), ephemeral=True
+            )
             return
 
         await interaction.response.defer(ephemeral=True)
@@ -162,7 +167,7 @@ class Trade(commands.GroupCog):
             log.error(f"Failed to initialize trade between {interaction.user.id} and {user.id}", exc_info=exc)
             raise
         else:
-            await interaction.followup.send("The trade has started.", ephemeral=True)
+            await interaction.followup.send(t("The trade has started."), ephemeral=True)
 
     @app_commands.command(extras={"trade": TradeCommandType.PICK})
     async def add(
@@ -183,7 +188,7 @@ class Trade(commands.GroupCog):
         """
         result = await self.get_trade(interaction)
         if result is None:
-            await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
+            await interaction.response.send_message(t("You do not have any active trade."), ephemeral=True)
             return
         trade, trader = result
         try:
@@ -193,7 +198,10 @@ class Trade(commands.GroupCog):
         else:
             await trade.edit_message(None)
             await interaction.response.send_message(
-                f"{countryball.description(is_trade=True, include_emoji=True, bot=self.bot)} added.", ephemeral=True
+                t("{countryball} added.").format(
+                    countryball=countryball.description(is_trade=True, include_emoji=True, bot=self.bot)
+                ),
+                ephemeral=True,
             )
 
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
@@ -215,7 +223,7 @@ class Trade(commands.GroupCog):
         """
         result = await self.get_trade(interaction)
         if result is None:
-            await interaction.response.send_message("You do not have any active trade.", ephemeral=True)
+            await interaction.response.send_message(t("You do not have any active trade."), ephemeral=True)
             return
         trade, trader = result
         try:
@@ -225,7 +233,10 @@ class Trade(commands.GroupCog):
         else:
             await trade.edit_message(None)
             await interaction.response.send_message(
-                f"{countryball.description(is_trade=True, include_emoji=True, bot=self.bot)} removed.", ephemeral=True
+                t("{countryball} removed.").format(
+                    countryball=countryball.description(is_trade=True, include_emoji=True, bot=self.bot)
+                ),
+                ephemeral=True,
             )
 
     @app_commands.command()
@@ -274,7 +285,7 @@ class Trade(commands.GroupCog):
 
         if days is not None and days <= 0:
             await interaction.followup.send(
-                "Invalid number of days. Please provide a strictly positive value.", ephemeral=True
+                t("Invalid number of days. Please provide a strictly positive value."), ephemeral=True
             )
             return
 
@@ -286,7 +297,7 @@ class Trade(commands.GroupCog):
                 p2 = await Player.objects.only("id").aget(discord_id=trade_user.id)
         except Player.DoesNotExist:
             send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
-            await send("One of the players does not exist.", ephemeral=True)
+            await send(t("One of the players does not exist."), ephemeral=True)
             return
         if trade_user:
             queryset = queryset.filter((Q(player1=p1, player2=p2)) | (Q(player1=p2, player2=p1)))
@@ -315,7 +326,7 @@ class Trade(commands.GroupCog):
             queryset = queryset.filter(tradeobject__ballinstance__in=matching_balls).distinct()
 
         if not await queryset.aexists():
-            await interaction.followup.send("No history found.", ephemeral=True)
+            await interaction.followup.send(t("No history found."), ephemeral=True)
             return
 
         async def callback(interaction: Interaction):
@@ -332,10 +343,10 @@ class Trade(commands.GroupCog):
             await interaction.followup.send(view=view, ephemeral=True)
 
         view = LayoutView()
-        header = discord.ui.TextDisplay("## Trade history")
+        header = discord.ui.TextDisplay(t("## Trade history"))
         view.add_item(header)
         action = discord.ui.ActionRow()
-        select = discord.ui.Select(placeholder="Choose a trade to display")
+        select = discord.ui.Select(placeholder=t("Choose a trade to display"))
         select.callback = callback
         action.add_item(select)
         view.add_item(action)
@@ -344,7 +355,7 @@ class Trade(commands.GroupCog):
         await menu.init()
         total_pages = source.get_max_pages()
         if total_pages > 1:
-            header.content = f"## Trade history (Page 1/{total_pages})"
+            header.content = t("## Trade history (Page 1/{total_pages})").format(total_pages=total_pages)
         await interaction.followup.send(view=view, ephemeral=True)
 
     @app_commands.command()
@@ -379,13 +390,15 @@ class Trade(commands.GroupCog):
         await interaction.response.defer(thinking=True, ephemeral=True)
         result = await self.get_trade(interaction)
         if result is None:
-            await interaction.followup.send("You do not have any active trade.", ephemeral=True)
+            await interaction.followup.send(t("You do not have any active trade."), ephemeral=True)
             return
         _, trader = result
         if trader.locked:
             await interaction.followup.send(
-                "You have locked your proposal, it cannot be edited! "
-                "You can click the cancel button to stop the trade instead.",
+                t(
+                    "You have locked your proposal, it cannot be edited! "
+                    "You can click the cancel button to stop the trade instead."
+                ),
                 ephemeral=True,
             )
             return
@@ -410,7 +423,9 @@ class Trade(commands.GroupCog):
             query = filter_balls(filter, query, interaction.guild_id)
         query.query.add_ordering("-id")  # enforce a unique ordering to prevent mismatch during pagination
         if not await query.aexists():
-            await interaction.followup.send(f"No {settings.plural_collectible_name} found.", ephemeral=True)
+            await interaction.followup.send(
+                t("No {collectibles} found.").format(collectibles=settings.plural_collectible_name), ephemeral=True
+            )
             return
         if reverse:
             query = query.reverse()
@@ -429,16 +444,18 @@ class Trade(commands.GroupCog):
         await interaction.response.defer(ephemeral=True, thinking=True)
         result = await self.get_trade(interaction)
         if result is None:
-            await interaction.followup.send("You do not have any active trade.")
+            await interaction.followup.send(t("You do not have any active trade."))
             return
         trade, trader = result
         if trade.trader1.confirmed and trade.trader2.confirmed:
-            await interaction.followup.send("You can't cancel now; the trade has already gone through.")
+            await interaction.followup.send(t("You can't cancel now; the trade has already gone through."))
             return
         view = ConfirmChoiceView(
-            interaction, accept_message="Cancelling the trade...", cancel_message="This request has been cancelled."
+            interaction,
+            accept_message=t("Cancelling the trade..."),
+            cancel_message=t("This request has been cancelled."),
         )
-        await interaction.followup.send("Are you sure you want to cancel this trade?", view=view, ephemeral=True)
+        await interaction.followup.send(t("Are you sure you want to cancel this trade?"), view=view, ephemeral=True)
         await view.wait()
         if not view.value:
             return
