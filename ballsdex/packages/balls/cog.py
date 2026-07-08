@@ -545,11 +545,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             return
 
         cog = cast("CountryBallsSpawner | None", self.bot.get_cog("CountryBallsSpawner"))
-        if not cog or not interaction.guild_id or cog.cache.get(interaction.guild_id) != interaction.channel_id:
-            await interaction.response.send_message(
-                f"You can only drop a {settings.collectible_name} in the spawn channel.", ephemeral=True
-            )
-            return
+        
 
         if not countryball.is_tradeable:
             await interaction.response.send_message(
