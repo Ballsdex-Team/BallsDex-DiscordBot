@@ -93,7 +93,7 @@ class Collectible(commands.GroupCog):
                 )
                 return
             else:
-                await player.remove_money(player.money)
+                await player.remove_money(collectible.price)
 
         await CollectibleInstance.objects.acreate(player=player, collectible=collectible)
         await interaction.followup.send(f"You've claimed **{collectible.name}!** Congratulations!")
