@@ -21,6 +21,9 @@ RECTANGLE_HEIGHT = (HEIGHT // 5) * 2
 CORNERS = ((34, 261), (1393, 992))
 artwork_size = [b - a for a, b in zip(*CORNERS)]
 
+GROUP_ICON_SIZE = 100
+GROUP_ICON_MARGIN = 30
+
 # ===== TIP =====
 #
 # If you want to quickly test the image generation, there is a CLI tool to quickly generate
@@ -131,6 +134,14 @@ def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any
 
     artwork = Image.open(ball.collection_card).convert("RGBA")
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
+
+    for i, group in enumerate(ball.cached_groups):
+        group_icon = ImageOps.fit(Image.open(group.icon).convert("RGBA"), (GROUP_ICON_SIZE, GROUP_ICON_SIZE))
+
+        upper_left_y = CORNERS[1][1] - GROUP_ICON_SIZE // 2
+        upper_left_x = CORNERS[1][0] - (GROUP_ICON_MARGIN // 2 + (i + 1) * GROUP_ICON_SIZE + i * GROUP_ICON_MARGIN)
+
+        image.paste(group_icon, (upper_left_x, upper_left_y), mask=group_icon)
 
     if icon:
         icon = ImageOps.fit(icon, (192, 192))
