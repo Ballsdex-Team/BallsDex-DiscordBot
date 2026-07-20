@@ -38,4 +38,7 @@ class FilteringChoices(enum.Enum):
     only_specials = "special"
     non_specials = "non_special"
     self_caught = "self_caught"
+    traded_only = "traded_only"
     this_server = "this_server"
+    favorites = "favorites"
+    duplicates = "duplicates"

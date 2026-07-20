@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -18,6 +19,11 @@ urlpatterns = (
     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 )
+
+for app_config in apps.get_app_configs():
+    prefix = getattr(app_config, "url_prefix", None)
+    if prefix is not None:
+        urlpatterns.append(path(prefix, include(f"{app_config.name}.urls")))
 
 if "debug_toolbar" in settings.INSTALLED_APPS:
     try:

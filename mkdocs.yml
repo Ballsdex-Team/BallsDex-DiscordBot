@@ -63,6 +63,7 @@ nav:
           - selfhosting/misc/backup-and-transfers.md
           - selfhosting/misc/migrating-windows-wsl.md
           - selfhosting/misc/managing-media.md
+          - selfhosting/misc/hosting-multiple-bots.md
   - Developing:
     - dev/custom-package.md
     - API Reference:

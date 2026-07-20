@@ -16,6 +16,7 @@ from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Cast
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.safestring import SafeText, mark_safe
 from django.utils.timezone import now
 
@@ -43,6 +44,7 @@ balls: dict[int, Ball] = {}
 regimes: dict[int, Regime] = {}
 economies: dict[int, Economy] = {}
 specials: dict[int, Special] = {}
+groups: dict[int, BallGroup] = {}
 
 
 class QuerySet[T: models.Model](models.QuerySet[T]):
@@ -79,6 +81,9 @@ class GuildConfig(models.Model):
     enabled = models.BooleanField(help_text="Whether the bot will spawn countryballs in this guild", default=True)
     silent = models.BooleanField(
         help_text="Whether the responses of guesses get sent as ephemeral or not", default=False
+    )
+    manual_drop_enabled = models.BooleanField(
+        help_text="Whether players are allowed to use the drop command in this server", default=True
     )
     admin_command_synced = models.BooleanField(
         help_text="True if slash admin commands are present in this server", default=False, editable=False
@@ -342,6 +347,28 @@ class Ball(models.Model):
         self.translations = lower_catch_names(self.translations)
 
         return super().save(**kwargs)
+
+
+class BallGroup(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    countryballs = models.ManyToManyField(Ball, related_name="groups", blank=True)
+
+    objects: Manager[Self] = Manager()
+
+    _ball_ids: frozenset[int] = frozenset()
+
+    class Meta:
+        managed = True
+        db_table = "ballgroup"
+        verbose_name = "group"
+        verbose_name_plural = "groups"
+
+    def __str__(self) -> str:
+        return self.name
+
+    @cached_property
+    def balls(self) -> list[Ball]:
+        return [balls[i] for i in self._ball_ids if i in balls]
 
 
 class BallInstance(models.Model):

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, cast
 import discord
 from asgiref.sync import sync_to_async
 from discord.ui import ActionRow, Button, Item, Section, Select, Separator, TextDisplay, TextInput, Thumbnail
-from discord.utils import format_dt
+from discord.utils import format_dt, utcnow
 from django.db import transaction
 from django.utils import timezone
 
@@ -143,6 +143,8 @@ class TradingUser(Container):
         return f"<TradingUser player_id={self.player.pk} discord_id={self.user.id}>"
 
     async def interaction_check(self, interaction: Interaction) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         if interaction.user.id not in (self.trade.trader1.user.id, self.trade.trader2.user.id):
             await interaction.response.send_message("You are not part of this trade!", ephemeral=True)
             return False
@@ -230,7 +232,11 @@ class TradingUser(Container):
             button = Button(label="Change", style=discord.ButtonStyle.primary)
             button.callback = self.set_currency
             currency_section = Section(
-                TextDisplay(f"{settings.currency_name} proposed: {format_currency(self.money)}"), accessory=button
+                TextDisplay(
+                    f"{settings.currency_display_name(self.cog.bot)} proposed: "
+                    f"{format_currency(self.money, bot=self.cog.bot)}"
+                ),
+                accessory=button,
             )
             self.add_item(currency_section)
 
@@ -461,6 +467,8 @@ class TradeInstance(LayoutView):
             await self._cleanup()
 
     async def interaction_check(self, interaction: Interaction) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         if interaction.user.id not in (self.trader1.user.id, self.trader2.user.id):
             await interaction.response.send_message("You are not part of this trade!", ephemeral=True)
             return False
@@ -482,7 +490,7 @@ class TradeInstance(LayoutView):
             await interaction.followup.send(e.error_message, ephemeral=True)
         else:
             if self.confirmation_phase and self.confirmation_phase_start is None:
-                self.confirmation_phase_start = datetime.now()
+                self.confirmation_phase_start = utcnow()
             await self.edit_message(interaction)
 
     @buttons.button(label="Reset", emoji="\N{DASH SYMBOL}", style=discord.ButtonStyle.secondary)
@@ -540,11 +548,10 @@ class TradeInstance(LayoutView):
             and self.trader2.player.trade_cooldown_policy == TradeCooldownPolicy.BYPASS
         )
         if not both_bypass and self.confirmation_phase_start is not None:
-            elapsed = (datetime.now() - self.confirmation_phase_start).total_seconds()
-            remaining = COOLDOWN_BYPASS_TIMEOUT - elapsed
-            if remaining > 0:
+            can_confirm_at = self.confirmation_phase_start + timedelta(seconds=COOLDOWN_BYPASS_TIMEOUT)
+            if utcnow() < can_confirm_at:
                 await interaction.response.send_message(
-                    f"Please wait {remaining:.0f} more second(s) before confirming.", ephemeral=True
+                    f"You can confirm the trade {format_dt(can_confirm_at, style='R')}.", ephemeral=True
                 )
                 return
         await interaction.response.defer()
@@ -568,7 +575,7 @@ class TradeInstance(LayoutView):
         trade.add_item(trade.trader2)
         trade.buttons.remove_item(trade.confirm_button)
         trade.add_item(trade.buttons)
-        timeout = datetime.now() + timedelta(seconds=TRADE_TIMEOUT)
+        timeout = utcnow() + timedelta(seconds=TRADE_TIMEOUT)
         trade.add_item(TextDisplay(f"-# This trade will timeout {format_dt(timeout, style='R')}."))
         return trade
 

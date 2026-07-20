@@ -18,6 +18,7 @@ from ballsdex.core.utils.menus import Menu, ModelSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
 from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
+    BallGroupTransform,
     BallInstanceTransform,
     SpecialEnabledTransform,
     TradeCommandType,
@@ -117,6 +118,9 @@ class Trade(commands.GroupCog):
         if user.id == interaction.user.id:
             await interaction.response.send_message("You cannot trade with yourself.", ephemeral=True)
             return
+        if user.id in self.bot.blacklist:
+            await interaction.response.send_message("You cannot trade with a blacklisted user.", ephemeral=True)
+            return
 
         player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
@@ -153,11 +157,12 @@ class Trade(commands.GroupCog):
             trade.message = await interaction.channel.send(  # type: ignore
                 view=trade, allowed_mentions=await can_mention([player1, player2])
             )
-        except Exception:
+        except Exception as exc:
             # unregister the trade if something failed to avoid the 30 min timeout
             del self.trades[interaction.channel.id][interaction.user.id]
             del self.trades[interaction.channel.id][user.id]
             await trade.cleanup()
+            log.error(f"Failed to initialize trade between {interaction.user.id} and {user.id}", exc_info=exc)
             raise
         else:
             await interaction.followup.send("The trade has started.", ephemeral=True)
@@ -231,19 +236,21 @@ class Trade(commands.GroupCog):
     async def history(
         self,
         interaction: Interaction,
-        sorting: Literal["Recent", "Oldest"] = "Recent",
+        sorting: Literal["Newest", "Oldest"] = "Newest",
         trade_user: discord.User | None = None,
         days: int | None = None,
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        group: BallGroupTransform | None = None,
         currency: bool = False,
+        filter: FilteringChoices | None = None,
     ):
         """
         Show your trade history.
 
         Parameters
         ----------
-        sorting: Literal["Recent", "Oldest"]
+        sorting: Literal["Newest", "Oldest"]
             The sorting order of your trades.
         trade_user: discord.User | None
             The user you want to filter your trade history with.
@@ -253,13 +260,17 @@ class Trade(commands.GroupCog):
             The countryball you want to filter the trade history by.
         special: Special | None
             The special you want to filter the trade history by.
+        group: BallGroup | None
+            The group you want to filter the trade history by.
         currency: bool
             Only show trades that included currency.
+        filter: FilteringChoices
+            Only show trades involving countryballs matching a specific filter.
         """
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         user = interaction.user
-        if sorting == "Recent":
+        if sorting == "Newest":
             sort_value = "-date"
         else:
             sort_value = "date"
@@ -289,17 +300,22 @@ class Trade(commands.GroupCog):
             start_date = timezone.now() - timedelta(days=days)
             queryset = queryset.filter(date__gte=start_date)
 
-        if countryball and special:
-            queryset = queryset.filter(
-                Q(tradeobject__ballinstance__ball=countryball) & Q(tradeobject__ballinstance__special=special)
-            ).distinct()
-        elif countryball:
-            queryset = queryset.filter(Q(tradeobject__ballinstance__ball=countryball)).distinct()
-        elif special:
-            queryset = queryset.filter(Q(tradeobject__ballinstance__special=special)).distinct()
+        if countryball or special or group:
+            object_filter = Q()
+            if countryball:
+                object_filter &= Q(tradeobject__ballinstance__ball=countryball)
+            if special:
+                object_filter &= Q(tradeobject__ballinstance__special=special)
+            if group:
+                object_filter &= Q(tradeobject__ballinstance__ball__groups=group)
+            queryset = queryset.filter(object_filter).distinct()
 
         if currency:
             queryset = queryset.filter(Q(player1_money__gt=0) | Q(player2_money__gt=0))
+
+        if filter:
+            matching_balls = filter_balls(filter, BallInstance.objects.all(), interaction.guild_id)
+            queryset = queryset.filter(tradeobject__ballinstance__in=matching_balls).distinct()
 
         if not await queryset.aexists():
             await interaction.followup.send("No history found.", ephemeral=True)
@@ -319,14 +335,19 @@ class Trade(commands.GroupCog):
             await interaction.followup.send(view=view, ephemeral=True)
 
         view = LayoutView()
-        view.add_item(discord.ui.TextDisplay("## Trade history"))
+        header = discord.ui.TextDisplay("## Trade history")
+        view.add_item(header)
         action = discord.ui.ActionRow()
         select = discord.ui.Select(placeholder="Choose a trade to display")
         select.callback = callback
         action.add_item(select)
         view.add_item(action)
-        menu = Menu(self.bot, view, ModelSource(queryset), TradeListFormatter(select, self, interaction.user))
+        source = ModelSource(queryset)
+        menu = Menu(self.bot, view, source, TradeListFormatter(select, self, interaction.user))
         await menu.init()
+        total_pages = source.get_max_pages()
+        if total_pages > 1:
+            header.content = f"## Trade history (Page 1/{total_pages})"
         await interaction.followup.send(view=view, ephemeral=True)
 
     @app_commands.command()
@@ -335,8 +356,10 @@ class Trade(commands.GroupCog):
         interaction: Interaction,
         countryball: BallEnabledTransform | None = None,
         sort: SortingChoices | None = None,
+        reverse: bool = False,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        group: BallGroupTransform | None = None,
     ):
         """
         Bulk add countryballs to the ongoing trade, with paramaters to aid with searching.
@@ -347,10 +370,14 @@ class Trade(commands.GroupCog):
             The countryball you would like to filter the results to
         sort: SortingChoices
             Choose how countryballs are sorted. Can be used to show duplicates.
+        reverse: bool
+            Reverse the sorted results.
         special: Special
             Filter the results to a special event
         filter: FilteringChoices
             Filter the results to a specific filter
+        group: BallGroup
+            Filter the results to a specific group
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
         result = await self.get_trade(interaction)
@@ -378,6 +405,8 @@ class Trade(commands.GroupCog):
             query = query.filter(ball=countryball)
         if special:
             query = query.filter(special=special)
+        if group:
+            query = query.filter(ball__groups=group)
         if sort:
             query = sort_balls(sort, query)
         if filter:
@@ -386,6 +415,8 @@ class Trade(commands.GroupCog):
         if not await query.aexists():
             await interaction.followup.send(f"No {settings.plural_collectible_name} found.", ephemeral=True)
             return
+        if reverse:
+            query = query.reverse()
 
         view = LayoutView()
         selector = BulkSelector()

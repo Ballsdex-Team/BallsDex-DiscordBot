@@ -29,6 +29,8 @@ class AcceptTOSView(View):
         self.add_item(Button(style=discord.ButtonStyle.link, label="Privacy policy", url=settings.privacy_policy))
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"]) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         if interaction.user.id != self.new_player.id:
             await interaction.response.send_message("You are not allowed to interact with this menu.", ephemeral=True)
             return False

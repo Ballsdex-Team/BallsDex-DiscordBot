@@ -69,6 +69,13 @@ class Settings(models.Model):
     currency_symbol_before = models.BooleanField(
         default=False, help_text="If enabled, your currency symbol will be placed before the amount."
     )
+    currency_emoji_id = models.BigIntegerField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Optional emoji ID for your currency. When set, the emoji is shown instead of the currency "
+        "name. The bot must have access to this emoji.",
+    )
 
     @cached_property
     def currency_plural(self) -> str:
@@ -79,6 +86,20 @@ class Settings(models.Model):
     @cached_property
     def currency_enabled(self) -> bool:
         return bool(self.currency_name)
+
+    def currency_emoji(self, bot: "BallsDexBot") -> str | None:
+        if not self.currency_emoji_id:
+            return None
+        emoji = bot.get_emoji(self.currency_emoji_id)
+        return str(emoji) if emoji else None
+
+    def currency_display_name(self, bot: "BallsDexBot | None" = None) -> str:
+        emoji = self.currency_emoji(bot) if bot is not None else None
+        return emoji or self.currency_name or ""
+
+    def currency_display_plural(self, bot: "BallsDexBot | None" = None) -> str:
+        emoji = self.currency_emoji(bot) if bot is not None else None
+        return emoji or self.currency_plural
 
     # further customization
     favorited_collectible_emoji = models.CharField(

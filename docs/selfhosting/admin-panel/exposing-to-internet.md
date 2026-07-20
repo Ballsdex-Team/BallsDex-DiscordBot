@@ -103,7 +103,24 @@ This `production.py` file should remain secret and never be pushed. It will be i
 
 To make use of that `production.py` file, you need to tell Django via the `DJANGO_SETTINGS_MODULE` environment variable.
 
-You will find in `docker-compose.yml` there is already a commented environment variable, simply uncomment that line. If you're not using docker compose, simply run `export DJANGO_SETTINGS_MODULE=config.production` before running the server.
+If you're not using docker compose, simply run `export DJANGO_SETTINGS_MODULE=config.production` before running the server.
+
+If you are using docker compose, create (or edit) a `docker-compose.override.yml` file at the root of the project with the following contents:
+
+```yaml
+services:
+  bot:
+    environment:
+      - "DJANGO_SETTINGS_MODULE=config.production"
+  admin-panel:
+    environment:
+      - "DJANGO_SETTINGS_MODULE=config.production"
+```
+
+!!! info
+    Using an override file instead of editing `docker-compose.yml` directly keeps your git tree clean, since `docker-compose.override.yml` is gitignored and won't get overwritten by future updates.
+
+Then recreate the containers for the change to take effect: `docker compose up -d`
 
 ----
 
