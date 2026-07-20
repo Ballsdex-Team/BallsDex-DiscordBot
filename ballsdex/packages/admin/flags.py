@@ -1,7 +1,7 @@
 import discord
 from discord.ext.commands import FlagConverter, Range, flag
 
-from ballsdex.core.utils.transformers import BallTransform, EconomyTransform, RegimeTransform, SpecialTransform
+from ballsdex.core.utils.transformers import BallTransform, EconomyTransform, RegimeTransform, SpecialTransform, BallGroupTransform
 from settings.models import settings
 
 
@@ -35,6 +35,7 @@ class SpawnFlags(FlagConverter):
     special: SpecialTransform | None = flag(
         description="Force the countryball to have a special attribute when caught."
     )
+    group: BallGroupTransform  | None = flag(description="Force the countryball to be in a specific group when spawning (cant specify countryball)")
     atk_bonus: int | None = flag(description="Force the countryball to have a specific attack bonus when caught.")
     hp_bonus: int | None = flag(description="Force the countryball to have a specific health bonus when caught.")
 

@@ -14,8 +14,10 @@ from django.utils import timezone
 from ballsdex.core.discord import Modal, View
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.utils import can_mention
-from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls, specials
+from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls, specials, BallGroup
 from settings.models import PromptMessage, settings
+
+from asgiref.sync import sync_to_async
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -180,6 +182,18 @@ class BallSpawnView(View):
         Get a new instance with a random countryball. Rarity values are taken into account.
         """
         countryballs = list(filter(lambda m: m.enabled, balls.values()))
+        if not countryballs:
+            raise RuntimeError("No ball to spawn")
+        rarities = [x.rarity for x in countryballs]
+        cb = random.choices(population=countryballs, weights=rarities, k=1)[0]
+        return cls(bot, cb)
+
+    @classmethod
+    async def get_random_from_group(cls, bot: "BallsDexBot", group: BallGroup):
+        """
+        Get a new instance with a random countryball. Rarity values are taken into account.
+        """
+        countryballs = await sync_to_async(list)(group.countryballs.all())
         if not countryballs:
             raise RuntimeError("No ball to spawn")
         rarities = [x.rarity for x in countryballs]
