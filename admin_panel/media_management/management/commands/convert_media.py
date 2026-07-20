@@ -28,7 +28,6 @@ class Command(BaseCommand):
 
         parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm conversion")
 
-    @transaction.atomic
     def handle(self, *args, **options):
         try:
             self.convert_media(*args, **options)
@@ -53,6 +52,7 @@ class Command(BaseCommand):
 
         return command
 
+    @transaction.atomic
     def convert_media(self, *args, **options):
         media_path = Path(options.get("media_path") or DEFAULT_MEDIA_PATH)
         if not media_path.exists():
@@ -126,5 +126,5 @@ class Command(BaseCommand):
                 model_instance.save()
 
         self.stdout.write(self.style.SUCCESS("Database updated!"))
-        self.stdout.write("You may want to run remove_unused_files to remove the old copies.")
+        self.stdout.write("You may want to run remove_unused_media to remove the old copies.")
         self.stdout.write("Remember to reloadcache to apply!")
