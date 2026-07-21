@@ -193,7 +193,7 @@ class BallSpawnView(View):
         """
         Get a new instance with a random countryball. Rarity values are taken into account.
         """
-        countryballs = await sync_to_async(list)(group.countryballs.all())
+        countryballs = await sync_to_async(list)(group.countryballs.filter(enabled=True))
         if not countryballs:
             raise RuntimeError("No ball to spawn")
         rarities = [x.rarity for x in countryballs]
