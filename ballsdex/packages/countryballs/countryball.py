@@ -177,23 +177,15 @@ class BallSpawnView(View):
         return view
 
     @classmethod
-    async def get_random(cls, bot: "BallsDexBot"):
+    async def get_random(cls, bot: "BallsDexBot", group: BallGroup | None = None,):
         """
         Get a new instance with a random countryball. Rarity values are taken into account.
         """
-        countryballs = list(filter(lambda m: m.enabled, balls.values()))
-        if not countryballs:
-            raise RuntimeError("No ball to spawn")
-        rarities = [x.rarity for x in countryballs]
-        cb = random.choices(population=countryballs, weights=rarities, k=1)[0]
-        return cls(bot, cb)
-
-    @classmethod
-    async def get_random_from_group(cls, bot: "BallsDexBot", group: BallGroup):
-        """
-        Get a new instance with a random countryball. Rarity values are taken into account.
-        """
-        countryballs = await sync_to_async(list)(group.countryballs.filter(enabled=True))
+        if group:
+            countryballs = await sync_to_async(list)(group.countryballs.filter(enabled=True))
+        else:
+            countryballs = list(filter(lambda m: m.enabled, balls.values()))
+        
         if not countryballs:
             raise RuntimeError("No ball to spawn")
         rarities = [x.rarity for x in countryballs]

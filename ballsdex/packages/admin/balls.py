@@ -60,10 +60,7 @@ async def _spawn_bomb(
     try:
         for i in range(n):
             if not countryball:
-                if group:
-                    ball = await countryball_cls.get_random_from_group(ctx.bot, group)
-                else:
-                    ball = await countryball_cls.get_random(ctx.bot)
+                ball = await countryball_cls.get_random(ctx.bot, group if group else None)
             else:
                 ball = countryball_cls(ctx.bot, countryball)
             ball.special = special
@@ -143,9 +140,7 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
 
     await ctx.defer(ephemeral=True)
     if not flags.countryball:
-        ball = await cog.countryball_cls.get_random(ctx.bot)
-        if flags.group:
-            ball = await cog.countryball_cls.get_random_from_group(ctx.bot, flags.group)
+        ball = await cog.countryball_cls.get_random(ctx.bot, flags.group if flags.group else None)
     else:
         ball = cog.countryball_cls(ctx.bot, flags.countryball)
     ball.special = flags.special
