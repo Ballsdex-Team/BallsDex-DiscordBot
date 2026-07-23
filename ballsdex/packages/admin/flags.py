@@ -85,7 +85,3 @@ class CreateFlags(FlagConverter):
 
 class PromptMessageFlags(FlagConverter):
     rarity: float = flag(description="The rarity of the spawn message.")
-
-
-class DeleteMessageFlags(FlagConverter):
-    message: PromptMessageTransform = flag(description="The message to be deleted.")
