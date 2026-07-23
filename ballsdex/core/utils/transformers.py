@@ -17,7 +17,7 @@ from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from bd_models.models import Ball, BallGroup, BallInstance, Economy, Regime, Special
-from settings.models import settings, PromptMessage
+from settings.models import settings
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -33,7 +33,6 @@ __all__ = (
     "RegimeTransform",
     "EconomyTransform",
     "BallGroupTransform",
-    "PromptMessageTransform",
 )
 
 
