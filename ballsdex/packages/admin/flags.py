@@ -1,7 +1,7 @@
 import discord
 from discord.ext.commands import FlagConverter, Range, flag
 
-from ballsdex.core.utils.transformers import BallTransform, EconomyTransform, RegimeTransform, SpecialTransform, PromptMessageTransform
+from ballsdex.core.utils.transformers import BallTransform, EconomyTransform, RegimeTransform, SpecialTransform
 from settings.models import settings
 
 
