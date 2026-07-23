@@ -17,7 +17,7 @@ from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from bd_models.models import Ball, BallGroup, BallInstance, Economy, Regime, Special
-from settings.models import settings
+from settings.models import settings, PromptMessage
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -33,6 +33,7 @@ __all__ = (
     "RegimeTransform",
     "EconomyTransform",
     "BallGroupTransform",
+    "PromptMessageTransform",
 )
 
 
@@ -306,6 +307,11 @@ class BallGroupTransformer(TTLModelTransformer[BallGroup]):
     model = BallGroup
 
 
+class PromptMessageTransformer(TTLModelTransformer[PromptMessage]):
+    name = "promptmessage"
+    model = PromptMessage
+
+
 BallTransform = app_commands.Transform[Ball, BallTransformer]
 BallInstanceTransform = app_commands.Transform[BallInstance, BallInstanceTransformer]
 SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
@@ -314,3 +320,4 @@ EconomyTransform = app_commands.Transform[Economy, EconomyTransformer]
 BallGroupTransform = app_commands.Transform[BallGroup, BallGroupTransformer]
 SpecialEnabledTransform = app_commands.Transform[Special, SpecialTransformer(hidden=False)]
 BallEnabledTransform = app_commands.Transform[Ball, BallTransformer(enabled=True)]
+PromptMessageTransform = app_commands.Transform[PromptMessage, PromptMessageTransformer]

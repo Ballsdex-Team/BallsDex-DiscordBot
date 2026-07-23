@@ -30,6 +30,7 @@ from .history import history as history_group
 from .info import info as info_group
 from .logs import logs as logs_group
 from .money import money as money_group
+from .promptmessage import promptmessage as promptmessage_group
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -103,6 +104,7 @@ class Admin(commands.Cog):
         self.admin.add_command(history_group)
         self.admin.add_command(logs_group)
         self.admin.add_command(money_group)
+        self.admin.add_command(promptmessage_group)
 
     async def cog_check(self, ctx: commands.Context["BallsDexBot"]) -> bool:
         return await checks.is_staff().predicate(ctx)

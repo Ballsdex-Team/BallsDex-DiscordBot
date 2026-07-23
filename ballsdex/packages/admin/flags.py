@@ -1,7 +1,7 @@
 import discord
 from discord.ext.commands import FlagConverter, Range, flag
 
-from ballsdex.core.utils.transformers import BallTransform, EconomyTransform, RegimeTransform, SpecialTransform
+from ballsdex.core.utils.transformers import BallTransform, EconomyTransform, RegimeTransform, SpecialTransform, PromptMessageTransform
 from settings.models import settings
 
 
@@ -81,3 +81,11 @@ class CreateFlags(FlagConverter):
     )
     regime: RegimeTransform = flag(description="Political regime of this countryball")
     economy: EconomyTransform | None = flag(description="Economical regime of this countryball", default=None)
+
+
+class PromptMessageFlags(FlagConverter):
+    rarity: float = flag(description="The rarity of the spawn message.")
+
+
+class DeleteMessageFlags(FlagConverter):
+    message: PromptMessageTransform = flag(description="The message to be deleted.")
