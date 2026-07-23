@@ -180,33 +180,6 @@ class Pack(commands.GroupCog):
         pages = ShopPages(source, interaction=interaction, compact=True)
         await pages.start()
 
-    @app_commands.command()
-    @app_commands.checks.cooldown(1, 86400, key=lambda i: i.user.id)
-    async def coin_daily(self, interaction: discord.Interaction["BallsDexBot"]):
-        """
-        Claim your daily payment.
-        """
-        await interaction.response.defer(thinking=True, ephemeral=True)
-        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        await player.add_money(1500)
-
-        await interaction.followup.send(
-            "You've claimed  "
-            f"**{format_currency(1500, False, self.bot)}**! "
-            f"Now you have **{player.money:,}**. Come back tomorrow!"
-        )
-
-    @app_commands.command()
-    async def coin_balance(self, interaction: discord.Interaction["BallsDexBot"]):
-        """
-        Check your actual coin balance.
-        """
-        await interaction.response.defer(thinking=True, ephemeral=True)
-        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-
-        await interaction.followup.send(f"You have {format_currency(player.money, False, self.bot)}")
-        return
-
     async def _get_random_countryball(self, countryballs: list[Ball]) -> Ball:
         if not countryballs:
             raise RuntimeError("No ball to spawn")

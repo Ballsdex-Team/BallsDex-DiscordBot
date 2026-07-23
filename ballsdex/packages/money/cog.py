@@ -98,3 +98,19 @@ class Money(commands.GroupCog):
             f"You just gave {format_currency(amount)} to {user.mention}!",
             allowed_mentions=await can_mention([new_player]),
         )
+
+    @app_commands.command()
+    @app_commands.checks.cooldown(1, 86400, key=lambda i: i.user.id)
+    async def daily(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Claim your daily payment.
+        """
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        await player.add_money(1500)
+
+        await interaction.followup.send(
+            "You've claimed  "
+            f"**{format_currency(1500, False, self.bot)}**! "
+            f"Now you have **{player.money:,}**. Come back tomorrow!"
+        )
