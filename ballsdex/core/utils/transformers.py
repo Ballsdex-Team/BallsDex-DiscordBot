@@ -307,11 +307,6 @@ class BallGroupTransformer(TTLModelTransformer[BallGroup]):
     model = BallGroup
 
 
-class PromptMessageTransformer(TTLModelTransformer[PromptMessage]):
-    name = "promptmessage"
-    model = PromptMessage
-
-
 BallTransform = app_commands.Transform[Ball, BallTransformer]
 BallInstanceTransform = app_commands.Transform[BallInstance, BallInstanceTransformer]
 SpecialTransform = app_commands.Transform[Special, SpecialTransformer]
@@ -320,4 +315,3 @@ EconomyTransform = app_commands.Transform[Economy, EconomyTransformer]
 BallGroupTransform = app_commands.Transform[BallGroup, BallGroupTransformer]
 SpecialEnabledTransform = app_commands.Transform[Special, SpecialTransformer(hidden=False)]
 BallEnabledTransform = app_commands.Transform[Ball, BallTransformer(enabled=True)]
-PromptMessageTransform = app_commands.Transform[PromptMessage, PromptMessageTransformer]
