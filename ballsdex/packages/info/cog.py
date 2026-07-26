@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.info")
 
-
 def mention_app_command(app_command: app_commands.Command | app_commands.Group) -> str:
     if "mention" in app_command.extras:
         return app_command.extras["mention"]
@@ -33,7 +32,32 @@ def mention_app_command(app_command: app_commands.Command | app_commands.Group) 
             return f"`{app_command.name}`"
         else:
             return f"`/{app_command.name}`"
+            
+class HelpSelect(discord.ui.Select):
+    def __init__(self, embeds: dict[str, discord.Embed]):
+        self.embeds = embeds
 
+        options = [
+            discord.SelectOption(label=name, description=f"{name} commands")
+            for name in embeds.keys()
+        ]
+
+        super().__init__(
+            placeholder="Choose a category…",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        embed = self.embeds[self.values[0]]
+        await interaction.response.edit_message(embed=embed, view=self.view)
+
+
+class HelpView(discord.ui.View):
+    def __init__(self, embeds: dict[str, discord.Embed]):
+        super().__init__(timeout=360)
+        self.add_item(HelpSelect(embeds))
 
 class Info(commands.Cog):
     """
@@ -151,12 +175,19 @@ class Info(commands.Cog):
         Show the list of commands from the bot.
         """
         assert self.bot.user
-        embed = discord.Embed(title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple())
-        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+
+        embeds: dict[str, discord.Embed] = {}
 
         for cog in self.bot.cogs.values():
             if cog.qualified_name == "Admin":
                 continue
+
+            embed = discord.Embed(
+                title=f"{settings.bot_name} Discord bot - help menu",
+                color=discord.Colour.blurple()
+            )
+            embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+
             content = ""
             for app_command in cog.walk_app_commands():
                 translated = await self.bot.tree.translator.translate(  # type: ignore
@@ -165,10 +196,16 @@ class Info(commands.Cog):
                     TranslationContext(TranslationContextLocation.other, None),
                 )
                 content += f"{mention_app_command(app_command)}: {translated}\n"
+
             if not content:
                 continue
+
             pages = pagify(content, page_length=1024)
             for i, page in enumerate(pages):
                 embed.add_field(name=cog.qualified_name if i == 0 else "\u200b", value=page, inline=False)
+            embeds[cog.qualified_name] = embed
 
-        await interaction.response.send_message(embed=embed)
+        og_embed = next(iter(embeds.values()))
+        view = HelpView(embeds)
+
+        await interaction.response.send_message(embed=og_embed, view=view)
