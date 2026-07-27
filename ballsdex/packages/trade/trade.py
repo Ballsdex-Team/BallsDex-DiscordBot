@@ -739,7 +739,6 @@ class TradeInstance(LayoutView):
 
     async def admin_cancel(self, reason: str):
         await self.cleanup()
-        self.clear_items()
         self.add_item(
             TextDisplay(f"Trading has been globally disabled by administrators for the following reason: {reason}")
         )
