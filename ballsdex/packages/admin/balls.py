@@ -15,7 +15,7 @@ from django.urls import reverse
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
+from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, BallGroup
 from settings.models import settings
 from settings.utils import format_currency
 
@@ -36,6 +36,7 @@ async def _spawn_bomb(
     channel: discord.TextChannel,
     n: int,
     special: Special | None = None,
+    group: BallGroup | None = None,
     atk_bonus: int | None = None,
     hp_bonus: int | None = None,
 ):
@@ -59,7 +60,7 @@ async def _spawn_bomb(
     try:
         for i in range(n):
             if not countryball:
-                ball = await countryball_cls.get_random(ctx.bot)
+                ball = await countryball_cls.get_random(ctx.bot, group if group else None)
             else:
                 ball = countryball_cls(ctx.bot, countryball)
             ball.special = special
@@ -125,6 +126,7 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
             flags.channel or ctx.channel,  # type: ignore
             flags.n,
             flags.special,
+            flags.group,
             flags.atk_bonus,
             flags.hp_bonus,
         )
@@ -138,7 +140,7 @@ async def spawn(ctx: commands.Context[BallsDexBot], *, flags: SpawnFlags):
 
     await ctx.defer(ephemeral=True)
     if not flags.countryball:
-        ball = await cog.countryball_cls.get_random(ctx.bot)
+        ball = await cog.countryball_cls.get_random(ctx.bot, flags.group if flags.group else None)
     else:
         ball = cog.countryball_cls(ctx.bot, flags.countryball)
     ball.special = flags.special
