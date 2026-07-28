@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("ballsdex.packages.info")
 
+
 def mention_app_command(app_command: app_commands.Command | app_commands.Group) -> str:
     if "mention" in app_command.extras:
         return app_command.extras["mention"]
@@ -32,22 +33,15 @@ def mention_app_command(app_command: app_commands.Command | app_commands.Group) 
             return f"`{app_command.name}`"
         else:
             return f"`/{app_command.name}`"
-            
+
+
 class HelpSelect(discord.ui.Select):
     def __init__(self, embeds: dict[str, discord.Embed]):
         self.embeds = embeds
 
-        options = [
-            discord.SelectOption(label=name, description=f"{name} commands")
-            for name in embeds.keys()
-        ]
+        options = [discord.SelectOption(label=name, description=f"{name} commands") for name in embeds.keys()]
 
-        super().__init__(
-            placeholder="Choose a category…",
-            min_values=1,
-            max_values=1,
-            options=options
-        )
+        super().__init__(placeholder="Choose a category…", min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         embed = self.embeds[self.values[0]]
@@ -58,6 +52,7 @@ class HelpView(discord.ui.View):
     def __init__(self, embeds: dict[str, discord.Embed]):
         super().__init__(timeout=360)
         self.add_item(HelpSelect(embeds))
+
 
 class Info(commands.Cog):
     """
@@ -182,10 +177,7 @@ class Info(commands.Cog):
             if cog.qualified_name == "Admin":
                 continue
 
-            embed = discord.Embed(
-                title=f"{settings.bot_name} Discord bot - help menu",
-                color=discord.Colour.blurple()
-            )
+            embed = discord.Embed(title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple())
             embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
             content = ""
