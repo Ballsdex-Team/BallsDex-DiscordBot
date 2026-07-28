@@ -93,7 +93,7 @@ class Merchant(commands.GroupCog):
             instance.rotation_ends_at = timezone.now() + merchant_settings.rotation_delta
             await instance.asave(update_fields=("rotation_ends_at",))
         else:
-            items = instance.items
+            items = [x async for x in instance.items.all()]
 
         entries: list[tuple[str, str]] = [
             (x.name, format_currency(x.prize or 0, False, self.bot)) for x in items if x.enabled
