@@ -5,9 +5,6 @@ from .models import ACHIEVEMENT_TYPE_SCHEMA, Achievement
 
 EXTRA_PARAM_FIELDS = {
     "server_id": forms.CharField(required=False, label="Server ID", help_text="This's for Catch Ball achievement-type"),
-    "max_seconds": forms.IntegerField(
-        required=False, label="Max seconds to Catch", help_text="This's for Fastest Catcher achievement-type."
-    ),
     "requires_currency": forms.BooleanField(
         required=False, label="Requires Currency", help_text="This's for Complete Trade achievement-type"
     ),
@@ -32,9 +29,6 @@ EXTRA_PARAM_FIELDS = {
 
 class AchievementAdminForm(forms.ModelForm):
     server_id = forms.CharField(required=False, label="Server ID", help_text="This's for Catch Ball achievement-type")
-    max_seconds = forms.IntegerField(
-        required=False, label="Max seconds to Catch", help_text="This's for Fastest Catcher achievement-type."
-    )
     requires_currency = forms.BooleanField(
         required=False, label="Requires Currency", help_text="This's for Complete Trade achievement-type"
     )

@@ -8,7 +8,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
-from achievement_app.models import AchievementType, progress_achievement
 from currency_app.models import CurrencySettings
 from discord.ui import Button, TextInput, button
 from django.utils import timezone
@@ -87,8 +86,6 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 amount = currency_settings.spawn_amount
                 await player.add_money(amount)
                 text += f"You get **{format_currency(amount, False, self.view.bot)}**"
-
-        await progress_achievement(player, AchievementType.CATCH_BALL, server_id=interaction.guild_id)
 
         await interaction.followup.send(text, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned))
         await interaction.followup.edit_message(self.view.message.id, view=self.view)

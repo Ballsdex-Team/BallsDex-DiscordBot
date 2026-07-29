@@ -1,6 +1,5 @@
 from typing import Any, Awaitable, Callable
 
-import discord
 from django.db import models
 from django.utils import timezone
 
@@ -20,15 +19,13 @@ class AchievementType(models.TextChoices):
     RECEIVE_BALL = "receive_ball", "Receive Ball"
     BALL_COUNT = "ball_count", "Ball Count"
     COMPLETION_PERCENTAGE = "completion_percentage", "Completion Percentage"
-    GROUP_COMPLETED = "group_completed", "Group Completed"
     HAVE_FRIEND = "have_friend", "Have X Friend"
-    PLAYTIME = "playtime", "Playtime"
     ACTIONS = "actions", "Actions (event-triggered)"
     COMPLETE_GROUP = "complete_group", "Catch all balls from a Group"
+    PLAYTIME = "playtime", "Time using the bot"
 
 
 ACHIEVEMENT_TYPE_SCHEMA = {
-    AchievementType.FASTEST_CATCHER: [{"name": "max_seconds", "label": "Max seconds to Catch", "input": "number"}],
     AchievementType.COMPLETE_TRADE: [{"name": "requires_currency", "label": "Requires Coins", "input": "checkbox"}],
     AchievementType.RECEIVE_BALL: [{"name": "user_id", "label": "User ID", "input": "text"}],
     AchievementType.CATCH_BALL: [
@@ -42,11 +39,19 @@ ACHIEVEMENT_TYPE_SCHEMA = {
     ],
 }
 
-CHECKERS: dict[AchievementType, Callable[..., Awaitable[int]]] = {}
+CHECKERS: dict[AchievementType, Callable[..., Awaitable[bool | int]]] = {}
 
 
 def register_checker(achievement_type: AchievementType):
-    def decorator(func: Callable[..., Awaitable[int]]) -> Callable[..., Awaitable[int]]:
+    """
+    Register a checker for achievements.
+
+    False = no progress
+    True = increment by 1
+    int = absolute progress
+    """
+
+    def decorator(func: Callable[..., Awaitable[bool | int]]) -> Callable[..., Awaitable[bool | int]]:
         if achievement_type in CHECKERS:
             raise ValueError(f"A {achievement_type.name} type checker has already been registered.")
         CHECKERS[achievement_type] = func
@@ -72,7 +77,15 @@ class Achievement(models.Model):
         max_length=3, choices=PrerequisiteLogic.choices, default=PrerequisiteLogic.ALL
     )
 
-    target_value = models.PositiveBigIntegerField()
+    target_value = models.PositiveBigIntegerField(help_text="Total progress needed to complete this achievement")
+    required_value = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Threshold each individual event must meet to count "
+            "(Only for Fastest Catcher and Complete Trade with Currency)"
+        ),
+    )
     ball = models.ForeignKey(Ball, null=True, blank=True, on_delete=models.SET_NULL)
     ball_id: int | None
     group = models.ForeignKey(BallGroup, null=True, blank=True, on_delete=models.SET_NULL)
@@ -132,9 +145,6 @@ async def prerequisities_met(player: Player, achievement: Achievement, prerequis
 
 async def progress_achievement(player: Player, achievement_type: AchievementType, **context):
     checker = CHECKERS.get(achievement_type)
-    if checker is None:
-        return
-
     achievements = Achievement.objects.prefetch_related("prerequisities").filter(type=achievement_type)
 
     async for achievement in achievements:
@@ -142,9 +152,11 @@ async def progress_achievement(player: Player, achievement_type: AchievementType
         if not await prerequisities_met(player, achievement, prerequisities):
             continue
 
-        new_progress = await checker(achievement, player, **context)
+        result = True
+        if checker is not None:
+            result = await checker(achievement, player, **context)
 
-        if new_progress is None or new_progress is False:
+        if result is False:
             continue
 
         user_achievement, _ = await UserAchievement.objects.aget_or_create(
@@ -154,7 +166,12 @@ async def progress_achievement(player: Player, achievement_type: AchievementType
         if user_achievement.completed:
             continue
 
-        user_achievement.progress = max(user_achievement.progress, new_progress)
+        if isinstance(result, bool):
+            user_achievement.progress += 1
+        elif isinstance(result, int):
+            user_achievement.progress = min(result, achievement.target_value)
+        else:
+            raise TypeError(f"Excepted bool or int, not {type(result).__name__}")
 
         if user_achievement.progress >= achievement.target_value:
             user_achievement.progress = achievement.target_value
@@ -162,6 +179,6 @@ async def progress_achievement(player: Player, achievement_type: AchievementType
             user_achievement.completed_at = timezone.now()
 
             await player.add_money(achievement.currency_reward)
-            # TODO: enviar mensaje/log
+        # TODO: enviar mensaje/log
 
         await user_achievement.asave(update_fields=["progress", "completed", "completed_at"])
