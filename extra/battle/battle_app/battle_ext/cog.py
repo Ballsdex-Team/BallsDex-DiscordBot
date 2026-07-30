@@ -4,11 +4,13 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict
 
 import discord
+from achievement_app.models import AchievementType, notify_user, progress_achievement
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import View
 
 from ballsdex.core.utils.transformers import BallInstanceTransform
+from bd_models.models import Player
 
 from ..models import Buff
 from .xe_battle_lib import BattleBall, BattleInstance, gen_battle
@@ -184,8 +186,10 @@ class Battle(commands.GroupCog):
 
             if p1_total_hp >= p2_total_hp:
                 battle.winner = guild_battle.author.display_name
+                winner_player, created = await Player.objects.aget_or_create(discord_id=guild_battle.author.id)
             else:
                 battle.winner = guild_battle.opponent.display_name
+                winner_player, created = await Player.objects.aget_or_create(discord_id=guild_battle.opponent.id)
 
             embed.title = "Battle: Complete!"
             embed.color = discord.Color.green()
@@ -205,6 +209,12 @@ class Battle(commands.GroupCog):
             embed.set_footer(text="Battle concluded.")
 
             await message.edit(embed=embed, view=None)
+            unlocked = await progress_achievement(winner_player, AchievementType.FIRST_BATTLE_WIN)
+            await notify_user(
+                unlocked,
+                user=guild_battle.author if p1_total_hp >= p2_total_hp else guild_battle.opponent,
+                channel=message.channel,
+            )
             self.battles[interaction.channel_id] = None
 
         else:

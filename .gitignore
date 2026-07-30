@@ -51,4 +51,5 @@ extra/*
 !extra/battle
 !extra/merchant
 !extra/bet
+!extra/achivement
 .gitmodules

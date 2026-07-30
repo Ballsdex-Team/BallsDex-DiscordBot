@@ -1,5 +1,5 @@
 [project]
-name = "balls_extension_app"
+name = "balls_extension"
 version = "1.0.0"
 
 dependencies = []

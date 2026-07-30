@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "pack_models",
     "collector_app",
     "merchant_app",
+    "achievement_app",
 ]
 
 EXTRA_APPS = discover_extra_packages()
