@@ -1,9 +1,16 @@
-from typing import Any, Awaitable, Callable
+from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
+import discord
+from discord.ui import Container, LayoutView, Section, Separator, TextDisplay, Thumbnail
 from django.db import models
 from django.utils import timezone
 
 from bd_models.models import Ball, BallGroup, Player, Special, balls, groups, specials
+
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
+
+_BOT: "BallsDexBot | None" = None
 
 
 class AchievementType(models.TextChoices):
@@ -118,6 +125,7 @@ class Achievement(models.Model):
 class UserAchievement(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+    achievement_id: int
     progress = models.PositiveIntegerField(default=0)
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -147,6 +155,7 @@ async def progress_achievement(player: Player, achievement_type: AchievementType
     checker = CHECKERS.get(achievement_type)
     achievements = Achievement.objects.prefetch_related("prerequisities").filter(type=achievement_type)
 
+    unlocked: list[Achievement] = []
     async for achievement in achievements:
         prerequisities = [x async for x in achievement.prerequisities.all()]
         if not await prerequisities_met(player, achievement, prerequisities):
@@ -178,7 +187,70 @@ async def progress_achievement(player: Player, achievement_type: AchievementType
             user_achievement.completed = True
             user_achievement.completed_at = timezone.now()
 
+            unlocked.append(achievement)
             await player.add_money(achievement.currency_reward)
-        # TODO: enviar mensaje/log
 
         await user_achievement.asave(update_fields=["progress", "completed", "completed_at"])
+
+    return unlocked
+
+
+async def notify_user(
+    achievements: list[Achievement],
+    *,
+    user: discord.User | discord.Member | None = None,
+    channel: discord.TextChannel | None = None,
+):
+    if not user and not channel:
+        raise RuntimeError("You must provide at least one of 'user' or 'channel'.")
+
+    files = []
+    container = Container()
+    container.add_item(TextDisplay("# New Achievement(s) Unlocked!"))
+    container.add_item(Separator())
+
+    shown = 3
+    for achievement in achievements:
+        if container._total_count >= 38:
+            break
+
+        if achievement.thumbnail:
+            file = discord.File(achievement.thumbnail.path, achievement.thumbnail.name)
+            section = Section(accessory=Thumbnail(file))
+            text = TextDisplay(f"**{achievement.name}**\n")
+            shown += 2
+            if achievement.description:
+                text.content += f"{achievement.description}"
+            section.add_item(text)
+            files.append(file)
+            container.add_item(section)
+        else:
+            text = TextDisplay(f"**{achievement.name}**\n")
+            if achievement.description:
+                text.content += f"{achievement.description}"
+            shown += 1
+            container.add_item(text)
+
+    remaining = len(achievements) - shown
+    if remaining > 0:
+        container.add_item(TextDisplay(f"...and **{remaining}** more achievement(s)."))
+
+    if user:
+        try:
+            view = LayoutView()
+            view.add_item(container)
+            await user.send(view=view)
+            return
+        except (discord.HTTPException, discord.Forbidden):
+            pass
+
+    if channel:
+        try:
+            view = LayoutView()
+            if user:
+                view.add_item(TextDisplay(user.mention))
+            view.add_item(container)
+            await channel.send(view=view)
+            return
+        except (discord.HTTPException, discord.Forbidden):
+            pass

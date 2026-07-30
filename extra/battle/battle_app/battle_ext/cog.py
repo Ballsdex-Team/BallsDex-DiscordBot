@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict
 
 import discord
-from achievement_app.models import AchievementType, progress_achievement
+from achievement_app.models import AchievementType, notify_user, progress_achievement
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import View
@@ -209,7 +209,12 @@ class Battle(commands.GroupCog):
             embed.set_footer(text="Battle concluded.")
 
             await message.edit(embed=embed, view=None)
-            await progress_achievement(winner_player, AchievementType.FIRST_BATTLE_WIN)
+            unlocked = await progress_achievement(winner_player, AchievementType.FIRST_BATTLE_WIN)
+            await notify_user(
+                unlocked,
+                user=guild_battle.author if p1_total_hp >= p2_total_hp else guild_battle.opponent,
+                channel=message.channel,
+            )
             self.battles[interaction.channel_id] = None
 
         else:
