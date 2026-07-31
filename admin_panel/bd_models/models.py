@@ -47,6 +47,7 @@ def filesize_validator(value: models.FieldFile):
         raise ValidationError("File too large for Discord. Size should not exceed 10 MiB.")
 
 
+assets: dict[int, Asset] = {}
 balls: dict[int, Ball] = {}
 regimes: dict[int, Regime] = {}
 economies: dict[int, Economy] = {}
@@ -208,6 +209,7 @@ class Asset(models.Model):
 class Economy(models.Model):
     name = models.CharField(max_length=64)
     icon = models.ForeignKey(Asset, on_delete=models.RESTRICT, help_text="512x512 PNG image")
+    icon_id: int
 
     objects: Manager[Self] = Manager()
 
@@ -219,10 +221,15 @@ class Economy(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    @property
+    def cached_icon(self) -> Asset:
+        return assets.get(self.icon_id) or self.icon
+
 
 class Regime(models.Model):
     name = models.CharField(max_length=64)
     background = models.ForeignKey(Asset, on_delete=models.RESTRICT, help_text="1428x2000 PNG image")
+    background_id: int
 
     objects: Manager[Self] = Manager()
 
@@ -232,6 +239,10 @@ class Regime(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def cached_background(self) -> Asset:
+        return assets.get(self.background_id) or self.background
 
 
 class EnabledManager[T: models.Model](Manager[T]):
@@ -292,6 +303,7 @@ class Special(models.Model):
     background = models.ForeignKey(
         Asset, on_delete=models.RESTRICT, blank=True, null=True, help_text="1428x2000 PNG image"
     )
+    background_id: int | None
     tradeable = models.BooleanField(help_text="Whether balls of this event can be traded", default=True)
     hidden = models.BooleanField(help_text="Hides the event from user commands", default=False)
     credits = models.CharField(max_length=64, help_text="Author of the special event artwork", null=True)
@@ -306,6 +318,12 @@ class Special(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    @property
+    def cached_background(self) -> Asset | None:
+        if self.background_id is None:
+            return None
+        return assets.get(self.background_id) or self.background
+
 
 class Ball(models.Model):
     country = models.CharField(unique=True, max_length=48, verbose_name="Name")
@@ -319,12 +337,14 @@ class Ball(models.Model):
         help_text="Image used when a new ball spawns in the wild",
         related_name="wild_card_set",
     )
+    wild_card_id: int
     collection_card = models.ForeignKey(
         Asset,
         on_delete=models.RESTRICT,
         help_text="Image used when displaying balls",
         related_name="collection_card_set",
     )
+    collection_card_id: int
     credits = models.CharField(max_length=64, help_text="Author of the collection artwork")
     capacity_name = models.CharField(max_length=64, help_text="Name of the countryball's capacity")
     capacity_description = models.CharField(max_length=256, help_text="Description of the countryball's capacity")
@@ -367,6 +387,14 @@ class Ball(models.Model):
     @property
     def cached_economy(self) -> Economy | None:
         return economies.get(self.economy_id) or self.economy if self.economy_id else None
+
+    @property
+    def cached_wild_card(self) -> Asset:
+        return assets.get(self.wild_card_id) or self.wild_card
+
+    @property
+    def cached_collection_card(self) -> Asset:
+        return assets.get(self.collection_card_id) or self.collection_card
 
     def __str__(self) -> str:
         return self.country
@@ -493,7 +521,7 @@ class BallInstance(models.Model):
     @property
     def special_card(self) -> "ImageFieldFile | None":
         if self.specialcard:
-            return self.specialcard.background or self.countryball.collection_card
+            return (self.specialcard.cached_background or self.countryball.cached_collection_card).file
 
     @property
     def countryball(self) -> Ball:

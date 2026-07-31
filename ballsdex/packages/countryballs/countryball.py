@@ -236,7 +236,7 @@ class BallSpawnView(View):
             source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
             return "".join(random.choices(source, k=15))
 
-        extension = self.model.wild_card.name.split(".")[-1]
+        extension = self.model.cached_wild_card.file.name.split(".")[-1]
         file_name = f"nt_{generate_random_name()}.{extension}"
         try:
             permissions = channel.permissions_for(channel.guild.me)
@@ -246,7 +246,9 @@ class BallSpawnView(View):
                 )
 
                 self.message = await channel.send(
-                    spawn_message, view=self, file=discord.File(self.model.wild_card.path, filename=file_name)
+                    spawn_message,
+                    view=self,
+                    file=discord.File(self.model.cached_wild_card.file.path, filename=file_name),
                 )
                 return True
             else:

@@ -33,6 +33,7 @@ from ballsdex.core.help import HelpCommand
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.utils.checks import check_perms
 from bd_models.models import (
+    Asset,
     Ball,
     BallGroup,
     BlacklistedGuild,
@@ -40,6 +41,7 @@ from bd_models.models import (
     Economy,
     Regime,
     Special,
+    assets,
     balls,
     economies,
     groups,
@@ -294,6 +296,11 @@ class BallsDexBot(commands.AutoShardedBot):
         self.application_emojis.clear()
         for emoji in await self.fetch_application_emojis():
             self.application_emojis[emoji.id] = emoji
+
+        assets.clear()
+        async for asset in Asset.objects.all():
+            assets[asset.pk] = asset
+        table.add_row("Assets", str(len(assets)))
 
         balls.clear()
         async for ball in Ball.objects.all():
