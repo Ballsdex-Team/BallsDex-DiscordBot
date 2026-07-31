@@ -55,6 +55,7 @@ class Collector(commands.GroupCog):
                 special=collector.cached_special,
                 tradeable=collector.tradeable,
                 catch_date=timezone.now(),
+                server_id=interaction.guild_id,
             )
 
             await CollectorInstance.objects.acreate(player=player, collector=collector)
@@ -79,6 +80,7 @@ class Collector(commands.GroupCog):
             special=collector.cached_special,
             tradeable=collector.tradeable,
             catch_date=timezone.now(),
+            server_id=interaction.guild_id,
         )
 
         await CollectorInstance.objects.acreate(player=player, collector=collector)

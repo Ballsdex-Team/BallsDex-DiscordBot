@@ -95,6 +95,7 @@ class Pack(commands.GroupCog):
             ball=ball,
             health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
+            server_id=interaction.guild_id,
         )
         embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
         embed.description = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
@@ -153,6 +154,7 @@ class Pack(commands.GroupCog):
             ball=ball,
             health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
+            server_id=interaction.guild_id,
         )
         embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
         embed.description = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"

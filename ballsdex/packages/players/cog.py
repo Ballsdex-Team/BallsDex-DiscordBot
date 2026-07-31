@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import discord
+from achievement_app.models import AchievementType, notify_user, progress_achievement
 from discord import app_commands
 from discord.ext import commands
 from django.db.models import Q
@@ -128,6 +129,19 @@ class Player(commands.GroupCog):
             return
 
         await Friendship.objects.acreate(player1=player1, player2=player2)
+        p1_unlocked = []
+        p2_unlocked = []
+
+        p1_unlocked += await progress_achievement(player1, AchievementType.FIRST_FRIEND)
+        p1_unlocked += await progress_achievement(player1, AchievementType.HAVE_FRIEND)
+        p2_unlocked += await progress_achievement(player2, AchievementType.FIRST_FRIEND)
+        p2_unlocked += await progress_achievement(player2, AchievementType.HAVE_FRIEND)
+
+        if p1_unlocked:
+            await notify_user(p1_unlocked, user=interaction.user, channel=interaction.channel)  # type: ignore
+
+        if p2_unlocked:
+            await notify_user(p2_unlocked, user=user, channel=interaction.channel)  # type: ignore
         self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
 
     @friend.command(name="remove")

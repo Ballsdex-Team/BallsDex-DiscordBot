@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
 import discord
@@ -9,6 +11,8 @@ from bd_models.models import Ball, BallGroup, Player, Special, balls, groups, sp
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+
+    from discord.abc import MessageableChannel
 
 _BOT: "BallsDexBot | None" = None
 
@@ -117,6 +121,9 @@ class Achievement(models.Model):
     def cached_special(self):
         return specials.get(self.special_id) or self.special if self.special_id else None
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         managed = True
         db_table = "achievement"
@@ -196,10 +203,7 @@ async def progress_achievement(player: Player, achievement_type: AchievementType
 
 
 async def notify_user(
-    achievements: list[Achievement],
-    *,
-    user: discord.User | discord.Member | None = None,
-    channel: discord.TextChannel | None = None,
+    achievements: list[Achievement], *, user: discord.abc.User | None = None, channel: MessageableChannel | None = None
 ):
     if not user and not channel:
         raise RuntimeError("You must provide at least one of 'user' or 'channel'.")
@@ -235,15 +239,6 @@ async def notify_user(
     if remaining > 0:
         container.add_item(TextDisplay(f"...and **{remaining}** more achievement(s)."))
 
-    if user:
-        try:
-            view = LayoutView()
-            view.add_item(container)
-            await user.send(view=view)
-            return
-        except (discord.HTTPException, discord.Forbidden):
-            pass
-
     if channel:
         try:
             view = LayoutView()
@@ -251,6 +246,15 @@ async def notify_user(
                 view.add_item(TextDisplay(user.mention))
             view.add_item(container)
             await channel.send(view=view)
+            return
+        except (discord.HTTPException, discord.Forbidden):
+            pass
+
+    if user:
+        try:
+            view = LayoutView()
+            view.add_item(container)
+            await user.send(view=view)
             return
         except (discord.HTTPException, discord.Forbidden):
             pass

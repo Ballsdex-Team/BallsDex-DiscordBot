@@ -12,4 +12,3 @@ from .friendship import *
 from .instance import *
 from .playtime import *
 from .receive_ball import *
-from .trade import *

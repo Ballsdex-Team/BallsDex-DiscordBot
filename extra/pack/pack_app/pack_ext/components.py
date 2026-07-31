@@ -54,6 +54,7 @@ class SelectBallPackView(Pages):
             special=special,
             health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
+            server_id=interaction.guild_id,
         )
         embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
         desc = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
@@ -126,6 +127,7 @@ class ShopPages(Pages):
             special=special,
             health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
+            server_id=interaction.guild_id,
         )
         embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
         desc = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"

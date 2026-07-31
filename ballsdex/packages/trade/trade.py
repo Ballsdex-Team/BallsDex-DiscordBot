@@ -4,7 +4,7 @@ This file contains most of the logic behind trading. It is composed of two main 
 on Discord.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import asyncio
 import logging
@@ -13,7 +13,8 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 import discord
-from asgiref.sync import sync_to_async
+from asgiref.sync import async_to_sync, sync_to_async
+from achievement_app.models import AchievementType, notify_user, progress_achievement
 from discord.ui import ActionRow, Button, Item, Section, Select, Separator, TextDisplay, TextInput, Thumbnail
 from discord.utils import format_dt, utcnow
 from django.db import transaction
@@ -707,6 +708,24 @@ class TradeInstance(LayoutView):
             player2.money += self.trader1.money - self.trader2.money
             player1.save(update_fields=("money",))
             player2.save(update_fields=("money",))
+
+        p1_unlocked = []
+        p2_unlocked = []
+
+        p1_unlocked += async_to_sync(progress_achievement)(self.trader1.player, AchievementType.FIRST_TRADE)
+        p2_unlocked += async_to_sync(progress_achievement)(self.trader2.player, AchievementType.FIRST_TRADE)
+        p2_unlocked += async_to_sync(progress_achievement)(
+            self.trader2.player, AchievementType.COMPLETE_TRADE, received_coins=trade.player1_money
+        )
+        p1_unlocked += async_to_sync(progress_achievement)(
+            self.trader1.player, AchievementType.COMPLETE_TRADE, received_coins=trade.player2_money
+        )
+
+        if p1_unlocked:
+            async_to_sync(notify_user)(p1_unlocked, user=self.trader1.user, channel=self.message.channel)
+
+        if p2_unlocked:
+            async_to_sync(notify_user)(p2_unlocked, user=self.trader2.user, channel=self.message.channel)
 
         BallInstance.objects.bulk_update(balls, fields=("player", "trade_player", "favorite", "locked"))
         TradeObject.objects.bulk_create(trade_objects)

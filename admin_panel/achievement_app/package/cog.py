@@ -38,6 +38,7 @@ class Achievement(commands.GroupCog):
         await interaction.response.defer(thinking=True)
         achievements = [x async for x in AchievementModel.objects.all()]
         user_achievements = {ua.achievement_id: ua async for ua in UserAchievement.objects.filter(player=player)}
+        completed_achievements = {key: value for key, value in user_achievements.items() if value.completed}
 
         entries: list[TextDisplay | Section] = []
         for achievement in achievements:
@@ -70,12 +71,12 @@ class Achievement(commands.GroupCog):
                     text.content += format_currency(achievement.currency_reward, False, self.bot)
                 entries.append(text)
 
-        percentage = round((len(user_achievements) / len(achievements)) * 100)
+        percentage = round((len(completed_achievements) / len(achievements)) * 100)
         view = LayoutView()
         view.restrict_author(interaction.user.id)
         container = Container()
         container.add_item(TextDisplay(f"# {settings.bot_name} Achievements"))
-        container.add_item(TextDisplay(f"{len(user_achievements)}/{len(achievements)} ({percentage}%)"))
+        container.add_item(TextDisplay(f"{len(completed_achievements)}/{len(achievements)} ({percentage}%)"))
         container.add_item(Separator())
         view.add_item(container)
         menu = Menu(interaction.client, view, ChunkedListSource(entries, 5), ItemFormatter(container, 2))
