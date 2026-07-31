@@ -12,6 +12,7 @@ import discord
 from discord.utils import format_dt
 from django.contrib import admin
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Cast
@@ -38,6 +39,12 @@ def transform_media(path: str) -> str:
 
 def image_display(image_link: str) -> SafeText:
     return mark_safe(f'<img src="/media/{transform_media(image_link)}" width="80%" />')
+
+
+def filesize_validator(value: models.FieldFile):
+    limit = 10 * 2**20  # 10 MiB
+    if value.size > limit:
+        raise ValidationError("File too large for Discord. Size should not exceed 10 MiB.")
 
 
 balls: dict[int, Ball] = {}
@@ -176,9 +183,31 @@ class Player(models.Model):
         return self.money >= amount
 
 
+class Asset(models.Model):
+    file = models.ImageField(validators=[filesize_validator])
+    author = models.CharField(max_length=64, help_text="Name of the asset author.")
+    player = models.ForeignKey(
+        Player,
+        on_delete=models.SET_NULL,
+        default=None,
+        null=True,
+        help_text="The player object of the author, if it exists. Optional and unused for now.",
+    )
+    hidden = models.BooleanField(default=False, help_text="Whether the artist should be hidden from /about")
+    extra_data = models.JSONField(blank=True, default=dict)
+
+    objects: Manager[Self] = Manager()
+
+    def __str__(self) -> str:
+        name = self.file.name
+        if len(name) > 32:
+            name = f"{name[:29]}..."
+        return f"{name} by {self.author}"
+
+
 class Economy(models.Model):
     name = models.CharField(max_length=64)
-    icon = models.ImageField(max_length=200, help_text="512x512 PNG image")
+    icon = models.ForeignKey(Asset, on_delete=models.RESTRICT, help_text="512x512 PNG image")
 
     objects: Manager[Self] = Manager()
 
@@ -193,7 +222,7 @@ class Economy(models.Model):
 
 class Regime(models.Model):
     name = models.CharField(max_length=64)
-    background = models.ImageField(max_length=200, help_text="1428x2000 PNG image")
+    background = models.ForeignKey(Asset, on_delete=models.RESTRICT, help_text="1428x2000 PNG image")
 
     objects: Manager[Self] = Manager()
 
@@ -260,7 +289,9 @@ class Special(models.Model):
     )
     rarity = models.FloatField(help_text="Value between 0 and 1, chances of using this special background.")
     emoji = models.CharField(max_length=20, blank=True, null=True, help_text="A unicode character")
-    background = models.ImageField(max_length=200, blank=True, null=True, help_text="1428x2000 PNG image")
+    background = models.ForeignKey(
+        Asset, on_delete=models.RESTRICT, blank=True, null=True, help_text="1428x2000 PNG image"
+    )
     tradeable = models.BooleanField(help_text="Whether balls of this event can be traded", default=True)
     hidden = models.BooleanField(help_text="Hides the event from user commands", default=False)
     credits = models.CharField(max_length=64, help_text="Author of the special event artwork", null=True)
@@ -282,8 +313,18 @@ class Ball(models.Model):
     attack = models.IntegerField(help_text="Ball attack stat")
     rarity = models.FloatField(help_text="Rarity of this ball")
     emoji_id = models.BigIntegerField(help_text="Emoji ID for this ball")
-    wild_card = models.ImageField(max_length=200, help_text="Image used when a new ball spawns in the wild")
-    collection_card = models.ImageField(max_length=200, help_text="Image used when displaying balls")
+    wild_card = models.ForeignKey(
+        Asset,
+        on_delete=models.RESTRICT,
+        help_text="Image used when a new ball spawns in the wild",
+        related_name="wild_card_set",
+    )
+    collection_card = models.ForeignKey(
+        Asset,
+        on_delete=models.RESTRICT,
+        help_text="Image used when displaying balls",
+        related_name="collection_card_set",
+    )
     credits = models.CharField(max_length=64, help_text="Author of the collection artwork")
     capacity_name = models.CharField(max_length=64, help_text="Name of the countryball's capacity")
     capacity_description = models.CharField(max_length=256, help_text="Description of the countryball's capacity")
