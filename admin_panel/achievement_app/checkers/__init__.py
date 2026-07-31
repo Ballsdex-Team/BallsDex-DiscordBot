@@ -8,7 +8,6 @@ from .complete_trade import *
 from .completion_percentage import *
 from .fastest_catcher import *
 from .first_special import *
-from .friendship import *
 from .instance import *
 from .playtime import *
 from .receive_ball import *
