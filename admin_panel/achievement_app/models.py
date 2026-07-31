@@ -8,11 +8,12 @@ from django.db import models
 from django.utils import timezone
 
 from bd_models.models import Ball, BallGroup, Player, Special, balls, groups, specials
+from settings.models import settings
 
 if TYPE_CHECKING:
-    from ballsdex.core.bot import BallsDexBot
-
     from discord.abc import MessageableChannel
+
+    from ballsdex.core.bot import BallsDexBot
 
 _BOT: "BallsDexBot | None" = None
 
@@ -208,34 +209,26 @@ async def notify_user(
     if not user and not channel:
         raise RuntimeError("You must provide at least one of 'user' or 'channel'.")
 
-    files = []
     container = Container()
     container.add_item(TextDisplay("# New Achievement(s) Unlocked!"))
     container.add_item(Separator())
 
-    shown = 3
-    for achievement in achievements:
-        if container._total_count >= 38:
-            break
-
+    for achievement in achievements[:5]:
         if achievement.thumbnail:
-            file = discord.File(achievement.thumbnail.path, achievement.thumbnail.name)
+            file = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
             section = Section(accessory=Thumbnail(file))
             text = TextDisplay(f"**{achievement.name}**\n")
-            shown += 2
             if achievement.description:
                 text.content += f"{achievement.description}"
             section.add_item(text)
-            files.append(file)
             container.add_item(section)
         else:
             text = TextDisplay(f"**{achievement.name}**\n")
             if achievement.description:
                 text.content += f"{achievement.description}"
-            shown += 1
             container.add_item(text)
 
-    remaining = len(achievements) - shown
+    remaining = len(achievements) - len(achievements[:5])
     if remaining > 0:
         container.add_item(TextDisplay(f"...and **{remaining}** more achievement(s)."))
 
