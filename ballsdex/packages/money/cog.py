@@ -1,11 +1,14 @@
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import discord
 from asgiref.sync import sync_to_async
 from discord import app_commands
 from discord.ext import commands
+from discord.utils import format_dt
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 
 from ballsdex.core.utils.utils import can_mention
 from bd_models.models import Player, Trade
@@ -100,14 +103,25 @@ class Money(commands.GroupCog):
         )
 
     @app_commands.command()
-    @app_commands.checks.cooldown(1, 86400, key=lambda i: i.user.id)
     async def daily(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Claim your daily payment.
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        raw_cooldown = player.extra_data.get("berry_daily_cooldown", None)
+        cooldown = datetime.fromisoformat(raw_cooldown) if raw_cooldown else None
+        if cooldown is not None:
+            now = timezone.now()
+            if cooldown >= now:
+                await interaction.followup.send(
+                    f"You've already claimed the daily payment. Come back in {format_dt(cooldown, 'R')}"
+                )
+                return
+
+        player.extra_data["berry_daily_cooldown"] = (timezone.now() + timedelta(hours=24)).isoformat()
         await player.add_money(1500)
+        await player.asave(update_fields=("extra_data",))
 
         await interaction.followup.send(
             "You've claimed  "

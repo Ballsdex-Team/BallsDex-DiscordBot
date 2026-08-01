@@ -311,7 +311,7 @@ class Merchant(commands.GroupCog):
             instance.rotation_ends_at = timezone.now() + merchant_settings.rotation_delta
             await instance.asave(update_fields=("rotation_ends_at",))
         else:
-            items = instance.items
+            items = [x async for x in instance.items.all()]
 
         return [
             app_commands.Choice(name=f"#{x.pk:0X} {x.name} ({format_currency(x.prize or 0)})", value=x.pk)

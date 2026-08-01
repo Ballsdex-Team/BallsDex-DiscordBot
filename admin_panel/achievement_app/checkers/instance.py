@@ -35,11 +35,8 @@ async def _handle_created_ballinstance(instance: BallInstance, notify: bool = Tr
     unlocked += await progress_achievement(player, AchievementType.PLAYTIME)
     unlocked += await progress_achievement(player, AchievementType.BALL_COUNT)
     if instance.trade_player_id is not None:
-        unlocked += await progress_achievement(
-            player,
-            AchievementType.RECEIVE_BALL,
-            user_id=instance.trade_player.discord_id,  # type: ignore
-        )
+        trade_player = await Player.objects.aget(pk=instance.trade_player_id)
+        unlocked += await progress_achievement(player, AchievementType.RECEIVE_BALL, user_id=trade_player.discord_id)
     if instance.favorite:
         unlocked += await progress_achievement(player, AchievementType.FIRST_FAVORITE_BALL)
 

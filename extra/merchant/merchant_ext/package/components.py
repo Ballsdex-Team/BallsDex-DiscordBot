@@ -100,7 +100,7 @@ class BuyItemView(Pages):
         else:
             await player.remove_money(item.prize)
             await interaction.followup.send(
-                f"You've bought {item.name} for **{format_currency(player.money, False, self.bot)}!**\n"
+                f"You've bought {item.name} for **{format_currency(item.prize, False, self.bot)}!**\n"
                 f"{instance.description(include_emoji=True, bot=self.bot)}"
             )
             return
