@@ -7,6 +7,9 @@ from ..models import Achievement, AchievementType, register_checker
 async def check_catch_time(achievement: Achievement, player: Player, **kwargs):
     elapsed_seconds = kwargs.get("elapsed_seconds", 0)
 
+    if achievement.required_value is None:
+        return False
+
     if elapsed_seconds <= achievement.required_value:
         return True
 

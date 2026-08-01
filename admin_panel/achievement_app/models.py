@@ -146,13 +146,21 @@ class UserAchievement(models.Model):
         indexes = [models.Index(fields=("player_id",)), models.Index(fields=("achievement_id",))]
 
 
-async def prerequisities_met(player: Player, achievement: Achievement, prerequisities: list[Achievement]):
+async def prerequisities_met(
+    player: Player,
+    achievement: Achievement,
+    prerequisities: list[Achievement],
+    existing_ua: dict[int, UserAchievement] | None = None,
+):
     if not prerequisities:
         return True
 
-    completed_count = await UserAchievement.objects.filter(
-        player=player, achievement_id__in=[x.pk for x in prerequisities], completed=True
-    ).acount()
+    if existing_ua is not None:
+        completed_count = sum(1 for p in prerequisities if existing_ua.get(p.pk) and existing_ua[p.pk].completed)
+    else:
+        completed_count = await UserAchievement.objects.filter(
+            player=player, achievement_id__in=[x.pk for x in prerequisities], completed=True
+        ).acount()
 
     if achievement.prerequisite_logic == PrerequisiteLogic.ALL:
         return completed_count == len(prerequisities)
@@ -160,14 +168,26 @@ async def prerequisities_met(player: Player, achievement: Achievement, prerequis
         return completed_count > 0
 
 
-async def progress_achievement(player: Player, achievement_type: AchievementType, **context):
+async def progress_achievement(
+    player: Player,
+    achievement_type: AchievementType,
+    *,
+    achievements: list[Achievement] | None = None,
+    existing_ua: dict[int, UserAchievement] | None = None,
+    **context,
+):
     checker = CHECKERS.get(achievement_type)
-    achievements = Achievement.objects.prefetch_related("prerequisities").filter(type=achievement_type)
+
+    if achievements is None:
+        achievements = [
+            x async for x in Achievement.objects.prefetch_related("prerequisities").filter(type=achievement_type)
+        ]
 
     unlocked: list[Achievement] = []
-    async for achievement in achievements:
-        prerequisities = [x async for x in achievement.prerequisities.all()]
-        if not await prerequisities_met(player, achievement, prerequisities):
+    to_update: list[UserAchievement] = []
+    for achievement in achievements:
+        prerequisities = list(achievement.prerequisities.all())
+        if not await prerequisities_met(player, achievement, prerequisities, existing_ua):
             continue
 
         result = True
@@ -177,9 +197,13 @@ async def progress_achievement(player: Player, achievement_type: AchievementType
         if result is False:
             continue
 
-        user_achievement, _ = await UserAchievement.objects.aget_or_create(
-            player=player, achievement=achievement, defaults={"progress": 0}
-        )
+        user_achievement = existing_ua.get(achievement.pk) if existing_ua is not None else None
+        if user_achievement is None:
+            user_achievement, _ = await UserAchievement.objects.aget_or_create(
+                player=player, achievement=achievement, defaults={"progress": 0}
+            )
+            if existing_ua is not None:
+                existing_ua[achievement.pk] = user_achievement
 
         if user_achievement.completed:
             continue
@@ -199,7 +223,10 @@ async def progress_achievement(player: Player, achievement_type: AchievementType
             unlocked.append(achievement)
             await player.add_money(achievement.currency_reward)
 
-        await user_achievement.asave(update_fields=["progress", "completed", "completed_at"])
+        to_update.append(user_achievement)
+
+    if to_update:
+        await UserAchievement.objects.abulk_update(to_update, ["progress", "completed", "completed_at"])
 
     return unlocked
 

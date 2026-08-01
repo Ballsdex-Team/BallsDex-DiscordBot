@@ -9,7 +9,7 @@ from django.db.models import Q
 
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.menus import ChunkedListSource, ItemFormatter, Menu
-from bd_models.models import BallInstance, Friendship, Player, Trade
+from bd_models.models import BallInstance, Friendship, Player, Trade, specials
 from settings.models import settings
 from settings.utils import format_currency
 
@@ -192,20 +192,56 @@ class Achievement(commands.GroupCog):
     async def _sync_achievements(self, player: Player) -> list[AchievementModel]:
         unlocked = []
 
-        async for instance in BallInstance.objects.filter(player=player).order_by("catch_date"):
-            unlocked += await _handle_created_ballinstance(instance, False)
+        all_achievements = [x async for x in AchievementModel.objects.prefetch_related("prerequisities").all()]
+        existing_ua = {ua.achievement_id: ua async for ua in UserAchievement.objects.filter(player=player)}
 
-        async for trade in Trade.objects.filter(Q(player1=player) | Q(player2=player)).order_by("date"):
-            is_player1 = trade.player1_id == player.pk
-            received_currency = trade.player2_money if is_player1 else trade.player1_money
+        ball_instances = [x async for x in BallInstance.all_objects.filter(player=player)]
+        trades = [x async for x in Trade.objects.filter(Q(player1=player) | Q(player2=player))]
+        friendships = [x async for x in Friendship.objects.filter(Q(player1=player) | Q(player2=player))]
 
-            unlocked += await progress_achievement(player, AchievementType.FIRST_TRADE)
-            unlocked += await progress_achievement(
-                player, AchievementType.COMPLETE_TRADE, received_currency=received_currency
+        trade_player_ids = {i.trade_player_id for i in ball_instances if i.trade_player_id}
+        trade_players = (
+            {p.pk: p async for p in Player.objects.filter(pk__in=trade_player_ids)} if trade_player_ids else {}
+        )
+
+        async def run(achievement_type, **context):
+            return await progress_achievement(
+                player, achievement_type, achievements=all_achievements, existing_ua=existing_ua, **context
             )
 
-        async for friendship in Friendship.objects.filter(Q(player1=player) | Q(player2=player)).order_by("since"):
-            unlocked += await progress_achievement(player, AchievementType.FIRST_FRIEND)
-            unlocked += await progress_achievement(player, AchievementType.HAVE_FRIEND)
+        for t in (
+            AchievementType.BALL_COUNT,
+            AchievementType.COMPLETE_GROUP,
+            AchievementType.COMPLETION_PERCENTAGE,
+            AchievementType.PLAYTIME,
+        ):
+            unlocked += await run(t)
+
+        special_ids = {i.special_id for i in ball_instances if i.special_id}
+        for special_id in special_ids:
+            if special := specials.get(special_id):
+                unlocked += await run(AchievementType.FIRST_SPECIAL, special=special)
+
+        for instance in ball_instances:
+            unlocked += await run(AchievementType.FIRST_CATCH)
+            unlocked += await run(AchievementType.CATCH_BALL, instance=instance)
+            if instance.catch_date and instance.spawned_time:
+                elapsed = (instance.catch_date - instance.spawned_time).total_seconds()
+                unlocked += await run(AchievementType.FASTEST_CATCHER, elapsed_seconds=elapsed)
+            if instance.trade_player_id is not None:
+                trade_player = trade_players.get(instance.trade_player_id)
+                if trade_player:
+                    unlocked += await run(AchievementType.RECEIVE_BALL, user_id=trade_player.discord_id)
+            if instance.favorite:
+                unlocked += await run(AchievementType.FIRST_FAVORITE_BALL)
+
+        for trade in trades:
+            received = trade.player2_money if trade.player1_id == player.pk else trade.player1_money
+            unlocked += await run(AchievementType.COMPLETE_TRADE, received_currency=received)
+            unlocked += await run(AchievementType.FIRST_TRADE)
+
+        for _ in friendships:
+            unlocked += await run(AchievementType.FIRST_FRIEND)
+            unlocked += await run(AchievementType.HAVE_FRIEND)
 
         return unlocked
