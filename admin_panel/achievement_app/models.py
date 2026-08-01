@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from bd_models.models import Ball, BallGroup, Player, Special, balls, groups, specials
 from settings.models import settings
+from settings.utils import format_currency
 
 if TYPE_CHECKING:
     from discord.abc import MessageableChannel
@@ -219,13 +220,17 @@ async def notify_user(
             section = Section(accessory=Thumbnail(file))
             text = TextDisplay(f"**{achievement.name}**\n")
             if achievement.description:
-                text.content += f"{achievement.description}"
+                text.content += f"{achievement.description}\n"
+            if achievement.currency_reward:
+                text.content += format_currency(achievement.currency_reward, False)
             section.add_item(text)
             container.add_item(section)
         else:
             text = TextDisplay(f"**{achievement.name}**\n")
             if achievement.description:
-                text.content += f"{achievement.description}"
+                text.content += f"{achievement.description}\n"
+            if achievement.currency_reward:
+                text.content += format_currency(achievement.currency_reward, False)
             container.add_item(text)
 
     remaining = len(achievements) - len(achievements[:5])
