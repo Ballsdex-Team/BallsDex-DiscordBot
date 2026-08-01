@@ -182,6 +182,8 @@ async def progress_achievement(
         achievements = [
             x async for x in Achievement.objects.prefetch_related("prerequisities").filter(type=achievement_type)
         ]
+    else:
+        achievements = [x for x in achievements if x.type == achievement_type]
 
     unlocked: list[Achievement] = []
     to_update: list[UserAchievement] = []
