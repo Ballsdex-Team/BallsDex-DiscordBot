@@ -525,6 +525,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             )
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 180, key=lambda i: i.user.id)
     async def drop(
         self,
         interaction: discord.Interaction["BallsDexBot"],
@@ -545,7 +546,6 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             return
 
         cog = cast("CountryBallsSpawner | None", self.bot.get_cog("CountryBallsSpawner"))
-        
 
         if not countryball.is_tradeable:
             await interaction.response.send_message(
