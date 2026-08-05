@@ -158,7 +158,7 @@ class Merchant(commands.GroupCog):
 
         if player.money < item.prize:
             await interaction.followup.send(
-                f"You don't enough {settings.currency_display_plural(self.bot)} to buy "
+                f"You don't have enough {settings.currency_display_plural(self.bot)} to buy "
                 f"**{item.name}**\n"
                 f"Your actual balance: {format_currency(player.money, False, self.bot)}"
             )
