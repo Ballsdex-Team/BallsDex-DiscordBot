@@ -159,15 +159,17 @@ class Core(commands.Cog):
         lines.append("# Broken media:")
         for ball in balls:
             try:
-                if not ball.wild_card.storage.exists(ball.wild_card.name):
+                if not ball.cached_wild_card.file.storage.exists(ball.cached_wild_card.file.name):
                     lines.append(f" - Spawn image for `{ball.country}` is missing")
-                if ball.wild_card.storage.exists(ball.wild_card.name) and ball.wild_card.size > 8 * (10**6):
-                    lines.append(f" - Spawn image for `{ball.country}` is {ball.wild_card.size // 10**6}MB")
+                if ball.cached_wild_card.file.storage.exists(
+                    ball.cached_wild_card.file.name
+                ) and ball.cached_wild_card.file.size > 8 * (10**6):
+                    lines.append(f" - Spawn image for `{ball.country}` is {ball.cached_wild_card.file.size // 10**6}MB")
             except SuspiciousFileOperation:
                 lines.append(f" - Spawn image for `{ball.country}` is outside the media root and cannot be used")
 
             try:
-                if not ball.collection_card.storage.exists(ball.collection_card.name):
+                if not ball.cached_collection_card.file.storage.exists(ball.cached_collection_card.file.name):
                     lines.append(f" - Collection card for `{ball.country}` is missing")
             except SuspiciousFileOperation:
                 lines.append(f" - Collection card for `{ball.country}` is outside the media root and cannot be used")

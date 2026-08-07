@@ -60,9 +60,9 @@ def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             special_credits += f" • Special Author: {ball_instance.specialcard.credits}"
     else:
-        image = Image.open(ball.cached_regime.background)
+        image = Image.open(ball.cached_regime.cached_background.file)
     image = image.convert("RGBA")
-    icon = Image.open(ball.cached_economy.icon).convert("RGBA") if ball.cached_economy else None
+    icon = Image.open(ball.cached_economy.cached_icon.file).convert("RGBA") if ball.cached_economy else None
 
     draw = ImageDraw.Draw(image)
     draw.text((50, 20), ball.short_name or ball.country, font=title_font, stroke_width=2, stroke_fill=(0, 0, 0, 255))
@@ -129,7 +129,7 @@ def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any
         stroke_fill=(255, 255, 255, 255),
     )
 
-    artwork = Image.open(ball.collection_card).convert("RGBA")
+    artwork = Image.open(ball.cached_collection_card.file).convert("RGBA")
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
 
     if icon:
