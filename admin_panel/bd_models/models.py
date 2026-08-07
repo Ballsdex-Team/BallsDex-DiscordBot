@@ -186,15 +186,8 @@ class Player(models.Model):
 
 class Asset(models.Model):
     file = models.ImageField(validators=[filesize_validator])
-    author = models.CharField(max_length=64, help_text="Name of the asset author.")
-    player = models.ForeignKey(
-        Player,
-        on_delete=models.SET_NULL,
-        default=None,
-        null=True,
-        help_text="The player object of the author, if it exists. Optional and unused for now.",
-    )
-    hidden = models.BooleanField(default=False, help_text="Whether the artist should be hidden from /about")
+    created_at = models.DateTimeField(auto_now=True)
+    modified_at = models.DateTimeField(auto_now_add=True)
     extra_data = models.JSONField(blank=True, default=dict)
 
     objects: Manager[Self] = Manager()
@@ -203,7 +196,18 @@ class Asset(models.Model):
         name = self.file.name
         if len(name) > 32:
             name = f"{name[:29]}..."
-        return f"{name} by {self.author}"
+        return name
+
+
+class AssetAuthor(models.Model):
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=32, help_text="Display name of the artist")
+    hidden = models.BooleanField(default=False, help_text="Whether the artist should be hidden from /about")
+    extra_data = models.JSONField(blank=True, default=dict)
+
+    def __str__(self):
+        return self.name
 
 
 class Economy(models.Model):
@@ -306,7 +310,6 @@ class Special(models.Model):
     background_id: int | None
     tradeable = models.BooleanField(help_text="Whether balls of this event can be traded", default=True)
     hidden = models.BooleanField(help_text="Hides the event from user commands", default=False)
-    credits = models.CharField(max_length=64, help_text="Author of the special event artwork", null=True)
 
     objects: Manager[Self] = Manager()
     enabled_objects = SpecialEnabledManager()
@@ -345,7 +348,6 @@ class Ball(models.Model):
         related_name="collection_card_set",
     )
     collection_card_id: int
-    credits = models.CharField(max_length=64, help_text="Author of the collection artwork")
     capacity_name = models.CharField(max_length=64, help_text="Name of the countryball's capacity")
     capacity_description = models.CharField(max_length=256, help_text="Description of the countryball's capacity")
     capacity_logic = models.JSONField(help_text="Effect of this capacity", blank=True, default=dict)
