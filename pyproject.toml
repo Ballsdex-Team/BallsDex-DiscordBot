@@ -48,7 +48,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit==4.3.0",
+    "pre-commit==4.6.1",
     "ruff==0.14.1",
     "pyright==1.1.406",
     "django-debug-toolbar==6.0.0",

@@ -20,3 +20,10 @@ repos:
     hooks:
       - id: pyright
         language_version: python3.14
+  - repo: local
+    hooks:
+      - id: django-migrations
+        name: django-migrations
+        entry: uv run python admin_panel/manage.py makemigrations --check --dry-run
+        language: unsupported
+        pass_filenames: false
