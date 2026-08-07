@@ -85,6 +85,9 @@ class GuildConfig(models.Model):
     manual_drop_enabled = models.BooleanField(
         help_text="Whether players are allowed to use the drop command in this server", default=True
     )
+    tips_enabled = models.BooleanField(
+        help_text="Whether tips are displayed below spawn messages in this server", default=True
+    )
     admin_command_synced = models.BooleanField(
         help_text="True if slash admin commands are present in this server", default=False, editable=False
     )

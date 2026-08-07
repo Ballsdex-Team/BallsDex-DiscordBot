@@ -7,7 +7,7 @@ from django.db import models
 from django.forms import widgets
 from django_admin_action_forms import AdminActionForm, action_with_form
 
-from .models import PromptMessage, Settings
+from .models import PromptMessage, Settings, Tip
 from .services.yml_import import import_settings_from_yaml
 
 if TYPE_CHECKING:
@@ -38,6 +38,35 @@ class PromptMessageAdmin(admin.ModelAdmin):
     exclude = ("settings", "id")
 
     # otherwise, category is link
+    list_display_links = None
+
+    search_fields = ("message",)
+
+    list_per_page = 100
+
+    def save_model(self, request, obj, form, change):
+        if obj.settings_id is None:
+            obj.settings = Settings.objects.first()
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(Tip)
+class TipAdmin(admin.ModelAdmin):
+    search_help_text = """Tips are displayed in a box below spawn messages, one picked at random.
+{collectible} is the collectible name.
+{collectibles} is the plural collectible name.
+{bot} is the bot's name.
+</command name> mentions a slash command, e.g. </balls list> or </about>"""
+
+    formfield_overrides = {models.TextField: {"widget": widgets.Textarea({"rows": 2, "cols": 60})}}
+
+    list_display = ("message", "enabled", "rarity")
+    list_editable = ("message", "enabled", "rarity")
+
+    list_filter = ("enabled",)
+    exclude = ("settings", "id")
+
+    # otherwise, message is link
     list_display_links = None
 
     search_fields = ("message",)
@@ -99,6 +128,9 @@ class SettingsAdmin(admin.ModelAdmin):
                     "spawn_chance_min",
                     "spawn_chance_max",
                     "show_rarity",
+                    "tip_chance",
+                    "tip_position",
+                    "tip_container",
                 ),
                 "classes": ("collapse",),
             },
