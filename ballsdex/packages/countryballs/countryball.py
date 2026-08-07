@@ -8,14 +8,15 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
-from discord.ui import Button, TextInput, button
+from discord.ui import ActionRow, Button, Item, MediaGallery, TextDisplay, TextInput, button
 from django.utils import timezone
 
-from ballsdex.core.discord import Modal, View
+from ballsdex.core.discord import Container, LayoutView, Modal
 from ballsdex.core.metrics import caught_balls
+from ballsdex.core.utils.formatting import format_command_mentions
 from ballsdex.core.utils.utils import can_mention
-from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls, specials
-from settings.models import PromptMessage, settings
+from bd_models.models import Ball, BallInstance, GuildConfig, Player, Special, Trade, TradeObject, balls, specials
+from settings.models import PromptMessage, Settings, settings
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -83,7 +84,31 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         await interaction.followup.edit_message(self.view.message.id, view=self.view)
 
 
-class BallSpawnView(View):
+class CatchRow(ActionRow["BallSpawnView"]):
+    """
+    The action row holding the catch button. Components v2 does not allow buttons to be defined
+    directly on the view, they must be wrapped in an action row.
+    """
+
+    def __init__(self, spawn_view: BallSpawnView):
+        super().__init__()
+        self.spawn_view = spawn_view
+
+    @button(style=discord.ButtonStyle.primary, label="Catch me!")
+    async def catch_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
+        if self.spawn_view.caught:
+            slow_message = settings.get_formatted_message(
+                category=PromptMessage.PromptType.SLOW,
+                mention=interaction.user.mention,
+                model=self.spawn_view.model,
+                bot=interaction.client,
+            )
+            await interaction.response.send_message(slow_message, ephemeral=True)
+        else:
+            await interaction.response.send_modal(CountryballNamePrompt(self.spawn_view))
+
+
+class BallSpawnView(LayoutView):
     """
     BallSpawnView is a Discord UI view that represents the spawning and interaction logic for a
     countryball in the BallsDex bot. It handles user interactions, spawning mechanics, and
@@ -126,7 +151,12 @@ class BallSpawnView(View):
         self.hp_bonus: int | None = None
         self.og_id: int
 
+        self.catch_row = CatchRow(self)
         self.catch_button.label = settings.catch_button_label
+
+    @property
+    def catch_button(self) -> Button["BallSpawnView"]:
+        return self.catch_row.catch_button
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
@@ -140,19 +170,6 @@ class BallSpawnView(View):
                 pass
         if self.ballinstance and not self.caught:
             await self.ballinstance.unlock()
-
-    @button(style=discord.ButtonStyle.primary, label="Catch me!")
-    async def catch_button(self, interaction: discord.Interaction["BallsDexBot"], button: Button):
-        if self.caught:
-            slow_message = settings.get_formatted_message(
-                category=PromptMessage.PromptType.SLOW,
-                mention=interaction.user.mention,
-                model=self.model,
-                bot=interaction.client,
-            )
-            await interaction.response.send_message(slow_message, ephemeral=True)
-        else:
-            await interaction.response.send_modal(CountryballNamePrompt(self))
 
     @classmethod
     async def from_existing(cls, bot: "BallsDexBot", ball_instance: BallInstance):
@@ -215,6 +232,63 @@ class BallSpawnView(View):
 
         return special
 
+    async def get_tip(self, guild_id: int | None = None) -> str | None:
+        """
+        Roll for a tip to display below the spawn message.
+
+        Parameters
+        ----------
+        guild_id: int | None
+            The guild where the countryball spawns. If set, its configuration is checked, as server
+            admins may opt out of tips.
+
+        Returns
+        -------
+        str | None
+            A formatted tip, or `None` if tips are disabled, no tip is configured, or the roll
+            against `tip_chance` failed.
+        """
+        if not settings.tip_chance or random.randint(1, 100) > settings.tip_chance:
+            return None
+        if guild_id is not None:
+            # a missing guild config means the default value, which is enabled
+            enabled = (
+                await GuildConfig.objects.filter(guild_id=guild_id).values_list("tips_enabled", flat=True).afirst()
+            )
+            if enabled is False:
+                return None
+        tip = settings.get_formatted_tip()
+        return format_command_mentions(tip, self.bot) if tip else None
+
+    async def build(self, spawn_message: str, file_name: str, guild_id: int | None = None) -> None:
+        """
+        Populate the components of this view. This must be called once, right before sending the
+        spawn message, since the layout depends on the message and the attached image.
+
+        Parameters
+        ----------
+        spawn_message: str
+            The formatted spawn message, displayed above the countryball.
+        file_name: str
+            The name of the image uploaded alongside this view.
+        guild_id: int | None
+            The guild where the countryball spawns, used to determine if a tip may be displayed.
+        """
+        if spawn_message:
+            self.add_item(TextDisplay(spawn_message))
+        self.add_item(MediaGallery(discord.MediaGalleryItem(f"attachment://{file_name}")))
+
+        tip_item: Item[LayoutView] | None = None
+        if tip := await self.get_tip(guild_id):
+            text = TextDisplay(f"-# \N{ELECTRIC LIGHT BULB} {tip}")
+            tip_item = Container(text) if settings.tip_container else text
+
+        if tip_item and settings.tip_position == Settings.TipPosition.ABOVE_BUTTON:
+            self.add_item(tip_item)
+        self.add_item(self.catch_row)
+        if tip_item and settings.tip_position == Settings.TipPosition.BELOW_BUTTON:
+            self.add_item(tip_item)
+
     async def spawn(self, channel: discord.TextChannel) -> bool:
         """
         Spawn a countryball in a channel.
@@ -244,9 +318,10 @@ class BallSpawnView(View):
                 spawn_message = settings.get_formatted_message(
                     category=PromptMessage.PromptType.SPAWN, mention="", model=self.model, bot=self.bot
                 )
+                await self.build(spawn_message, file_name, channel.guild.id)
 
                 self.message = await channel.send(
-                    spawn_message, view=self, file=discord.File(self.model.wild_card.path, filename=file_name)
+                    view=self, file=discord.File(self.model.wild_card.path, filename=file_name)
                 )
                 return True
             else:

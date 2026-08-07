@@ -172,6 +172,21 @@ class Config(commands.GroupCog):
 
     @app_commands.command()
     @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.checks.bot_has_permissions(send_messages=True)
+    async def toggletips(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Show or hide the tips displayed below spawn messages in this server.
+        """
+        config, created = await GuildConfig.objects.aget_or_create(guild_id=interaction.guild_id)
+        config.tips_enabled = not config.tips_enabled  # type: ignore
+        await config.asave()
+        if config.tips_enabled:
+            await interaction.response.send_message("Tips will now be displayed below spawn messages.")
+        else:
+            await interaction.response.send_message("Tips will no longer be displayed below spawn messages.")
+
+    @app_commands.command()
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def status(self, interaction: discord.Interaction["BallsDexBot"]):
         """
         Check the server configuration status.
@@ -201,6 +216,7 @@ class Config(commands.GroupCog):
         embed.add_field(name="Channel", value=channel.mention, inline=True)
         embed.add_field(name="Status", value="Enabled" if config.enabled else "Disabled", inline=True)
         embed.add_field(name="Drop command", value="Enabled" if config.manual_drop_enabled else "Disabled", inline=True)
+        embed.add_field(name="Tips", value="Enabled" if config.tips_enabled else "Disabled", inline=True)
 
         def tick(granted: bool) -> str:
             return "\N{WHITE HEAVY CHECK MARK}" if granted else "\N{CROSS MARK}"
