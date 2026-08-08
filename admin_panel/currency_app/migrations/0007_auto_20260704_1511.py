@@ -39,6 +39,10 @@ def default_migrate_coins_backward(apps: "Apps", schema_editor: "BaseDatabaseSch
 
 
 class Migration(migrations.Migration):
-    dependencies = [("currency_app", "0006_remove_item_ball_itemball")]
+    dependencies = [
+        ("currency_app", "0006_remove_item_ball_itemball"),
+        ("settings", "0007_settings_currency_emoji_id"),
+        ("bd_models", "0016_alter_player_money"),
+    ]
 
     operations = [migrations.RunPython(default_migrate_coins_forward, default_migrate_coins_backward, atomic=True)]

@@ -668,3 +668,46 @@ class Block(models.Model):
     class Meta:
         managed = True
         db_table = "block"
+
+
+class VoteRecord(models.Model):
+    """
+    One entry per Top.gg vote webhook received, used to grant/track vote rewards and to
+    prevent a replayed webhook from granting a reward again within the same 12h vote window.
+    """
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="vote_records")
+    player_id: int
+    voted_at = models.DateTimeField(auto_now_add=True, editable=False)
+    reward = models.ForeignKey(BallInstance, on_delete=models.SET_NULL, null=True, blank=True)
+    reward_id: int | None
+
+    objects: Manager[Self] = Manager()
+
+    def __str__(self) -> str:
+        return f"Vote from {self.player} at {self.voted_at}"
+
+    class Meta:
+        managed = True
+        db_table = "voterecord"
+        ordering = ("-voted_at",)
+        indexes = (models.Index(fields=("player_id", "voted_at")),)
+
+
+class VoteInteraction(models.Model):
+    """
+    Interaction token of the most recent /vote command run by a player, so the Top.gg webhook can
+    send the reward as an ephemeral follow-up (visible only to that player) once the vote is
+    confirmed. Discord interaction tokens expire 15 minutes after the command was run.
+    """
+
+    discord_id = models.BigIntegerField(unique=True)
+    application_id = models.BigIntegerField()
+    token = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects: Manager[Self] = Manager()
+
+    class Meta:
+        managed = True
+        db_table = "voteinteraction"
