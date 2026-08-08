@@ -64,6 +64,7 @@ DEFAULT_PACKAGES = (
     ("money", "ballsdex.packages.money"),
     ("players", "ballsdex.packages.players"),
     ("trade", "ballsdex.packages.trade"),
+    ("vote", "ballsdex.packages.vote"),
 )
 
 

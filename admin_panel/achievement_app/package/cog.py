@@ -45,7 +45,7 @@ class Achievement(commands.GroupCog):
         unlocked = await self._sync_achievements(player)
 
         if not unlocked:
-            await interaction.followup.send("You don't have any pending achievement.")
+            await interaction.followup.send("You don't any pending achievement.")
             return
 
         entries: list[TextDisplay | Section] = []
