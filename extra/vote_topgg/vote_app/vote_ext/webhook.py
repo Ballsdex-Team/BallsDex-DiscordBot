@@ -24,6 +24,9 @@ log = logging.getLogger("ballsdex.extra.vote")
 # Top.gg's own vote cooldown; also used here to ignore a webhook replayed for the same vote
 VOTE_COOLDOWN = timedelta(hours=12)
 
+# Port the vote webhook server listens on
+WEBHOOK_PORT = 15261
+
 
 async def _get_random_active_special() -> Special | None:
     now = timezone.now()
@@ -101,12 +104,12 @@ async def start_webhook_server(bot: "BallsDexBot", vote_settings: VoteSettings) 
         log.info("No vote webhook secret configured, the vote webhook server stays disabled.")
         return None
 
-    webhooks = topgg.Webhooks("/webhook/topgg", vote_settings.webhook_secret, port=vote_settings.webhook_port)
+    webhooks = topgg.Webhooks("/webhook/topgg", vote_settings.webhook_secret, port=WEBHOOK_PORT)
 
     @webhooks.on(topgg.PayloadType.VOTE_CREATE)
     async def on_vote(payload: "topgg.VoteCreatePayload", trace: str):
         await grant_reward(bot, vote_settings, int(payload.user.platform_id))
 
     await webhooks.start()
-    log.info("Vote webhook server started on port %s", vote_settings.webhook_port)
+    log.info("Vote webhook server started on port %s", WEBHOOK_PORT)
     return webhooks

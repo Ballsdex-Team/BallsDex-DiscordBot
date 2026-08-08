@@ -16,12 +16,10 @@ webhook (v1, HMAC-SHA256 signed), not just by running the command.
    ```
 2. In the admin panel, go to **Vote app → Vote settings** and set:
    - `webhook_secret` — must match the secret you configure on Top.gg's webhook page.
-   - `webhook_port` — the port this package's webhook server listens on (default `15261`). Must
-     be reachable from Top.gg, so expose/proxy it (see below).
    - `min_rarity` / `max_rarity` / `special_chance` — reward tuning.
 3. On your bot's Top.gg project dashboard → Webhooks: point the URL at
-   `http://<your public host>:<webhook_port>/webhook/topgg` with the same secret.
+   `http://<your public host>/webhook/topgg` with the same secret.
 4. Restart the bot so it picks up the new settings and starts the webhook server.
 
 The webhook server runs inside the bot process (same pattern as the built-in Prometheus metrics
-server), not the admin panel — it needs its own exposed port.
+server), not the admin panel — it listens on its own port (`15261`), proxied by nginx.

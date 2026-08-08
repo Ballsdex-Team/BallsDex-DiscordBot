@@ -20,7 +20,6 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('vote_url', models.URLField(default='https://top.gg/bot/1428438991203598467', help_text='Link shown to users to vote for the bot.')),
                 ('webhook_secret', models.CharField(blank=True, default='', help_text='Secret configured on your Top.gg webhook page, used to verify the x-topgg-signature header of incoming vote webhooks. Leave empty to keep the webhook server disabled.', max_length=128)),
-                ('webhook_port', models.PositiveIntegerField(default=15261, help_text='Port the vote webhook server listens on.')),
                 ('min_rarity', models.FloatField(default=1.0, help_text='Lowest rarity that can be granted as a vote reward.')),
                 ('max_rarity', models.FloatField(default=100.0, help_text='Highest rarity that can be granted as a vote reward.')),
                 ('special_chance', models.FloatField(default=0.05, help_text='Chance (between 0 and 1) that the vote reward is a currently active special instead of a regular countryball.', validators=[django.core.validators.MinValueValidator(0.0), django.core.validators.MaxValueValidator(1.0)])),

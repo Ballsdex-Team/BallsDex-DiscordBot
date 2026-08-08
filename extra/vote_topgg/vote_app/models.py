@@ -19,9 +19,6 @@ class VoteSettings(models.Model):
         blank=True,
         default="",
     )
-    webhook_port = models.PositiveIntegerField(
-        default=15261, help_text="Port the vote webhook server listens on."
-    )
     min_rarity = models.FloatField(help_text="Lowest rarity that can be granted as a vote reward.", default=1.0)
     max_rarity = models.FloatField(help_text="Highest rarity that can be granted as a vote reward.", default=100.0)
     special_chance = models.FloatField(
