@@ -55,4 +55,5 @@ extra/*
 !extra/merchant
 !extra/bet
 !extra/achivement
+!extra/vote_topgg
 .gitmodules

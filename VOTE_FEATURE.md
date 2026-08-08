@@ -4,115 +4,93 @@ Adds a `/vote` command and a Top.gg vote webhook that rewards players with a ran
 (with a small chance of an active special) when they actually vote for the bot — not just for
 running the command.
 
-## Admin panel setup
+## Review feedback addressed
 
-Go to **Settings → Settings → Vote rewards (Top.gg)** in the admin panel and fill in:
+An earlier version of this PR added models/migrations directly to the core `bd_models` and
+`settings` apps, added the cog under `ballsdex/packages/`, hand-rolled the Top.gg webhook
+signature check, and stored an interaction token per player just to notify them. All four points
+raised in review are fixed:
 
-| Field | What it does |
+1. **No more migrations on `bd_models`/`settings`.** Those numbering collisions with upstream
+   were the real risk. The whole feature is now a self-contained **custom package** under
+   `extra/vote_topgg/`, with its own Django app (`vote_app`) and its own migration sequence
+   (`0001_initial.py`, ...) that can never collide with core app migrations.
+2. **Follows the [custom package guide](https://wiki.ballsdex.com/dev/custom-package/)** —
+   `extra/vote_topgg/pyproject.toml`, `vote_app/apps.py` with `dpy_package`, `vote_app/vote_ext/`
+   for the discord.py side, same structure as the guide's example.
+3. **Uses the official Top.gg SDK** (`topggpy`, from
+   [Top-gg-Community/python-sdk](https://github.com/Top-gg-Community/python-sdk)) for signature
+   verification and payload parsing, instead of hand-rolled HMAC code.
+4. **`VoteInteraction` is gone.** The reward notification is now a plain DM sent from the bot
+   process (`user.send(...)`) instead of an ephemeral follow-up tied to a stored interaction
+   token — no per-player row needed just to remember how to reply to them.
+
+## How it works now
+
+- `/vote` (`extra/vote_topgg/vote_app/vote_ext/cog.py`) sends an ephemeral embed with a link to
+  vote. It does not grant anything — clicking it and voting are two different things, and only
+  Top.gg knows for sure that a vote happened.
+- The Top.gg SDK's `topgg.Webhooks` runs its own small web server **inside the bot process**
+  (`extra/vote_topgg/vote_app/vote_ext/webhook.py`), the same pattern already used for the
+  built-in Prometheus metrics server (`ballsdex/core/metrics.py`). It listens on its own port
+  (`VoteSettings.webhook_port`, default `15261`), verifies Top.gg's `x-topgg-signature` header
+  (HMAC-SHA256, v1 scheme) via the SDK, and only reacts to genuine `vote.create` events.
+- On a verified vote: get-or-create the `Player`, skip if they were already rewarded in the last
+  12h (Top.gg's own vote cooldown — also guards against a redelivered webhook), pick a random
+  `Ball` in the configured rarity range (weighted the same way spawns are), roll a chance for an
+  active `Special`, create the `BallInstance`, and DM the player the result with the rendered
+  card. A `VoteRecord` is kept either way, for the 12h check and as an audit trail (read-only in
+  the admin).
+- nginx (`bd-nginx.conf`) forwards `/webhook/topgg` to the bot container instead of the admin
+  panel, since that's now where the webhook server lives. The bot container joins the `nginx`
+  docker network for this (`docker-compose.yml`).
+
+## Setup
+
+**1. Enable the package** — not committed, this is per-deployment config. Create
+`config/extra.toml`:
+```toml
+[[ballsdex.packages]]
+location = "/code/extra/vote_topgg"   # or a git URL once this package is published on its own
+path = "vote_app"
+enabled = true
+editable = true                        # local development only, omit for a real install
+```
+Rebuild so it gets installed (`docker compose build`), then run migrations
+(`docker compose run --rm migration python3 -m django migrate`).
+
+**2. Admin panel** — a new **Vote app** section appears with two models:
+| Setting | What it does |
 |---|---|
 | `vote_url` | Link shown by `/vote`. Pre-filled with the bot's Top.gg page. |
-| `vote_webhook_secret` | Shared secret used to verify incoming webhooks. **Leave empty and the `/webhook/topgg` endpoint stays disabled** — nothing else works until this is set. |
-| `vote_min_rarity` / `vote_max_rarity` | Rarity range the reward ball is picked from (same field as regular balls, weighted the same way spawns are). |
-| `vote_special_chance` | 0–1 chance that the reward is a currently-active special instead of a plain ball. |
+| `webhook_secret` | Shared secret used to verify incoming webhooks. **Leave empty and the webhook server stays disabled** — nothing else works until this is set. |
+| `webhook_port` | Port the webhook server listens on (default `15261`). |
+| `min_rarity` / `max_rarity` | Rarity range the reward ball is picked from. |
+| `special_chance` | 0–1 chance the reward is a currently-active special instead of a plain ball. |
 
-Then, on your bot's **Top.gg project dashboard → Webhooks**:
+`Vote records` (read-only) shows the history of processed votes and their rewards.
 
-1. Set the endpoint URL to `<your admin panel's public base URL>/webhook/topgg`
-   (same domain as the admin panel — see `Settings.site_base_url` — just with this path appended).
-2. Set a secret and paste the **same** value into `vote_webhook_secret` above.
+**3. Top.gg dashboard** — on your bot's project page → Webhooks:
+1. Set the endpoint URL to `<your public host>/webhook/topgg` (same domain as the admin panel,
+   nginx routes it to the bot automatically — see "How it works" above).
+2. Set a secret and paste the **same** value into `webhook_secret` in the admin panel.
+3. Restart the bot so it picks up the settings and starts the webhook server.
 
-That's it — no other config or deploy step needed, the endpoint is wired in automatically.
+⚠️ This only works once the host is reachable from the public internet — Top.gg cannot reach
+`localhost`. For local testing without a public deploy, tunnel it (e.g.
+`cloudflared tunnel --url http://localhost:8000`) and use the tunnel's URL instead.
 
-⚠️ This only works once the admin panel is reachable from the public internet over the URL you
-give Top.gg. It cannot reach `localhost`; for local testing without a public deploy, tunnel it
-(e.g. `cloudflared tunnel --url http://localhost:8000`) and use the tunnel's URL in the Top.gg
-dashboard instead.
+## Files touched
 
-## What was added, and why
+- `extra/vote_topgg/` (new) — the whole package: `pyproject.toml`, `README.md`,
+  `vote_app/{apps,models,admin}.py`, `vote_app/migrations/0001_initial.py`,
+  `vote_app/vote_ext/{cog,webhook}.py`.
+- `bd-nginx.conf` — added the `/webhook/topgg` → bot route.
+- `docker-compose.yml` — `bot` service joins the `nginx` network.
 
-### The core problem
+Nothing in `bd_models`, `settings`, or `ballsdex/` was touched by this version of the feature.
 
-Nothing about voting existed in the codebase before (`topgg`/`vote` search returns nothing). It
-also needed to solve one thing by design: **a reward must only be granted for a real vote**, not
-for merely running `/vote` — so the command itself never grants anything; it just links out. The
-actual reward is entirely driven by Top.gg's server-to-server webhook, which only fires once a
-vote is genuinely recorded on their end.
-
-### New/changed files
-
-**`ballsdex/packages/vote/` (new)** — `cog.py`, `__init__.py`
-The `/vote` command. Sends an ephemeral embed with a link button to `settings.vote_url`, and
-records a `VoteInteraction` (see below) so a later webhook call can find its way back to this
-specific interaction. Registered in `DEFAULT_PACKAGES` in `ballsdex/core/bot.py`.
-
-**`admin_panel/settings/views.py` (new)** — `topgg_webhook`
-The actual webhook receiver. Runs in the Django admin panel process (not the bot), because that's
-the process already exposed to the internet (via nginx) and it can touch the same database
-directly with the async ORM — no need to add new bot-side network exposure. Flow per request:
-
-1. Verify `x-topgg-signature` (Top.gg's **v1** scheme: header is
-   `t=<unix ts>,v1=<hex hmac-sha256 of "{ts}.{raw body}">`, checked with `hmac.compare_digest`
-   and a 5-minute timestamp tolerance). Confirmed against the current
-   [docs.top.gg webhooks docs](https://docs.top.gg/webhooks/overview) — Top.gg's *legacy* (v0)
-   scheme uses a plain `Authorization` header instead, which is what an early version of this
-   code mistakenly implemented; this was caught and fixed before merging.
-2. Parse `data.user.platform_id` (the voter's Discord ID) and `type` (`vote.create` vs
-   `webhook.test`, the latter is Top.gg's dashboard test ping — acknowledged with 200, no reward).
-3. Get-or-create the `Player`, check the last `VoteRecord` for that player isn't < 12h old
-   (Top.gg's own vote cooldown — defends against a webhook being delivered more than once for the
-   same vote).
-4. Pick a random `Ball` in `[vote_min_rarity, vote_max_rarity]`, weighted by rarity, same
-   mechanic as `Ball.get_random_countryball` elsewhere. Roll `vote_special_chance` for whether to
-   also attach a currently-active `Special` (same date-window logic as
-   `countryball.get_random_special`, reimplemented against the DB here since this process has no
-   bot-side in-memory cache).
-5. Create the `BallInstance` — the reward exists in the player's inventory at this point,
-   regardless of whether the notification below succeeds.
-6. Call `_send_ephemeral_reward` to notify the player privately (see next section).
-7. Record a `VoteRecord` either way (even with no reward, e.g. if no ball matched the rarity
-   range) so the 12h dedup in step 3 still works next time.
-
-**Why an ephemeral follow-up instead of a channel announcement or a DM?**
-That's what was asked for: a message only the voter can see. A true Discord "ephemeral" message
-only exists as a response to an interaction — there's no way to push one out of nowhere. The
-`/vote` command's own interaction token is reused for this: Discord's
-`POST /webhooks/{application_id}/{token}` endpoint accepts follow-up messages for **15 minutes**
-after the original interaction, using just the token (no bot auth needed), and `flags: 64` makes
-it ephemeral. So `/vote` stores `(discord_id, application_id, token)` in `VoteInteraction`, and the
-webhook looks it up by `discord_id` when the reward is granted. If the player voted more than 15
-minutes after running `/vote` (or never ran it), sending is skipped — the reward is still granted,
-just silently, and they'll find it browsing their collection. This is a hard Discord API
-limitation, not a bug: there's no way around the 15-minute window without a fundamentally
-different flow (e.g. a persistent "claim" button), which wasn't in scope here.
-
-**`admin_panel/bd_models/models.py`** — two new models
-- `VoteRecord(player, voted_at, reward)`: audit trail of every processed vote webhook, also used
-  for the 12h dedup check above. Read-only in the admin (`bd_models/admin/vote.py`) — it's a
-  tracker, not something to hand-edit.
-- `VoteInteraction(discord_id, application_id, token, created_at)`: the short-lived "ticket"
-  described above. One row per player (upserted on each `/vote`), deleted once consumed by the
-  webhook (success or failure — it's single-use either way).
-
-**`admin_panel/settings/models.py` / `admin.py`** — `Settings` fields
-Added `vote_url`, `vote_webhook_secret`, `vote_min_rarity`, `vote_max_rarity`,
-`vote_special_chance` to the existing global settings singleton (same pattern as the currency or
-spawn-chance fields already there), plus a `vote_min_rarity <= vote_max_rarity` check constraint
-mirroring the existing `spawn_chance_min_lt_max` one. Surfaced in the admin under a new
-"Vote rewards (Top.gg)" fieldset.
-
-**`admin_panel/settings/apps.py` / `urls.py` (new)**
-`SettingsConfig.url_prefix = "webhook/"` opts this app into the admin panel's existing
-per-app URL auto-inclusion mechanism (`admin_panel/urls.py` already loops over
-`apps.get_app_configs()` for any `url_prefix`, previously unused by any app). `urls.py` just maps
-`topgg` to the view above, giving the final path `/webhook/topgg`.
-
-**Migrations**
-`bd_models/migrations/0018_voterecord.py`, `0019_voteinteraction.py`, and
-`settings/migrations/0008_settings_vote_max_rarity_settings_vote_min_rarity_and_more.py`
-(the settings one was squashed from a few iterations made during development — verified locally
-against a fresh DB to produce the same schema).
-
-### Unrelated fixes bundled from the same session
+## Unrelated fixes bundled from the same session
 
 Two pre-existing bugs unrelated to this feature were also fixed while getting the project running
 locally, and may show up in the same diff:

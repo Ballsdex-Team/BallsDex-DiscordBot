@@ -29,6 +29,7 @@ services:
     #   - "127.0.0.1:15260:15260"
     networks:
       - internal
+      - nginx  # exposes the vote_topgg extra package's webhook server (see bd-nginx.conf), if enabled
     volumes:
       - "./logs/:/var/log/ballsdex/:rw"
       - "./config:/code/admin_panel/config:ro"
