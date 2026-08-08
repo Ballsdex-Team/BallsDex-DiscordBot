@@ -5,6 +5,9 @@ __pycache__
 # macOS
 .DS_Store
 
+# Jetbrains
+.idea
+
 # Python binaries
 *.egg-info
 dist
