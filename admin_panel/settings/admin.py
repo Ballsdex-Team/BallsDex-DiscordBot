@@ -97,21 +97,6 @@ class SettingsAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Vote rewards (Top.gg)",
-            {
-                "description": "Reward players who vote for the bot on Top.gg. Configure a webhook on your bot's "
-                "Top.gg page pointing to <your admin panel URL>/webhook/topgg, with the same secret as below.",
-                "fields": (
-                    "vote_url",
-                    "vote_webhook_secret",
-                    "vote_min_rarity",
-                    "vote_max_rarity",
-                    "vote_special_chance",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
-        (
             "Login with Discord",
             {
                 "description": "Configure this to login to this panel using Discord OAuth2",

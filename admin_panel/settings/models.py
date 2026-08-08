@@ -6,7 +6,7 @@ import warnings
 from typing import TYPE_CHECKING, cast
 
 from django.conf import settings as django_settings
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.signals import post_init
@@ -168,30 +168,6 @@ class Settings(models.Model):
         default=None,
     )
 
-    # vote rewards (top.gg)
-    vote_url = models.URLField(
-        help_text="Link shown to users to vote for the bot.",
-        default="https://top.gg/bot/1428438991203598467",
-    )
-    vote_webhook_secret = models.CharField(
-        max_length=128,
-        help_text="Secret configured on your Top.gg webhook page, used to verify the "
-        "x-topgg-signature header of incoming vote webhooks. Leave empty to keep the "
-        "/webhook/topgg endpoint disabled.",
-        blank=True,
-        default="",
-    )
-    vote_min_rarity = models.FloatField(help_text="Lowest rarity that can be granted as a vote reward.", default=1.0)
-    vote_max_rarity = models.FloatField(
-        help_text="Highest rarity that can be granted as a vote reward.", default=100.0
-    )
-    vote_special_chance = models.FloatField(
-        help_text="Chance (between 0 and 1) that the vote reward is a currently active special instead of "
-        "a regular countryball.",
-        default=0.05,
-        validators=(MinValueValidator(0.0), MaxValueValidator(1.0)),
-    )
-
     # ownership
     team_owners = models.BooleanField(
         help_text="Whether to consider Discord Developer Team members (regardless of their roles) as owner of the bot.",
@@ -295,11 +271,6 @@ class Settings(models.Model):
                 condition=Q(spawn_chance_min__lte=F("spawn_chance_max")),
                 name="spawn_chance_min_lt_max",
                 violation_error_message="Minimum spawn chance value must be lower or equal to maximum chance.",
-            ),
-            models.CheckConstraint(
-                condition=Q(vote_min_rarity__lte=F("vote_max_rarity")),
-                name="vote_min_rarity_lte_max",
-                violation_error_message="Vote minimum rarity must be lower or equal to maximum rarity.",
             ),
         )
         verbose_name_plural = "Settings"
