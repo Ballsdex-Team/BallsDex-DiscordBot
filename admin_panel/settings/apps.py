@@ -11,7 +11,6 @@ log = logging.getLogger(__name__)
 class SettingsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "settings"
-    url_prefix = "webhook/"
 
     def ready(self):
         # TODO: change this mess
