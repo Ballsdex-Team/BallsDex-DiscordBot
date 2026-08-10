@@ -244,7 +244,7 @@ async def notify_user(
     container.add_item(Separator())
 
     for achievement in achievements[:5]:
-        if achievement.thumbnail:
+        if achievement.thumbnail is not None:
             file = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
             section = Section(accessory=Thumbnail(file))
             text = TextDisplay(f"**{achievement.name}**\n")
