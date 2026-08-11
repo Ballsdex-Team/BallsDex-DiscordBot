@@ -194,6 +194,8 @@ class SettingsContainer(Container):
     player: Player
 
     async def interaction_check(self, interaction: Interaction) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         if interaction.user.id == self.player.discord_id:
             return True
         await interaction.response.send_message("You are not allowed to interact with this!", ephemeral=True)

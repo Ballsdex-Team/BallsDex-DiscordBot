@@ -11,7 +11,7 @@ from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 from settings.models import settings
 
-from .donation import BulkDonationRequest, add_view_all_button, check_giveable
+from .donation import BulkDonationRequest, add_view_all_button, check_giveable, check_recipient
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -95,6 +95,14 @@ class BulkGiveSelector(BaseBulkSelector):
             interaction = confirm_view.interaction_response
         else:
             await interaction.response.defer(ephemeral=True)
+
+        # re-check here, not just at /balls bulk_give invocation time: this selector can stay
+        # open for a while (paginated, multi-step), so the recipient's blacklist/donation
+        # policy/block status may have changed since the command was first run
+        error = await check_recipient(self.bot, self.new_player, self.old_player)
+        if error:
+            await interaction.followup.send(error, ephemeral=True)
+            return
 
         for ball in valid:
             await ball.lock_for_trade()

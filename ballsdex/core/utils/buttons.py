@@ -65,6 +65,8 @@ class ConfirmChoiceView(View):
         self.message: discord.Message | None = None
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"]) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         self.interaction_response = interaction
 
         if interaction.user != self.user:

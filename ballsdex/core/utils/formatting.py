@@ -1,6 +1,14 @@
-from typing import Iterator, Sequence
+import re
+from typing import TYPE_CHECKING, Iterator, Sequence
 
 import discord
+from discord import app_commands
+
+if TYPE_CHECKING:
+    from ballsdex.core.bot import BallsDexBot
+
+# matches "</command>", "</command sub>" and "</command group sub>", the deepest nesting Discord allows
+COMMAND_MENTION_RE = re.compile(r"</([\w-]+(?: +[\w-]+){0,2})>")
 
 
 def pagify(
@@ -97,3 +105,39 @@ def escape(text: str, *, mass_mentions: bool = False, formatting: bool = False) 
     if formatting:
         text = discord.utils.escape_markdown(text)
     return text
+
+
+def format_command_mentions(text: str, bot: "BallsDexBot") -> str:
+    """
+    Replace every `</command name>` reference in a text by a clickable slash command mention.
+
+    This allows admin-configured messages to link to slash commands without knowing their IDs.
+    Unknown commands, or commands that were never synced, fall back to `` `/command name` ``.
+
+    Parameters
+    ----------
+    text: str
+        The text to scan for command references.
+    bot: BallsDexBot
+        The bot, used to resolve command IDs assigned on sync.
+
+    Returns
+    -------
+    str
+        The text with its command references resolved.
+    """
+
+    def replace(match: re.Match[str]) -> str:
+        parts = match.group(1).split()
+        command = bot.tree.get_command(parts[0])
+        for part in parts[1:]:
+            if not isinstance(command, app_commands.Group):
+                command = None
+                break
+            command = command.get_command(part)
+        name = " ".join(parts)
+        if command is None:
+            return f"`/{name}`"
+        return command.extras.get("mention", f"`/{name}`")
+
+    return COMMAND_MENTION_RE.sub(replace, text)
