@@ -8,26 +8,17 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
-<<<<<<< HEAD
 from currency_app.models import CurrencySettings
-from discord.ui import Button, TextInput, button
-=======
 from discord.ui import ActionRow, Button, Item, MediaGallery, TextDisplay, TextInput, button
->>>>>>> 4f3d263046843d89b94fde19a99fa05b0f7148a1
 from django.utils import timezone
 
 from ballsdex.core.discord import Container, LayoutView, Modal
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.formatting import format_command_mentions
 from ballsdex.core.utils.utils import can_mention
-<<<<<<< HEAD
-from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, balls, specials
-from settings.models import PromptMessage, settings
-from settings.utils import format_currency
-=======
 from bd_models.models import Ball, BallInstance, GuildConfig, Player, Special, Trade, TradeObject, balls, specials
 from settings.models import PromptMessage, Settings, settings
->>>>>>> 4f3d263046843d89b94fde19a99fa05b0f7148a1
+from settings.utils import format_currency
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
