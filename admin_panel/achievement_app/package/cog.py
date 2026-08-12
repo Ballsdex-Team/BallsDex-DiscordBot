@@ -50,7 +50,7 @@ class Achievement(commands.GroupCog):
 
         entries: list[TextDisplay | Section] = []
         for achievement in unlocked:
-            if achievement.thumbnail:
+            if achievement.thumbnail is not None:
                 file = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
                 section = Section(accessory=Thumbnail(file))
                 title = TextDisplay(f"**{achievement.name}**")
@@ -97,7 +97,7 @@ class Achievement(commands.GroupCog):
         entries: list[TextDisplay | Section] = []
         for achievement in achievements:
             ua = user_achievements.get(achievement.pk)
-            if achievement.thumbnail:
+            if achievement.thumbnail is not None:
                 file = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
                 section = Section(accessory=Thumbnail(file))
                 title = TextDisplay(f"**{achievement.name}**")
@@ -162,8 +162,8 @@ class Achievement(commands.GroupCog):
         container = Container()
         container.add_item(TextDisplay(f"# {achievement.name}"))
         container.add_item(Separator())
-        if achievement.thumbnail:
-            file = discord.File(achievement.thumbnail.path, achievement.thumbnail.name)
+        if achievement.thumbnail is not None:
+            file = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
             section = Section(accessory=Thumbnail(file))
             if achievement.description:
                 section.add_item(TextDisplay(achievement.description))

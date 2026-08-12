@@ -202,6 +202,7 @@ class Merchant(commands.GroupCog):
         ]
         source = FieldPageSource(entries, per_page=3, inline=True)
         source.embed.title = f"{settings.bot_name} {shop.name}"
+        source.embed.set_image(url=f"{settings.site_base_url}/media/{shop.banner.name}")
         pages = Pages(source, interaction=interaction, compact=True)
         await pages.start()
 

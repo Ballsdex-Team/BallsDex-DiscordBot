@@ -6,7 +6,7 @@ import warnings
 from typing import TYPE_CHECKING, cast
 
 from django.conf import settings as django_settings
-from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.signals import post_init
@@ -115,6 +115,26 @@ class Settings(models.Model):
     )
     catch_button_label = models.CharField(max_length=80, help_text="Label of the catch button", default="Catch me")
 
+    class TipPosition(models.IntegerChoices):
+        ABOVE_BUTTON = 1, "Above the catch button"
+        BELOW_BUTTON = 2, "Below the catch button"
+
+    tip_chance = models.PositiveIntegerField(
+        help_text="Percentage of spawns displaying a random tip below the message. A value of 10 means 10% of "
+        "spawns. Set to 0 to disable tips entirely. Server admins can also opt out individually.",
+        default=0,
+        validators=(MaxValueValidator(100),),
+    )
+    tip_position = models.PositiveSmallIntegerField(
+        help_text="Where the tip is placed within the spawn message.",
+        choices=TipPosition,
+        default=TipPosition.ABOVE_BUTTON,
+    )
+    tip_container = models.BooleanField(
+        help_text="Whether to wrap the tip in a container, giving it a visible box instead of plain text.",
+        default=False,
+    )
+
     # spawn algorithm details
     spawn_chance_min = models.PositiveIntegerField(
         help_text="Minimum base chance value to spawn a ball. Lower value leads to more spawn.", default=40
@@ -210,6 +230,7 @@ class Settings(models.Model):
     )
 
     prompts: models.QuerySet[PromptMessage]
+    tips: models.QuerySet[Tip]
 
     @cached_property
     def catch_messages(self) -> dict[str, float]:
@@ -245,6 +266,52 @@ class Settings(models.Model):
                 return random.choices(
                     population=list(self.slow_messages.keys()), weights=list(self.slow_messages.values()), k=1
                 )[0]
+
+    def get_formatted_message(
+        self, category: PromptMessage.PromptType, model: Ball, mention: str, bot: BallsDexBot, **kwargs: str
+    ):
+        message = self.get_random_message(category)
+        try:
+            return message.format(
+                user=mention,
+                ball=model.country,
+                emoji=str(bot.get_emoji(model.emoji_id)),
+                collectible=self.collectible_name,
+                collectibles=self.plural_collectible_name,
+                **{k: str(v) for k, v in kwargs.items()},
+            )
+        except (ValueError, IndexError, KeyError):
+            return message
+
+    @cached_property
+    def tip_messages(self) -> dict[str, float]:
+        return {x.message: x.rarity for x in self.tips.all() if x.enabled}
+
+    def get_random_tip(self) -> str | None:
+        """
+        Pick a random tip, weighted by rarity. Returns `None` if no tip is enabled.
+        """
+        tips = self.tip_messages
+        if not tips:
+            return None
+        return random.choices(population=list(tips.keys()), weights=list(tips.values()), k=1)[0]
+
+    def get_formatted_tip(self) -> str | None:
+        """
+        Pick a random tip and substitute its placeholders. Returns `None` if no tip is enabled.
+
+        Slash command references (`</command name>`) are *not* resolved here, since this requires
+        the bot to be running. Use `ballsdex.core.utils.formatting.format_command_mentions` for this.
+        """
+        tip = self.get_random_tip()
+        if tip is None:
+            return None
+        try:
+            return tip.format(
+                collectible=self.collectible_name, collectibles=self.plural_collectible_name, bot=self.bot_name
+            )
+        except (ValueError, IndexError, KeyError):
+            return tip
 
     @property
     @warnings.deprecated("This setting returns nothing, Webhook notifications must be used instead")
@@ -297,6 +364,19 @@ class PromptMessage(models.Model):
         return ""
 
 
+class Tip(models.Model):
+    settings = models.ForeignKey(Settings, on_delete=models.CASCADE, related_name="tips")
+    message = models.TextField(help_text="The tip to display below spawn messages")
+    enabled = models.BooleanField(default=True, help_text="Disabled tips are never picked.")
+    rarity = models.FloatField(default=1.0, help_text="Weight of tip.")
+
+    class Meta:
+        constraints = (models.UniqueConstraint(fields=("message",), name="tip_message_unique"),)
+
+    def __str__(self) -> str:
+        return self.message
+
+
 @receiver(post_init, sender=Settings)
 def load_details(sender: type[Settings], instance: Settings, **kwargs):
     from bd_models.apps import BdModelsConfig
@@ -334,7 +414,7 @@ else:
 
 
 def load_settings():
-    instance = Settings.objects.prefetch_related("prompts").first()
+    instance = Settings.objects.prefetch_related("prompts", "tips").first()
     if not instance:
         raise RuntimeError("No Settings instance found!")
     singleton = cast(SettingsProxy, settings)

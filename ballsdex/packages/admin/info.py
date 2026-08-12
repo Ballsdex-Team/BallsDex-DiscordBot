@@ -187,9 +187,13 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
         await ctx.send("The user you gave does not exist.", ephemeral=True)
         return
     url = f"{settings.site_base_url}{reverse('admin:bd_models_player_change', args=(player.pk,))}"
+
     total_user_balls = await BallInstance.objects.filter(
-        catch_date__gte=datetime.datetime.now(tz=get_current_timezone()) - datetime.timedelta(days=days), player=player
+        catch_date__gte=datetime.datetime.now(tz=get_current_timezone()) - datetime.timedelta(days=days),
+        trade_player_id__isnull=True,
+        player=player,
     ).aall()
+
     embed = discord.Embed(
         title=f"{user} ({user.id})",
         url=url,
@@ -214,7 +218,7 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
     )
     embed.add_field(
         name=f"Total {settings.plural_collectible_name} caught:",
-        value=await BallInstance.objects.filter(player__discord_id=user.id).acount(),
+        value=await BallInstance.objects.filter(player__discord_id=user.id, trade_player_id__isnull=True).acount(),
     )
     embed.add_field(
         name=f"Total unique {settings.plural_collectible_name} caught:",

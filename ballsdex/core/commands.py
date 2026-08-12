@@ -31,6 +31,8 @@ class SimpleCheckView(View):
         self.value = False
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"]) -> bool:
+        if not await interaction.client.blacklist_check(interaction):
+            return False
         return interaction.user == self.ctx.author
 
     @discord.ui.button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
