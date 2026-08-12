@@ -36,7 +36,7 @@ SECRET_KEY = None
 # https://github.com/Ballsdex-Team/BallsDex-DiscordBot/wiki/Serving-the-admin-panel-online
 # THIS HAS SECURITY IMPLICATIONS, ENABLES PRIVILEGE ESCALATION AND REMOTE CODE EXECUTION
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 INTERNAL_IPS = ["127.0.0.1"]
 
 
