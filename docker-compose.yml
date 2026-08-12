@@ -71,6 +71,7 @@ services:
     environment:
       - *postgres-url
       - *django-settings
+      - "ALLOWED_HOSTS=${ALLOWED_HOSTS}"
     depends_on:
       migration:
         condition: service_completed_successfully

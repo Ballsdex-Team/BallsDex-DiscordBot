@@ -228,7 +228,7 @@ telemetry-instrumentations = [
 [package.metadata]
 requires-dist = [
     { name = "cachetools", specifier = "==6.2.1" },
-    { name = "discord-py", git = "https://github.com/Rapptz/discord.py.git?rev=c342db853486ef6e26d72b10bf901e951c4b4d8e" },
+    { name = "discord-py", git = "https://github.com/Rapptz/discord.py.git?tag=v2.7.1" },
     { name = "dj-database-url", specifier = "==3.0.1" },
     { name = "django", specifier = "==6.0.0" },
     { name = "django-admin-action-forms", specifier = "==2.2.0" },
@@ -443,8 +443,8 @@ wheels = [
 
 [[package]]
 name = "discord-py"
-version = "2.7.0a5356+gc342db85"
-source = { git = "https://github.com/Rapptz/discord.py.git?rev=c342db853486ef6e26d72b10bf901e951c4b4d8e#c342db853486ef6e26d72b10bf901e951c4b4d8e" }
+version = "2.7.1"
+source = { git = "https://github.com/Rapptz/discord.py.git?tag=v2.7.1#dfd1144b2246a7adafe3f1c64a4dd9bc2187fcee" }
 dependencies = [
     { name = "aiohttp" },
     { name = "audioop-lts" },
