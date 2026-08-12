@@ -5,6 +5,9 @@ __pycache__
 # macOS
 .DS_Store
 
+# Jetbrains
+.idea
+
 # Python binaries
 *.egg-info
 dist
@@ -26,6 +29,8 @@ venv
 pgbackups
 pre-migration-data-dump.sql
 final-data-dump.sql
+data-dump.sql
+backup_opdex.zip
 
 # static
 static
@@ -52,4 +57,5 @@ extra/*
 !extra/merchant
 !extra/bet
 !extra/achivement
+!extra/vote_topgg
 .gitmodules

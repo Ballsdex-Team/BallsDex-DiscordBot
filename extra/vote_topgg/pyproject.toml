@@ -1,0 +1,16 @@
+[project]
+name = "vote-topgg"
+version = "1.0.0"
+description = "Rewards players who vote for the bot on Top.gg, verified through Top.gg's webhook."
+license = "MIT"
+authors = [
+    { name = "OnePieceDex" },
+]
+readme = "README.md"
+
+dependencies = [
+    "topggpy @ git+https://github.com/Top-gg-Community/python-sdk.git@master",
+]
+
+[project.urls]
+Homepage = "https://github.com/allinthedev/OnePieceDex"
