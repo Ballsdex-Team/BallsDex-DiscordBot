@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Container, Section, Separator, TextDisplay, Thumbnail
-from discord.utils import MISSING, format_dt
+from discord.utils import format_dt
 from django.db.models import Q
 
 from ballsdex.core.discord import LayoutView
@@ -163,8 +163,8 @@ class Achievement(commands.GroupCog):
         container.add_item(TextDisplay(f"# {achievement.name}"))
         container.add_item(Separator())
         if achievement.thumbnail is not None:
-            file = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
-            section = Section(accessory=Thumbnail(file))
+            thumbnail_url = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
+            section = Section(accessory=Thumbnail(thumbnail_url))
             if achievement.description:
                 section.add_item(TextDisplay(achievement.description))
             if achievement.currency_reward:
@@ -175,7 +175,6 @@ class Achievement(commands.GroupCog):
                 section.add_item(TextDisplay(f"**Progress:** {user_achievement.progress}/{achievement.target_value}"))
             container.add_item(section)
         else:
-            file = MISSING
             if achievement.description:
                 container.add_item(TextDisplay(achievement.description))
             if achievement.currency_reward:
@@ -187,7 +186,7 @@ class Achievement(commands.GroupCog):
 
         view = LayoutView()
         view.add_item(container)
-        await interaction.response.send_message(view=view, file=file)
+        await interaction.response.send_message(view=view)
 
     async def _sync_achievements(self, player: Player) -> list[AchievementModel]:
         unlocked = []
