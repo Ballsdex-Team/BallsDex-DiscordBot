@@ -6,7 +6,7 @@ First, enter a Linux terminal (WSL or proper linux).
 Clone Ballsdex. **You must replace <botname>** with some text you haven't already used for another bot (the dex's name is a decent choice)
 
 ```bash
-git clone https://github.com/laggron42/BallsDex-DiscordBot.git <botname>
+git clone https://github.com/Ballsdex-Team/BallsDex-DiscordBot.git <botname>
 ```
 
 Then, run `cd <botname>` (replacing <botname> with whatever you chose). Like with one bot, every time you need to type commands for a dex, you must always open the bot's directory first.
