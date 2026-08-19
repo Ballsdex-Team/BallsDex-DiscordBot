@@ -354,7 +354,7 @@ class Player(commands.GroupCog):
             f"**Completion:**\n✔️ {completion_percentage}\n\n"
             f"**{settings.plural_collectible_name.title()} Owned:**\n{len(balls_owned):,}\n\n"
             f"**Self-Caught {settings.plural_collectible_name.title()}:**\n{len(caught_owned):,}\n\n"
-            f"**Special Enemies:**\n✨ {len(special):,}\n\n"
+            f"**Special {settings.plural_collectible_name.title()}:**\n✨ {len(special):,}\n\n"
             f"**Trades Completed:**\n📈 {len(trades):,}\n\n"
             f"**Trade Partners:**\n🤝 {len(trade_partners):,}\n\n"
             + (
