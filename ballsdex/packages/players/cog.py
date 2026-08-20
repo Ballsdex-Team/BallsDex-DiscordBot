@@ -350,7 +350,7 @@ class Player(commands.GroupCog):
             title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=discord.Color.blurple()
         )
         embed.description = (
-            "Here are your statistics in the bot!\n"
+            "Here are your settings and statistics in the bot!\n"
             "## Player Info\n"
             f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
             f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
