@@ -344,25 +344,34 @@ class Player(commands.GroupCog):
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
         ).acount()
         blocks = await Block.objects.filter(player1__discord_id=interaction.user.id).acount()
+        currency_symbol = settings.currency_emoji(self.bot) or settings.currency_symbol
 
         embed = discord.Embed(
             title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=discord.Color.blurple()
         )
         embed.description = (
             "Here are your statistics in the bot!\n"
+            "## Player Info\n"
+            f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
+            f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
+            f"**Mention Policy:** {MENTION_POLICY_MAP[player.mention_policy]}\n"
+            f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}\n"
+            f"**Trade Cooldown Policy:** {TRADE_POLICY_MAP[player.trade_cooldown_policy]}\n"
+            f"**Amount of Friends:** {friends}\n"
+            f"**Amount of Blocked Users:** {blocks}\n"
             "## Player Stats\n"
-            f"**Completion:**\n✔️ {completion_percentage}\n\n"
+            f"**Completion:**\n{completion_percentage}\n\n"
             f"**{settings.plural_collectible_name.title()} Owned:**\n{len(balls_owned):,}\n\n"
             f"**Self-Caught {settings.plural_collectible_name.title()}:**\n{len(caught_owned):,}\n\n"
-            f"**Special {settings.plural_collectible_name.title()}:**\n✨ {len(special):,}\n\n"
-            f"**Trades Completed:**\n📈 {len(trades):,}\n\n"
-            f"**Trade Partners:**\n🤝 {len(trade_partners):,}\n\n"
+            f"**Special {settings.plural_collectible_name.title()}:**\n{len(special):,}\n\n"
+            f"**Trades Completed:**\n{len(trades):,}\n\n"
+            f"**Trade Partners:**\n{len(trade_partners):,}\n\n"
             + (
-                f"**Current Balance:**\n**{settings.currency_symbol} {player.money:,}**"
+                f"**Current Balance:**\n**{currency_symbol} {player.money:,}**"
                 if settings.currency_enabled
                 else ""
             )
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore
-        await interaction.followup.send(embed=embed, ephemeral=False)
+        await interaction.followup.send(embed=embed, ephemeral=True)
