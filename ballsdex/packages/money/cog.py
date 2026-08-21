@@ -95,6 +95,6 @@ class Money(commands.GroupCog):
 
         await sync_to_async(self.perform_donation)(old_player, new_player, amount)
         await interaction.followup.send(
-            f"You just gave {format_currency(amount)} to {user.mention}!",
+            f"You just gave {format_currency(amount, bot=self.bot)} to {user.mention}!",
             allowed_mentions=await can_mention([new_player]),
         )
