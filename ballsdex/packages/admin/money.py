@@ -145,7 +145,7 @@ async def setdefault(ctx: commands.Context[BallsDexBot], amount: int, force: boo
         If true, then ALL users will have their balance reset to the default!
     """
     view = ConfirmChoiceView(ctx)
-    msg = f"You are about to set the new default balance to {amount}.\n"
+    msg = f"You are about to set the new default balance to {amount:,}.\n"
     if force:
         msg += (
             ":warning: You have chosen to reset ALL PLAYERS balance and set it to the new amount. "
