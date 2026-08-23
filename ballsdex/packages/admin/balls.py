@@ -294,9 +294,11 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str, 
         await ctx.send(f"{settings.collectible_name.title()} {countryball_id} soft deleted.", ephemeral=True)
         log.info(f"{ctx.author} soft deleted {ball}({ball.pk}).", extra={"webhook": True})
     else:
+        ball_name = str(ball)
+        ball_id = ball.pk
         await ball.adelete()
         await ctx.send(f"{settings.collectible_name.title()} {countryball_id} hard deleted.", ephemeral=True)
-        log.info(f"{ctx.author} hard deleted {ball}({ball.pk}).", extra={"webhook": True})
+        log.info(f"{ctx.author} hard deleted {ball_name}({ball_id}).", extra={"webhook": True})
 
 
 @balls.command(name="transfer")
