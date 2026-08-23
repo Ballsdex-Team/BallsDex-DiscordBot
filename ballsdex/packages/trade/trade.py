@@ -78,7 +78,8 @@ class SetMoneyModal(Modal, title="Set money offering"):
             await interaction.response.send_message("You have already locked your proposal!", ephemeral=True)
             return
         try:
-            proposal_amount = int(self.proposal.value.strip())
+            # amounts are displayed with thousands separators, accept them back as input
+            proposal_amount = int(self.proposal.value.strip().replace(",", "").replace(" ", ""))
         except ValueError:
             await interaction.response.send_message("This number could not be parsed.", ephemeral=True)
             return
