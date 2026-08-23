@@ -807,6 +807,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         sort: DuplicateSort | None = None,
         limit: app_commands.Range[int, 1] | None = None,
         reverse: bool = False,
+        group: BallGroupTransform | None = None,
+        filter: FilteringChoices | None = None,
     ):
         """
         Shows your most duplicated countryballs or specials.
@@ -821,12 +823,21 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The amount of countryballs to show (default: all), can only be used with `countryballs`.
         reverse: bool
             Show your least duplicated countryballs or specials first instead.
+        group: BallGroup
+            Filter the results by a specific group.
+        filter: FilteringChoices
+            Filter the results by a specific filter.
         """
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         is_special = type == DuplicateType.specials
         queryset = BallInstance.objects.filter(player=player)
+
+        if filter:
+            queryset = filter_balls(filter, queryset, interaction.guild_id)
+        if group:
+            queryset = queryset.filter(ball__groups=group)
 
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
@@ -859,8 +870,9 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             query = query[:limit]
 
         if not await query.aexists():
+            filter_txt = " matching your filters" if group or filter else ""
             await interaction.followup.send(
-                f"You don't have any {type.value} duplicates in your inventory.", ephemeral=True
+                f"You don't have any {type.value} duplicates{filter_txt} in your inventory.", ephemeral=True
             )
             return
 
