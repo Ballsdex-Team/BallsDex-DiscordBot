@@ -16,6 +16,12 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 
+class NotEnoughMoney(RuntimeError):
+    """
+    The sender's balance dropped below the donated amount before the transaction locked it.
+    """
+
+
 class Money(commands.GroupCog):
     """
     Currency commands
@@ -41,16 +47,23 @@ class Money(commands.GroupCog):
 
     @transaction.atomic()
     def perform_donation(self, old_player: Player, new_player: Player, amount: int) -> Trade:
-        old_player.refresh_from_db(fields=["money"])
-        if old_player.money < amount:
-            raise RuntimeError(
-                f"Player's balance changed, cannot afford donation anymore {amount=} {old_player.money=}"
-            )
-        old_player.money = F("money") - amount
-        new_player.money = F("money") + amount
-        old_player.save(update_fields=["money"])
-        new_player.save(update_fields=["money"])
-        return Trade.objects.create(player1=old_player, player2=new_player, player1_money=amount)
+        # a plain refresh does not lock, so two concurrent donations could both pass the check
+        # below and overdraw the account. Ordering by primary key keeps two players donating to
+        # each other from deadlocking.
+        locked = {
+            player.pk: player
+            for player in Player.objects.select_for_update()
+            .filter(pk__in=(old_player.pk, new_player.pk))
+            .order_by("pk")
+        }
+        sender, recipient = locked[old_player.pk], locked[new_player.pk]
+        if not sender.can_afford(amount):
+            raise NotEnoughMoney(f"Player's balance changed, cannot afford donation anymore {amount=} {sender.money=}")
+        sender.money = F("money") - amount
+        recipient.money = F("money") + amount
+        sender.save(update_fields=["money"])
+        recipient.save(update_fields=["money"])
+        return Trade.objects.create(player1=sender, player2=recipient, player1_money=amount)
 
     @app_commands.command()
     async def give(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User, amount: int):
@@ -93,7 +106,14 @@ class Money(commands.GroupCog):
             await interaction.followup.send("You cannot donate to a blacklisted user.", ephemeral=True)
             return
 
-        await sync_to_async(self.perform_donation)(old_player, new_player, amount)
+        try:
+            await sync_to_async(self.perform_donation)(old_player, new_player, amount)
+        except NotEnoughMoney:
+            await interaction.followup.send(
+                f"Your balance changed, you do not have enough {settings.currency_display_plural(self.bot)} anymore.",
+                ephemeral=True,
+            )
+            return
         await interaction.followup.send(
             f"You just gave {format_currency(amount, bot=self.bot)} to {user.mention}!",
             allowed_mentions=await can_mention([new_player]),

@@ -28,3 +28,14 @@ def format_currency(amount: int, shortened: bool = True, bot: "BallsDexBot | Non
         return f"{humanized} {settings.currency_display_name(bot)}"
     else:
         return f"{humanized} {settings.currency_display_plural(bot)}"
+
+
+# separators that `format_currency` may emit, plus the ones a user is likely to type by hand
+_CURRENCY_SEPARATORS = str.maketrans("", "", ", _\N{NO-BREAK SPACE}\N{NARROW NO-BREAK SPACE}")
+
+
+def parse_currency(text: str) -> int:
+    """
+    Parse a user-supplied amount back into an integer, raising `ValueError` if it is not one.
+    """
+    return int(text.strip().translate(_CURRENCY_SEPARATORS))
