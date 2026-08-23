@@ -14,6 +14,7 @@ from bd_models.enums import FriendPolicy
 from bd_models.models import BallInstance, Block, Friendship, Trade, balls
 from bd_models.models import Player as PlayerModel
 from settings.models import settings
+from settings.utils import format_currency
 
 from .views import RelationContainer, SettingsContainer
 
@@ -344,7 +345,6 @@ class Player(commands.GroupCog):
             Q(player1__discord_id=interaction.user.id) | Q(player2__discord_id=interaction.user.id)
         ).acount()
         blocks = await Block.objects.filter(player1__discord_id=interaction.user.id).acount()
-        currency_symbol = settings.currency_emoji(self.bot) or settings.currency_symbol
 
         embed = discord.Embed(
             title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=discord.Color.blurple()
@@ -367,7 +367,7 @@ class Player(commands.GroupCog):
             f"**Trades Completed:**\n{len(trades):,}\n\n"
             f"**Trade Partners:**\n{len(trade_partners):,}\n\n"
             + (
-                f"**Current Balance:**\n**{currency_symbol} {player.money:,}**"
+                f"**Current Balance:**\n**{format_currency(player.money, bot=self.bot)}**"
                 if settings.currency_enabled
                 else ""
             )
