@@ -642,6 +642,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         await countryball.lock_for_trade()
         new_player, _ = await Player.objects.aget_or_create(discord_id=user.id)
         old_player = countryball.player
+        assert old_player is not None
 
         error = await check_recipient(self.bot, new_player, old_player)
         if error:

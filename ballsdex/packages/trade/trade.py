@@ -683,7 +683,7 @@ class TradeInstance(LayoutView):
             return trader.get_queryset().select_for_update(nowait=True, of=("self",)).only("player__discord_id")
 
         for countryball in queryset_for_update(self.trader1):
-            if countryball.player.discord_id != self.trader1.player.discord_id:
+            if countryball.player is None or countryball.player.discord_id != self.trader1.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise IntegrityError()
             countryball.player = self.trader2.player
@@ -694,7 +694,7 @@ class TradeInstance(LayoutView):
             trade_objects.append(TradeObject(trade=trade, ballinstance=countryball, player=self.trader1.player))
 
         for countryball in queryset_for_update(self.trader2):
-            if countryball.player.discord_id != self.trader2.player.discord_id:
+            if countryball.player is None or countryball.player.discord_id != self.trader2.player.discord_id:
                 # This is a invalid mutation, the player is not the owner of the countryball
                 raise IntegrityError()
             countryball.player = self.trader1.player

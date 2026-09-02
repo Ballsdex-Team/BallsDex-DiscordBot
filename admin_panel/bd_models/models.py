@@ -386,8 +386,10 @@ class BallInstance(models.Model):
     attack_bonus = models.IntegerField(default=0)
     ball = models.ForeignKey(Ball, on_delete=models.CASCADE)
     ball_id: int
-    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="balls")
-    player_id: int
+    # SET_NULL rather than CASCADE: on account deletion we soft-delete the player's instances
+    # (see DeleteDataModal) instead of hard-deleting them, so trade history referencing them survives.
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, related_name="balls", null=True, blank=True)
+    player_id: int | None
     trade_player = models.ForeignKey(
         Player, on_delete=models.SET_NULL, related_name="ballinstance_trade_player_set", null=True, blank=True
     )
@@ -615,11 +617,15 @@ class BlacklistHistory(models.Model):
 
 class Trade(models.Model):
     date = models.DateTimeField(auto_now_add=True, editable=False)
-    player1 = models.ForeignKey(Player, on_delete=models.CASCADE)
-    player1_id: int
+    # player1/player2 use SET_NULL rather than CASCADE: a trade is a shared record between two
+    # players, so one player deleting their account must not destroy the other player's history.
+    player1 = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True, blank=True)
+    player1_id: int | None
     player1_money = models.PositiveBigIntegerField(default=0)
-    player2 = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="trade_player2_set")
-    player2_id: int
+    player2 = models.ForeignKey(
+        Player, on_delete=models.SET_NULL, related_name="trade_player2_set", null=True, blank=True
+    )
+    player2_id: int | None
     player2_money = models.PositiveBigIntegerField(default=0)
     tradeobject_set: models.QuerySet[TradeObject]
 
@@ -635,10 +641,12 @@ class Trade(models.Model):
 
 
 class TradeObject(models.Model):
-    ballinstance = models.ForeignKey(BallInstance, on_delete=models.CASCADE)
-    ballinstance_id: int
-    player = models.ForeignKey(Player, on_delete=models.CASCADE)
-    player_id: int
+    # same reasoning as Trade.player1/player2: keep the line item around, just detach it,
+    # so the other party's trade history/export stays intact after an account deletion.
+    ballinstance = models.ForeignKey(BallInstance, on_delete=models.SET_NULL, null=True, blank=True)
+    ballinstance_id: int | None
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True, blank=True)
+    player_id: int | None
     trade = models.ForeignKey(Trade, on_delete=models.CASCADE)
     trade_id: int
 
