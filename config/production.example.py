@@ -9,9 +9,9 @@ from admin_panel.settings.production_base import *  # noqa: F403
 SECRET_KEY = None
 
 ALLOWED_HOSTS = [
-    "localhost"
+    "localhost",
     # place the domain of your website here
-    # "ballsdex.com"
+    # "ballsdex.com",
 ]
 
 # Enable connection pooling, allowing multiple concurrent connections to be made to the database and divide the load
