@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 from django_admin_action_forms import AdminActionForm, action_with_form
 
+from bd_models.models import Special
 from bd_models.utils import ApproxCountPaginator
 
 from .models import (
@@ -86,6 +87,15 @@ class AddTierForm(AdminActionForm):
     multiplier = forms.IntegerField(
         min_value=1, initial=2, help_text="The amount of every copied requirement is multiplied by this number."
     )
+    combine_with_specials = forms.ModelMultipleChoiceField(
+        queryset=Special.objects.all(),
+        required=False,
+        help_text="Instead of copying the requirements as they are, ask for every treasure of the copied tier with "
+        "each of these specials. Picking Air, Fire, Water and Earth builds an elemental recipe.",
+    )
+    delete_balls = forms.BooleanField(
+        required=False, help_text="Whether the required treasures are used up when claiming."
+    )
     tradeable = forms.BooleanField(required=False, initial=True, help_text="Whether the claimed cards can be traded.")
 
     class Meta:
@@ -136,6 +146,7 @@ class CollectorAdmin(admin.ModelAdmin):
         level: CollectorTierLevel = data["level"]
         source: CollectorTierLevel | None = data["copy_requirements_from"]
         multiplier: int = data["multiplier"]
+        specials = list(data["combine_with_specials"])
         if source is not None and source.pk == level.pk:
             self.message_user(request, "You can't copy the requirements of the tier you're adding.", messages.ERROR)
             return
@@ -150,17 +161,36 @@ class CollectorAdmin(admin.ModelAdmin):
                 added += 1
                 if source is None:
                     continue
-                requirements = [
-                    CollectorRequirement(
-                        collector=collector,
-                        level=level,
-                        ball_id=requirement.ball_id,
-                        special_id=requirement.special_id,
-                        amount=requirement.amount * multiplier,
-                        delete_balls=requirement.delete_balls,
+                source_requirements = list(CollectorRequirement.objects.filter(collector=collector, level=source))
+                if specials:
+                    # every treasure of the copied tier is asked for once per special, elemental style
+                    ball_ids = list(
+                        dict.fromkeys(requirement.ball_id for requirement in source_requirements if requirement.ball_id)
                     )
-                    for requirement in CollectorRequirement.objects.filter(collector=collector, level=source)
-                ]
+                    requirements = [
+                        CollectorRequirement(
+                            collector=collector,
+                            level=level,
+                            ball_id=ball_id,
+                            special=special,
+                            amount=multiplier,
+                            delete_balls=data["delete_balls"],
+                        )
+                        for ball_id in ball_ids
+                        for special in specials
+                    ]
+                else:
+                    requirements = [
+                        CollectorRequirement(
+                            collector=collector,
+                            level=level,
+                            ball_id=requirement.ball_id,
+                            special_id=requirement.special_id,
+                            amount=requirement.amount * multiplier,
+                            delete_balls=data["delete_balls"] or requirement.delete_balls,
+                        )
+                        for requirement in source_requirements
+                    ]
                 CollectorRequirement.objects.bulk_create(requirements)
                 copied += len(requirements)
 
