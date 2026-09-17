@@ -71,6 +71,12 @@ class MerchantItem(models.Model):
     ball_id: int
     special = models.ForeignKey(Special, null=True, blank=True, on_delete=models.SET_NULL)
     special_id: int | None
+    stock = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="How many of this item can still be bought, all players combined. It goes down with every "
+        "purchase and the item can't be bought anymore once it reaches 0. Leave empty for an unlimited stock.",
+    )
     created_at = models.DateTimeField(editable=False, auto_now_add=True)
 
     @property
@@ -82,15 +88,32 @@ class MerchantItem(models.Model):
         return specials.get(self.special_id) or self.special if self.special_id else None
 
     @property
+    def sold_out(self) -> bool:
+        return self.stock is not None and self.stock <= 0
+
+    @property
     def enabled(self) -> bool:
         """
-        Checks if this item is active.
+        Checks if this item is active and still in stock.
         """
+        if self.sold_out:
+            return False
         return (
             (self.start_date or datetime.min.replace(tzinfo=timezone.get_default_timezone()))
             <= timezone.now()
             <= (self.end_date or datetime.max.replace(tzinfo=timezone.get_default_timezone()))
         )
+
+    @property
+    def stock_text(self) -> str:
+        """
+        A short text describing the remaining stock, empty for unlimited items.
+        """
+        if self.stock is None:
+            return ""
+        if self.stock <= 0:
+            return "Sold out"
+        return f"{self.stock} left"
 
     def __str__(self) -> str:
         return self.name

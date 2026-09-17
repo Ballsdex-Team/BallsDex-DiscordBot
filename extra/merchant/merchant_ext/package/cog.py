@@ -25,6 +25,7 @@ from settings.models import settings
 from settings.utils import format_currency
 
 from .components import BuyItemView
+from .purchase import PurchaseError, buy_item, purchase_message
 from .transformers import GlobalShopTransform
 
 if TYPE_CHECKING:
@@ -82,7 +83,7 @@ class Merchant(commands.GroupCog):
         has_items = bool(instance.items)
 
         if created or not has_items or instance.rotation_expired:
-            items = self._get_random_items(merchant_settings.items)
+            items = await self._get_random_items(merchant_settings.items)
             if not items:
                 await interaction.followup.send("Failed to select items for rotation.")
                 return
@@ -96,9 +97,7 @@ class Merchant(commands.GroupCog):
         else:
             items = [x async for x in instance.items.all()]
 
-        entries: list[tuple[str, str]] = [
-            (x.name, format_currency(x.prize or 0, False, self.bot)) for x in items if x.enabled
-        ]
+        entries: list[tuple[str, str]] = [(x.name, self._price_text(x)) for x in items if x.enabled]
         source = FieldPageSource(entries, per_page=merchant_settings.items, inline=True, clear_description=False)
         source.embed.title = f"{settings.bot_name} shop"
         source.embed.description = (
@@ -139,58 +138,21 @@ class Merchant(commands.GroupCog):
                 "You can't buy this item because it's not in your current selection.", ephemeral=True
             )
             return
+        if item.sold_out:
+            await interaction.response.send_message(f"**{item.name}** is sold out!", ephemeral=True)
+            return
+        if not item.enabled:
+            await interaction.response.send_message(f"**{item.name}** isn't available anymore.", ephemeral=True)
+            return
 
         await interaction.response.defer(thinking=True, ephemeral=True)
 
-        if not item.prize:
-            instance = await BallInstance.objects.acreate(
-                player=player,
-                ball=item.cached_ball,
-                special=item.cached_special,
-                health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
-                attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
-                catch_date=timezone.now(),
-                server_id=interaction.guild_id,
-            )
-            await interaction.followup.send(
-                f"You've bought {item.name} for **free!**\n{instance.description(include_emoji=True, bot=self.bot)}"
-            )
-            return
-
-        if player.money < item.prize:
-            await interaction.followup.send(
-                f"You don't have enough {settings.currency_display_plural(self.bot)} to buy "
-                f"**{item.name}**\n"
-                f"Your actual balance: {format_currency(player.money, False, self.bot)}"
-            )
-            return
-
         try:
-            instance = await BallInstance.objects.acreate(
-                player=player,
-                ball=item.cached_ball,
-                special=item.cached_special,
-                health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
-                attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
-                catch_date=timezone.now(),
-                server_id=interaction.guild_id,
-            )
-        except Exception:
-            log.exception("Failed to create a ball instance while a user trying to buy an item.", exc_info=True)
-            await interaction.followup.send("An error occurred while trying to buy the item.")
+            ball_instance = await buy_item(self.bot, player, item, server_id=interaction.guild_id)
+        except PurchaseError as error:
+            await interaction.followup.send(str(error))
             return
-        else:
-            await player.remove_money(
-                item.prize,
-                reason=BerryTransaction.Reason.MERCHANT_BUY,
-                description=f"Bought {item.name} from the merchant",
-                server_id=interaction.guild_id,
-            )
-            await interaction.followup.send(
-                f"You've bought {item.name} for **{format_currency(item.prize, False, self.bot)}!**\n"
-                f"{instance.description(include_emoji=True, bot=self.bot)}"
-            )
-            return
+        await interaction.followup.send(purchase_message(self.bot, item, ball_instance))
 
     @global_group.command(name="shop")
     async def global_shop(self, interaction: discord.Interaction["BallsDexBot"], shop: GlobalShopTransform):
@@ -203,9 +165,7 @@ class Merchant(commands.GroupCog):
             The shop you want to visit
         """
         await interaction.response.defer(thinking=True)
-        entries: list[tuple[str, str]] = [
-            (x.name, format_currency(x.prize, False, self.bot)) async for x in shop.items.all()
-        ]
+        entries: list[tuple[str, str]] = [(x.name, self._price_text(x)) async for x in shop.items.all()]
         source = FieldPageSource(entries, per_page=3, inline=True)
         source.embed.title = f"{settings.bot_name} {shop.name}"
         source.embed.set_image(url=f"{settings.site_base_url}/media/{shop.banner.name}")
@@ -312,7 +272,7 @@ class Merchant(commands.GroupCog):
         has_items = bool(instance.items)
 
         if created or not has_items or instance.rotation_expired:
-            items = self._get_random_items(merchant_settings.items)
+            items = await self._get_random_items(merchant_settings.items)
             if not items:
                 return []
 
@@ -326,13 +286,25 @@ class Merchant(commands.GroupCog):
             items = [x async for x in instance.items.all()]
 
         return [
-            app_commands.Choice(name=f"#{x.pk:0X} {x.name} ({format_currency(x.prize or 0)})", value=x.pk)
+            app_commands.Choice(
+                name=f"#{x.pk:0X} {x.name} ({format_currency(x.prize or 0)})"
+                + (f" • {x.stock_text}" if x.stock is not None else ""),
+                value=x.pk,
+            )
             for x in items
             if current.lower() in x.name.lower()
         ]
 
-    def _get_random_items(self, amount: int) -> list[MerchantItem] | None:
-        population = [x for x in merchant_items.values() if x.enabled]
+    def _price_text(self, item: MerchantItem) -> str:
+        text = format_currency(item.prize or 0, False, self.bot)
+        if item.stock is not None:
+            text += f"\n-# {item.stock_text}"
+        return text
+
+    async def _get_random_items(self, amount: int) -> list[MerchantItem] | None:
+        # the cached items may hold an outdated stock, sold out items are checked in the database
+        sold_out = {pk async for pk in MerchantItem.objects.filter(stock=0).values_list("pk", flat=True)}
+        population = [x for x in merchant_items.values() if x.enabled and x.pk not in sold_out]
 
         if not population:
             return None
