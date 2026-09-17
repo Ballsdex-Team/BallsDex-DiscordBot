@@ -7,6 +7,7 @@ panel don't unlock achievements or send Discord messages.
 """
 
 import asyncio
+import contextvars
 import logging
 from collections.abc import Callable, Coroutine
 from typing import Any
@@ -42,7 +43,10 @@ def run_on_bot_loop(factory: Callable[[], Coroutine[Any, Any, Any]]):
         return
 
     def start():
-        task = loop.create_task(factory())
+        # a fresh context: the caller is often inside a thread sensitive `sync_to_async` call (any signal receiver
+        # is), and asgiref refuses to touch the database again from a context already using its single thread
+        # executor. The task is independent, it can wait for its turn on that executor instead.
+        task = loop.create_task(factory(), context=contextvars.Context())
         _tasks.add(task)
         task.add_done_callback(_on_task_done)
 
@@ -53,4 +57,4 @@ def run_on_bot_loop(factory: Callable[[], Coroutine[Any, Any, Any]]):
     if running is loop:
         start()
     else:
-        loop.call_soon_threadsafe(start)
+        loop.call_soon_threadsafe(start, context=contextvars.Context())
