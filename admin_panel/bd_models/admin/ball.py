@@ -95,7 +95,11 @@ class BallAdmin(admin.ModelAdmin):
         ),
         (
             "Ability",
-            {"description": "The ability of the countryball", "fields": ["capacity_name", "capacity_description"]},
+            {
+                "description": "The ability of the countryball. Only the description is drawn on the card, "
+                "the ability name is not displayed anymore.",
+                "fields": ["capacity_name", "capacity_description"],
+            },
         ),
         (
             "Advanced",
