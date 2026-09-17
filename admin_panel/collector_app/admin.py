@@ -85,7 +85,10 @@ class AddTierForm(AdminActionForm):
         "requirements.",
     )
     multiplier = forms.IntegerField(
-        min_value=1, initial=2, help_text="The amount of every copied requirement is multiplied by this number."
+        min_value=1,
+        initial=2,
+        help_text="The amount of every copied requirement is multiplied by this number. When specials are combined "
+        "below, this is the amount asked for each treasure and special (1 for an elemental recipe).",
     )
     combine_with_specials = forms.ModelMultipleChoiceField(
         queryset=Special.objects.all(),
