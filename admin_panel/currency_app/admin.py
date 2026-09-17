@@ -12,12 +12,20 @@ class ItemAdmin(admin.ModelAdmin):
     save_on_top = True
     fieldsets = [
         (None, {"fields": ["name", "description", "prize"]}),
+        (
+            "Shop display",
+            {
+                "description": "Reorder the packs directly from the list by editing their position.",
+                "fields": ["section", "position"],
+            },
+        ),
         ("Configure Reward", {"fields": ["minimum_rarity", "maximum_rarity", "special"]}),
     ]
-    list_display = ("name", "prize", "minimum_rarity", "maximum_rarity")
-    list_editable = ("prize", "minimum_rarity", "maximum_rarity")
-    list_filter = ("created_at", "special")
-    ordering = ["-created_at"]
+    list_display = ("name", "section", "position", "prize", "minimum_rarity", "maximum_rarity")
+    list_editable = ("section", "position", "prize", "minimum_rarity", "maximum_rarity")
+    list_filter = ("section", "created_at", "special")
+    ordering = ["section", "position", "prize"]
+    list_per_page = 100
 
     search_fields = ("name",)
 

@@ -156,8 +156,22 @@ class BerryTransaction(models.Model):
 
 
 class Item(models.Model):
+    class Section(models.TextChoices):
+        SHOP = "shop", "Pack shop (/pack shop)"
+        TIERS = "tiers", "Tier packs (/pack tiers)"
+
     name = models.CharField(max_length=64)
     description = models.TextField(null=True, blank=True, help_text="An optional description for the item")
+    section = models.CharField(
+        max_length=8,
+        choices=Section.choices,
+        default=Section.SHOP,
+        help_text="Which command lists this pack. Tier packs (Bronze, Silver, Gold...) have their own /pack tiers "
+        "command so they don't get lost at the end of the shop.",
+    )
+    position = models.PositiveIntegerField(
+        default=0, help_text="Packs are listed from the lowest position to the highest, then by price."
+    )
     prize = models.PositiveBigIntegerField(
         blank=True, null=True, help_text="The prize of the item. If blanks, it will free"
     )
@@ -194,6 +208,7 @@ class Item(models.Model):
     class Meta:
         managed = True
         db_table = "item"
+        ordering = ("section", "position", "prize")
 
     def __str__(self) -> str:
         return self.name
