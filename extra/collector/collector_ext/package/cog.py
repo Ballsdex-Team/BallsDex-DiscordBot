@@ -19,9 +19,15 @@ from bd_models.signals import ownership_changed
 from settings.models import settings
 
 from .monitoring import CollectorMonitor
-from .requirements import collector_card_special_ids, evaluate_requirements, tier_requirements
+from .requirements import (
+    collector_card_special_ids,
+    evaluate_requirements,
+    evaluate_with_counts,
+    owned_counts,
+    tier_requirements,
+)
 from .transformers import CollectorEnabledTransform
-from .views import CollectorClaimView
+from .views import CollectorClaimView, CollectorPage, TierState
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -55,31 +61,108 @@ class Collector(commands.GroupCog):
         await self.bot.wait_until_ready()
 
     @app_commands.command()
-    async def claim(self, interaction: discord.Interaction["BallsDexBot"], collector: CollectorEnabledTransform):
+    @app_commands.choices(
+        show=[
+            app_commands.Choice(name="Ready to claim", value="ready"),
+            app_commands.Choice(name="Every collector", value="all"),
+        ]
+    )
+    async def claim(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        collector: CollectorEnabledTransform | None = None,
+        show: app_commands.Choice[str] | None = None,
+    ):
         """
         Claim a collector card.
 
         Parameters
         ----------
         collector: Collector
-            The collector to claim, its tiers are shown afterwards.
+            The collector to claim. Leave it empty to browse the collectors one by one.
+        show: str
+            When browsing, show the collectors you can claim right now or every collector.
         """
         await interaction.response.defer(thinking=True)
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        tiers = [
-            tier
-            async for tier in CollectorTier.objects.filter(collector=collector, enabled=True)
-            .select_related("level")
-            .order_by("level__position", "level_id")
-        ]
-        if not tiers:
-            await interaction.followup.send("This collector can't be claimed right now.", ephemeral=True)
-            return
+        only_ready = show is None or show.value == "ready"
 
-        view = CollectorClaimView(self.bot, player, collector, tiers)
+        if collector is not None:
+            tiers = [
+                tier
+                async for tier in CollectorTier.objects.filter(collector=collector, enabled=True)
+                .select_related("level")
+                .order_by("level__position", "level_id")
+            ]
+            if not tiers:
+                await interaction.followup.send("This collector can't be claimed right now.", ephemeral=True)
+                return
+            pages = [CollectorPage(collector, tiers)]
+        else:
+            pages = await self._browse_pages(player, only_ready=only_ready)
+            if not pages:
+                await interaction.followup.send(
+                    "You can't claim any collector card right now. Use `show: Every collector` to see them all "
+                    "and what you're missing."
+                    if only_ready
+                    else f"{settings.bot_name} doesn't have any collector active.",
+                    ephemeral=True,
+                )
+                return
+
+        view = CollectorClaimView(self.bot, player, pages)
         view.restrict_author(interaction.user.id)
         await view.refresh()
         view.message = await interaction.followup.send(view=view, wait=True)
+
+    async def _browse_pages(self, player: Player, *, only_ready: bool) -> list[CollectorPage]:
+        """
+        One page per collector, with the player's progress on every tier. Everything is counted from a single
+        summary of the player's treasures, so browsing hundreds of collectors stays cheap.
+        """
+        tiers = [
+            tier
+            async for tier in CollectorTier.objects.filter(enabled=True)
+            .select_related("level", "collector")
+            .order_by("collector__name", "level__position")
+        ]
+        tiers = [tier for tier in tiers if tier.collector.active]
+        if not tiers:
+            return []
+
+        requirements: dict[tuple[int, int], list[CollectorRequirement]] = defaultdict(list)
+        async for requirement in CollectorRequirement.objects.filter(
+            collector_id__in={tier.collector_id for tier in tiers}
+        ).select_related("ball", "special"):
+            requirements[(requirement.collector_id, requirement.level_id)].append(requirement)
+        claimed = {
+            (collector_id, level_id)
+            async for collector_id, level_id in CollectorInstance.objects.filter(
+                player=player, revoked_at__isnull=True
+            ).values_list("collector_id", "level_id")
+        }
+        counts = await sync_to_async(owned_counts)(player.pk)
+
+        pages: list[CollectorPage] = []
+        by_collector: dict[int, CollectorPage] = {}
+        for tier in tiers:
+            page = by_collector.get(tier.collector_id)
+            if page is None:
+                page = by_collector[tier.collector_id] = CollectorPage(tier.collector, [])
+                pages.append(page)
+            page.tiers.append(tier)
+            page.states.append(
+                TierState(
+                    tier=tier,
+                    claimed=(tier.collector_id, tier.level_id) in claimed,
+                    statuses=evaluate_with_counts(counts, requirements[(tier.collector_id, tier.level_id)]),
+                )
+            )
+
+        if only_ready:
+            return [page for page in pages if page.ready]
+        pages.sort(key=lambda page: (not page.ready, page.missing_count, page.collector.name))
+        return pages
 
     @app_commands.command(name="list")
     async def collector_list(self, interaction: discord.Interaction["BallsDexBot"]):

@@ -11,7 +11,7 @@ from collector_app.models import CollectorInstance, CollectorRequirement, Collec
 from currency_app.ledger import adjust_money
 from currency_app.models import BerryTransaction
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from bd_models.models import BallInstance, Player
@@ -82,6 +82,50 @@ def requirement_queryset(
     elif excluded_specials:
         queryset = queryset.exclude(special_id__in=excluded_specials)
     return queryset
+
+
+@dataclass
+class OwnedCounts:
+    """
+    How many treasures a player owns, grouped so that any requirement can be answered without another query.
+    """
+
+    by_ball_and_special: dict[tuple[int, int | None], int]
+    by_ball: dict[int, int]
+    by_special: dict[int, int]
+    total: int
+
+    def count(self, requirement: CollectorRequirement) -> int:
+        if requirement.ball_id and requirement.special_id:
+            return self.by_ball_and_special.get((requirement.ball_id, requirement.special_id), 0)
+        if requirement.ball_id:
+            return self.by_ball.get(requirement.ball_id, 0)
+        if requirement.special_id:
+            return self.by_special.get(requirement.special_id, 0)
+        return self.total
+
+
+def owned_counts(player_id: int, excluded_specials: set[int] | None = None) -> OwnedCounts:
+    if excluded_specials is None:
+        excluded_specials = collector_card_special_ids()
+    counts = OwnedCounts({}, {}, {}, 0)
+    rows = BallInstance.objects.filter(player_id=player_id).values("ball_id", "special_id").annotate(n=Count("id"))
+    for row in rows:
+        ball_id, special_id, amount = row["ball_id"], row["special_id"], row["n"]
+        counts.by_ball_and_special[(ball_id, special_id)] = (
+            counts.by_ball_and_special.get((ball_id, special_id), 0) + amount
+        )
+        if special_id is not None:
+            counts.by_special[special_id] = counts.by_special.get(special_id, 0) + amount
+        # collector cards never count toward requirements that don't ask for their special
+        if special_id not in excluded_specials:
+            counts.by_ball[ball_id] = counts.by_ball.get(ball_id, 0) + amount
+            counts.total += amount
+    return counts
+
+
+def evaluate_with_counts(counts: OwnedCounts, requirements: list[CollectorRequirement]) -> list[RequirementStatus]:
+    return [RequirementStatus(requirement, counts.count(requirement)) for requirement in requirements]
 
 
 def evaluate_requirements(

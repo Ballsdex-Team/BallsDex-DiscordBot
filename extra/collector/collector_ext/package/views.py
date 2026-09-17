@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import discord
@@ -6,7 +6,7 @@ from asgiref.sync import sync_to_async
 from collector_app.models import Collector, CollectorTier
 from discord.ui import ActionRow, Button, Separator, TextDisplay
 
-from ballsdex.core.discord import Container, LayoutView
+from ballsdex.core.discord import Container, LayoutView, Modal
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.utils import can_mention
 from bd_models.models import Player
@@ -44,8 +44,27 @@ class TierState:
         return [status for status in self.statuses if not status.met]
 
     @property
+    def ready(self) -> bool:
+        return self.available and not self.claimed and not self.missing
+
+    @property
     def needs_confirmation(self) -> bool:
         return bool(self.tier.price) or any(status.requirement.delete_balls for status in self.statuses)
+
+
+@dataclass
+class CollectorPage:
+    collector: Collector
+    tiers: list[CollectorTier]
+    states: list[TierState] = field(default_factory=list)
+
+    @property
+    def ready(self) -> bool:
+        return any(state.ready for state in self.states)
+
+    @property
+    def missing_count(self) -> int:
+        return min((len(state.missing) for state in self.states if state.available and not state.claimed), default=999)
 
 
 def load_tier_states(player_id: int, tiers: list[CollectorTier]) -> list[TierState]:
@@ -71,7 +90,11 @@ class ClaimTierButton(Button["CollectorClaimView"]):
             style = discord.ButtonStyle.success if not state.missing else discord.ButtonStyle.primary
             label = tier.level.name
         super().__init__(
-            style=style, label=label, emoji=tier.level.emoji or None, disabled=state.claimed or not state.available
+            style=style,
+            label=label,
+            emoji=tier.level.emoji or None,
+            disabled=state.claimed or not state.available,
+            row=1,
         )
         self.tier_id = tier.pk
 
@@ -80,19 +103,63 @@ class ClaimTierButton(Button["CollectorClaimView"]):
         await self.view.claim(interaction, self.tier_id)
 
 
+class PageButton(Button["CollectorClaimView"]):
+    def __init__(self, label: str, step: int, disabled: bool):
+        super().__init__(style=discord.ButtonStyle.secondary, label=label, disabled=disabled, row=0)
+        self.step = step
+
+    async def callback(self, interaction: Interaction):
+        assert self.view
+        await self.view.show_page(interaction, self.view.index + self.step)
+
+
+class JumpButton(Button["CollectorClaimView"]):
+    def __init__(self, label: str):
+        super().__init__(style=discord.ButtonStyle.primary, label=label, row=0)
+
+    async def callback(self, interaction: Interaction):
+        assert self.view
+        await interaction.response.send_modal(JumpModal(self.view))
+
+
+class JumpModal(Modal, title="Go to a collector"):
+    page = discord.ui.TextInput(label="Page number", placeholder="Enter a number", min_length=1, max_length=5)
+
+    def __init__(self, view: "CollectorClaimView"):
+        super().__init__()
+        self.claim_view = view
+        self.page.placeholder = f"Enter a number between 1 and {len(view.pages)}"
+
+    async def on_submit(self, interaction: Interaction):
+        try:
+            index = int(self.page.value) - 1
+        except ValueError:
+            await interaction.response.send_message("That's not a number.", ephemeral=True)
+            return
+        if not 0 <= index < len(self.claim_view.pages):
+            await interaction.response.send_message(
+                f"Enter a number between 1 and {len(self.claim_view.pages)}.", ephemeral=True
+            )
+            return
+        await self.claim_view.show_page(interaction, index)
+
+
 class CollectorClaimView(LayoutView):
     """
-    Shows every tier of a collector with the player's progress, and a button to claim each of them.
+    Shows one collector per page with the player's progress on each of its tiers, and a button to claim them.
     """
 
-    def __init__(self, bot: "BallsDexBot", player: Player, collector: Collector, tiers: list[CollectorTier]):
+    def __init__(self, bot: "BallsDexBot", player: Player, pages: list[CollectorPage]):
         super().__init__(timeout=300)
         self.bot = bot
         self.player = player
-        self.collector = collector
-        self.tiers = tiers
-        self.states: list[TierState] = []
+        self.pages = pages
+        self.index = 0
         self.message: discord.Message | None = None
+
+    @property
+    def page(self) -> CollectorPage:
+        return self.pages[self.index]
 
     async def on_timeout(self):
         for item in self.walk_children():
@@ -104,22 +171,37 @@ class CollectorClaimView(LayoutView):
             except discord.HTTPException:
                 pass
 
-    async def refresh(self):
-        self.states = await sync_to_async(load_tier_states)(self.player.pk, self.tiers)
+    async def show_page(self, interaction: Interaction, index: int):
+        self.index = max(0, min(index, len(self.pages) - 1))
+        await self.refresh()
+        await interaction.response.edit_message(view=self)
+
+    async def refresh(self, *, reload_states: bool = False):
+        page = self.page
+        if reload_states or not page.states:
+            page.states = await sync_to_async(load_tier_states)(self.player.pk, page.tiers)
         self.clear_items()
 
-        ball = self.collector.cached_ball
+        ball = page.collector.cached_ball
         emoji = self.bot.get_emoji(ball.emoji_id) if ball else None
         container = Container(
-            TextDisplay(f"# {f'{emoji} ' if emoji else ''}{self.collector.name}"),
+            TextDisplay(f"# {f'{emoji} ' if emoji else ''}{page.collector.name}"),
             TextDisplay("-# Pick the tier you want to claim."),
             Separator(),
             accent_colour=settings.embed_colour,
         )
-        for state in self.states:
+        for state in page.states:
             container.add_item(TextDisplay(self._describe(state)))
+
         row = ActionRow()
-        for state in self.states:
+        if len(self.pages) > 1:
+            container.add_item(TextDisplay(f"-# Collector {self.index + 1}/{len(self.pages)}"))
+            row.add_item(PageButton("◀", -1, self.index == 0))
+            row.add_item(JumpButton(f"{self.index + 1}/{len(self.pages)}"))
+            row.add_item(PageButton("▶", 1, self.index >= len(self.pages) - 1))
+            container.add_item(row)
+            row = ActionRow()
+        for state in page.states:
             if len(row.children) == 5:
                 container.add_item(row)
                 row = ActionRow()
@@ -148,14 +230,14 @@ class CollectorClaimView(LayoutView):
         return "\n".join(lines)
 
     async def claim(self, interaction: Interaction, tier_id: int):
-        state = next(state for state in self.states if state.tier.pk == tier_id)
+        state = next(state for state in self.page.states if state.tier.pk == tier_id)
         tier = state.tier
-        tier_name = f"**{self.collector.name}** ({tier.level.name})"
+        tier_name = f"**{self.page.collector.name}** ({tier.level.name})"
 
         if state.missing:
             # tell exactly what is missing, the list above may be outdated
             statuses = await sync_to_async(evaluate_requirements)(
-                self.player.pk, [s.requirement for s in state.statuses]
+                self.player.pk, [status.requirement for status in state.statuses]
             )
             state.statuses = statuses
             if missing := state.missing:
@@ -197,7 +279,7 @@ class CollectorClaimView(LayoutView):
         match result.status:
             case "claimed":
                 assert result.card
-                await self.refresh()
+                await self.refresh(reload_states=True)
                 if self.message:
                     await self.message.edit(view=self)
                 await interaction.followup.send(
