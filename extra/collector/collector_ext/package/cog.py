@@ -124,7 +124,7 @@ class Collector(commands.GroupCog):
             tier
             async for tier in CollectorTier.objects.filter(enabled=True)
             .select_related("level", "collector")
-            .order_by("collector__name", "level__position")
+            .order_by("collector__name", "level__position", "level_id")
         ]
         tiers = [tier for tier in tiers if tier.collector.active]
         if not tiers:
