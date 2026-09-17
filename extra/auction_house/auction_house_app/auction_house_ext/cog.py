@@ -1158,12 +1158,16 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
 
     async def place_featured_bid(
         self, auction_id: int, bidder_discord_id: int, amount: int
-    ) -> tuple[FeaturedAuction, Player | None, int]:
+    ) -> tuple[FeaturedAuction, Player | None, int, int]:
+        """
+        Returns the updated auction, the previous bidder and bid, and how many minutes the auction was
+        extended by (0 if the bid didn't come in at the last minute).
+        """
         return await services.safe_settle(self._place_featured_bid, auction_id, bidder_discord_id, amount)
 
     def _place_featured_bid(
         self, auction_id: int, bidder_discord_id: int, amount: int
-    ) -> tuple[FeaturedAuction, Player | None, int]:
+    ) -> tuple[FeaturedAuction, Player | None, int, int]:
         with transaction.atomic():
             try:
                 auction = FeaturedAuction.objects.select_for_update().get(
@@ -1171,7 +1175,8 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
                 )
             except FeaturedAuction.DoesNotExist:
                 raise RuntimeError("This featured auction is no longer active.")
-            if auction.expires_at <= timezone.now():
+            now = timezone.now()
+            if auction.expires_at <= now:
                 raise RuntimeError("This featured auction has already ended.")
 
             minimum = (
@@ -1211,9 +1216,36 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             auction.current_bid = amount
             auction.current_bidder = bidder
             auction.bid_count = F("bid_count") + 1
-            auction.save(update_fields=["current_bid", "current_bidder", "bid_count"])
+            update_fields = ["current_bid", "current_bidder", "bid_count"]
+
+            # a bid placed right before the end pushes it back, so nobody can snipe the auction
+            extension = 0
+            auction_settings = AuctionSettings.load()
+            window = timedelta(minutes=auction_settings.featured_extension_window_minutes)
+            if auction_settings.featured_extension_minutes and auction.expires_at - now <= window:
+                extension = auction_settings.featured_extension_minutes
+                auction.expires_at += timedelta(minutes=extension)
+                update_fields.append("expires_at")
+
+            auction.save(update_fields=update_fields)
             auction.refresh_from_db()
-            return auction, previous_bidder, previous_bid or 0
+            return auction, previous_bidder, previous_bid or 0, extension
+
+    async def announce_featured_extension(self, auction: FeaturedAuction, minutes: int):
+        channel = self.bot.get_channel(auction.channel_id)
+        if channel is None:
+            try:
+                channel = await self.bot.fetch_channel(auction.channel_id)
+            except discord.HTTPException:
+                return
+        try:
+            await channel.send(  # type: ignore
+                f"\N{ALARM CLOCK} Last-minute bid on **Auction #{auction.id} — {auction.title}**! "
+                f"The auction is extended by **{minutes} minutes** and now ends "
+                f"{discord.utils.format_dt(auction.expires_at, 'R')}."
+            )
+        except discord.HTTPException:
+            log.warning("Failed to announce the extension of featured auction %s", auction.id)
 
     async def _build_featured_embed(self, auction: FeaturedAuction) -> discord.Embed:
         items = [item async for item in auction.items.select_related("instance", "instance__ball").all()]
@@ -1523,7 +1555,8 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             GiveawayLog.objects.create(server_id=home_server_id or 0, winner=winner, instance=instance)
             return winner, instance, home_server_id
 
-    @tasks.loop(minutes=5)
+    # checked every minute since last-minute bids keep moving the end of featured auctions
+    @tasks.loop(minutes=1)
     async def sweep_featured_auctions(self):
         closed = await sync_to_async(self._sweep_featured_auctions)()
         for auction in closed:

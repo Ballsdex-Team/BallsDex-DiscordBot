@@ -72,6 +72,17 @@ class AuctionSettings(models.Model):
         help_text="How long a card stays in Buggy's resale shop before it expires. Unsold cards are deleted "
         "for good when this runs out, not held back for the giveaway.",
     )
+
+    featured_extension_window_minutes = models.PositiveIntegerField(
+        default=10,
+        help_text="A bid placed on a featured auction when less than this many minutes remain extends the "
+        "auction. Set to 0 to disable extensions.",
+    )
+    featured_extension_minutes = models.PositiveIntegerField(
+        default=10,
+        help_text="How many minutes are added to a featured auction when a last-minute bid comes in. There is no "
+        "limit, every last-minute bid extends it again.",
+    )
     excluded_balls = models.ManyToManyField(
         Ball,
         blank=True,
