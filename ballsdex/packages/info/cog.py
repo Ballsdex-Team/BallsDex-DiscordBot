@@ -79,7 +79,7 @@ class Info(commands.Cog):
         """
         Get information about this bot.
         """
-        embed = discord.Embed(title=f"{settings.bot_name} Discord bot", color=discord.Colour.blurple())
+        embed = discord.Embed(title=f"{settings.bot_name} Discord bot", color=settings.embed_colour)
 
         try:
             balls = await self._get_10_balls_emojis()
@@ -134,6 +134,11 @@ class Info(commands.Cog):
             f"({settings.repository}) by El Laggron and maintained by the Ballsdex Team "
             f"and community of [contributors]({settings.repository}/graphs/contributors)."
         )
+        if settings.artist_credits_url:
+            dex_credits += (
+                f"\n\N{ARTIST PALETTE} Artworks are made by talented artists, "
+                f"[check out the artist credits]({settings.artist_credits_url})!"
+            )
         embed.description = (
             f"{' '.join(str(x) for x in balls)}\n"
             f"{settings.about_description}\n"
@@ -177,7 +182,7 @@ class Info(commands.Cog):
             if cog.qualified_name == "Admin":
                 continue
 
-            embed = discord.Embed(title=f"{settings.bot_name} Discord bot - help menu", color=discord.Colour.blurple())
+            embed = discord.Embed(title=f"{settings.bot_name} Discord bot - help menu", color=settings.embed_colour)
             embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
             content = ""

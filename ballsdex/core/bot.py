@@ -32,6 +32,7 @@ from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.help import HelpCommand
 from ballsdex.core.metrics import PrometheusServer
+from ballsdex.core.theme import apply_theme
 from ballsdex.core.utils.checks import check_perms
 from bd_models.models import (
     Ball,
@@ -366,6 +367,7 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
 
     async def setup_hook(self) -> None:
+        apply_theme()
         await self.tree.set_translator(Translator())
         log.info("Starting up with %s shards...", self.shard_count)
         if self.gateway_url is None:

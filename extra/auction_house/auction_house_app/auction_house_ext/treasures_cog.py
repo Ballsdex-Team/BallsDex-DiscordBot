@@ -13,8 +13,8 @@ from settings.utils import format_currency
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
-# same vivid blue used across Buggy's Auction House embeds
-TREASURES_COLOR = discord.Colour.from_rgb(0, 132, 255)
+# every embed uses the color configured in the admin panel settings
+TREASURES_COLOR = settings.embed_colour
 
 
 class TreasureSale(commands.Cog):

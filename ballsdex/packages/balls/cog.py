@@ -1082,7 +1082,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
         embed = discord.Embed(
             title=f"Collection of {countryball.country}" if countryball else "Total Collection",
             description=desc,
-            color=discord.Color.blurple(),
+            color=settings.embed_colour,
         )
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         if countryball:

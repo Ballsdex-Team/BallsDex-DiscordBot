@@ -203,7 +203,7 @@ class Collectible(commands.GroupCog):
             f"{settings.bot_name} collectibles progression: "
             f"**{round(len(owned_countryballs) / len(bot_countryballs) * 100, 1)}%**"
         )
-        source.embed.colour = discord.Colour.blurple()
+        source.embed.colour = settings.embed_colour
         source.embed.set_author(name=user_obj.display_name, icon_url=user_obj.display_avatar.url)
 
         pages = Pages(source=source, interaction=interaction, compact=True)

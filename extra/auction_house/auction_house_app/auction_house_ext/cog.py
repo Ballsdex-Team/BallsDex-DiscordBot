@@ -41,8 +41,8 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-# vivid blue used across every Buggy's Auction House embed
-AUCTION_COLOR = discord.Colour.from_rgb(0, 132, 255)
+# every embed uses the color configured in the admin panel settings
+AUCTION_COLOR = settings.embed_colour
 
 SORT_CHOICES = [
     app_commands.Choice(name="Rarity", value="rarity"),

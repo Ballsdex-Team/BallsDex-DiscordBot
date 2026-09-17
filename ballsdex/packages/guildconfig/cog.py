@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 activation_embed = discord.Embed(
-    colour=0x00D936,
+    colour=settings.embed_colour,
     title=f"{settings.bot_name} activation",
     description=f"To enable {settings.bot_name} in your server, you must "
     f"read and accept the [Terms of Service]({settings.terms_of_service}).\n\n"
@@ -193,7 +193,7 @@ class Config(commands.GroupCog):
         """
         config = await GuildConfig.objects.aget_or_none(guild_id=interaction.guild_id)
         config_cmd = self.channel.extras.get("mention", "`/config channel`")
-        embed = discord.Embed(title=f"{settings.bot_name} configuration status", color=discord.Colour.blurple())
+        embed = discord.Embed(title=f"{settings.bot_name} configuration status", color=settings.embed_colour)
 
         if not config or not config.spawn_channel:
             embed.description = f"{settings.bot_name} is not configured in this server yet."

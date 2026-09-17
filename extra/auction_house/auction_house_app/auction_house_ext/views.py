@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import discord
 
 from ballsdex.core.discord import View
+from settings.models import settings
 from settings.utils import format_currency
 
 from .. import services
@@ -13,8 +14,8 @@ if TYPE_CHECKING:
 
     from .cog import AuctionHouse
 
-# same vivid blue used across every Buggy's Auction House embed
-AUCTION_COLOR = discord.Colour.from_rgb(0, 132, 255)
+# every embed uses the color configured in the admin panel settings
+AUCTION_COLOR = settings.embed_colour
 
 
 class MyBidsView(View):

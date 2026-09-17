@@ -219,7 +219,7 @@ class TradingUser(Container):
                 )
             )
         else:
-            self.accent_colour = discord.Colour.blue()
+            self.accent_colour = settings.embed_colour
             add_cmd = self.cog.add.extras.get("mention", "`/trade add`")
             del_cmd = self.cog.remove.extras.get("mention", "`/trade remove`")
             section.add_item(TextDisplay(f"You can edit your proposal with {add_cmd} and {del_cmd}."))

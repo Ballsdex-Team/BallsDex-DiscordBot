@@ -360,7 +360,7 @@ class Player(commands.GroupCog):
         blocks = await Block.objects.filter(player1__discord_id=interaction.user.id).acount()
 
         embed = discord.Embed(
-            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=discord.Color.blurple()
+            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=settings.embed_colour
         )
         embed.description = (
             "Here are your statistics and settings in the bot!\n"

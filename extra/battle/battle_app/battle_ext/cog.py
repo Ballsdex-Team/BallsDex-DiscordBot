@@ -364,7 +364,7 @@ class Battle(commands.GroupCog):
                 f"Add or remove treasures with `/battle add` and `/battle remove`. Up to "
                 f"**{state['deck_size']}** per deck. Click ✔ once ready — 🛒 opens the shop anytime."
             ),
-            color=discord.Colour.blurple(),
+            color=settings.embed_colour,
         )
         if session.wager_amount:
             embed.description += f"\n**Wager:** {session.wager_amount} {settings.currency_display_plural(self.bot)}"
@@ -569,7 +569,7 @@ class Battle(commands.GroupCog):
                 embed=discord.Embed(
                     title="Battle Plan",
                     description="Battle started! Scroll down for the fight.",
-                    color=discord.Color.green(),
+                    color=settings.embed_colour,
                 ),
                 view=None,
             )
@@ -593,7 +593,7 @@ class Battle(commands.GroupCog):
         session.status = BattleSessionStatus.CANCELLED
         await session.asave(update_fields=("status",))
         embed = discord.Embed(
-            title="Battle Plan", description="The battle has been cancelled.", color=discord.Color.red()
+            title="Battle Plan", description="The battle has been cancelled.", color=settings.embed_colour
         )
         try:
             await interaction.response.edit_message(embed=embed, view=None)
@@ -618,7 +618,7 @@ class Battle(commands.GroupCog):
         embed = discord.Embed(
             title="Battle in progress",
             description=f"**{active_name}**'s turn — Turn {state.get('turn', 0)}\n\n{log_text}",
-            color=discord.Color.orange(),
+            color=settings.embed_colour,
         )
         embed.add_field(name=f"{p1_name}'s deck", value=deck_lines(state["p1_balls"]), inline=True)
         embed.add_field(name=f"{p2_name}'s deck", value=deck_lines(state["p2_balls"]), inline=True)
@@ -803,7 +803,7 @@ class Battle(commands.GroupCog):
         p2_name = await player_name(self.bot, session.player2.discord_id)
         winner_name = p1_name if winner_side == "p1" else p2_name
 
-        embed = discord.Embed(title="Battle: Complete!", color=discord.Color.green())
+        embed = discord.Embed(title="Battle: Complete!", color=settings.embed_colour)
         forfeit_suffix = " (forfeit)" if forfeited else ""
         summary = f"**Winner: {winner_name}**{forfeit_suffix}\nTurns: {state.get('turn', 0)}"
         if session.wager_amount:

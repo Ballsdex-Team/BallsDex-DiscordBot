@@ -110,7 +110,7 @@ class Augment(commands.Cog):
                 f"Do you want to reroll the stats of this {settings.collectible_name} for "
                 f"**{format_currency(price, False, self.bot)}**?"
             ),
-            color=discord.Colour.blurple(),
+            color=settings.embed_colour,
         )
         return embed
 
@@ -130,5 +130,5 @@ class Augment(commands.Cog):
                 f"HP: {health_delta:+d}% \N{RIGHTWARDS ARROW} now **{countryball.health_bonus:+d}%**\n\n"
                 f"Remaining balance: **{format_currency(player.money, False, self.bot)}**"
             ),
-            color=discord.Colour.green() if success else discord.Colour.red(),
+            color=settings.embed_colour,
         )

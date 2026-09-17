@@ -509,6 +509,19 @@ class BallInstance(models.Model):
                     text = f"{emoji} {text}"
         return text
 
+    def artwork_credits(self) -> str:
+        """
+        A small line crediting the artists of this card, linking to the artist credits page if configured.
+        """
+        # frames may override the artwork of a card for a day, along with its author
+        frame_credits = self.extra_data.get("credits") if isinstance(self.extra_data, dict) else None
+        text = f"\N{ARTIST PALETTE} Artwork by {frame_credits or self.countryball.credits}"
+        if self.specialcard and self.specialcard.credits:
+            text += f" • Special artwork by {self.specialcard.credits}"
+        if settings.artist_credits_url:
+            text += f" • [Artist credits](<{settings.artist_credits_url}>)"
+        return f"-# {text}"
+
     def draw_card(self) -> BytesIO:
         image, kwargs = draw_card(self)
         buffer = BytesIO()
@@ -552,7 +565,8 @@ class BallInstance(models.Model):
             f"Caught on {format_dt(self.catch_date)}{catch_time_msg} ({format_dt(self.catch_date, style='R')}).\n"
             f"{trade_content}\n"
             f"ATK: {self.attack} ({self.attack_bonus:+d}%)\n"
-            f"HP: {self.health} ({self.health_bonus:+d}%)"
+            f"HP: {self.health} ({self.health_bonus:+d}%)\n"
+            f"{self.artwork_credits()}"
         )
 
         # draw image

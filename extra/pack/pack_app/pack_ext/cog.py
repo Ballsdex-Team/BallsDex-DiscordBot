@@ -97,7 +97,7 @@ class Pack(commands.GroupCog):
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
             server_id=interaction.guild_id,
         )
-        embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
+        embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=settings.embed_colour)
         embed.description = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         footer_text = (
@@ -156,7 +156,7 @@ class Pack(commands.GroupCog):
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
             server_id=interaction.guild_id,
         )
-        embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
+        embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=settings.embed_colour)
         embed.description = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         embed.set_footer(text="Come back next week for another pack!")
