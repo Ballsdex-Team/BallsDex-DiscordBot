@@ -5,18 +5,20 @@ ELEMENTS = ("Air", "Fire", "Water", "Earth")
 
 def create_elemental_tier(apps, schema_editor):
     """
-    Add an "Elemental" tier to every existing collector: one treasure of each element, used up when claiming, gives
-    the collector card with the Elemental special. Collectors created later need the "Add a tier" admin action.
+    Add an "Elemental" tier to every collector: every treasure of its Tier 1 recipe is needed in the four elements,
+    and they are used up when claiming. The card given has the Elemental special.
+
+    Collectors created later need the "Add a tier" admin action.
     """
     Special = apps.get_model("bd_models", "Special")
-    Collector = apps.get_model("collector_app", "Collector")
     CollectorTierLevel = apps.get_model("collector_app", "CollectorTierLevel")
     CollectorTier = apps.get_model("collector_app", "CollectorTier")
     CollectorRequirement = apps.get_model("collector_app", "CollectorRequirement")
 
     elemental = Special.objects.filter(name__iexact="Elemental").first()
     elements = [Special.objects.filter(name__iexact=name).first() for name in ELEMENTS]
-    if elemental is None or not all(elements):
+    tier_1 = CollectorTierLevel.objects.filter(name="Tier 1").first()
+    if elemental is None or tier_1 is None or not all(elements):
         # another instance of the bot without these specials, nothing to set up
         return
 
@@ -27,40 +29,42 @@ def create_elemental_tier(apps, schema_editor):
             "position": 3,
             "special": elemental,
             "claimable": True,
-            # the elements are used up when claiming, there is nothing left to watch afterwards
+            # the treasures are used up when claiming, there is nothing left to watch afterwards
             "monitored": False,
         },
     )
-    tier_1 = CollectorTierLevel.objects.filter(name="Tier 1").first()
-    tradeable_by_collector = {}
-    if tier_1 is not None:
-        tradeable_by_collector = dict(
-            CollectorTier.objects.filter(level=tier_1).values_list("collector_id", "tradeable")
-        )
+
+    recipes: dict[int, list[int]] = {}
+    for collector_id, ball_id in (
+        CollectorRequirement.objects.filter(level=tier_1, ball__isnull=False)
+        .order_by("pk")
+        .values_list("collector_id", "ball_id")
+    ):
+        balls = recipes.setdefault(collector_id, [])
+        if ball_id not in balls:
+            balls.append(ball_id)
 
     already_set_up = set(CollectorTier.objects.filter(level=level).values_list("collector_id", flat=True))
-    collector_ids = [
-        collector_id
-        for collector_id in Collector.objects.values_list("pk", flat=True)
-        if collector_id not in already_set_up
-    ]
-    CollectorTier.objects.bulk_create(
-        [
+    tradeable_by_collector = dict(CollectorTier.objects.filter(level=tier_1).values_list("collector_id", "tradeable"))
+
+    tiers, requirements = [], []
+    for collector_id, ball_ids in recipes.items():
+        if collector_id in already_set_up:
+            continue
+        tiers.append(
             CollectorTier(
                 collector_id=collector_id, level=level, tradeable=tradeable_by_collector.get(collector_id, True)
             )
-            for collector_id in collector_ids
-        ],
-        batch_size=500,
-    )
-    CollectorRequirement.objects.bulk_create(
-        [
-            CollectorRequirement(collector_id=collector_id, level=level, special=element, amount=1, delete_balls=True)
-            for collector_id in collector_ids
+        )
+        requirements.extend(
+            CollectorRequirement(
+                collector_id=collector_id, level=level, ball_id=ball_id, special=element, amount=1, delete_balls=True
+            )
+            for ball_id in ball_ids
             for element in elements
-        ],
-        batch_size=1000,
-    )
+        )
+    CollectorTier.objects.bulk_create(tiers, batch_size=500)
+    CollectorRequirement.objects.bulk_create(requirements, batch_size=1000)
 
 
 def remove_elemental_tier(apps, schema_editor):

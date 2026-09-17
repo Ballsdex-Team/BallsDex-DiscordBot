@@ -28,6 +28,16 @@ if TYPE_CHECKING:
 
 type Interaction = discord.Interaction["BallsDexBot"]
 
+# a collector asking for dozens of treasures can't show them all in a message
+MAX_REQUIREMENT_LINES = 10
+
+
+def missing_text(statuses: list[RequirementStatus], bot: "BallsDexBot | None" = None) -> str:
+    lines = [status.describe(bot) for status in statuses[:MAX_REQUIREMENT_LINES]]
+    if len(statuses) > MAX_REQUIREMENT_LINES:
+        lines.append(f"-# ...and {len(statuses) - MAX_REQUIREMENT_LINES} more")
+    return "\n".join(lines)
+
 
 @dataclass
 class TierState:
@@ -224,7 +234,15 @@ class CollectorClaimView(LayoutView):
             lines.append(f"Missing {len(state.missing)} of {len(state.statuses)} requirements:")
         else:
             lines.append("\N{SPARKLES} You meet every requirement, you can claim it!")
-        lines.extend(status.describe(self.bot) for status in state.statuses)
+
+        # long recipes only show what is missing, a message can't hold hundreds of lines
+        shown = state.statuses if len(state.statuses) <= MAX_REQUIREMENT_LINES else (state.missing or [])
+        lines.extend(status.describe(self.bot) for status in shown[:MAX_REQUIREMENT_LINES])
+        if len(shown) > MAX_REQUIREMENT_LINES:
+            lines.append(f"-# ...and {len(shown) - MAX_REQUIREMENT_LINES} more missing")
+        elif len(state.statuses) > MAX_REQUIREMENT_LINES:
+            lines.append(f"-# {len(state.statuses)} treasures needed, they are all used up when claiming")
+
         if state.tier.price:
             lines.append(f"Cost: **{format_currency(state.tier.price, False, self.bot)}**")
         return "\n".join(lines)
@@ -242,8 +260,7 @@ class CollectorClaimView(LayoutView):
             state.statuses = statuses
             if missing := state.missing:
                 await interaction.response.send_message(
-                    f"You can't claim {tier_name} yet, you're missing:\n"
-                    + "\n".join(status.describe(self.bot) for status in missing),
+                    f"You can't claim {tier_name} yet, you're missing:\n" + missing_text(missing, self.bot),
                     ephemeral=True,
                 )
                 return
@@ -253,10 +270,13 @@ class CollectorClaimView(LayoutView):
             if tier.price:
                 costs.append(f"cost **{format_currency(tier.price, False, self.bot)}**")
             if consumed := [status for status in state.statuses if status.requirement.delete_balls]:
-                costs.append(
-                    "use up "
-                    + ", ".join(f"{status.requirement.amount}× {status.label(self.bot)}" for status in consumed)
+                listed = ", ".join(
+                    f"{status.requirement.amount}× {status.label(self.bot)}"
+                    for status in consumed[:MAX_REQUIREMENT_LINES]
                 )
+                if len(consumed) > MAX_REQUIREMENT_LINES:
+                    listed += f" and {len(consumed) - MAX_REQUIREMENT_LINES} more"
+                costs.append(f"use up {listed}")
             confirm = ConfirmChoiceView(
                 interaction, accept_message="Claiming...", cancel_message="The claim was cancelled."
             )
@@ -289,8 +309,7 @@ class CollectorClaimView(LayoutView):
                 )
             case "missing":
                 await interaction.followup.send(
-                    f"You can't claim {tier_name} yet, you're missing:\n"
-                    + "\n".join(status.describe(self.bot) for status in result.missing),
+                    f"You can't claim {tier_name} yet, you're missing:\n" + missing_text(result.missing, self.bot),
                     ephemeral=True,
                 )
             case "already_claimed":
