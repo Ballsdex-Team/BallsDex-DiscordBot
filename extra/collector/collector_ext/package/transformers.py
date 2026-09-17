@@ -1,9 +1,7 @@
-from datetime import datetime
 from typing import Iterable
 
 from collector_app.models import Collector
 from discord import app_commands
-from django.utils import timezone
 
 from ballsdex.core.utils.transformers import TTLModelTransformer
 
@@ -13,18 +11,14 @@ class CollectorTransformer(TTLModelTransformer[Collector]):
     model = Collector
 
     async def get_from_pk(self, value: int) -> Collector:
-        return await self.get_queryset().prefetch_related("requirements").aget(pk=value)
+        return await self.get_queryset().aget(pk=value)
 
 
 class CollectorEnabledTransformer(CollectorTransformer):
     async def load_items(self) -> Iterable[Collector]:
-        return [
-            x
-            async for x in Collector.objects.all()
-            if (x.start_date or datetime.min.replace(tzinfo=timezone.get_default_timezone()))
-            <= timezone.now()
-            <= (x.end_date or datetime.max.replace(tzinfo=timezone.get_default_timezone()))
-        ]
+        # each collector shows up once, its tiers are picked afterwards
+        queryset = Collector.objects.filter(tiers__enabled=True).distinct()
+        return [collector async for collector in queryset if collector.active]
 
 
 CollectorTransform = app_commands.Transform[Collector, CollectorTransformer]

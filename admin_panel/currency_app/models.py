@@ -121,6 +121,7 @@ class BerryTransaction(models.Model):
         MERCHANT_BUY = "merchant_buy", "Bought from the merchant"
         MERCHANT_TOKEN = "merchant_token", "Converted merchant tokens"
         COLLECTIBLE_BUY = "collectible_buy", "Bought a collectible"
+        COLLECTOR_CLAIM = "collector_claim", "Claimed a collector card"
         AUGMENT_BUY = "augment_buy", "Bought an augment"
         BATTLE_ITEM_BUY = "battle_item_buy", "Bought a battle item"
         BATTLE_WAGER_HOLD = "battle_wager_hold", "Battle wager (berries held)"
