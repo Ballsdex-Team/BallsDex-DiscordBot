@@ -180,6 +180,39 @@ class Achievement(commands.GroupCog):
         return achievement_item(self.bot, achievement, heading=heading)
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 300, key=lambda i: i.user.id)
+    async def sync(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Refresh your progress and claim the achievements you already earned.
+        """
+        await interaction.response.defer(thinking=True)
+        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
+        if player is None:
+            await interaction.followup.send(f"You're not registered in {settings.bot_name}.", ephemeral=True)
+            return
+
+        unlocked = await engine.sync_player(player)
+        if not unlocked:
+            await interaction.followup.send(
+                "Your progress is up to date, you don't have any pending achievement.\n"
+                "-# Achievements counting actions, like catches or trades, are counted when you play.",
+                ephemeral=True,
+            )
+            return
+
+        view = LayoutView()
+        container = Container(
+            TextDisplay(f"## \N{TROPHY} {len(unlocked)} achievement(s) unlocked!"),
+            Separator(),
+            accent_colour=settings.embed_colour,
+        )
+        view.add_item(container)
+        entries = [achievement_item(self.bot, achievement) for achievement in unlocked]
+        menu = Menu(self.bot, view, ChunkedListSource(entries, 5), ItemFormatter(container, 2))
+        await menu.init()
+        await interaction.followup.send(view=view)
+
+    @app_commands.command()
     async def info(self, interaction: discord.Interaction["BallsDexBot"], achievement: AchievementTransform):
         """
         Check your progress in a specific achievement.

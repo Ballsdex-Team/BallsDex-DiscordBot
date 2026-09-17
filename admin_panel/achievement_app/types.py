@@ -20,6 +20,7 @@ class Event(StrEnum):
     FAVORITE = "favorite"  # a player set a favorite treasure
     BATTLE_WIN = "battle_win"  # a player won a battle
     ACTIVITY = "activity"  # a player did something, only used to check time based achievements
+    SYNC = "sync"  # a player asked to refresh their progress, every achievement based on a state is checked
 
 
 TREASURE_FILTERS = ("ball", "special", "any_special", "group", "min_attack_bonus", "min_health_bonus", "hex_contains")
@@ -151,7 +152,7 @@ TYPES: dict[str, TypeDefinition] = {
         ),
         TypeDefinition(
             AchievementType.OWN,
-            frozenset({Event.CATCH, Event.OBTAIN}),
+            frozenset({Event.CATCH, Event.OBTAIN, Event.SYNC}),
             TREASURE_FILTERS,
             "Number of treasures owned",
             "Checked when the player gets a matching treasure: unlocked once they own that many at the same time.",
@@ -159,7 +160,7 @@ TYPES: dict[str, TypeDefinition] = {
         ),
         TypeDefinition(
             AchievementType.COMPLETE_GROUP,
-            frozenset({Event.CATCH, Event.OBTAIN}),
+            frozenset({Event.CATCH, Event.OBTAIN, Event.SYNC}),
             ("group",),
             "Number of different treasures of the group (leave 0 for the whole group)",
             "Unlocked once the player owns one of each treasure of the group.",
@@ -167,7 +168,7 @@ TYPES: dict[str, TypeDefinition] = {
         ),
         TypeDefinition(
             AchievementType.COMPLETION,
-            frozenset({Event.CATCH, Event.OBTAIN}),
+            frozenset({Event.CATCH, Event.OBTAIN, Event.SYNC}),
             (),
             "Completion percentage (200 = two of each)",
             "Percentage of the enabled treasures owned. Above 100, 200% means owning two of each treasure.",
@@ -183,7 +184,7 @@ TYPES: dict[str, TypeDefinition] = {
         ),
         TypeDefinition(
             AchievementType.FRIENDS,
-            frozenset({Event.FRIEND}),
+            frozenset({Event.FRIEND, Event.SYNC}),
             (),
             "Number of friends",
             "Checked when the player adds a friend.",
@@ -191,7 +192,7 @@ TYPES: dict[str, TypeDefinition] = {
         ),
         TypeDefinition(
             AchievementType.FAVORITES,
-            frozenset({Event.FAVORITE}),
+            frozenset({Event.FAVORITE, Event.SYNC}),
             (),
             "Number of favorite treasures",
             "Checked when the player sets a favorite treasure.",

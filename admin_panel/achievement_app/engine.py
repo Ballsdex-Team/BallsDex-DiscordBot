@@ -120,6 +120,20 @@ class AchievementEngine:
             await self.notifier.add(player_id, unlocked, channel_id)
         return unlocked
 
+    async def sync_player(self, player: Player | int) -> list[Achievement]:
+        """
+        Refresh the progress of a player on every achievement based on what they own or have (treasures, groups,
+        completion, friends, favorites, playtime), and unlock the ones they deserve.
+
+        Achievements counting actions (catches, trades, battles) can't be refreshed, those are only counted when the
+        action happens.
+        """
+        if self.bot is None:
+            return []
+        player_id = player if isinstance(player, int) else player.pk
+        async with self._locks[player_id]:
+            return await self._process(player_id, Event.SYNC, EventContext())
+
     def dispatch_soon(
         self, player_id: int, event: Event, *, context: EventContext | None = None, channel_id: int | None = None
     ):
@@ -200,7 +214,7 @@ class AchievementEngine:
                 if not self._prerequisites_met(achievement, completed):
                     waiting.append(achievement)
                     continue
-                result = await self._evaluate(achievement, player_id, context)
+                result = await self._evaluate(achievement, player_id, context, event)
                 if result is None:
                     continue
                 if await self._apply(achievement, player_id, user_achievements.get(achievement.pk), result, now):
@@ -283,8 +297,10 @@ class AchievementEngine:
     # -- evaluation of each type -------------------------------------------------------------------------------------
 
     async def _evaluate(
-        self, achievement: Achievement, player_id: int, context: EventContext
+        self, achievement: Achievement, player_id: int, context: EventContext, event: Event
     ) -> Increment | Absolute | None:
+        # a sync has no treasure to look at, achievements based on a state are all checked
+        refresh = event == Event.SYNC
         match achievement.type:
             case AchievementType.CATCH:
                 count = sum(
@@ -299,13 +315,15 @@ class AchievementEngine:
                 return Increment(count) if count else None
 
             case AchievementType.OWN:
-                if not any(achievement.matches_instance(x) for x in context.instances):
+                if not refresh and not any(achievement.matches_instance(x) for x in context.instances):
                     return None
                 return Absolute(await owned_queryset(achievement, player_id).acount())
 
             case AchievementType.COMPLETE_GROUP:
                 group = groups.get(achievement.group_id) if achievement.group_id else None
-                if group is None or not any(x.ball_id in group._ball_ids for x in context.instances):
+                if group is None:
+                    return None
+                if not refresh and not any(x.ball_id in group._ball_ids for x in context.instances):
                     return None
                 owned = (
                     BallInstance.objects.filter(player_id=player_id, ball_id__in=group._ball_ids)
@@ -315,7 +333,7 @@ class AchievementEngine:
                 return Absolute(await owned.acount())
 
             case AchievementType.COMPLETION:
-                if not any((ball := balls.get(x.ball_id)) and ball.enabled for x in context.instances):
+                if not refresh and not any((ball := balls.get(x.ball_id)) and ball.enabled for x in context.instances):
                     return None
                 return Absolute(await completion_percentage(player_id, achievement.target_value))
 
