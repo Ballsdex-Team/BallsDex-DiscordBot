@@ -9,6 +9,7 @@ from __future__ import annotations  # noqa: I001
 import asyncio
 import logging
 import uuid
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
@@ -27,6 +28,7 @@ from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
 from bd_models.enums import TradeCooldownPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
+from bd_models.signals import notify_ownership_change
 from settings.models import settings
 from settings.utils import format_currency
 
@@ -743,6 +745,14 @@ class TradeInstance(LayoutView):
 
         BallInstance.objects.bulk_update(balls, fields=("player", "trade_player", "favorite", "locked"))
         TradeObject.objects.bulk_create(trade_objects)
+
+        # bulk_update doesn't send model signals, packages watching treasures changing hands are told here
+        gained: dict[int, list[BallInstance]] = defaultdict(list)
+        lost: dict[int, list[int]] = defaultdict(list)
+        for ball, trade_object in zip(balls, trade_objects):
+            gained[ball.player_id].append(ball)
+            lost[trade_object.player_id].append(ball.pk)
+        notify_ownership_change(gained=gained, lost=lost)
         return trade
 
     async def finish_trade(self):
