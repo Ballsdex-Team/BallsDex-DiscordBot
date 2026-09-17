@@ -1,0 +1,6 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+<li><a href="{% url 'admin:achievement_app_achievement_series' %}" class="addlink">Create a series</a></li>
+{{ block.super }}
+{% endblock %}

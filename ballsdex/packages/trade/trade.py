@@ -14,8 +14,9 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 import discord
-from asgiref.sync import async_to_sync, sync_to_async
-from achievement_app.models import AchievementType, notify_user, progress_achievement
+from asgiref.sync import sync_to_async
+from achievement_app.engine import Event, EventContext
+from achievement_app.engine import engine as achievement_engine
 from currency_app.ledger import adjust_money
 from currency_app.models import BerryTransaction
 from discord.ui import ActionRow, Button, Item, Section, Select, Separator, TextDisplay, TextInput, Thumbnail
@@ -24,6 +25,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView, Modal
+from ballsdex.core.utils.background import run_on_bot_loop
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
 from bd_models.enums import TradeCooldownPolicy
@@ -725,24 +727,6 @@ class TradeInstance(LayoutView):
                 description=f"Trade #{trade.pk:0X} with {player1.discord_id}",
             )
 
-        p1_unlocked = []
-        p2_unlocked = []
-
-        p1_unlocked += async_to_sync(progress_achievement)(self.trader1.player, AchievementType.FIRST_TRADE)
-        p2_unlocked += async_to_sync(progress_achievement)(self.trader2.player, AchievementType.FIRST_TRADE)
-        p2_unlocked += async_to_sync(progress_achievement)(
-            self.trader2.player, AchievementType.COMPLETE_TRADE, received_coins=trade.player1_money
-        )
-        p1_unlocked += async_to_sync(progress_achievement)(
-            self.trader1.player, AchievementType.COMPLETE_TRADE, received_coins=trade.player2_money
-        )
-
-        if p1_unlocked:
-            async_to_sync(notify_user)(p1_unlocked, user=self.trader1.user, channel=self.message.channel)
-
-        if p2_unlocked:
-            async_to_sync(notify_user)(p2_unlocked, user=self.trader2.user, channel=self.message.channel)
-
         BallInstance.objects.bulk_update(balls, fields=("player", "trade_player", "favorite", "locked"))
         TradeObject.objects.bulk_create(trade_objects)
 
@@ -764,6 +748,19 @@ class TradeInstance(LayoutView):
         self.stop()
         # edition of the message will be triggered by the caller
         self.add_item(TextDisplay(f"## The trade has been completed!\n-# ID: `#{trade.pk:0X}`"))
+        run_on_bot_loop(lambda: self.progress_achievements(trade))
+
+    async def progress_achievements(self, trade: Trade):
+        channel_id = self.message.channel.id if self.message else None
+        for receiver, giver, received_currency in (
+            (self.trader1, self.trader2, trade.player2_money),
+            (self.trader2, self.trader1, trade.player1_money),
+        ):
+            received = [x async for x in BallInstance.objects.filter(pk__in=giver.proposal)]
+            context = EventContext(
+                instances=received, partner_discord_id=giver.user.id, received_currency=received_currency
+            )
+            await achievement_engine.dispatch(receiver.player, Event.TRADE, context=context, channel_id=channel_id)
 
     async def _cleanup(self):
         self.stop()

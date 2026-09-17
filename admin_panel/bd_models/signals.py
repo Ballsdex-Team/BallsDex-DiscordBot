@@ -6,6 +6,7 @@ given to someone else or deleted. Its arguments are:
 
 - `gained`: `dict[int, list[BallInstance]]`, player primary key to the treasures they received or obtained
 - `lost`: `dict[int, list[int]]`, player primary key to the IDs of the treasures they don't own anymore
+- `created`: `set[int]`, IDs of the treasures in `gained` that were just created (as opposed to given)
 
 Saving a `BallInstance` sends it automatically. Code moving treasures with `QuerySet.update` or `bulk_update` bypasses
 model signals and must call `notify_ownership_change` itself.
@@ -28,7 +29,10 @@ _STATE_ATTRIBUTE = "_ownership_previous_state"
 
 
 def notify_ownership_change(
-    *, gained: "Mapping[int, Iterable[BallInstance]] | None" = None, lost: "Mapping[int, Iterable[int]] | None" = None
+    *,
+    gained: "Mapping[int, Iterable[BallInstance]] | None" = None,
+    lost: "Mapping[int, Iterable[int]] | None" = None,
+    created: "Iterable[int]" = (),
 ):
     """
     Send `ownership_changed` once the current transaction is committed (immediately outside of a transaction).
@@ -39,8 +43,11 @@ def notify_ownership_change(
     lost_lists = {player_id: ids for player_id, ids in lost_lists.items() if ids}
     if not gained_lists and not lost_lists:
         return
+    created_ids = set(created)
     transaction.on_commit(
-        lambda: ownership_changed.send_robust(sender=BallInstance, gained=gained_lists, lost=lost_lists)
+        lambda: ownership_changed.send_robust(
+            sender=BallInstance, gained=gained_lists, lost=lost_lists, created=created_ids
+        )
     )
 
 
@@ -65,7 +72,7 @@ def detect_ownership_change(
         return
     if created:
         if not instance.deleted:
-            notify_ownership_change(gained={instance.player_id: [instance]})
+            notify_ownership_change(gained={instance.player_id: [instance]}, created=[instance.pk])
         return
     if previous is None:
         return

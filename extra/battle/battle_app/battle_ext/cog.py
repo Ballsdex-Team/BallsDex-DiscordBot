@@ -3,7 +3,8 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Optional
 
 import discord
-from achievement_app.models import AchievementType, notify_user, progress_achievement
+from achievement_app.engine import Event
+from achievement_app.engine import engine as achievement_engine
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Container, Section, Separator, TextDisplay, Thumbnail
@@ -823,10 +824,9 @@ class Battle(commands.GroupCog):
         except (discord.NotFound, discord.HTTPException):
             pass
 
-        unlocked = await progress_achievement(winner_player, AchievementType.FIRST_BATTLE_WIN)
-        winner_user = self.bot.get_user(winner_player.discord_id)
-        if winner_user:
-            await notify_user(unlocked, user=winner_user, channel=target_message.channel if target_message else None)
+        await achievement_engine.dispatch(
+            winner_player, Event.BATTLE_WIN, channel_id=target_message.channel.id if target_message else None
+        )
 
     async def _compute_earnings(
         self, winner: Player, loser: Player, winner_balls: list[dict], loser_balls: list[dict]

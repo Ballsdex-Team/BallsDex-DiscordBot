@@ -1,77 +1,37 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
-import discord
-from discord.ui import Container, LayoutView, Section, Separator, TextDisplay, Thumbnail
+from django.conf import settings as django_settings
 from django.db import models
-from currency_app.models import BerryTransaction
-from django.utils import timezone
 
 from bd_models.models import Ball, BallGroup, Player, Special, balls, groups, specials
 from settings.models import settings
-from settings.utils import format_currency
 
 if TYPE_CHECKING:
-    from discord.abc import MessageableChannel
-
-    from ballsdex.core.bot import BallsDexBot
-
-_BOT: "BallsDexBot | None" = None
+    from bd_models.models import BallInstance
 
 
 class AchievementType(models.TextChoices):
-    FIRST_CATCH = "first_catch", "First Catch"
-    FIRST_SPECIAL = "first_special", "First Special"
-    FIRST_TRADE = "first_trade", "First Trade"
-    FIRST_BATTLE_WIN = "first_battle", "First Battle"
-    FIRST_FRIEND = "first_friend", "First Friend"
-    FIRST_FAVORITE_BALL = "first_favorite_ball", "First Favorite Ball"
-    CATCH_BALL = "catch_ball", "Catch Ball"
-    FASTEST_CATCHER = "fastest_catcher", "Fastest Catcher"
-    COMPLETE_TRADE = "complete_trade", "Complete Trade"
-    RECEIVE_BALL = "receive_ball", "Receive Ball"
-    BALL_COUNT = "ball_count", "Ball Count"
-    COMPLETION_PERCENTAGE = "completion_percentage", "Completion Percentage"
-    HAVE_FRIEND = "have_friend", "Have X Friend"
-    ACTIONS = "actions", "Actions (event-triggered)"
-    COMPLETE_GROUP = "complete_group", "Catch all balls from a Group"
-    PLAYTIME = "playtime", "Time using the bot"
+    CATCH = "catch", "Catch treasures"
+    OBTAIN = "obtain", "Obtain treasures (catch, trade, pack, claim...)"
+    OWN = "own", "Own treasures at the same time"
+    COMPLETE_GROUP = "complete_group", "Complete a group"
+    COMPLETION = "completion", "Reach a completion percentage"
+    TRADE = "trade", "Complete trades"
+    FRIENDS = "friends", "Have friends"
+    FAVORITES = "favorites", "Have favorite treasures"
+    BATTLE_WIN = "battle_win", "Win battles"
+    PLAYTIME = "playtime", "Play since the first catch"
 
 
-ACHIEVEMENT_TYPE_SCHEMA = {
-    AchievementType.COMPLETE_TRADE: [{"name": "requires_currency", "label": "Requires Coins", "input": "checkbox"}],
-    AchievementType.RECEIVE_BALL: [{"name": "user_id", "label": "User ID", "input": "text"}],
-    AchievementType.CATCH_BALL: [
-        {"name": "server_id", "label": "Server ID", "input": "text"},
-        {"name": "hex_contains", "label": "Hex ID Contains", "input": "text"},
-        {"name": "attack_bonus", "label": "Attack Bonus", "input": "number"},
-        {"name": "health_bonus", "label": "Health Bonus", "input": "number"},
-    ],
-    AchievementType.PLAYTIME: [
-        {"name": "unit", "label": "Unit", "input": "select", "options": ["days", "months", "years"]}
-    ],
-}
-
-CHECKERS: dict[AchievementType, Callable[..., Awaitable[bool | int]]] = {}
+class TimeUnit(models.TextChoices):
+    DAYS = "days", "Days"
+    MONTHS = "months", "Months"
+    YEARS = "years", "Years"
 
 
-def register_checker(achievement_type: AchievementType):
-    """
-    Register a checker for achievements.
-
-    False = no progress
-    True = increment by 1
-    int = absolute progress
-    """
-
-    def decorator(func: Callable[..., Awaitable[bool | int]]) -> Callable[..., Awaitable[bool | int]]:
-        if achievement_type in CHECKERS:
-            raise ValueError(f"A {achievement_type.name} type checker has already been registered.")
-        CHECKERS[achievement_type] = func
-        return func
-
-    return decorator
+DAYS_PER_UNIT = {TimeUnit.DAYS: 1, TimeUnit.MONTHS: 30, TimeUnit.YEARS: 365}
 
 
 class PrerequisiteLogic(models.TextChoices):
@@ -79,50 +39,140 @@ class PrerequisiteLogic(models.TextChoices):
     ANY = "any", "Any one Required"
 
 
-class Achievement(models.Model):
+class AchievementCategory(models.Model):
     name = models.CharField(max_length=64, unique=True)
-    description = models.TextField(null=True, blank=True)
+    emoji = models.CharField(max_length=64, blank=True, default="", help_text="Optional emoji shown next to the name.")
+    position = models.PositiveSmallIntegerField(default=0, help_text="Categories are listed from the lowest position.")
+
+    def __str__(self) -> str:
+        return f"{self.emoji} {self.name}".strip()
+
+    class Meta:
+        managed = True
+        db_table = "achievementcategory"
+        ordering = ("position", "name")
+        verbose_name_plural = "achievement categories"
+
+
+class Achievement(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft (proposal, not live)"
+        ACTIVE = "active", "Active"
+        RETIRED = "retired", "Retired (can't be unlocked anymore)"
+
+    name = models.CharField(max_length=64, unique=True)
+    description = models.TextField(
+        null=True, blank=True, help_text="Shown to players. Leave empty to show the goal generated from the settings."
+    )
     thumbnail = models.ImageField(max_length=200, help_text="128x128 PNG image", null=True, blank=True)
+    category = models.ForeignKey(
+        AchievementCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name="achievements"
+    )
+    category_id: int | None
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.ACTIVE)
+    hidden = models.BooleanField(
+        default=False, help_text="Secret achievement: players only see its name and description once unlocked."
+    )
+    position = models.PositiveIntegerField(default=0, help_text="Achievements are listed from the lowest position.")
+
     type = models.CharField(max_length=48, choices=AchievementType.choices)
-    prerequisities: models.ManyToManyField["Achievement", Any] = models.ManyToManyField(
-        "self", symmetrical=False, blank=True
+    target_value = models.PositiveBigIntegerField(
+        verbose_name="goal", help_text="How much progress is needed, the unit depends on the type."
+    )
+
+    # filters, which ones are used depends on the type
+    ball = models.ForeignKey(Ball, null=True, blank=True, on_delete=models.SET_NULL)
+    ball_id: int | None
+    special = models.ForeignKey(Special, null=True, blank=True, on_delete=models.SET_NULL)
+    special_id: int | None
+    any_special = models.BooleanField(
+        default=False, help_text="Only count treasures with a special, whichever it is. Ignored if a special is set."
+    )
+    group = models.ForeignKey(BallGroup, null=True, blank=True, on_delete=models.SET_NULL)
+    group_id: int | None
+    server_id = models.BigIntegerField(
+        null=True, blank=True, help_text="Only count treasures caught in this Discord server (ID)."
+    )
+    min_attack_bonus = models.IntegerField(null=True, blank=True, help_text="Minimum attack bonus, in percent.")
+    min_health_bonus = models.IntegerField(null=True, blank=True, help_text="Minimum health bonus, in percent.")
+    hex_contains = models.CharField(
+        max_length=16, blank=True, default="", help_text="Only count treasures whose ID contains this text (hex)."
+    )
+    max_catch_seconds = models.FloatField(
+        null=True, blank=True, help_text="Only count catches made within this many seconds after the spawn."
+    )
+    partner_discord_id = models.BigIntegerField(
+        null=True, blank=True, help_text="Only count trades with this Discord user (ID)."
+    )
+    min_currency = models.PositiveBigIntegerField(
+        null=True, blank=True, help_text="Only count trades where the player receives at least this much currency."
+    )
+    must_receive_treasure = models.BooleanField(
+        default=False, help_text="Only count trades where the player receives at least one treasure."
+    )
+    time_unit = models.CharField(max_length=8, choices=TimeUnit.choices, default=TimeUnit.DAYS)
+
+    currency_reward = models.PositiveIntegerField(db_default=0, default=0, help_text="Currency given on unlock.")
+    prerequisities: models.ManyToManyField[Achievement, Any] = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        verbose_name="prerequisites",
+        help_text="Achievements that must be unlocked before this one starts progressing.",
     )
     prerequisite_logic = models.CharField(
         max_length=3, choices=PrerequisiteLogic.choices, default=PrerequisiteLogic.ALL
     )
 
-    target_value = models.PositiveBigIntegerField(help_text="Total progress needed to complete this achievement")
-    required_value = models.PositiveBigIntegerField(
-        null=True,
-        blank=True,
-        help_text=(
-            "Threshold each individual event must meet to count "
-            "(Only for Fastest Catcher and Complete Trade with Currency)"
-        ),
+    notes = models.TextField(blank=True, default="", help_text="Internal notes, never shown to players.")
+    proposed_by = models.ForeignKey(
+        django_settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
-    ball = models.ForeignKey(Ball, null=True, blank=True, on_delete=models.SET_NULL)
-    ball_id: int | None
-    group = models.ForeignKey(BallGroup, null=True, blank=True, on_delete=models.SET_NULL)
-    group_id: int | None
-    special = models.ForeignKey(Special, null=True, blank=True, on_delete=models.SET_NULL)
-    special_id: int | None
-    currency_reward = models.PositiveIntegerField(
-        db_default=0, help_text="When a user completes the achievement, how much currency gets?"
-    )
-
-    extra_params = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     @property
-    def cached_ball(self):
+    def cached_ball(self) -> Ball | None:
         return balls.get(self.ball_id) or self.ball if self.ball_id else None
 
     @property
-    def cached_group(self):
+    def cached_group(self) -> BallGroup | None:
         return groups.get(self.group_id) or self.group if self.group_id else None
 
     @property
-    def cached_special(self):
+    def cached_special(self) -> Special | None:
         return specials.get(self.special_id) or self.special if self.special_id else None
+
+    @property
+    def thumbnail_url(self) -> str | None:
+        if not self.thumbnail:
+            return None
+        return f"{settings.site_base_url.rstrip('/')}/media/{self.thumbnail.name}"
+
+    def matches_instance(self, instance: BallInstance) -> bool:
+        """
+        Whether a treasure passes the treasure filters of this achievement. The group cache must be loaded.
+        """
+        if self.ball_id and instance.ball_id != self.ball_id:
+            return False
+        if self.special_id:
+            if instance.special_id != self.special_id:
+                return False
+        elif self.any_special and instance.special_id is None:
+            return False
+        if self.group_id:
+            group = groups.get(self.group_id)
+            if group is None or instance.ball_id not in group._ball_ids:
+                return False
+        if self.server_id and instance.server_id != self.server_id:
+            return False
+        if self.min_attack_bonus is not None and instance.attack_bonus < self.min_attack_bonus:
+            return False
+        if self.min_health_bonus is not None and instance.health_bonus < self.min_health_bonus:
+            return False
+        if self.hex_contains and self.hex_contains.lower() not in f"{instance.pk:x}":
+            return False
+        return True
 
     def __str__(self):
         return self.name
@@ -130,15 +180,20 @@ class Achievement(models.Model):
     class Meta:
         managed = True
         db_table = "achievement"
+        ordering = ("category__position", "position", "name")
 
 
 class UserAchievement(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    player_id: int
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
     achievement_id: int
     progress = models.PositiveIntegerField(default=0)
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.achievement_id} for {self.player_id}"
 
     class Meta:
         managed = True
@@ -147,148 +202,18 @@ class UserAchievement(models.Model):
         indexes = [models.Index(fields=("player_id",)), models.Index(fields=("achievement_id",))]
 
 
-async def prerequisities_met(
-    player: Player,
-    achievement: Achievement,
-    prerequisities: list[Achievement],
-    existing_ua: dict[int, UserAchievement] | None = None,
-):
-    if not prerequisities:
-        return True
+class PlayerAchievementStats(models.Model):
+    """
+    Facts about a player used by achievements that can't be read from other tables cheaply.
+    """
 
-    if existing_ua is not None:
-        completed_count = sum(1 for p in prerequisities if existing_ua.get(p.pk) and existing_ua[p.pk].completed)
-    else:
-        completed_count = await UserAchievement.objects.filter(
-            player=player, achievement_id__in=[x.pk for x in prerequisities], completed=True
-        ).acount()
+    player = models.OneToOneField(Player, on_delete=models.CASCADE, related_name="achievement_stats")
+    player_id: int
+    first_catch_at = models.DateTimeField(
+        null=True, blank=True, help_text="When the player caught a treasure themselves for the first time."
+    )
 
-    if achievement.prerequisite_logic == PrerequisiteLogic.ALL:
-        return completed_count == len(prerequisities)
-    else:
-        return completed_count > 0
-
-
-async def progress_achievement(
-    player: Player,
-    achievement_type: AchievementType,
-    *,
-    achievements: list[Achievement] | None = None,
-    existing_ua: dict[int, UserAchievement] | None = None,
-    **context,
-):
-    checker = CHECKERS.get(achievement_type)
-
-    if achievements is None:
-        achievements = [
-            x async for x in Achievement.objects.prefetch_related("prerequisities").filter(type=achievement_type)
-        ]
-    else:
-        achievements = [x for x in achievements if x.type == achievement_type]
-
-    unlocked: list[Achievement] = []
-    to_update: list[UserAchievement] = []
-    for achievement in achievements:
-        prerequisities = list(achievement.prerequisities.all())
-        if not await prerequisities_met(player, achievement, prerequisities, existing_ua):
-            continue
-
-        result = True
-        if checker is not None:
-            result = await checker(achievement, player, **context)
-
-        if result is False:
-            continue
-
-        user_achievement = existing_ua.get(achievement.pk) if existing_ua is not None else None
-        if user_achievement is None:
-            user_achievement, _ = await UserAchievement.objects.aget_or_create(
-                player=player, achievement=achievement, defaults={"progress": 0}
-            )
-            if existing_ua is not None:
-                existing_ua[achievement.pk] = user_achievement
-
-        if user_achievement.completed:
-            continue
-
-        if isinstance(result, bool):
-            user_achievement.progress += 1
-        elif isinstance(result, int):
-            user_achievement.progress = min(result, achievement.target_value)
-        else:
-            raise TypeError(f"Excepted bool or int, not {type(result).__name__}")
-
-        if user_achievement.progress >= achievement.target_value:
-            user_achievement.progress = achievement.target_value
-            user_achievement.completed = True
-            user_achievement.completed_at = timezone.now()
-
-            unlocked.append(achievement)
-            await player.add_money(
-                achievement.currency_reward,
-                reason=BerryTransaction.Reason.ACHIEVEMENT,
-                description=f"Unlocked {achievement.name}",
-            )
-
-        to_update.append(user_achievement)
-
-    if to_update:
-        await UserAchievement.objects.abulk_update(to_update, ["progress", "completed", "completed_at"])
-
-    return unlocked
-
-
-async def notify_user(
-    achievements: list[Achievement], *, user: discord.abc.User | None = None, channel: MessageableChannel | None = None
-):
-    if not user and not channel:
-        raise RuntimeError("You must provide at least one of 'user' or 'channel'.")
-
-    if not achievements:
-        return
-
-    container = Container()
-    container.add_item(TextDisplay("# New Achievement(s) Unlocked!"))
-    container.add_item(Separator())
-
-    for achievement in achievements[:5]:
-        if achievement.thumbnail is not None:
-            file = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
-            section = Section(accessory=Thumbnail(file))
-            text = TextDisplay(f"**{achievement.name}**\n")
-            if achievement.description:
-                text.content += f"{achievement.description}\n"
-            if achievement.currency_reward:
-                text.content += format_currency(achievement.currency_reward, False, _BOT)
-            section.add_item(text)
-            container.add_item(section)
-        else:
-            text = TextDisplay(f"**{achievement.name}**\n")
-            if achievement.description:
-                text.content += f"{achievement.description}\n"
-            if achievement.currency_reward:
-                text.content += format_currency(achievement.currency_reward, False, _BOT)
-            container.add_item(text)
-
-    remaining = len(achievements) - len(achievements[:5])
-    if remaining > 0:
-        container.add_item(TextDisplay(f"...and **{remaining}** more achievement(s)."))
-
-    if channel:
-        try:
-            view = LayoutView()
-            if user:
-                view.add_item(TextDisplay(user.mention))
-            view.add_item(container)
-            await channel.send(view=view)
-            return
-        except (discord.HTTPException, discord.Forbidden):
-            pass
-
-    if user:
-        try:
-            view = LayoutView()
-            view.add_item(container)
-            await user.send(view=view)
-        except (discord.HTTPException, discord.Forbidden):
-            pass
+    class Meta:
+        managed = True
+        db_table = "achievementplayerstats"
+        verbose_name_plural = "player achievement stats"

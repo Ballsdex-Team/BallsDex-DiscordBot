@@ -4,6 +4,8 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, cast
 
 import discord
+from achievement_app.engine import Event
+from achievement_app.engine import engine as achievement_engine
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Container, LayoutView, TextDisplay
@@ -513,6 +515,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
                 f"is now a favorite {settings.collectible_name}!",
                 ephemeral=True,
             )
+            await achievement_engine.dispatch(player, Event.FAVORITE, channel_id=interaction.channel_id)
 
         else:
             countryball.favorite = False  # type: ignore
