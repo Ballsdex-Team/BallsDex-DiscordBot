@@ -110,6 +110,12 @@ def _describe_trade(achievement: Achievement) -> str:
     return f"{text}."
 
 
+def _describe_trade_treasures(achievement: Achievement) -> str:
+    count = achievement.target_value
+    treasures = _plural(count, settings.collectible_name, settings.plural_collectible_name)
+    return f"Exchange {count} {treasures} in {'a single trade' if achievement.in_one_trade else 'trades'}."
+
+
 def _describe_friends(achievement: Achievement) -> str:
     count = achievement.target_value
     return f"Have {count} {_plural(count, 'friend')}."
@@ -197,6 +203,15 @@ TYPES: dict[str, TypeDefinition] = {
             "Number of trades",
             "Counts the trades completed with /trade. Treasure filters apply to the treasures received.",
             _describe_trade,
+        ),
+        TypeDefinition(
+            AchievementType.TRADE_TREASURES,
+            frozenset({Event.TRADE}),
+            ("in_one_trade",),
+            "Number of treasures",
+            "Counts the treasures changing hands in the player's trades, given and received. A trade where only one "
+            "side gives something is a gift and doesn't count. Past trades are counted with the recompute action.",
+            _describe_trade_treasures,
         ),
         TypeDefinition(
             AchievementType.FRIENDS,

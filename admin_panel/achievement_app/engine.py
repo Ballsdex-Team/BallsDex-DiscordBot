@@ -61,6 +61,9 @@ class EventContext:
     # trades and currency gifts: the other player, or the admin giving currency
     partner_discord_id: int | None = None
     received_currency: int = 0
+    # trades only: what the player gave in exchange
+    given_count: int = 0
+    given_currency: int = 0
     # commands only, like "treasures list"
     command_name: str = ""
 
@@ -361,6 +364,18 @@ class AchievementEngine:
                 if needs_treasure and not any(achievement.matches_instance(x) for x in context.instances):
                     return None
                 return Increment(1)
+
+            case AchievementType.TRADE_TREASURES:
+                received = len(context.instances)
+                # a trade where one side gives nothing is a gift, not an exchange
+                if not (received or context.received_currency) or not (context.given_count or context.given_currency):
+                    return None
+                exchanged = received + context.given_count
+                if not exchanged:
+                    return None
+                if achievement.in_one_trade:
+                    return Absolute(exchanged) if exchanged >= achievement.target_value else None
+                return Increment(exchanged)
 
             case AchievementType.FRIENDS:
                 friends = Friendship.objects.filter(Q(player1_id=player_id) | Q(player2_id=player_id))

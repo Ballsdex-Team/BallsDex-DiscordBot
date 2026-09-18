@@ -19,6 +19,7 @@ class AchievementType(models.TextChoices):
     COMPLETE_GROUP = "complete_group", "Complete a group"
     COMPLETION = "completion", "Reach a completion percentage"
     TRADE = "trade", "Complete trades"
+    TRADE_TREASURES = "trade_treasures", "Exchange treasures in trades"
     FRIENDS = "friends", "Have friends"
     FAVORITES = "favorites", "Have favorite treasures"
     BATTLE_WIN = "battle_win", "Win battles"
@@ -122,6 +123,9 @@ class Achievement(models.Model):
     )
     must_receive_treasure = models.BooleanField(
         default=False, help_text="Only count trades where the player receives at least one treasure."
+    )
+    in_one_trade = models.BooleanField(
+        default=False, help_text="Ask for a single trade exchanging that many treasures, instead of a total."
     )
     time_unit = models.CharField(max_length=8, choices=TimeUnit.choices, default=TimeUnit.DAYS)
     command_name = models.CharField(
