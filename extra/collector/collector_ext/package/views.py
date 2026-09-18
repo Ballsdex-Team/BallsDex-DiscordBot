@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import discord
@@ -30,6 +30,8 @@ type Interaction = discord.Interaction["BallsDexBot"]
 
 # a collector asking for dozens of treasures can't show them all in a message
 MAX_REQUIREMENT_LINES = 10
+# a recipe has a whole page to itself, it can list more
+PAGE_REQUIREMENT_LINES = 20
 
 
 def missing_text(statuses: list[RequirementStatus], bot: "BallsDexBot | None" = None) -> str:
@@ -63,18 +65,30 @@ class TierState:
 
 
 @dataclass
-class CollectorPage:
+class RecipePage:
+    """
+    A page of the claim menu: one tier of a collector, with the player's progress on it.
+    """
+
     collector: Collector
-    tiers: list[CollectorTier]
-    states: list[TierState] = field(default_factory=list)
+    tier: CollectorTier
+    state: TierState | None = None
 
     @property
     def ready(self) -> bool:
-        return any(state.ready for state in self.states)
+        return self.state is not None and self.state.ready
+
+    @property
+    def pending(self) -> bool:
+        """
+        Whether the player can still claim it, now or once they meet the requirements.
+        """
+        return self.state is not None and self.state.available and not self.state.claimed
 
     @property
     def missing_count(self) -> int:
-        return min((len(state.missing) for state in self.states if state.available and not state.claimed), default=999)
+        # recipes that can't be claimed anymore come last
+        return len(self.state.missing) if self.pending and self.state else 999
 
 
 def load_tier_states(player_id: int, tiers: list[CollectorTier]) -> list[TierState]:
@@ -91,31 +105,27 @@ def load_tier_states(player_id: int, tiers: list[CollectorTier]) -> list[TierSta
 
 class ClaimTierButton(Button["CollectorClaimView"]):
     def __init__(self, state: TierState):
-        tier = state.tier
+        level = state.tier.level
         if state.claimed:
-            style, label = discord.ButtonStyle.secondary, f"{tier.level.name} (claimed)"
+            style, label = discord.ButtonStyle.secondary, "Already claimed"
         elif not state.available:
-            style, label = discord.ButtonStyle.secondary, f"{tier.level.name} (soon)"
+            style, label = discord.ButtonStyle.secondary, "Not available yet"
         else:
+            # a click on an incomplete recipe tells exactly what is missing
             style = discord.ButtonStyle.success if not state.missing else discord.ButtonStyle.primary
-            label = tier.level.name
+            label = f"Claim {level.name}"
         super().__init__(
-            style=style,
-            label=label,
-            emoji=tier.level.emoji or None,
-            disabled=state.claimed or not state.available,
-            row=1,
+            style=style, label=label, emoji=level.emoji or None, disabled=state.claimed or not state.available
         )
-        self.tier_id = tier.pk
 
     async def callback(self, interaction: Interaction):
         assert self.view
-        await self.view.claim(interaction, self.tier_id)
+        await self.view.claim(interaction)
 
 
 class PageButton(Button["CollectorClaimView"]):
     def __init__(self, label: str, step: int, disabled: bool):
-        super().__init__(style=discord.ButtonStyle.secondary, label=label, disabled=disabled, row=0)
+        super().__init__(style=discord.ButtonStyle.secondary, label=label, disabled=disabled)
         self.step = step
 
     async def callback(self, interaction: Interaction):
@@ -125,14 +135,14 @@ class PageButton(Button["CollectorClaimView"]):
 
 class JumpButton(Button["CollectorClaimView"]):
     def __init__(self, label: str):
-        super().__init__(style=discord.ButtonStyle.primary, label=label, row=0)
+        super().__init__(style=discord.ButtonStyle.primary, label=label)
 
     async def callback(self, interaction: Interaction):
         assert self.view
         await interaction.response.send_modal(JumpModal(self.view))
 
 
-class JumpModal(Modal, title="Go to a collector"):
+class JumpModal(Modal, title="Go to a recipe"):
     page = discord.ui.TextInput(label="Page number", placeholder="Enter a number", min_length=1, max_length=5)
 
     def __init__(self, view: "CollectorClaimView"):
@@ -156,19 +166,19 @@ class JumpModal(Modal, title="Go to a collector"):
 
 class CollectorClaimView(LayoutView):
     """
-    Shows one collector per page with the player's progress on each of its tiers, and a button to claim them.
+    Shows one recipe per page, a tier of a collector with the player's progress on it, and a button to claim it.
     """
 
-    def __init__(self, bot: "BallsDexBot", player: Player, pages: list[CollectorPage]):
+    def __init__(self, bot: "BallsDexBot", player: Player, pages: list[RecipePage], *, index: int = 0):
         super().__init__(timeout=300)
         self.bot = bot
         self.player = player
         self.pages = pages
-        self.index = 0
+        self.index = index
         self.message: discord.Message | None = None
 
     @property
-    def page(self) -> CollectorPage:
+    def page(self) -> RecipePage:
         return self.pages[self.index]
 
     async def on_timeout(self):
@@ -186,42 +196,35 @@ class CollectorClaimView(LayoutView):
         await self.refresh()
         await interaction.response.edit_message(view=self)
 
-    async def refresh(self, *, reload_states: bool = False):
+    async def refresh(self, *, reload_state: bool = False):
         page = self.page
-        if reload_states or not page.states:
-            page.states = await sync_to_async(load_tier_states)(self.player.pk, page.tiers)
+        if reload_state or page.state is None:
+            page.state = (await sync_to_async(load_tier_states)(self.player.pk, [page.tier]))[0]
         self.clear_items()
 
         ball = page.collector.cached_ball
         emoji = self.bot.get_emoji(ball.emoji_id) if ball else None
         container = Container(
             TextDisplay(f"# {f'{emoji} ' if emoji else ''}{page.collector.name}"),
-            TextDisplay("-# Pick the tier you want to claim."),
             Separator(),
+            TextDisplay(self._describe(page.state)),
             accent_colour=settings.embed_colour,
         )
-        for state in page.states:
-            container.add_item(TextDisplay(self._describe(state)))
-
-        row = ActionRow()
         if len(self.pages) > 1:
-            container.add_item(TextDisplay(f"-# Collector {self.index + 1}/{len(self.pages)}"))
-            row.add_item(PageButton("◀", -1, self.index == 0))
-            row.add_item(JumpButton(f"{self.index + 1}/{len(self.pages)}"))
-            row.add_item(PageButton("▶", 1, self.index >= len(self.pages) - 1))
-            container.add_item(row)
-            row = ActionRow()
-        for state in page.states:
-            if len(row.children) == 5:
-                container.add_item(row)
-                row = ActionRow()
-            row.add_item(ClaimTierButton(state))
-        container.add_item(row)
+            container.add_item(TextDisplay(f"-# Recipe {self.index + 1}/{len(self.pages)}"))
+            container.add_item(
+                ActionRow(
+                    PageButton("◀", -1, self.index == 0),
+                    JumpButton(f"{self.index + 1}/{len(self.pages)}"),
+                    PageButton("▶", 1, self.index >= len(self.pages) - 1),
+                )
+            )
+        container.add_item(ActionRow(ClaimTierButton(page.state)))
         self.add_item(container)
 
     def _describe(self, state: TierState) -> str:
         level = state.tier.level
-        title = f"### {f'{level.emoji} ' if level.emoji else ''}{level.name}"
+        title = f"## {f'{level.emoji} ' if level.emoji else ''}{level.name}"
         if state.claimed:
             return f"{title}\n\N{WHITE HEAVY CHECK MARK} Already claimed"
         if not state.available:
@@ -235,22 +238,31 @@ class CollectorClaimView(LayoutView):
         else:
             lines.append("\N{SPARKLES} You meet every requirement, you can claim it!")
 
+        # said once for the whole recipe rather than on every line when everything is used up
+        all_consumed = bool(state.statuses) and all(status.requirement.delete_balls for status in state.statuses)
+        if all_consumed:
+            lines.append(f"-# Every {settings.collectible_name} of this recipe is used up when claiming.")
+
         # long recipes only show what is missing, a message can't hold hundreds of lines
-        shown = state.statuses if len(state.statuses) <= MAX_REQUIREMENT_LINES else (state.missing or [])
-        lines.extend(status.describe(self.bot) for status in shown[:MAX_REQUIREMENT_LINES])
-        if len(shown) > MAX_REQUIREMENT_LINES:
-            lines.append(f"-# ...and {len(shown) - MAX_REQUIREMENT_LINES} more missing")
-        elif len(state.statuses) > MAX_REQUIREMENT_LINES:
-            lines.append(f"-# {len(state.statuses)} treasures needed, they are all used up when claiming")
+        shown = state.statuses if len(state.statuses) <= PAGE_REQUIREMENT_LINES else (state.missing or [])
+        lines.extend(
+            status.describe(self.bot, show_consumed=not all_consumed) for status in shown[:PAGE_REQUIREMENT_LINES]
+        )
+        if len(shown) > PAGE_REQUIREMENT_LINES:
+            lines.append(f"-# ...and {len(shown) - PAGE_REQUIREMENT_LINES} more missing")
+        elif len(state.statuses) > PAGE_REQUIREMENT_LINES:
+            lines.append(f"-# {len(state.statuses)} {settings.plural_collectible_name} needed in total")
 
         if state.tier.price:
             lines.append(f"Cost: **{format_currency(state.tier.price, False, self.bot)}**")
         return "\n".join(lines)
 
-    async def claim(self, interaction: Interaction, tier_id: int):
-        state = next(state for state in self.page.states if state.tier.pk == tier_id)
+    async def claim(self, interaction: Interaction):
+        page = self.page
+        state = page.state
+        assert state
         tier = state.tier
-        tier_name = f"**{self.page.collector.name}** ({tier.level.name})"
+        tier_name = f"**{page.collector.name}** ({tier.level.name})"
 
         if state.missing:
             # tell exactly what is missing, the list above may be outdated
@@ -292,14 +304,14 @@ class CollectorClaimView(LayoutView):
         else:
             await interaction.response.defer()
 
-        result = await sync_to_async(claim_tier)(self.player.pk, tier_id, interaction.guild_id)
+        result = await sync_to_async(claim_tier)(self.player.pk, tier.pk, interaction.guild_id)
         await self._send_result(interaction, tier_name, result)
 
     async def _send_result(self, interaction: Interaction, tier_name: str, result: ClaimResult):
         match result.status:
             case "claimed":
                 assert result.card
-                await self.refresh(reload_states=True)
+                await self.refresh(reload_state=True)
                 if self.message:
                     await self.message.edit(view=self)
                 await interaction.followup.send(

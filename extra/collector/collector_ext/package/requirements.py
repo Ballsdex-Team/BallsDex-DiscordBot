@@ -40,12 +40,12 @@ class RequirementStatus:
         emoji = bot.get_emoji(ball.emoji_id) if bot and ball else None
         return f"{f'{emoji} ' if emoji else ''}{name or settings.plural_collectible_name}"
 
-    def describe(self, bot: "BallsDexBot | None" = None) -> str:
+    def describe(self, bot: "BallsDexBot | None" = None, *, show_consumed: bool = True) -> str:
         text = (
             f"{'✅' if self.met else '❌'} {min(self.owned, self.requirement.amount)}/{self.requirement.amount} "
             f"{self.label(bot)}"
         )
-        if self.requirement.delete_balls:
+        if show_consumed and self.requirement.delete_balls:
             text += " *(used up when claiming)*"
         return text
 

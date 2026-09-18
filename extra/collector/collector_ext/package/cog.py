@@ -27,7 +27,7 @@ from .requirements import (
     tier_requirements,
 )
 from .transformers import CollectorEnabledTransform
-from .views import CollectorClaimView, CollectorPage, TierState
+from .views import CollectorClaimView, RecipePage, TierState, load_tier_states
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -64,7 +64,7 @@ class Collector(commands.GroupCog):
     @app_commands.choices(
         show=[
             app_commands.Choice(name="Ready to claim", value="ready"),
-            app_commands.Choice(name="Every collector", value="all"),
+            app_commands.Choice(name="Every recipe", value="all"),
         ]
     )
     async def claim(
@@ -79,9 +79,9 @@ class Collector(commands.GroupCog):
         Parameters
         ----------
         collector: Collector
-            The collector to claim. Leave it empty to browse the collectors one by one.
+            The collector to claim. Leave it empty to browse every recipe one by one.
         show: str
-            When browsing, show the collectors you can claim right now or every collector.
+            When browsing, show the recipes you can claim right now or all of them.
         """
         await interaction.response.defer(thinking=True)
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
@@ -97,12 +97,19 @@ class Collector(commands.GroupCog):
             if not tiers:
                 await interaction.followup.send("This collector can't be claimed right now.", ephemeral=True)
                 return
-            pages = [CollectorPage(collector, tiers)]
+            states = await sync_to_async(load_tier_states)(player.pk, tiers)
+            pages = [RecipePage(collector, tier, state) for tier, state in zip(tiers, states)]
+            # one page per recipe, opened on the one the player can claim, or else still work on
+            index = next(
+                (i for i, page in enumerate(pages) if page.ready),
+                next((i for i, page in enumerate(pages) if page.pending), 0),
+            )
         else:
             pages = await self._browse_pages(player, only_ready=only_ready)
+            index = 0
             if not pages:
                 await interaction.followup.send(
-                    "You can't claim any collector card right now. Use `show: Every collector` to see them all "
+                    "You can't claim any collector card right now. Use `show: Every recipe` to see them all "
                     "and what you're missing."
                     if only_ready
                     else f"{settings.bot_name} doesn't have any collector active.",
@@ -110,15 +117,15 @@ class Collector(commands.GroupCog):
                 )
                 return
 
-        view = CollectorClaimView(self.bot, player, pages)
+        view = CollectorClaimView(self.bot, player, pages, index=index)
         view.restrict_author(interaction.user.id)
         await view.refresh()
         view.message = await interaction.followup.send(view=view, wait=True)
 
-    async def _browse_pages(self, player: Player, *, only_ready: bool) -> list[CollectorPage]:
+    async def _browse_pages(self, player: Player, *, only_ready: bool) -> list[RecipePage]:
         """
-        One page per collector, with the player's progress on every tier. Everything is counted from a single
-        summary of the player's treasures, so browsing hundreds of collectors stays cheap.
+        One page per recipe, with the player's progress on it. Everything is counted from a single summary of the
+        player's treasures, so browsing hundreds of collectors stays cheap.
         """
         tiers = [
             tier
@@ -143,24 +150,22 @@ class Collector(commands.GroupCog):
         }
         counts = await sync_to_async(owned_counts)(player.pk)
 
-        pages: list[CollectorPage] = []
-        by_collector: dict[int, CollectorPage] = {}
-        for tier in tiers:
-            page = by_collector.get(tier.collector_id)
-            if page is None:
-                page = by_collector[tier.collector_id] = CollectorPage(tier.collector, [])
-                pages.append(page)
-            page.tiers.append(tier)
-            page.states.append(
+        pages = [
+            RecipePage(
+                tier.collector,
+                tier,
                 TierState(
                     tier=tier,
                     claimed=(tier.collector_id, tier.level_id) in claimed,
                     statuses=evaluate_with_counts(counts, requirements[(tier.collector_id, tier.level_id)]),
-                )
+                ),
             )
+            for tier in tiers
+        ]
 
         if only_ready:
             return [page for page in pages if page.ready]
+        # the sort is stable: the recipes of a collector stay in the order of their tiers
         pages.sort(key=lambda page: (not page.ready, page.missing_count, page.collector.name))
         return pages
 
