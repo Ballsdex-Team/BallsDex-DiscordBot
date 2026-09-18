@@ -23,6 +23,15 @@ class AchievementType(models.TextChoices):
     FAVORITES = "favorites", "Have favorite treasures"
     BATTLE_WIN = "battle_win", "Win battles"
     PLAYTIME = "playtime", "Play since the first catch"
+    COMMAND = "command", "Use a command"
+    RECEIVE_CURRENCY = "receive_currency", "Receive currency from someone"
+
+
+def normalize_command(name: str) -> str:
+    """
+    "/Treasures  List" and "treasures list" are the same command.
+    """
+    return " ".join(name.lstrip("/").lower().split())
 
 
 class TimeUnit(models.TextChoices):
@@ -102,15 +111,25 @@ class Achievement(models.Model):
         null=True, blank=True, help_text="Only count catches made within this many seconds after the spawn."
     )
     partner_discord_id = models.BigIntegerField(
-        null=True, blank=True, help_text="Only count trades with this Discord user (ID)."
+        null=True,
+        blank=True,
+        help_text="Only count trades with this Discord user, or the currency this user gives (ID).",
     )
     min_currency = models.PositiveBigIntegerField(
-        null=True, blank=True, help_text="Only count trades where the player receives at least this much currency."
+        null=True,
+        blank=True,
+        help_text="Only count trades or gifts where the player receives at least this much currency.",
     )
     must_receive_treasure = models.BooleanField(
         default=False, help_text="Only count trades where the player receives at least one treasure."
     )
     time_unit = models.CharField(max_length=8, choices=TimeUnit.choices, default=TimeUnit.DAYS)
+    command_name = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text='Full name of the slash command, without the slash: "treasures list" to open the inventory.',
+    )
 
     currency_reward = models.PositiveIntegerField(db_default=0, default=0, help_text="Currency given on unlock.")
     prerequisities: models.ManyToManyField[Achievement, Any] = models.ManyToManyField(
@@ -130,6 +149,10 @@ class Achievement(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    def clean(self):
+        super().clean()
+        self.command_name = normalize_command(self.command_name)
 
     @property
     def cached_ball(self) -> Ball | None:

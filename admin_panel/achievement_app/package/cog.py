@@ -14,9 +14,9 @@ from ballsdex.core.utils.menus import ChunkedListSource, ItemFormatter, Menu
 from bd_models.models import Player
 from settings.models import settings
 
-from ..engine import Event, engine
+from ..engine import Event, EventContext, engine
 from ..models import Achievement as AchievementModel
-from ..models import UserAchievement
+from ..models import AchievementType, UserAchievement, normalize_command
 from ..notifications import achievement_item
 from ..transformers import AchievementCategoryTransform, AchievementTransform
 
@@ -46,11 +46,22 @@ class Achievement(commands.GroupCog):
     async def on_app_command_completion(
         self, interaction: discord.Interaction["BallsDexBot"], command: app_commands.Command | app_commands.ContextMenu
     ):
-        if interaction.user.id in self._recent_activity:
+        name = normalize_command(command.qualified_name)
+        listened = any(
+            achievement.type == AchievementType.COMMAND and normalize_command(achievement.command_name) == name
+            for achievement in await engine.active_achievements()
+        )
+        if not listened and interaction.user.id in self._recent_activity:
             return
         self._recent_activity[interaction.user.id] = True
         player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
-        if player:
+        if player is None:
+            return
+        if listened:
+            # time based achievements listen to every event, they are checked along
+            context = EventContext(command_name=name)
+            await engine.dispatch(player, Event.COMMAND, context=context, channel_id=interaction.channel_id)
+        else:
             await engine.dispatch(player, Event.ACTIVITY, channel_id=interaction.channel_id)
 
     async def _visible_achievements(

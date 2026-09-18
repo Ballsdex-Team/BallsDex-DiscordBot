@@ -36,6 +36,7 @@ from .models import (
     PlayerAchievementStats,
     PrerequisiteLogic,
     UserAchievement,
+    normalize_command,
 )
 from .types import TYPES, Event
 
@@ -57,9 +58,11 @@ log = logging.getLogger(__name__)
 class EventContext:
     # treasures caught or obtained, or the treasures received in a trade
     instances: list[BallInstance] = field(default_factory=list)
-    # trades only
+    # trades and currency gifts: the other player, or the admin giving currency
     partner_discord_id: int | None = None
     received_currency: int = 0
+    # commands only, like "treasures list"
+    command_name: str = ""
 
 
 @dataclass
@@ -367,6 +370,18 @@ class AchievementEngine:
                 return Absolute(await BallInstance.objects.filter(player_id=player_id, favorite=True).acount())
 
             case AchievementType.BATTLE_WIN:
+                return Increment(1)
+
+            case AchievementType.COMMAND:
+                if normalize_command(context.command_name) != normalize_command(achievement.command_name):
+                    return None
+                return Increment(1)
+
+            case AchievementType.RECEIVE_CURRENCY:
+                if achievement.partner_discord_id and context.partner_discord_id != achievement.partner_discord_id:
+                    return None
+                if achievement.min_currency and context.received_currency < achievement.min_currency:
+                    return None
                 return Increment(1)
 
             case AchievementType.PLAYTIME:

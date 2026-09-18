@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import discord
+from achievement_app.engine import Event, EventContext
+from achievement_app.engine import engine as achievement_engine
 from asgiref.sync import sync_to_async
 from currency_app.ledger import adjust_money
 from currency_app.models import BerryTransaction, CurrencySettings, DailyBonusRole
@@ -137,6 +139,12 @@ class Money(commands.GroupCog):
         await interaction.followup.send(
             f"You just gave {format_currency(amount)} to {user.mention}!",
             allowed_mentions=await can_mention([new_player]),
+        )
+        achievement_engine.dispatch_soon(
+            new_player.pk,
+            Event.CURRENCY_RECEIVED,
+            context=EventContext(partner_discord_id=interaction.user.id, received_currency=amount),
+            channel_id=interaction.channel_id,
         )
 
     @app_commands.command()
