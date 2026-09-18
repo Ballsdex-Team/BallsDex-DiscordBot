@@ -206,6 +206,10 @@ STATICFILES_DIRS = ["staticfiles"]
 MEDIA_URL = "media/"
 MEDIA_ROOT = "media"
 
+# The settings page edits every prompt message inline, about 5 fields each: Django's default of 1000 fields per
+# request is reached with ~190 messages, and saving the page then fails with "Bad Request (400)".
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
