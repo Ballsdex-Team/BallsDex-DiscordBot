@@ -67,7 +67,7 @@ def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any
     draw = ImageDraw.Draw(image)
     draw.text((50, 20), ball.short_name or ball.country, font=title_font, stroke_width=2, stroke_fill=(0, 0, 0, 255))
 
-    cap_name = textwrap.wrap(f"Ability: {ball.capacity_name}", width=26)
+    cap_name = textwrap.wrap(ball.capacity_name, width=26)
 
     for i, line in enumerate(cap_name):
         draw.text(
