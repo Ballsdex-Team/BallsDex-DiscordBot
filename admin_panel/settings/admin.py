@@ -100,7 +100,6 @@ class SettingsAdmin(admin.ModelAdmin):
             {
                 "description": "Advanced options to further personalize your bot",
                 "fields": (
-                    "catch_button_label",
                     "favorited_collectible_emoji",
                     "max_favorites",
                     "max_attack_bonus",
@@ -111,6 +110,20 @@ class SettingsAdmin(admin.ModelAdmin):
                     "tip_chance",
                     "tip_position",
                     "tip_container",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Catch button",
+            {
+                "description": "The button of the spawn messages: while it can be caught, once caught, and once it "
+                "left without being caught. Discord only allows these 4 colors for buttons. The bot must be "
+                "restarted to apply the changes.",
+                "fields": (
+                    ("catch_button_label", "catch_button_color", "catch_button_emoji"),
+                    ("caught_button_label", "caught_button_color", "caught_button_emoji"),
+                    ("despawned_button_label", "despawned_button_color", "despawned_button_emoji"),
                 ),
                 "classes": ("collapse",),
             },

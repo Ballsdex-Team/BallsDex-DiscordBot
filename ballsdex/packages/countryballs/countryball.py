@@ -5,7 +5,7 @@ import math
 import random
 import string
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import discord
 from currency_app.models import BerryTransaction, CurrencySettings
@@ -17,7 +17,7 @@ from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.formatting import format_command_mentions
 from ballsdex.core.utils.utils import can_mention
 from bd_models.models import Ball, BallInstance, GuildConfig, Player, Special, Trade, TradeObject, balls, specials
-from settings.models import PromptMessage, Settings, settings
+from settings.models import CUSTOM_EMOJI_RE, PromptMessage, Settings, settings
 from settings.utils import format_currency
 
 if TYPE_CHECKING:
@@ -97,6 +97,22 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         await interaction.followup.edit_message(self.view.message.id, view=self.view)
 
 
+def button_emoji(bot: "BallsDexBot", value: str) -> discord.Emoji | str | None:
+    """
+    The emoji configured for a button: a unicode emoji as it is, or a custom emoji the bot can use. A custom emoji the
+    bot can't use would make Discord refuse the whole message, it is left out.
+    """
+    if not value:
+        return None
+    match = CUSTOM_EMOJI_RE.fullmatch(value)
+    if match is None:
+        return value
+    emoji = bot.get_emoji(int(match.group(1) or match.group(2)))
+    if emoji is None:
+        log.warning(f"The emoji {value} of the catch button isn't available to the bot, it is left out.")
+    return emoji
+
+
 class CatchRow(ActionRow["BallSpawnView"]):
     """
     The action row holding the catch button. Components v2 does not allow buttons to be defined
@@ -165,17 +181,29 @@ class BallSpawnView(LayoutView):
         self.og_id: int
 
         self.catch_row = CatchRow(self)
-        self.catch_button.label = settings.catch_button_label
+        self.style_catch_button("catch")
 
     @property
     def catch_button(self) -> Button["BallSpawnView"]:
         return self.catch_row.catch_button
+
+    def style_catch_button(self, state: Literal["catch", "caught", "despawned"]):
+        """
+        Give the catch button the label, color and emoji configured for this state of the spawn.
+        """
+        button = self.catch_button
+        button.label = getattr(settings, f"{state}_button_label") or settings.catch_button_label
+        button.style = discord.ButtonStyle(getattr(settings, f"{state}_button_color"))
+        button.emoji = button_emoji(self.bot, getattr(settings, f"{state}_button_emoji"))
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
 
     async def on_timeout(self):
         self.catch_button.disabled = True
+        # the view keeps running once caught, its button must keep that look
+        if not self.caught:
+            self.style_catch_button("despawned")
         if self.message:
             try:
                 await self.message.edit(view=self)
@@ -410,6 +438,7 @@ class BallSpawnView(LayoutView):
             raise RuntimeError("This ball was already caught!")
         self.caught = True
         self.catch_button.disabled = True
+        self.style_catch_button("caught")
         caught_time = timezone.now()
         player = player or (await Player.objects.aget_or_create(discord_id=user.id))[0]
         is_new = not await BallInstance.objects.filter(player=player, ball=self.model).aexists()
