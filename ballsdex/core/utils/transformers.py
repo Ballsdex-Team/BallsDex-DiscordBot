@@ -17,6 +17,7 @@ from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from bd_models.models import Ball, BallGroup, BallInstance, Economy, Regime, Special
+from currency_app.models import ItemBall
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -286,6 +287,15 @@ class BallTransformer(TTLModelTransformer[Ball]):
     model = Ball
 
 
+class BallObtainableTransformer(BallTransformer):
+    """
+    Every countryball players can get: the enabled ones, and the ones only found in packs.
+    """
+
+    def get_queryset(self) -> "QuerySet[Ball]":
+        return Ball.objects.filter(Q(enabled=True) | Q(pk__in=ItemBall.objects.values("ball_id")))
+
+
 class SpecialTransformer(TTLModelTransformer[Special]):
     name = "special event"
     model = Special
@@ -314,3 +324,4 @@ EconomyTransform = app_commands.Transform[Economy, EconomyTransformer]
 BallGroupTransform = app_commands.Transform[BallGroup, BallGroupTransformer]
 SpecialEnabledTransform = app_commands.Transform[Special, SpecialTransformer(hidden=False)]
 BallEnabledTransform = app_commands.Transform[Ball, BallTransformer(enabled=True)]
+BallObtainableTransform = app_commands.Transform[Ball, BallObtainableTransformer]

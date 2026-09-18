@@ -20,6 +20,7 @@ from ballsdex.core.utils.transformers import (
     BallEnabledTransform,
     BallGroupTransform,
     BallInstanceTransform,
+    BallObtainableTransform,
     EconomyTransform,
     RegimeTransform,
     SpecialEnabledTransform,
@@ -1019,7 +1020,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
     async def collection(
         self,
         interaction: discord.Interaction["BallsDexBot"],
-        countryball: BallEnabledTransform | None = None,
+        countryball: BallObtainableTransform | None = None,
         ephemeral: bool = False,
     ):
         """
