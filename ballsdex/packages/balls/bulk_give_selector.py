@@ -135,6 +135,8 @@ class BulkGiveSelector(BaseBulkSelector):
             ball.player = self.new_player
             ball.trade_player = self.old_player
             ball.favorite = False
+            # transient attribute, read by the achievements to congratulate the recipient where the gift was made
+            ball._notify_channel_id = interaction.channel_id  # type: ignore
             await ball.asave()
             await TradeObject.objects.acreate(trade=trade, ballinstance=ball, player=self.old_player)
             await ball.unlock()

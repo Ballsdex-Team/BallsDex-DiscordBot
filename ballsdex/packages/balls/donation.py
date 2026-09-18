@@ -123,6 +123,8 @@ class DonationRequest(View):
         self.countryball.favorite = False
         self.countryball.trade_player = self.countryball.player
         self.countryball.player = self.new_player
+        # transient attribute, read by the achievements to congratulate the recipient where the gift was made
+        self.countryball._notify_channel_id = interaction.channel_id  # type: ignore
         await self.countryball.asave()
         trade = await Trade.objects.acreate(player1=self.countryball.trade_player, player2=self.new_player)
         await TradeObject.objects.acreate(
@@ -194,6 +196,8 @@ class BulkDonationRequest(View):
             countryball.favorite = False
             countryball.trade_player = self.old_player
             countryball.player = self.new_player
+            # transient attribute, read by the achievements to congratulate the recipient where the gift was made
+            countryball._notify_channel_id = interaction.channel_id  # type: ignore
             await countryball.asave()
             await TradeObject.objects.acreate(trade=trade, ballinstance=countryball, player=self.old_player)
             await countryball.unlock()

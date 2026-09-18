@@ -161,7 +161,14 @@ class AchievementEngine:
                     player_id, Event.CATCH, context=EventContext(instances=caught), channel_id=channel_id
                 )
             if obtained:
-                self.dispatch_soon(player_id, Event.OBTAIN, context=EventContext(instances=obtained))
+                # a treasure given by someone else carries the channel of the gift, to congratulate the
+                # recipient where it happened instead of where they last played
+                channel_id = next(
+                    (channel for x in obtained if (channel := getattr(x, "_notify_channel_id", None))), None
+                )
+                self.dispatch_soon(
+                    player_id, Event.OBTAIN, context=EventContext(instances=obtained), channel_id=channel_id
+                )
 
     # -- processing --------------------------------------------------------------------------------------------------
 

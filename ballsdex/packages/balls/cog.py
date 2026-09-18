@@ -669,6 +669,8 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
         countryball.player = new_player
         countryball.trade_player = old_player
         countryball.favorite = False
+        # transient attribute, read by the achievements to congratulate the recipient where the gift was made
+        countryball._notify_channel_id = interaction.channel_id  # type: ignore
         await countryball.asave()
 
         trade = await Trade.objects.acreate(player1=old_player, player2=new_player)
