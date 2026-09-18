@@ -4,12 +4,12 @@ import discord
 from currency_app.models import Item, ItemBall
 from discord import app_commands
 from discord.ui import Container, Section, Separator, TextDisplay, Thumbnail
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from ballsdex.core.discord import LayoutView
 from ballsdex.core.utils.menus import ChunkedListSource, ItemFormatter, Menu
-from ballsdex.core.utils.transformers import BallEnabledTransform, SpecialEnabledTransform, TTLModelTransformer
-from bd_models.models import BallInstance, Player
+from ballsdex.core.utils.transformers import BallTransformer, SpecialEnabledTransform, TTLModelTransformer
+from bd_models.models import Ball, BallInstance, Player
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -35,6 +35,18 @@ class PackTransformer(TTLModelTransformer[Item]):
 PackTransform = app_commands.Transform[Item, PackTransformer]
 
 
+class ObtainableBallTransformer(BallTransformer):
+    """
+    Every treasure players can get: the ones spawning, and the ones only found in packs.
+    """
+
+    def get_queryset(self) -> "QuerySet[Ball]":
+        return Ball.objects.filter(Q(enabled=True) | Q(pk__in=ItemBall.objects.values("ball_id")))
+
+
+ObtainableBallTransform = app_commands.Transform[Ball, ObtainableBallTransformer]
+
+
 async def resolve_user(client: "BallsDexBot", discord_id: int) -> discord.User | None:
     if user := client.get_user(discord_id):
         return user
@@ -48,7 +60,7 @@ async def resolve_user(client: "BallsDexBot", discord_id: int) -> discord.User |
 async def leaderboard(
     interaction: discord.Interaction["BallsDexBot"],
     *,
-    countryball: BallEnabledTransform | None = None,
+    countryball: ObtainableBallTransform | None = None,
     special: SpecialEnabledTransform | None = None,
     pack_only: bool = False,
     pack: PackTransform | None = None,
