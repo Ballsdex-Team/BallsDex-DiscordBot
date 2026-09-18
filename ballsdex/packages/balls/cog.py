@@ -28,7 +28,19 @@ from ballsdex.core.utils.transformers import (
 )
 from ballsdex.core.utils.utils import can_mention, inventory_privacy, is_staff
 from bd_models.enums import DonationPolicy
-from bd_models.models import BallInstance, GuildConfig, Player, Special, Trade, TradeObject, balls, groups
+from bd_models.models import (
+    FRAME_EMOJI,
+    FRAMED,
+    BallInstance,
+    GuildConfig,
+    Player,
+    Special,
+    Trade,
+    TradeObject,
+    balls,
+    groups,
+    special_filter,
+)
 from settings.models import settings
 
 from .bulk_give_selector import BulkGiveSelector
@@ -144,7 +156,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
         if economy:
             query = query.filter(ball__economy=economy)
         if special:
-            query = query.filter(special=special)
+            query = query.filter(special_filter(special))
         if group:
             query = query.filter(ball__groups=group)
         if sort:
@@ -257,8 +269,8 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
 
         # Set of ball IDs owned by the player
         filters = {"player__discord_id": user_obj.id, "ball__enabled": True}
+        special_q = special_filter(special) if special else Q()
         if special:
-            filters["special"] = special
             bot_countryballs = {
                 x: y.emoji_id
                 for x, y in balls.items()
@@ -279,9 +291,9 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
             bot_countryballs = {x: y for x, y in bot_countryballs.items() if x in group_ball_ids}
 
         if filter:
-            query = filter_balls(filter, BallInstance.objects.filter(**filters), interaction.guild_id)
+            query = filter_balls(filter, BallInstance.objects.filter(special_q, **filters), interaction.guild_id)
         else:
-            query = BallInstance.objects.filter(**filters)
+            query = BallInstance.objects.filter(special_q, **filters)
 
         if not bot_countryballs:
             await interaction.followup.send(
@@ -296,7 +308,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
         owned_countryballs = set(
             [
                 x[0]
-                async for x in query.filter(**filters)
+                async for x in query.filter(special_q, **filters)
                 .distinct()  # Do not query everything
                 .values_list("ball_id")
             ]
@@ -512,8 +524,8 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
             await countryball.asave()
             emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
-                f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
-                f"is now a favorite {settings.collectible_name}!",
+                f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country}"
+                f"{f' {FRAME_EMOJI}' if countryball.framed else ''} is now a favorite {settings.collectible_name}!",
                 ephemeral=True,
             )
             await achievement_engine.dispatch(player, Event.FAVORITE, channel_id=interaction.channel_id)
@@ -523,8 +535,9 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
             await countryball.asave()
             emoji = self.bot.get_emoji(countryball.countryball.emoji_id) or ""
             await interaction.response.send_message(
-                f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country} "
-                f"isn't a favorite {settings.collectible_name} anymore.",
+                f"{emoji} `#{countryball.pk:0X}` {countryball.countryball.country}"
+                f"{f' {FRAME_EMOJI}' if countryball.framed else ''} isn't a favorite "
+                f"{settings.collectible_name} anymore.",
                 ephemeral=True,
             )
 
@@ -746,7 +759,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
         if countryball:
             query = query.filter(ball=countryball)
         if special:
-            query = query.filter(special=special)
+            query = query.filter(special_filter(special))
         if sort:
             query = sort_balls(sort, query)
         if filter:
@@ -790,13 +803,11 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
         filters = {}
         if countryball:
             filters["ball"] = countryball
-        if special:
-            filters["special"] = special
         filters["player__discord_id"] = interaction.user.id
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        query = BallInstance.objects.filter(**filters)
+        query = BallInstance.objects.filter(special_filter(special) if special else Q(), **filters)
         if filter:
             query = filter_balls(filter, query, interaction.guild_id)
         balls = await query.acount()
@@ -964,7 +975,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
             return
         queryset = BallInstance.objects.filter(ball__enabled=True).distinct()
         if special:
-            queryset = queryset.filter(special=special)
+            queryset = queryset.filter(special_filter(special))
         if filter:
             queryset = filter_balls(filter, queryset, interaction.guild_id)
         if duplicates:
@@ -1047,6 +1058,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
                     filter=Q(special_id__isnull=False)
                     & ~Exists(Special.objects.filter(hidden=True, id=OuterRef("special_id"))),
                 ),
+                frames=Count("id", filter=FRAMED),
             )
         )
         specials = (
@@ -1077,7 +1089,8 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
         desc = (
             f"**Total**: {counts['total']:,} ({counts['total'] - counts['traded']:,} caught, "
             f"{counts['traded']:,} received from trade)\n"
-            f"**Total Specials**: {counts['specials']:,}\n\n"
+            f"**Total Specials**: {counts['specials']:,}\n"
+            f"**Total Frames**: {counts['frames']:,} {FRAME_EMOJI}\n\n"
         )
         if counts["specials"]:
             desc += "**Specials**:\n"

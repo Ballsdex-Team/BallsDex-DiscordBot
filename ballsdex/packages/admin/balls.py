@@ -12,12 +12,13 @@ from discord.ext import commands
 from discord.utils import format_dt
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.urls import reverse
 
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject
+from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, special_filter
 from settings.models import settings
 from settings.utils import format_currency
 
@@ -514,13 +515,11 @@ async def balls_count(ctx: commands.Context[BallsDexBot], *, flags: BallsCountFl
     filters = {}
     if flags.countryball:
         filters["ball"] = flags.countryball
-    if flags.special:
-        filters["special"] = flags.special
     if flags.user:
         filters["player__discord_id"] = flags.user.id
     await ctx.defer(ephemeral=True)
     qs = BallInstance.all_objects if flags.deleted else BallInstance.objects
-    balls = await qs.filter(**filters).acount()
+    balls = await qs.filter(special_filter(flags.special) if flags.special else Q(), **filters).acount()
     verb = "is" if balls == 1 else "are"
     country = f"{flags.countryball.country} " if flags.countryball else ""
     plural = "s" if balls > 1 or balls == 0 else ""

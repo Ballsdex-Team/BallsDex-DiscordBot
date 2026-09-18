@@ -16,7 +16,18 @@ from ballsdex.core.discord import Container, LayoutView, Modal
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.formatting import format_command_mentions
 from ballsdex.core.utils.utils import can_mention
-from bd_models.models import Ball, BallInstance, GuildConfig, Player, Special, Trade, TradeObject, balls, specials
+from bd_models.models import (
+    FRAME_EMOJI,
+    Ball,
+    BallInstance,
+    GuildConfig,
+    Player,
+    Special,
+    Trade,
+    TradeObject,
+    balls,
+    specials,
+)
 from settings.models import CUSTOM_EMOJI_RE, PromptMessage, Settings, settings
 from settings.utils import format_currency
 
@@ -542,4 +553,5 @@ class BallSpawnView(LayoutView):
             + " "
         )
 
-        return caught_message + f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`\n\n{text}"
+        frame = f" {FRAME_EMOJI}" if ball.framed else ""
+        return caught_message + f"`(#{ball.pk:0X}, {ball.attack_bonus:+}%/{ball.health_bonus:+}%)`{frame}\n\n{text}"

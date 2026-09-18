@@ -24,7 +24,7 @@ from ballsdex.core.utils.transformers import (
     TradeCommandType,
 )
 from ballsdex.core.utils.utils import can_mention
-from bd_models.models import BallInstance, Player
+from bd_models.models import BallInstance, Player, special_filter
 from bd_models.models import Trade as TradeModel
 from settings.models import settings
 
@@ -305,7 +305,7 @@ class Trade(commands.GroupCog):
             if countryball:
                 object_filter &= Q(tradeobject__ballinstance__ball=countryball)
             if special:
-                object_filter &= Q(tradeobject__ballinstance__special=special)
+                object_filter &= special_filter(special, "tradeobject__ballinstance__")
             if group:
                 object_filter &= Q(tradeobject__ballinstance__ball__groups=group)
             queryset = queryset.filter(object_filter).distinct()
@@ -404,7 +404,7 @@ class Trade(commands.GroupCog):
         if countryball:
             query = query.filter(ball=countryball)
         if special:
-            query = query.filter(special=special)
+            query = query.filter(special_filter(special))
         if group:
             query = query.filter(ball__groups=group)
         if sort:

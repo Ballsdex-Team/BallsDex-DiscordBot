@@ -45,7 +45,6 @@ class FramesCog(commands.Cog):
         import bd_models.models as bd_models_module
         import ballsdex.core.utils.sorting as sorting_module
         from ballsdex.packages.countryballs.countryball import BallSpawnView
-        from ballsdex.core.utils.menus.formatter import CountryballFormatter
         from ballsdex.core.utils.enums import FilteringChoices
         from bd_models.models import BallInstance
 
@@ -56,8 +55,6 @@ class FramesCog(commands.Cog):
         if "draw_card" in self._originals:
             image_gen_module.draw_card = self._originals["draw_card"]
             bd_models_module.draw_card = self._originals["draw_card"]
-        if "format_page" in self._originals:
-            CountryballFormatter.format_page = self._originals["format_page"]  # type: ignore[method-assign]
         if "filter_balls" in self._originals:
             sorting_module.filter_balls = self._originals["filter_balls"]
         if "balls_cog_filter_balls" in self._originals:
@@ -90,7 +87,6 @@ class FramesCog(commands.Cog):
         import ballsdex.core.image_generator.image_gen as image_gen_module
         import bd_models.models as bd_models_module
         from ballsdex.packages.countryballs.countryball import BallSpawnView
-        from ballsdex.core.utils.menus.formatter import CountryballFormatter
         from settings.models import PromptMessage, settings
         from bd_models.models import BallInstance
 
@@ -218,33 +214,6 @@ class FramesCog(commands.Cog):
 
         image_gen_module.draw_card = patched_draw_card
         bd_models_module.draw_card = patched_draw_card
-
-        # ── CountryballFormatter.format_page ───────────────────────────────────
-
-        async def patched_format_page(fmt_self: CountryballFormatter, page) -> None:
-            fmt_self.item.options = []
-            async for ball in page:
-                emoji = fmt_self.menu.bot.get_emoji(int(ball.countryball.emoji_id))
-                favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
-                special = ball.specialcard.emoji if ball.specialcard else ""
-                frame_entry = ball.extra_data if isinstance(ball.extra_data, dict) else None
-                frame = "🖼️ " if isinstance(frame_entry, dict) and frame_entry.get("card") else ""
-                fmt_self.item.add_option(
-                    label=f"{favorite}{special}{frame}#{ball.pk:0X} {ball.countryball.country}",
-                    description=(
-                        f"ATK: {ball.attack}({ball.attack_bonus:+d}%) "
-                        f"• HP: {ball.health}({ball.health_bonus:+d}%) • "
-                        f"{ball.catch_date.strftime('%Y/%m/%d | %H:%M')}"
-                    ),
-                    emoji=emoji,
-                    value=f"{ball.pk}",
-                    default=ball.pk in fmt_self.defaulted,
-                )
-            fmt_self.min_values = max(fmt_self.min_values, len(page))
-            fmt_self.item.max_values = min(fmt_self.max_values, len(page))
-
-        self._originals["format_page"] = CountryballFormatter.format_page
-        CountryballFormatter.format_page = patched_format_page  # type: ignore[method-assign]
 
         # ── FilteringChoices + filter_balls ───────────────────────────────────
 
