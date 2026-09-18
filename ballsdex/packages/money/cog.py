@@ -15,7 +15,7 @@ from django.db.models import Count, Sum
 from django.utils import timezone
 
 from ballsdex.core.utils.leaderboard import EXTRA_ROWS, LEADERBOARD_SIZE, send_leaderboard
-from ballsdex.core.utils.utils import can_mention
+from ballsdex.core.utils.utils import can_mention, member_role_ids
 from bd_models.models import Player, Trade
 from settings.models import settings
 from settings.utils import format_currency
@@ -177,15 +177,14 @@ class Money(commands.GroupCog):
 
         # a player with several qualifying roles gets every matching bonus added together
         matching_roles = []
-        if interaction.guild_id is not None and isinstance(interaction.user, discord.Member):
-            member_role_ids = [role.id for role in interaction.user.roles]
-            if member_role_ids:
-                matching_roles = [
-                    candidate
-                    async for candidate in DailyBonusRole.objects.filter(
-                        server__server_id=interaction.guild_id, role_id__in=member_role_ids
-                    )
-                ]
+        role_ids = member_role_ids(interaction.user)
+        if interaction.guild_id is not None and role_ids:
+            matching_roles = [
+                candidate
+                async for candidate in DailyBonusRole.objects.filter(
+                    server__server_id=interaction.guild_id, role_id__in=role_ids
+                )
+            ]
         role_bonus = sum(candidate.bonus_amount for candidate in matching_roles)
         total = currency_settings.base_daily_amount + streak_bonus + role_bonus
 
