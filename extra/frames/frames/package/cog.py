@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 import discord
 from discord.ext import commands
-from PIL import Image, ImageDraw, ImageOps, ImageSequence
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -90,7 +89,6 @@ class FramesCog(commands.Cog):
     def _patch(self) -> None:
         import ballsdex.core.image_generator.image_gen as image_gen_module
         import bd_models.models as bd_models_module
-        from django.core.exceptions import ObjectDoesNotExist
         from ballsdex.packages.countryballs.countryball import BallSpawnView
         from ballsdex.core.utils.menus.formatter import CountryballFormatter
         from settings.models import PromptMessage, settings
@@ -201,113 +199,22 @@ class FramesCog(commands.Cog):
 
         self._originals["draw_card"] = image_gen_module.draw_card
         original_draw_card = image_gen_module.draw_card
-        corners = image_gen_module.CORNERS
-        artwork_size = image_gen_module.artwork_size
-        credits_font = image_gen_module.credits_font
-        get_credit_color = image_gen_module.get_credit_color
-        credits_color_cache = image_gen_module.credits_color_cache
-        HEIGHT = image_gen_module.HEIGHT
-        credits_region = (0, 1840, image_gen_module.WIDTH, HEIGHT)
 
-        def patched_draw_card(ball_instance):
-            image, kwargs = original_draw_card(ball_instance)
+        def patched_draw_card(ball_instance, **options):
             frame = ball_instance.extra_data if isinstance(ball_instance.extra_data, dict) else None
             if not frame:
-                return image, kwargs
-
-            # The decorations cog runs before us: it wraps the finished card in a larger
-            # canvas, pasting it at a (margin // 2, margin // 2) offset before overlaying an
-            # animated mask. So draw_card can hand us an already-padded (and multi-frame)
-            # image, and every coordinate below has to be shifted by that same offset. The
-            # vertical padding is the reliable signal — the canvas height is HEIGHT + margin
-            # and the card sits at margin // 2 — so offset == (image.height - HEIGHT) // 2.
-            # It resolves to 0 when no decoration is applied, leaving the plain-card path
-            # untouched.
-            offset = max(0, image.height - HEIGHT) // 2
-
-            # A decoration turns the card into an animation; paint onto every frame it
-            # produced, not just the first, so the frame art/credits don't flicker away.
-            targets = kwargs.get("append_images") or [image]
-
+                return original_draw_card(ball_instance, **options)
             if frame.get("card"):
-                try:
-                    artwork = Image.open("./media/" + frame["card"]).convert("RGBA")
-                    fitted = ImageOps.fit(artwork, artwork_size)
-                    artwork.close()
-                    position = (corners[0][0] + offset, corners[0][1] + offset)
-                    for target in targets:
-                        target.paste(fitted, position)  # type: ignore[arg-type]
-                except Exception:
-                    log.exception(
-                        "Failed to apply frame card art for %s", ball_instance.countryball.country
-                    )
+                # either the whole card, or only the artwork square
+                layout = "full_art" if frame.get("full_art") else "artwork"
+                options.setdefault(layout, "./media/" + frame["card"])
             if frame.get("credits"):
-                try:
-                    ball = ball_instance.countryball
-                    special_credits = ""
-                    if ball_instance.specialcard and ball_instance.specialcard.credits:
-                        special_credits = f" • Special Author: {ball_instance.specialcard.credits}"
-
-                    # Wipe the original credits text by repainting the region with the
-                    # untouched card background, then redraw it with the artwork author
-                    # line swapped for the frame's credits.
-                    background_path = ball_instance.special_card or ball.cached_regime.background
-                    background = Image.open(background_path).convert("RGBA")
-                    background_region = background.crop(credits_region)
-                    background.close()
-
-                    card_name = getattr(ball_instance.specialcard, "name", None) or ball.cached_regime.name
-                    if card_name in credits_color_cache:
-                        credits_color = credits_color_cache[card_name]
-                    else:
-                        credits_color = get_credit_color(
-                            image, (0, int(image.height * 0.8), image.width, image.height)
-                        )
-                        credits_color_cache[card_name] = credits_color
-
-                    paste_position = (credits_region[0] + offset, credits_region[1] + offset)
-                    text_position = (30 + offset, 1870 + offset)
-                    credits_text = (
-                        f"Created by El Laggron{special_credits}\n"
-                        f"Artwork author: {frame['credits']}"
-                    )
-                    for target in targets:
-                        target.paste(background_region, paste_position)
-                        ImageDraw.Draw(target).text(
-                            text_position,
-                            credits_text,
-                            font=credits_font,
-                            fill=credits_color,
-                            stroke_width=0,
-                            stroke_fill=(255, 255, 255, 255),
-                        )
-                except Exception:
-                    log.exception(
-                        "Failed to apply frame credits for %s", ball_instance.countryball.country
-                    )
-
-            # The decoration's animated mask was already composited onto these frames before
-            # we pasted the frame art/credits, so our paint currently sits *over* it. Re-overlay
-            # the mask (exactly as the decorations cog does) so the frame ends up underneath.
-            if offset:
-                try:
-                    deco = ball_instance.entitlement.decoration
-                except (ObjectDoesNotExist, AttributeError):
-                    deco = None
-                if deco is not None:
-                    try:
-                        animation = Image.open(deco.mask.path)
-                        for target, mask_frame in zip(targets, ImageSequence.Iterator(animation)):
-                            mask_frame.load()
-                            resized = ImageOps.fit(mask_frame, target.size).convert("RGBA")
-                            target.paste(resized, None, resized)
-                        animation.close()
-                    except Exception:
-                        log.exception(
-                            "Failed to re-overlay decoration for %s",
-                            ball_instance.countryball.country,
-                        )
-            return image, kwargs
+                options.setdefault("artwork_credits", frame["credits"])
+            try:
+                return original_draw_card(ball_instance, **options)
+            except Exception:
+                log.exception("Failed to apply the frame of %s, drawing the regular card", ball_instance.pk)
+                return original_draw_card(ball_instance)
 
         image_gen_module.draw_card = patched_draw_card
         bd_models_module.draw_card = patched_draw_card

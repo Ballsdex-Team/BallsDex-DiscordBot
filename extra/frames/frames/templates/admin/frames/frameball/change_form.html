@@ -23,6 +23,7 @@
         <tr>
           <th style="padding:6px 8px; text-align:left">{% trans "Date (MM-DD-YYYY)" %}</th>
           <th style="padding:6px 8px; text-align:left">{% trans "Card art" %}</th>
+          <th style="padding:6px 8px; text-align:left">{% trans "Layout" %}</th>
           <th style="padding:6px 8px; text-align:left">{% trans "Spawn art" %}</th>
           <th style="padding:6px 8px; text-align:left">{% trans "Credits" %}</th>
           <th style="padding:6px 8px; text-align:left">{% trans "Catch phrase" %}</th>
@@ -40,6 +41,7 @@
               <small style="word-break:break-all">{{ frame.data.card }}</small>
             {% else %}&mdash;{% endif %}
           </td>
+          <td style="padding:6px 8px">{% if frame.data.full_art %}{% trans "Full art" %}{% else %}{% trans "Artwork square" %}{% endif %}</td>
           <td style="padding:6px 8px">
             {% if frame.spawn_url %}
               <img src="{{ frame.spawn_url }}" style="max-height:60px; display:block; margin-bottom:4px" />
@@ -71,7 +73,7 @@
   <div class="module" style="margin-top:2em">
     <h2>{% blocktrans with name=ball.country %}Add frame date(s) to {{ name }}{% endblocktrans %}</h2>
     <p class="help" style="padding:0 16px 8px">
-      {% trans "Uploading art for a date that already has a frame will replace it." %}
+      {% trans "Uploading art for a date that already has a frame will replace it. Without new art, the existing art is kept." %}
     </p>
 
     {% if form.errors %}

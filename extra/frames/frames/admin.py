@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
 
 FRAME_DATE_RE = re.compile(r"^\d{2}-\d{2}-\d{4}$")
+CARD_LAYOUTS = (("artwork", "Artwork square"), ("full_art", "Full art (whole card)"))
 
 
 def _is_frame_entry(value: Any) -> bool:
@@ -57,6 +58,13 @@ class FrameAddForm(forms.Form):
     card_art = forms.ImageField(
         required=False,
         help_text="Collection card art image (same format as a regular ball collection card). Leave blank to keep existing."
+    )
+    card_layout = forms.ChoiceField(
+        choices=CARD_LAYOUTS,
+        initial="artwork",
+        widget=forms.RadioSelect,
+        help_text="Where the card art goes: in the artwork square of the regular card, or over the whole card "
+        "with the name, ability and stats written on top.",
     )
     credits = forms.CharField(max_length=256, help_text="Artwork credits line.")
     catch_phrase = forms.CharField(
@@ -103,6 +111,13 @@ class FrameDateForm(forms.Form):
         required=False,
         help_text="Collection card art image (same format as a regular ball collection card). Leave blank to keep existing."
     )
+    card_layout = forms.ChoiceField(
+        choices=CARD_LAYOUTS,
+        initial="artwork",
+        widget=forms.RadioSelect,
+        help_text="Where the card art goes: in the artwork square of the regular card, or over the whole card "
+        "with the name, ability and stats written on top.",
+    )
     credits = forms.CharField(max_length=256, help_text="Artwork credits line.")
     catch_phrase = forms.CharField(
         max_length=512,
@@ -141,10 +156,11 @@ def _apply_frames(
     credits_str: str,
     catch_str: str,
     chance: int = 100,
+    full_art: bool = False,
 ) -> None:
     """
     Write MM-DD-YYYY frame entries into ball.capacity_logic and persist art files.
-    spawn_bytes / card_bytes may be None — omitted keys are not added to the dict.
+    spawn_bytes / card_bytes may be None: a date that already has art keeps it.
     Does NOT call ball.save().
     """
     safe_name = re.sub(r"[^a-z0-9]+", "_", ball.country.lower()).strip("_")
@@ -153,15 +169,21 @@ def _apply_frames(
     current = date_from
     while current <= date_to:
         key = current.strftime("%m-%d-%Y")
+        previous = capacity.get(key) if _is_frame_entry(capacity.get(key)) else {}
         entry: dict[str, Any] = {
             "credits": credits_str,
             "catch": catch_str,
             "chance": chance,
+            "full_art": full_art,
         }
         if spawn_bytes is not None and spawn_ext is not None:
             entry["spawn"] = _save_art(spawn_bytes, f"frame_{safe_name}_{key}_spawn.{spawn_ext}")
+        elif previous.get("spawn"):
+            entry["spawn"] = previous["spawn"]
         if card_bytes is not None and card_ext is not None:
             entry["card"] = _save_art(card_bytes, f"frame_{safe_name}_{key}_card.{card_ext}")
+        elif previous.get("card"):
+            entry["card"] = previous["card"]
         capacity[key] = entry
         current += timedelta(days=1)
 
@@ -249,6 +271,7 @@ class FrameAdmin(admin.ModelAdmin):
                     form.cleaned_data["credits"],
                     form.cleaned_data["catch_phrase"],
                     form.cleaned_data.get("chance", 100),
+                    form.cleaned_data.get("card_layout") == "full_art",
                 )
                 ball.save(update_fields=["capacity_logic"])
 
@@ -309,6 +332,7 @@ class FrameAdmin(admin.ModelAdmin):
                     form.cleaned_data["credits"],
                     form.cleaned_data["catch_phrase"],
                     form.cleaned_data.get("chance", 100),
+                    form.cleaned_data.get("card_layout") == "full_art",
                 )
                 ball.save(update_fields=["capacity_logic"])
 

@@ -48,12 +48,31 @@ def get_credit_color(image: Image.Image, region: tuple) -> tuple:
     return (0, 0, 0, 255) if brightness > 100 else (255, 255, 255, 255)
 
 
-def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any]]:
+def draw_card(
+    ball_instance: "BallInstance",
+    *,
+    artwork: str | None = None,
+    full_art: str | None = None,
+    artwork_credits: str | None = None,
+) -> tuple[Image.Image, dict[str, Any]]:
+    """
+    Draw the card of a countryball instance.
+
+    Parameters
+    ----------
+    artwork: str | None
+        Path of an image drawn in the artwork square instead of the countryball's card art.
+    full_art: str | None
+        Path of an image covering the whole card, drawn instead of the background and the artwork square. The name,
+        ability, stats and credits are written over it.
+    artwork_credits: str | None
+        Author of the artwork drawn, instead of the countryball's artwork author.
+    """
     ball = ball_instance.countryball
     ball_health = (237, 115, 101, 255)
-    ball_credits = ball.credits
+    ball_credits = artwork_credits or ball.credits
     special_credits = ""
-    card_name = ball.cached_regime.name
+    card_name: str | None = ball.cached_regime.name
     if special_image := ball_instance.special_card:
         card_name = getattr(ball_instance.specialcard, "name", card_name)
         image = Image.open(special_image)
@@ -62,6 +81,12 @@ def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any
     else:
         image = Image.open(ball.cached_regime.background)
     image = image.convert("RGBA")
+    if full_art:
+        with Image.open(full_art) as art:
+            image = ImageOps.fit(art.convert("RGBA"), image.size)
+        # the background of the special isn't shown, and every full art needs its own credits color
+        special_credits = ""
+        card_name = None
     icon = Image.open(ball.cached_economy.icon).convert("RGBA") if ball.cached_economy else None
 
     draw = ImageDraw.Draw(image)
@@ -113,11 +138,12 @@ def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any
     )
     if settings.show_rarity:
         draw.text((1200, 50), str(ball.rarity), font=stats_font, stroke_width=2, stroke_fill=(0, 0, 0, 255))
-    if card_name in credits_color_cache:
+    if card_name is not None and card_name in credits_color_cache:
         credits_color = credits_color_cache[card_name]
     else:
         credits_color = get_credit_color(image, (0, int(image.height * 0.8), image.width, image.height))
-        credits_color_cache[card_name] = credits_color
+        if card_name is not None:
+            credits_color_cache[card_name] = credits_color
     draw.text(
         (30, 1870),
         # Modifying the line below is breaking the licence as you are removing credits
@@ -129,13 +155,13 @@ def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any
         stroke_fill=(255, 255, 255, 255),
     )
 
-    artwork = Image.open(ball.collection_card).convert("RGBA")
-    image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
+    if not full_art:
+        with Image.open(artwork or ball.collection_card) as art:
+            image.paste(ImageOps.fit(art.convert("RGBA"), artwork_size), CORNERS[0])  # type: ignore
 
     if icon:
         icon = ImageOps.fit(icon, (192, 192))
         image.paste(icon, (1200, 30), mask=icon)
         icon.close()
-    artwork.close()
 
     return image, {"format": "WEBP"}
