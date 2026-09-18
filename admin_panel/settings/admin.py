@@ -118,8 +118,8 @@ class SettingsAdmin(admin.ModelAdmin):
             "Catch button",
             {
                 "description": "The button of the spawn messages: while it can be caught, once caught, and once it "
-                "left without being caught. Discord only allows these 4 colors for buttons. The bot must be "
-                "restarted to apply the changes.",
+                "left without being caught. Discord only allows these 4 colors for buttons. Use the reloadconf "
+                "command of the bot to apply the changes to the next spawns.",
                 "fields": (
                     ("catch_button_label", "catch_button_color", "catch_button_emoji"),
                     ("caught_button_label", "caught_button_color", "caught_button_emoji"),
