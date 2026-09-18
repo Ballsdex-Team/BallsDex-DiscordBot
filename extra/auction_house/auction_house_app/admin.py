@@ -38,6 +38,14 @@ class AuctionSettingsAdmin(admin.ModelAdmin):
         ("Resale shop", {"fields": ["resale_markup_percent", "max_shop_rarity", "shop_listing_hours"]}),
         ("Listing duration", {"fields": ["min_listing_minutes", "max_listing_minutes"]}),
         (
+            "Featured auctions",
+            {
+                "description": "Last-minute bids extend featured auctions, so nobody can snipe them right before "
+                "they end.",
+                "fields": ["featured_extension_window_minutes", "featured_extension_minutes"],
+            },
+        ),
+        (
             "Giveaway",
             {"fields": ["giveaway_interval_hours", "giveaway_activity_window_hours", "giveaway_server_id"]},
         ),

@@ -104,7 +104,7 @@ class CountryballsDuplicateSource(LayoutView):
                 emoji = special_emojis.get(special["special__name"], "")
                 desc += f"{emoji} {special['special__name']}: {special['count']:,}\n"
 
-        embed = discord.Embed(title=f"{name} Collection", description=desc, color=discord.Color.blurple())
+        embed = discord.Embed(title=f"{name} Collection", description=desc, color=settings.embed_colour)
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         if countryball:
             file_location = countryball.wild_card.path

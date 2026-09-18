@@ -1,143 +1,214 @@
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import discord
+from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Container, Section, Separator, TextDisplay, Thumbnail
+from discord.ui import Separator, TextDisplay
 from discord.utils import format_dt
 from django.db.models import Q
 
-from ballsdex.core.discord import LayoutView
+from ballsdex.core.discord import Container, LayoutView
 from ballsdex.core.utils.menus import ChunkedListSource, ItemFormatter, Menu
-from bd_models.models import BallInstance, Friendship, Player, Trade, specials
+from bd_models.models import Player
 from settings.models import settings
-from settings.utils import format_currency
 
-from ..checkers.instance import _handle_created_ballinstance
+from ..engine import Event, engine
 from ..models import Achievement as AchievementModel
-from ..models import AchievementType, UserAchievement, progress_achievement
-from ..transformers import AchievementTransform
+from ..models import UserAchievement
+from ..notifications import achievement_item
+from ..transformers import AchievementCategoryTransform, AchievementTransform
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+    from bd_models.models import Player as PlayerModel
+
+    from ..models import AchievementCategory
+
+
+def progress_bar(progress: int, target: int, length: int = 10) -> str:
+    filled = min(length, progress * length // max(target, 1))
+    return "\N{BLACK PARALLELOGRAM}" * filled + "\N{WHITE PARALLELOGRAM}" * (length - filled)
 
 
 class Achievement(commands.GroupCog):
+    """
+    Check your achievements.
+    """
+
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
+        # players whose time-based achievements were checked recently
+        self._recent_activity: TTLCache[int, bool] = TTLCache(maxsize=100_000, ttl=60 * 60)
 
-    @app_commands.command()
-    @app_commands.checks.cooldown(1, 86400, key=lambda i: i.user.id)
-    async def sync(self, interaction: discord.Interaction["BallsDexBot"]):
-        """
-        Synchronize your progress and claim any achievements you've earned
-        """
-        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
-
-        if not player:
-            await interaction.response.send_message(f"You're not registered in {settings.bot_name}", ephemeral=True)
+    @commands.Cog.listener()
+    async def on_app_command_completion(
+        self, interaction: discord.Interaction["BallsDexBot"], command: app_commands.Command | app_commands.ContextMenu
+    ):
+        if interaction.user.id in self._recent_activity:
             return
+        self._recent_activity[interaction.user.id] = True
+        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
+        if player:
+            await engine.dispatch(player, Event.ACTIVITY, channel_id=interaction.channel_id)
 
-        await interaction.response.defer(thinking=True)
-        message = await interaction.followup.send(
-            "Synchronizing achievements (it may take a few minutes)...", wait=True
+    async def _visible_achievements(
+        self, player: "PlayerModel | None", category: "AchievementCategory | None"
+    ) -> tuple[list[AchievementModel], dict[int, UserAchievement]]:
+        user_achievements = (
+            {ua.achievement_id: ua async for ua in UserAchievement.objects.filter(player=player)} if player else {}
         )
-        unlocked = await self._sync_achievements(player)
+        unlocked_ids = [achievement_id for achievement_id, ua in user_achievements.items() if ua.completed]
+        # retired achievements stay visible to the players who unlocked them
+        queryset = AchievementModel.objects.filter(
+            Q(status=AchievementModel.Status.ACTIVE) | Q(status=AchievementModel.Status.RETIRED, pk__in=unlocked_ids)
+        ).select_related("ball", "special", "group", "category")
+        if category:
+            queryset = queryset.filter(category=category)
+        return [achievement async for achievement in queryset], user_achievements
 
-        if not unlocked:
-            await interaction.followup.send("You don't have any pending achievement.")
-            return
-
-        entries: list[TextDisplay | Section] = []
-        for achievement in unlocked:
-            if achievement.thumbnail is not None:
-                file = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
-                section = Section(accessory=Thumbnail(file))
-                title = TextDisplay(f"**{achievement.name}**")
-                section.add_item(title)
-                if achievement.description:
-                    section.add_item(TextDisplay(achievement.description))
-                if achievement.currency_reward:
-                    section.add_item(TextDisplay(f"{format_currency(achievement.currency_reward, False, self.bot)}"))
-                entries.append(section)
-            else:
-                text = TextDisplay(f"**{achievement.name}\n**")
-                if achievement.description:
-                    text.content += f"{achievement.description}\n"
-                if achievement.currency_reward:
-                    text.content += format_currency(achievement.currency_reward, False, self.bot)
-                entries.append(text)
-
-        view = LayoutView()
-        view.add_item(TextDisplay(f"Synchronized! **{len(unlocked)}** have been completed."))
-        container = Container()
-        container.add_item(TextDisplay("# New Achievement(s) Unlocked!"))
-        container.add_item(Separator())
-        view.add_item(container)
-        menu = Menu(interaction.client, view, ChunkedListSource(entries, 5), ItemFormatter(container, 1))
-        await menu.init()
-        await message.edit(content=None, view=view)
-
-    @app_commands.command()
-    async def list(self, interaction: discord.Interaction["BallsDexBot"]):
+    @app_commands.command(name="list")
+    @app_commands.choices(
+        show=[
+            app_commands.Choice(name="All achievements", value="all"),
+            app_commands.Choice(name="Unlocked only", value="unlocked"),
+            app_commands.Choice(name="Locked only", value="locked"),
+        ],
+        sort=[
+            app_commands.Choice(name="Default order", value="default"),
+            app_commands.Choice(name="Recently unlocked first", value="recent"),
+            app_commands.Choice(name="Oldest unlocked first", value="oldest"),
+            app_commands.Choice(name="Closest to unlock first", value="progress"),
+        ],
+    )
+    async def achievement_list(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        show: app_commands.Choice[str] | None = None,
+        sort: app_commands.Choice[str] | None = None,
+        category: AchievementCategoryTransform | None = None,
+    ):
         """
-        Show the list of available achievements.
+        Show the list of achievements and your progress.
+
+        Parameters
+        ----------
+        show: str
+            Show every achievement, or only the unlocked or locked ones.
+        sort: str
+            How to order the achievements.
+        category: AchievementCategory
+            Only show the achievements of this category.
         """
-        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
-
-        if not player:
-            await interaction.response.send_message(f"You're not registered in {settings.bot_name}", ephemeral=True)
-            return
-
         await interaction.response.defer(thinking=True)
-        achievements = [x async for x in AchievementModel.objects.all()]
-        user_achievements = {ua.achievement_id: ua async for ua in UserAchievement.objects.filter(player=player)}
-        completed_achievements = {key: value for key, value in user_achievements.items() if value.completed}
+        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
+        achievements, user_achievements = await self._visible_achievements(player, category)
+        if not achievements:
+            await interaction.followup.send("There are no achievements to show yet.", ephemeral=True)
+            return
 
-        entries: list[TextDisplay | Section] = []
-        for achievement in achievements:
+        def is_unlocked(achievement: AchievementModel) -> bool:
             ua = user_achievements.get(achievement.pk)
-            if achievement.thumbnail is not None:
-                file = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
-                section = Section(accessory=Thumbnail(file))
-                title = TextDisplay(f"**{achievement.name}**")
-                if ua is not None:
-                    if ua.completed_at:
-                        title.content += f" ✅\n**Completed At:** {format_dt(ua.completed_at)}"
-                    else:
-                        title.content += f" ({ua.progress}/{achievement.target_value})"
-                section.add_item(title)
-                if achievement.description:
-                    section.add_item(TextDisplay(achievement.description))
-                if achievement.currency_reward:
-                    section.add_item(TextDisplay(f"{format_currency(achievement.currency_reward, False, self.bot)}"))
-                entries.append(section)
-            else:
-                text = TextDisplay(f"**{achievement.name}**")
-                if ua is not None:
-                    if ua.completed_at:
-                        text.content += " ✅\n"
-                    else:
-                        text.content += f" ({ua.progress}/{achievement.target_value})\n"
-                else:
-                    text.content += "\n"
-                if achievement.description:
-                    text.content += f"{achievement.description}\n"
-                if achievement.currency_reward:
-                    text.content += format_currency(achievement.currency_reward, False, self.bot)
-                if ua is not None and ua.completed_at:
-                    text.content += f"**Completed at:** {format_dt(ua.completed_at)}"
-                entries.append(text)
+            return ua is not None and ua.completed
 
-        percentage = round((len(completed_achievements) / len(achievements)) * 100)
+        def unlocked_at(achievement: AchievementModel) -> datetime:
+            ua = user_achievements.get(achievement.pk)
+            return (ua.completed_at if ua else None) or datetime.min.replace(tzinfo=UTC)
+
+        def ratio(achievement: AchievementModel) -> float:
+            ua = user_achievements.get(achievement.pk)
+            return (ua.progress if ua else 0) / engine.target(achievement)
+
+        unlocked = [achievement for achievement in achievements if is_unlocked(achievement)]
+        locked = [achievement for achievement in achievements if not is_unlocked(achievement)]
+        total, unlocked_count = len(achievements), len(unlocked)
+
+        match sort.value if sort else "default":
+            case "recent":
+                unlocked.sort(key=unlocked_at, reverse=True)
+                ordered = unlocked + locked
+            case "oldest":
+                unlocked.sort(key=unlocked_at)
+                ordered = unlocked + locked
+            case "progress":
+                locked.sort(key=ratio, reverse=True)
+                ordered = locked + unlocked
+            case _:
+                ordered = achievements
+        if show and show.value == "unlocked":
+            ordered = [achievement for achievement in ordered if is_unlocked(achievement)]
+        elif show and show.value == "locked":
+            ordered = [achievement for achievement in ordered if not is_unlocked(achievement)]
+        if not ordered:
+            await interaction.followup.send(
+                "You haven't unlocked any achievement yet!"
+                if show and show.value == "unlocked"
+                else "You unlocked every achievement, congratulations!",
+                ephemeral=True,
+            )
+            return
+
+        entries = [self._entry(achievement, user_achievements.get(achievement.pk)) for achievement in ordered]
+        percentage = round(unlocked_count * 100 / total)
+        subtitle = f"-# {unlocked_count}/{total} unlocked ({percentage}%)"
+        if category:
+            subtitle += f" • {category}"
         view = LayoutView()
         view.restrict_author(interaction.user.id)
-        container = Container()
-        container.add_item(TextDisplay(f"# {settings.bot_name} Achievements"))
-        container.add_item(TextDisplay(f"{len(completed_achievements)}/{len(achievements)} ({percentage}%)"))
-        container.add_item(Separator())
+        container = Container(
+            TextDisplay(f"# {interaction.user.display_name}'s {settings.bot_name} achievements"),
+            TextDisplay(subtitle),
+            Separator(),
+            accent_colour=settings.embed_colour,
+        )
         view.add_item(container)
-        menu = Menu(interaction.client, view, ChunkedListSource(entries, 5), ItemFormatter(container, 2))
+        menu = Menu(self.bot, view, ChunkedListSource(entries, 5), ItemFormatter(container, 2))
+        await menu.init()
+        await interaction.followup.send(view=view)
+
+    def _entry(self, achievement: AchievementModel, ua: UserAchievement | None) -> discord.ui.Item:
+        if ua and ua.completed:
+            unlocked = f" • unlocked {format_dt(ua.completed_at, 'R')}" if ua.completed_at else ""
+            heading = f"\N{WHITE HEAVY CHECK MARK} **{achievement.name}**{unlocked}"
+            return achievement_item(self.bot, achievement, heading=heading)
+        if achievement.hidden:
+            return TextDisplay("\N{BLACK QUESTION MARK ORNAMENT} **Secret achievement**\nKeep playing to discover it!")
+        target = engine.target(achievement)
+        progress = ua.progress if ua else 0
+        heading = f"\N{LOCK} **{achievement.name}** • {progress}/{target} {progress_bar(progress, target)}"
+        return achievement_item(self.bot, achievement, heading=heading)
+
+    @app_commands.command()
+    @app_commands.checks.cooldown(1, 300, key=lambda i: i.user.id)
+    async def sync(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Refresh your progress and claim the achievements you already earned.
+        """
+        await interaction.response.defer(thinking=True)
+        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
+        if player is None:
+            await interaction.followup.send(f"You're not registered in {settings.bot_name}.", ephemeral=True)
+            return
+
+        unlocked = await engine.sync_player(player)
+        if not unlocked:
+            await interaction.followup.send(
+                "Your progress is up to date, you don't have any pending achievement.\n"
+                "-# Achievements counting actions, like catches or trades, are counted when you play.",
+                ephemeral=True,
+            )
+            return
+
+        view = LayoutView()
+        container = Container(
+            TextDisplay(f"## \N{TROPHY} {len(unlocked)} achievement(s) unlocked!"),
+            Separator(),
+            accent_colour=settings.embed_colour,
+        )
+        view.add_item(container)
+        entries = [achievement_item(self.bot, achievement) for achievement in unlocked]
+        menu = Menu(self.bot, view, ChunkedListSource(entries, 5), ItemFormatter(container, 2))
         await menu.init()
         await interaction.followup.send(view=view)
 
@@ -152,99 +223,30 @@ class Achievement(commands.GroupCog):
             The achievement to check.
         """
         player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
+        ua = await UserAchievement.objects.filter(player=player, achievement=achievement).afirst() if player else None
+        target = engine.target(achievement)
 
-        if not player:
-            await interaction.response.send_message(f"You're not registered in {settings.bot_name}", ephemeral=True)
-            return
-
-        user_achievement, _ = await UserAchievement.objects.aget_or_create(player=player, achievement=achievement)
-
-        container = Container()
-        container.add_item(TextDisplay(f"# {achievement.name}"))
-        container.add_item(Separator())
-        if achievement.thumbnail is not None:
-            thumbnail_url = f"{settings.site_base_url}/media/{achievement.thumbnail.name}"
-            section = Section(accessory=Thumbnail(thumbnail_url))
-            if achievement.description:
-                section.add_item(TextDisplay(achievement.description))
-            if achievement.currency_reward:
-                section.add_item(
-                    TextDisplay(f"**Reward:** {format_currency(achievement.currency_reward, False, self.bot)}")
-                )
-            if user_achievement.completed_at:
-                section.add_item(TextDisplay(f"**Unlocked at:** {format_dt(user_achievement.completed_at)}"))
-            else:
-                section.add_item(TextDisplay(f"**Progress:** {user_achievement.progress}/{achievement.target_value}"))
-            container.add_item(section)
+        if ua and ua.completed:
+            status = "\N{WHITE HEAVY CHECK MARK} Unlocked" + (
+                f" {format_dt(ua.completed_at)}" if ua.completed_at else ""
+            )
+        elif achievement.status == AchievementModel.Status.RETIRED:
+            status = "\N{NO ENTRY SIGN} This achievement can't be unlocked anymore."
         else:
-            if achievement.description:
-                container.add_item(TextDisplay(achievement.description))
-            if achievement.currency_reward:
-                container.add_item(
-                    TextDisplay(f"**Reward:** {format_currency(achievement.currency_reward, False, self.bot)}")
-                )
-            if user_achievement.completed_at:
-                container.add_item(TextDisplay(f"**Unlocked at:** {format_dt(user_achievement.completed_at)}"))
-            else:
-                container.add_item(TextDisplay(f"**Progress:** {user_achievement.progress}/{achievement.target_value}"))
+            progress = ua.progress if ua else 0
+            status = f"**Progress:** {progress}/{target} {progress_bar(progress, target)}"
+        unlocked_by = await UserAchievement.objects.filter(achievement=achievement, completed=True).acount()
+        details = f"{status}\n-# Unlocked by {unlocked_by:,} player{'s' if unlocked_by != 1 else ''}"
+        if achievement.category:
+            details += f" • {achievement.category}"
 
         view = LayoutView()
-        view.add_item(container)
-        await interaction.response.send_message(view=view)
-
-    async def _sync_achievements(self, player: Player) -> list[AchievementModel]:
-        unlocked = []
-
-        all_achievements = [x async for x in AchievementModel.objects.prefetch_related("prerequisities").all()]
-        existing_ua = {ua.achievement_id: ua async for ua in UserAchievement.objects.filter(player=player)}
-
-        ball_instances = [x async for x in BallInstance.all_objects.filter(player=player)]
-        trades = [x async for x in Trade.objects.filter(Q(player1=player) | Q(player2=player))]
-        friendships = [x async for x in Friendship.objects.filter(Q(player1=player) | Q(player2=player))]
-
-        trade_player_ids = {i.trade_player_id for i in ball_instances if i.trade_player_id}
-        trade_players = (
-            {p.pk: p async for p in Player.objects.filter(pk__in=trade_player_ids)} if trade_player_ids else {}
-        )
-
-        async def run(achievement_type, **context):
-            return await progress_achievement(
-                player, achievement_type, achievements=all_achievements, existing_ua=existing_ua, **context
+        view.add_item(
+            Container(
+                TextDisplay(f"# {achievement.name}"),
+                Separator(),
+                achievement_item(self.bot, achievement, heading="", details=details),
+                accent_colour=settings.embed_colour,
             )
-
-        for t in (
-            AchievementType.BALL_COUNT,
-            AchievementType.COMPLETE_GROUP,
-            AchievementType.COMPLETION_PERCENTAGE,
-            AchievementType.PLAYTIME,
-        ):
-            unlocked += await run(t)
-
-        special_ids = {i.special_id for i in ball_instances if i.special_id}
-        for special_id in special_ids:
-            if special := specials.get(special_id):
-                unlocked += await run(AchievementType.FIRST_SPECIAL, special=special)
-
-        for instance in ball_instances:
-            unlocked += await run(AchievementType.FIRST_CATCH)
-            unlocked += await run(AchievementType.CATCH_BALL, instance=instance)
-            if instance.catch_date and instance.spawned_time:
-                elapsed = (instance.catch_date - instance.spawned_time).total_seconds()
-                unlocked += await run(AchievementType.FASTEST_CATCHER, elapsed_seconds=elapsed)
-            if instance.trade_player_id is not None:
-                trade_player = trade_players.get(instance.trade_player_id)
-                if trade_player:
-                    unlocked += await run(AchievementType.RECEIVE_BALL, user_id=trade_player.discord_id)
-            if instance.favorite:
-                unlocked += await run(AchievementType.FIRST_FAVORITE_BALL)
-
-        for trade in trades:
-            received = trade.player2_money if trade.player1_id == player.pk else trade.player1_money
-            unlocked += await run(AchievementType.COMPLETE_TRADE, received_currency=received)
-            unlocked += await run(AchievementType.FIRST_TRADE)
-
-        for _ in friendships:
-            unlocked += await run(AchievementType.FIRST_FRIEND)
-            unlocked += await run(AchievementType.HAVE_FRIEND)
-
-        return unlocked
+        )
+        await interaction.response.send_message(view=view)

@@ -9,6 +9,7 @@ import discord
 from discord.ext.commands import Paginator as CommandPaginator
 
 from ballsdex.core.bot import BallsDexBot
+from settings.models import settings
 
 from . import menus
 
@@ -257,7 +258,7 @@ class FieldPageSource(menus.ListPageSource):
         clear_description: bool = True,
     ) -> None:
         super().__init__(entries, per_page=per_page)
-        self.embed: discord.Embed = discord.Embed(colour=discord.Colour.blurple())
+        self.embed: discord.Embed = discord.Embed(colour=settings.embed_colour)
         self.clear_description: bool = clear_description
         self.inline: bool = inline
 
@@ -315,4 +316,4 @@ class SimplePages(Pages):
 
     def __init__(self, entries, *, interaction: discord.Interaction["BallsDexBot"], per_page: int = 12):
         super().__init__(SimplePageSource(entries, per_page=per_page), interaction=interaction)
-        self.embed = discord.Embed(colour=discord.Colour.blurple())
+        self.embed = discord.Embed(colour=settings.embed_colour)

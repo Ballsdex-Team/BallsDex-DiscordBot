@@ -147,10 +147,10 @@ async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7
             title=f"{guild.name} ({guild.id})",
             url=url,
             description=f"**Owner:** {owner} ({guild.owner_id})",
-            color=discord.Color.blurple(),
+            color=settings.embed_colour,
         )
     else:
-        embed = discord.Embed(title=f"{guild.name} ({guild.id})", url=url, color=discord.Color.blurple())
+        embed = discord.Embed(title=f"{guild.name} ({guild.id})", url=url, color=settings.embed_colour)
     embed.add_field(name="Members:", value=guild.member_count)
     embed.add_field(name="Spawn enabled:", value=spawn_enabled)
     embed.add_field(name="Created at:", value=format_dt(guild.created_at, style="F"))
@@ -203,7 +203,7 @@ async def user(ctx: commands.Context[BallsDexBot], user: discord.User, days: int
             f"**Mention Policy:** {MENTION_POLICY_MAP[player.mention_policy]}\n"
             f"**Friend Policy:** {FRIEND_POLICY_MAP[player.friend_policy]}"
         ),
-        color=discord.Color.blurple(),
+        color=settings.embed_colour,
     )
     embed.add_field(
         name=f"{settings.plural_collectible_name.title()} caught ({days} days):", value=len(total_user_balls)

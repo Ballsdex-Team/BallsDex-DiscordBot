@@ -1,23 +1,38 @@
-import random
-from datetime import datetime
-from typing import TYPE_CHECKING, Literal
+from collections import defaultdict
+from typing import TYPE_CHECKING
 
 import discord
+from asgiref.sync import sync_to_async
 from collector_app.models import Collector as CollectorModel
-from collector_app.models import CollectorInstance, CollectorRequirement
+from collector_app.models import CollectorInstance, CollectorRequirement, CollectorTier
 from discord import app_commands
-from discord.ext import commands
-from django.db.models import QuerySet
-from django.utils import timezone
+from discord.ext import commands, tasks
+from discord.ui import Separator, TextDisplay
+from discord.utils import format_dt
+from django.db.models import Prefetch
 
+from ballsdex.core.discord import Container, LayoutView
+from ballsdex.core.utils.menus import Menu, TextFormatter, TextSource
 from ballsdex.core.utils.menus.old import FieldPageSource, Pages
-from ballsdex.settings import settings
-from bd_models.models import BallInstance, Player
+from bd_models.models import Player
+from bd_models.signals import ownership_changed
+from settings.models import settings
 
+from .monitoring import CollectorMonitor
+from .requirements import (
+    collector_card_special_ids,
+    evaluate_requirements,
+    evaluate_with_counts,
+    owned_counts,
+    tier_requirements,
+)
 from .transformers import CollectorEnabledTransform
+from .views import CollectorClaimView, RecipePage, TierState, load_tier_states
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+
+MONITOR_DISPATCH_UID = "collector_monitoring"
 
 
 class Collector(commands.GroupCog):
@@ -27,67 +42,132 @@ class Collector(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
+        self.monitor = CollectorMonitor(bot)
+
+    async def cog_load(self):
+        ownership_changed.connect(self.monitor.on_ownership_changed, dispatch_uid=MONITOR_DISPATCH_UID)
+        self.monitoring_sweep.start()
+
+    async def cog_unload(self):
+        ownership_changed.disconnect(dispatch_uid=MONITOR_DISPATCH_UID)
+        self.monitoring_sweep.cancel()
+
+    @tasks.loop(minutes=10)
+    async def monitoring_sweep(self):
+        await self.monitor.sweep()
+
+    @monitoring_sweep.before_loop
+    async def before_monitoring_sweep(self):
+        await self.bot.wait_until_ready()
 
     @app_commands.command()
-    async def claim(self, interaction: discord.Interaction["BallsDexBot"], collector: CollectorEnabledTransform):
+    @app_commands.choices(
+        show=[
+            app_commands.Choice(name="Ready to claim", value="ready"),
+            app_commands.Choice(name="Every recipe", value="all"),
+        ]
+    )
+    async def claim(
+        self,
+        interaction: discord.Interaction["BallsDexBot"],
+        collector: CollectorEnabledTransform | None = None,
+        show: app_commands.Choice[str] | None = None,
+    ):
         """
         Claim a collector card.
 
         Parameters
         ----------
         collector: Collector
-            The collector to claim.
+            The collector to claim. Leave it empty to browse every recipe one by one.
+        show: str
+            When browsing, show the recipes you can claim right now or all of them.
         """
-        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        if await CollectorInstance.objects.filter(player=player, collector=collector).aexists():
-            await interaction.response.send_message("You've claimed this collector card!", ephemeral=True)
-            return
-
         await interaction.response.defer(thinking=True)
+        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        only_ready = show is None or show.value == "ready"
 
-        requirements = [x async for x in collector.requirements.all()]
-        if not requirements:
-            instance = await BallInstance.objects.acreate(
-                player=player,
-                ball=collector.cached_ball,
-                health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
-                attack_bonus=random.randint(settings.max_attack_bonus, settings.max_attack_bonus),
-                special=collector.cached_special,
-                tradeable=collector.tradeable,
-                catch_date=timezone.now(),
-                server_id=interaction.guild_id,
+        if collector is not None:
+            tiers = [
+                tier
+                async for tier in CollectorTier.objects.filter(collector=collector, enabled=True)
+                .select_related("level")
+                .order_by("level__position", "level_id")
+            ]
+            if not tiers:
+                await interaction.followup.send("This collector can't be claimed right now.", ephemeral=True)
+                return
+            states = await sync_to_async(load_tier_states)(player.pk, tiers)
+            pages = [RecipePage(collector, tier, state) for tier, state in zip(tiers, states)]
+            # one page per recipe, opened on the one the player can claim, or else still work on
+            index = next(
+                (i for i, page in enumerate(pages) if page.ready),
+                next((i for i, page in enumerate(pages) if page.pending), 0),
             )
+        else:
+            pages = await self._browse_pages(player, only_ready=only_ready)
+            index = 0
+            if not pages:
+                await interaction.followup.send(
+                    "You can't claim any collector card right now. Use `show: Every recipe` to see them all "
+                    "and what you're missing."
+                    if only_ready
+                    else f"{settings.bot_name} doesn't have any collector active.",
+                    ephemeral=True,
+                )
+                return
 
-            await CollectorInstance.objects.acreate(player=player, collector=collector)
-            await interaction.followup.send(
-                f"You've claimed **{collector.name}** collector!\n"
-                f"{instance.description(include_emoji=True, bot=self.bot)}"
+        view = CollectorClaimView(self.bot, player, pages, index=index)
+        view.restrict_author(interaction.user.id)
+        await view.refresh()
+        view.message = await interaction.followup.send(view=view, wait=True)
+
+    async def _browse_pages(self, player: Player, *, only_ready: bool) -> list[RecipePage]:
+        """
+        One page per recipe, with the player's progress on it. Everything is counted from a single summary of the
+        player's treasures, so browsing hundreds of collectors stays cheap.
+        """
+        tiers = [
+            tier
+            async for tier in CollectorTier.objects.filter(enabled=True)
+            .select_related("level", "collector")
+            .order_by("collector__name", "level__position", "level_id")
+        ]
+        tiers = [tier for tier in tiers if tier.collector.active]
+        if not tiers:
+            return []
+
+        requirements: dict[tuple[int, int], list[CollectorRequirement]] = defaultdict(list)
+        async for requirement in CollectorRequirement.objects.filter(
+            collector_id__in={tier.collector_id for tier in tiers}
+        ).select_related("ball", "special"):
+            requirements[(requirement.collector_id, requirement.level_id)].append(requirement)
+        claimed = {
+            (collector_id, level_id)
+            async for collector_id, level_id in CollectorInstance.objects.filter(
+                player=player, revoked_at__isnull=True
+            ).values_list("collector_id", "level_id")
+        }
+        counts = await sync_to_async(owned_counts)(player.pk)
+
+        pages = [
+            RecipePage(
+                tier.collector,
+                tier,
+                TierState(
+                    tier=tier,
+                    claimed=(tier.collector_id, tier.level_id) in claimed,
+                    statuses=evaluate_with_counts(counts, requirements[(tier.collector_id, tier.level_id)]),
+                ),
             )
-            return
+            for tier in tiers
+        ]
 
-        qs = BallInstance.objects.filter(player=player).order_by("-catch_date")
-        result = await self._check_requirements(qs, requirements)
-        if isinstance(result, tuple):
-            result, msg = result
-            await interaction.followup.send(msg)
-            return
-
-        instance = await BallInstance.objects.acreate(
-            player=player,
-            ball=collector.cached_ball,
-            health_bonus=random.randint(-settings.max_health_bonus, settings.max_health_bonus),
-            attack_bonus=random.randint(settings.max_attack_bonus, settings.max_attack_bonus),
-            special=collector.cached_special,
-            tradeable=collector.tradeable,
-            catch_date=timezone.now(),
-            server_id=interaction.guild_id,
-        )
-
-        await CollectorInstance.objects.acreate(player=player, collector=collector)
-        await interaction.followup.send(
-            f"You've claimed **{collector.name}** collector!\n{instance.description(include_emoji=True, bot=self.bot)}"
-        )
-        return
+        if only_ready:
+            return [page for page in pages if page.ready]
+        # the sort is stable: the recipes of a collector stay in the order of their tiers
+        pages.sort(key=lambda page: (not page.ready, page.missing_count, page.collector.name))
+        return pages
 
     @app_commands.command(name="list")
     async def collector_list(self, interaction: discord.Interaction["BallsDexBot"]):
@@ -95,13 +175,16 @@ class Collector(commands.GroupCog):
         Check all active collectors.
         """
         await interaction.response.defer(thinking=True)
+        tiers = CollectorTier.objects.filter(enabled=True).select_related("level").order_by("level__position")
+        requirements = CollectorRequirement.objects.select_related("ball", "special").order_by("amount", "pk")
         collectors = [
             x
-            async for x in CollectorModel.objects.prefetch_related("requirements").all()
-            if (x.start_date or datetime.min.replace(tzinfo=timezone.get_default_timezone()))
-            <= timezone.now()
-            <= (x.end_date or datetime.max.replace(tzinfo=timezone.get_default_timezone()))
+            async for x in CollectorModel.objects.prefetch_related(
+                Prefetch("tiers", tiers), Prefetch("requirements", requirements)
+            ).order_by("name")
+            if x.active
         ]
+        collectors = [x for x in collectors if x.tiers.all()]  # type: ignore
 
         if not collectors:
             await interaction.followup.send(f"{settings.bot_name} doesn't have any collectors active.", ephemeral=True)
@@ -109,44 +192,85 @@ class Collector(commands.GroupCog):
 
         entries: list[tuple[str, str]] = []
         for collector in collectors:
-            description = f"Collector {settings.collectible_name}: {collector.cached_ball}\n\n"
-            i = 1
-            async for requirement in collector.requirements.all():
-                desc_requirement = f"**Requirement #{i}:**\nAmount: {requirement.amount}\n"
-                if requirement.cached_ball:
-                    desc_requirement += f"{settings.collectible_name.title()}: {requirement.cached_ball.country}\n"
-                if requirement.cached_special:
-                    desc_requirement += f"Special: {requirement.cached_special.name}\n"
-                description += desc_requirement
+            requirements_by_level: dict[int, list[str]] = defaultdict(list)
+            for requirement in collector.requirements.all():
+                name = " ".join(
+                    x
+                    for x in (
+                        requirement.cached_special.name if requirement.cached_special else "",
+                        requirement.cached_ball.country if requirement.cached_ball else "",
+                    )
+                    if x
+                )
+                requirements_by_level[requirement.level_id].append(
+                    f"{requirement.amount}× {name or settings.plural_collectible_name}"
+                )
 
-            entries.append((f"{collector.name}", description))
+            lines = [f"{settings.collectible_name.title()}: {collector.cached_ball}"]
+            for tier in collector.tiers.all():
+                soon = "" if tier.level.claimable else " *(not available yet)*"
+                listed = ", ".join(requirements_by_level[tier.level_id]) or "no requirement"
+                lines.append(f"**{tier.level.name}**{soon}: {listed}")
+            entries.append((collector.name, "\n".join(lines)[:1024]))
+
         source = FieldPageSource(entries, per_page=3)
         source.embed.title = "Active Collector List"
-
         pages = Pages(source, interaction=interaction)
         await pages.start()
 
-    async def _check_requirements(
-        self, balls: QuerySet[BallInstance], requirements: list[CollectorRequirement]
-    ) -> Literal[True] | tuple[Literal[False], str]:
-        for i, requirement in enumerate(requirements, start=1):
-            qs = balls
-            text = ""
-            if requirement.cached_ball:
-                qs = qs.filter(ball=requirement.cached_ball)
-                text += f"{requirement.cached_ball.country} "
-            if requirement.cached_special:
-                qs = qs.filter(special=requirement.cached_special)
-                text += f"{requirement.cached_special.name}"
-            count = await qs.acount()
-            if not count >= requirement.amount:
-                grammar = settings.collectible_name if count == 1 else settings.plural_collectible_name
-                return (
-                    False,
-                    f"You don't meet requirement #{i}: **X{requirement.amount} {text if text else grammar}**",
-                )
-            if requirement.delete_balls:
-                ids = qs[: requirement.amount].values_list("id", flat=True)
-                await BallInstance.objects.filter(id__in=ids).aupdate(deleted=True)
+    @app_commands.command()
+    async def status(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Check your collector cards, and the ones you're about to lose.
+        """
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
+        instances = []
+        if player:
+            instances = [
+                instance
+                async for instance in CollectorInstance.objects.filter(player=player, revoked_at__isnull=True)
+                .select_related("collector", "level")
+                .order_by("collector__name", "level__position")
+            ]
+        if not instances:
+            await interaction.followup.send("You haven't claimed any collector card yet.", ephemeral=True)
+            return
 
-        return True
+        at_risk = [instance for instance in instances if instance.at_risk_since]
+        excluded = await sync_to_async(collector_card_special_ids)()
+        lines = []
+        if at_risk:
+            lines.append("## \N{WARNING SIGN} At risk")
+            for instance in at_risk:
+                requirements = await sync_to_async(tier_requirements)(instance, include_consumed=False)
+                statuses = await sync_to_async(evaluate_requirements)(player.pk, requirements, excluded)  # type: ignore
+                missing = "\n".join(status.describe(self.bot) for status in statuses if not status.met)
+                lines.append(
+                    f"**{instance.collector.name}** ({instance.level.name}), taken back "
+                    f"{format_dt(instance.grace_ends_at, 'R')} unless you get back:\n{missing}\n"  # type: ignore
+                )
+        lines.append("## Your collector cards")
+        for instance in instances:
+            if instance.at_risk_since:
+                continue
+            icon = "\N{SHIELD}" if instance.monitored else "\N{SMALL BLUE DIAMOND}"
+            lines.append(f"{icon} **{instance.collector.name}** ({instance.level.name})")
+        lines.append(
+            "\n-# \N{SHIELD} cards are taken back if you stop meeting their requirements for too long, "
+            "\N{SMALL BLUE DIAMOND} cards were claimed before that rule and are never taken back."
+        )
+
+        view = LayoutView()
+        display = TextDisplay("")
+        view.add_item(
+            Container(
+                TextDisplay(f"# {interaction.user.display_name}'s collector cards"),
+                Separator(),
+                display,
+                accent_colour=settings.embed_colour,
+            )
+        )
+        menu = Menu(self.bot, view, TextSource("\n".join(lines), page_length=3000), TextFormatter(display))
+        await menu.init()
+        await interaction.followup.send(view=view, ephemeral=True)

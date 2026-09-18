@@ -174,6 +174,6 @@ class Money(commands.GroupCog):
             lines.append(f"+{candidate.bonus_amount:,} bonus applied for being a <@&{candidate.role_id}> supporter")
         lines.append(f"Come back tomorrow {format_dt(cooldown_end, 'R')}")
 
-        embed = discord.Embed(description="\n".join(lines), color=discord.Colour.gold())
+        embed = discord.Embed(description="\n".join(lines), color=settings.embed_colour)
         embed.set_footer(text=f"New balance: {player.money:,}")
         await interaction.followup.send(embed=embed)

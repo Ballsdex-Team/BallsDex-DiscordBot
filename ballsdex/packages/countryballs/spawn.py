@@ -198,7 +198,7 @@ class SpawnManager(BaseSpawnManager):
 
         embed = discord.Embed()
         embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else None)
-        embed.colour = discord.Colour.orange()
+        embed.colour = settings.embed_colour
 
         delta = (
             (ctx.interaction.created_at if ctx.interaction else ctx.message.created_at) - cooldown.time

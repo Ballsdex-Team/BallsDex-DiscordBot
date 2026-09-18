@@ -5,6 +5,7 @@ import re
 import warnings
 from typing import TYPE_CHECKING, cast
 
+import discord
 from django.conf import settings as django_settings
 from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
@@ -20,6 +21,7 @@ DISCORD_INVITE_RE = re.compile(r"^https?://(discord.gg|discord(app)?.com/invite)
 DISCORD_WEBHOOK_RE = re.compile(r"^https://discord.com/api/webhooks/[0-9]{17,22}/[a-zA-Z0-9-_]{68}$")
 SENTRY_ENV_RE = re.compile(r"^(?!None$)[^\s/]{,64}$")
 PYTHON_PATH_RE = re.compile(r"^[a-zA-Z_][\\.a-zA-Z0-9_]+$")
+HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 class Settings(models.Model):
@@ -114,6 +116,22 @@ class Settings(models.Model):
         help_text="Whether to show the rarity on the card (replaces economy icon)", default=False
     )
     catch_button_label = models.CharField(max_length=80, help_text="Label of the catch button", default="Catch me")
+    embed_color = models.CharField(
+        max_length=7,
+        default="#00FFFF",
+        help_text="Hex color of every embed and message box sent by the bot, for instance #00FFFF for cyan.",
+        validators=(RegexValidator(HEX_COLOR_RE, message="Enter a hex color such as #00FFFF."),),
+    )
+    artist_credits_url = models.URLField(
+        blank=True,
+        default="",
+        help_text="Link to the page crediting the artists (a GitHub file for instance). "
+        "Shown in /about and when displaying a card.",
+    )
+
+    @cached_property
+    def embed_colour(self) -> discord.Colour:
+        return discord.Colour(int(self.embed_color.removeprefix("#"), 16))
 
     class TipPosition(models.IntegerChoices):
         ABOVE_BUTTON = 1, "Above the catch button"

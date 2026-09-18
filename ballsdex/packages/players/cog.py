@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
 
 import discord
-from achievement_app.models import AchievementType, notify_user, progress_achievement
+from achievement_app.engine import Event
+from achievement_app.engine import engine as achievement_engine
 from discord import app_commands
 from discord.ext import commands
 from django.db.models import Q
@@ -129,20 +130,9 @@ class Player(commands.GroupCog):
             return
 
         await Friendship.objects.acreate(player1=player1, player2=player2)
-        p1_unlocked = []
-        p2_unlocked = []
-
-        p1_unlocked += await progress_achievement(player1, AchievementType.FIRST_FRIEND)
-        p1_unlocked += await progress_achievement(player1, AchievementType.HAVE_FRIEND)
-        p2_unlocked += await progress_achievement(player2, AchievementType.FIRST_FRIEND)
-        p2_unlocked += await progress_achievement(player2, AchievementType.HAVE_FRIEND)
-
-        if p1_unlocked:
-            await notify_user(p1_unlocked, user=interaction.user, channel=interaction.channel)  # type: ignore
-
-        if p2_unlocked:
-            await notify_user(p2_unlocked, user=user, channel=interaction.channel)  # type: ignore
         self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
+        await achievement_engine.dispatch(player1, Event.FRIEND, channel_id=interaction.channel_id)
+        await achievement_engine.dispatch(player2, Event.FRIEND, channel_id=interaction.channel_id)
 
     @friend.command(name="remove")
     async def friend_remove(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):
@@ -360,7 +350,7 @@ class Player(commands.GroupCog):
         blocks = await Block.objects.filter(player1__discord_id=interaction.user.id).acount()
 
         embed = discord.Embed(
-            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=discord.Color.blurple()
+            title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=settings.embed_colour
         )
         embed.description = (
             "Here are your statistics and settings in the bot!\n"

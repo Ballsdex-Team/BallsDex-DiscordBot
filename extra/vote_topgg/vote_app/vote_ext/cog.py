@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord.ui import Button
 
 from ballsdex.core.discord import View
+from settings.models import settings
 
 from ..models import VoteSettings
 
@@ -40,7 +41,7 @@ class Vote(commands.Cog):
                 f"[Click here to vote]({self.vote_settings.vote_url})\n\n"
                 "You'll receive a reward by DM once your vote is confirmed."
             ),
-            color=discord.Colour.blurple(),
+            color=settings.embed_colour,
         )
         await interaction.response.send_message(
             embed=embed, view=VoteView(self.vote_settings.vote_url), ephemeral=True

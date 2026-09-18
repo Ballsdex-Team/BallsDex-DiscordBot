@@ -74,6 +74,7 @@ class SettingsAdmin(admin.ModelAdmin):
                     "bot_name",
                     "balls_slash_name",
                     "site_base_url",
+                    "embed_color",
                 ),
             },
         ),
@@ -118,7 +119,14 @@ class SettingsAdmin(admin.ModelAdmin):
             "/about",
             {
                 "description": "These fields will personalize the /about command",
-                "fields": ("about_description", "discord_invite", "terms_of_service", "privacy_policy", "repository"),
+                "fields": (
+                    "about_description",
+                    "discord_invite",
+                    "terms_of_service",
+                    "privacy_policy",
+                    "repository",
+                    "artist_credits_url",
+                ),
             },
         ),
         (

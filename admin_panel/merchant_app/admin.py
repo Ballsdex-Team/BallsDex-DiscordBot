@@ -23,7 +23,7 @@ class MerchantItemAdmin(admin.ModelAdmin):
     autocomplete_fields = ("ball", "special")
     save_on_top = True
     fieldsets = [
-        (None, {"fields": ["name", "prize", "rarity"]}),
+        (None, {"fields": ["name", "prize", "rarity", "stock"]}),
         (
             "Time range",
             {
@@ -36,8 +36,8 @@ class MerchantItemAdmin(admin.ModelAdmin):
         ("Rewards", {"fields": ["ball", "special"]}),
     ]
 
-    list_display = ("name", "prize", "rarity", "ball_name", "special_name")
-    list_editable = ("rarity", "prize")
+    list_display = ("name", "prize", "rarity", "stock", "ball_name", "special_name")
+    list_editable = ("rarity", "prize", "stock")
     list_filter = ("created_at", "start_date", "end_date")
 
     search_fields = ["name", "pk"]

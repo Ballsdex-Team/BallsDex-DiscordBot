@@ -57,7 +57,7 @@ class SelectBallPackView(Pages):
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
             server_id=interaction.guild_id,
         )
-        embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
+        embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=settings.embed_colour)
         desc = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
         if special:
             desc += f"⚡ **Special:** {special.name}\n"
@@ -135,7 +135,7 @@ class ShopPages(Pages):
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
             server_id=interaction.guild_id,
         )
-        embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=discord.Color.gold())
+        embed = discord.Embed(title=f"🎁 You got {ball.country}!", color=settings.embed_colour)
         desc = f"📖 **Rarity:** {rarity}\n❤️ **Health:** {ball.health}\n⚔️ **Attack:** {ball.attack}\n"
         if special:
             desc += f"⚡ **Special:** {special.name}\n"
@@ -162,7 +162,7 @@ class ShopMenuSource(menus.ListPageSource):
 
     async def format_page(self, menu: ShopPages, page: Item) -> discord.Embed:
         menu._current_item = self.entries[menu.current_page]
-        embed = discord.Embed(title=page.name, color=discord.Color.blurple())
+        embed = discord.Embed(title=page.name, color=settings.embed_colour)
         embed.set_footer(text=f"Item {menu.current_page + 1}/{menu.source.get_max_pages()}")
         emoji = str(self.bot.get_emoji(page.emoji_id)) if page.emoji_id else ""
 

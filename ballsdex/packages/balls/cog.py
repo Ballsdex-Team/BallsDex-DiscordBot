@@ -4,6 +4,8 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, cast
 
 import discord
+from achievement_app.engine import Event
+from achievement_app.engine import engine as achievement_engine
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Container, LayoutView, TextDisplay
@@ -513,6 +515,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
                 f"is now a favorite {settings.collectible_name}!",
                 ephemeral=True,
             )
+            await achievement_engine.dispatch(player, Event.FAVORITE, channel_id=interaction.channel_id)
 
         else:
             countryball.favorite = False  # type: ignore
@@ -666,6 +669,8 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
         countryball.player = new_player
         countryball.trade_player = old_player
         countryball.favorite = False
+        # transient attribute, read by the achievements to congratulate the recipient where the gift was made
+        countryball._notify_channel_id = interaction.channel_id  # type: ignore
         await countryball.asave()
 
         trade = await Trade.objects.acreate(player1=old_player, player2=new_player)
@@ -1082,7 +1087,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
         embed = discord.Embed(
             title=f"Collection of {countryball.country}" if countryball else "Total Collection",
             description=desc,
-            color=discord.Color.blurple(),
+            color=settings.embed_colour,
         )
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         if countryball:

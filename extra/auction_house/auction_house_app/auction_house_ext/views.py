@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import discord
 
 from ballsdex.core.discord import View
+from settings.models import settings
 from settings.utils import format_currency
 
 from .. import services
@@ -13,8 +14,8 @@ if TYPE_CHECKING:
 
     from .cog import AuctionHouse
 
-# same vivid blue used across every Buggy's Auction House embed
-AUCTION_COLOR = discord.Colour.from_rgb(0, 132, 255)
+# every embed uses the color configured in the admin panel settings
+AUCTION_COLOR = settings.embed_colour
 
 
 class MyBidsView(View):
@@ -220,16 +221,19 @@ class FeaturedBidModal(discord.ui.Modal, title="Place your bid"):
             return
         amount = int(raw)
         try:
-            await self.cog.place_featured_bid(self.auction_id, interaction.user.id, amount)
+            auction, _, _, extension = await self.cog.place_featured_bid(self.auction_id, interaction.user.id, amount)
         except RuntimeError as error:
             await interaction.response.send_message(str(error), ephemeral=True)
             return
-        await interaction.response.send_message(
-            f"Bid of **{format_currency(amount, False, self.cog.bot)}** placed on featured auction "
-            f"#{self.auction_id}!",
-            ephemeral=True,
+        message = (
+            f"Bid of **{format_currency(amount, False, self.cog.bot)}** placed on featured auction #{self.auction_id}!"
         )
+        if extension:
+            message += f"\nThe auction was about to end, it has been extended by {extension} minutes."
+        await interaction.response.send_message(message, ephemeral=True)
         await self.cog._refresh_featured_embed(self.auction_id)
+        if extension:
+            await self.cog.announce_featured_extension(auction, extension)
 
 
 class FeaturedAuctionView(View):

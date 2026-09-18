@@ -32,6 +32,8 @@ from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.help import HelpCommand
 from ballsdex.core.metrics import PrometheusServer
+from ballsdex.core.theme import apply_theme
+from ballsdex.core.utils.background import set_bot_loop
 from ballsdex.core.utils.checks import check_perms
 from bd_models.models import (
     Ball,
@@ -260,6 +262,8 @@ class BallsDexBot(commands.AutoShardedBot):
         self.catch_log: set[int] = set()
         self.command_log: set[int] = set()
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
+        # discord_id -> channel where the user last interacted with the bot, to notify them where they play
+        self.recent_interaction_channels: TTLCache[int, int] = TTLCache(maxsize=100_000, ttl=60 * 10)
 
         if tracing.enabled():
             log.info("OpenTelemetry tracing is enabled.")
@@ -366,6 +370,8 @@ class BallsDexBot(commands.AutoShardedBot):
             return False
 
     async def setup_hook(self) -> None:
+        apply_theme()
+        set_bot_loop(asyncio.get_running_loop())
         await self.tree.set_translator(Translator())
         log.info("Starting up with %s shards...", self.shard_count)
         if self.gateway_url is None:
@@ -396,6 +402,10 @@ class BallsDexBot(commands.AutoShardedBot):
         if self.is_ready():
             await self.tree.load_command_mentions(cog=cog)
         # otherwise, bot is still starting, that will be done with the sync
+
+    async def on_interaction(self, interaction: discord.Interaction[Self]):
+        if interaction.channel_id is not None:
+            self.recent_interaction_channels[interaction.user.id] = interaction.channel_id
 
     async def on_ready(self):
         if self.cogs != {}:
