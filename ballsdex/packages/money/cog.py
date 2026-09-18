@@ -9,8 +9,10 @@ from discord import app_commands
 from discord.ext import commands
 from discord.utils import format_dt
 from django.db import transaction
+from django.db.models import Count, Sum
 from django.utils import timezone
 
+from ballsdex.core.utils.leaderboard import EXTRA_ROWS, LEADERBOARD_SIZE, send_leaderboard
 from ballsdex.core.utils.utils import can_mention
 from bd_models.models import Player, Trade
 from settings.models import settings
@@ -41,6 +43,32 @@ class Money(commands.GroupCog):
             balance = player.money
         await interaction.response.send_message(
             f"You have {format_currency(balance, shortened=False, bot=self.bot)}.", ephemeral=True
+        )
+
+    @app_commands.command()
+    async def leaderboard(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Show the top 20 richest players.
+        """
+        await interaction.response.defer(thinking=True)
+        holders = Player.objects.filter(money__gt=0)
+        totals = await holders.aaggregate(total=Sum("money"), players=Count("id"))
+        if not totals["total"]:
+            await interaction.followup.send(f"Nobody has any {settings.currency_plural} yet.", ephemeral=True)
+            return
+
+        currency = settings.currency_display_plural(self.bot)
+        await send_leaderboard(
+            interaction,
+            title=f"{(settings.currency_name or 'currency').capitalize()} Leaderboard",
+            subtitle=f"Total: {totals['total']:,} {currency} owned by {totals['players']:,} players",
+            ranking=[
+                x
+                async for x in holders.order_by("-money").values_list("discord_id", "money")[
+                    : LEADERBOARD_SIZE + EXTRA_ROWS
+                ]
+            ],
+            describe=lambda money: f"Balance: {money:,} {currency} ({money / totals['total'] * 100:.1f}% of all)",
         )
 
     @transaction.atomic()
