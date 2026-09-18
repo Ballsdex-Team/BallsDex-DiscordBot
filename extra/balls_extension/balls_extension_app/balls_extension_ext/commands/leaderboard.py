@@ -3,24 +3,17 @@ from typing import TYPE_CHECKING
 import discord
 from currency_app.models import Item, ItemBall
 from discord import app_commands
-from discord.ui import Container, Section, Separator, TextDisplay, Thumbnail
-from django.db.models import Count, Q
+from django.db.models import Count
 
-from ballsdex.core.discord import LayoutView
-from ballsdex.core.utils.menus import ChunkedListSource, ItemFormatter, Menu
-from ballsdex.core.utils.transformers import BallTransformer, SpecialEnabledTransform, TTLModelTransformer
-from bd_models.models import Ball, BallInstance, Player
+from ballsdex.core.utils.leaderboard import EXTRA_ROWS, LEADERBOARD_SIZE, send_leaderboard
+from ballsdex.core.utils.transformers import BallObtainableTransform, SpecialEnabledTransform, TTLModelTransformer
+from bd_models.models import BallInstance, Player
 from settings.models import settings
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
 
     from ballsdex.core.bot import BallsDexBot
-
-medals = {1: "🥇", 2: "🥈", 3: "🥉"}
-
-LEADERBOARD_SIZE = 20
-PER_PAGE = 5
 
 
 class PackTransformer(TTLModelTransformer[Item]):
@@ -35,32 +28,11 @@ class PackTransformer(TTLModelTransformer[Item]):
 PackTransform = app_commands.Transform[Item, PackTransformer]
 
 
-class ObtainableBallTransformer(BallTransformer):
-    """
-    Every treasure players can get: the ones spawning, and the ones only found in packs.
-    """
-
-    def get_queryset(self) -> "QuerySet[Ball]":
-        return Ball.objects.filter(Q(enabled=True) | Q(pk__in=ItemBall.objects.values("ball_id")))
-
-
-ObtainableBallTransform = app_commands.Transform[Ball, ObtainableBallTransformer]
-
-
-async def resolve_user(client: "BallsDexBot", discord_id: int) -> discord.User | None:
-    if user := client.get_user(discord_id):
-        return user
-    try:
-        return await client.fetch_user(discord_id)
-    except (discord.NotFound, discord.HTTPException):
-        return None
-
-
 @app_commands.command()
 async def leaderboard(
     interaction: discord.Interaction["BallsDexBot"],
     *,
-    countryball: ObtainableBallTransform | None = None,
+    countryball: BallObtainableTransform | None = None,
     special: SpecialEnabledTransform | None = None,
     pack_only: bool = False,
     pack: PackTransform | None = None,
@@ -106,46 +78,23 @@ async def leaderboard(
         )
         return
 
-    # a few more rows than needed, some users may not be reachable anymore
-    ranking = [
+    counts = [
         (row["player_id"], row["ball_count"])
         async for row in query.values("player_id")
         .annotate(ball_count=Count("id"))
-        .order_by("-ball_count")[: LEADERBOARD_SIZE + 10]
+        .order_by("-ball_count")[: LEADERBOARD_SIZE + EXTRA_ROWS]
     ]
-    players = {p.pk: p async for p in Player.objects.filter(id__in=[player_id for player_id, _ in ranking])}
-
-    entries: list[Section] = []
-    for player_id, ball_count in ranking:
-        if len(entries) == LEADERBOARD_SIZE:
-            break
-        user = await resolve_user(interaction.client, players[player_id].discord_id)
-        if user is None:
-            continue
-        top = len(entries) + 1
-        share = ball_count / totals["items"] * 100
-        entries.append(
-            Section(
-                TextDisplay(
-                    f"### Top {medals.get(top, top)}\n"
-                    f"> User: {user.display_name}\n"
-                    f"> Count: {ball_count:,} ({share:.1f}% of all)"
-                ),
-                accessory=Thumbnail(media=user.display_avatar.url),
-            )
+    discord_ids = {
+        player_id: discord_id
+        async for player_id, discord_id in Player.objects.filter(id__in=[x for x, _ in counts]).values_list(
+            "id", "discord_id"
         )
-
-    view = LayoutView()
-    view.restrict_author(interaction.user.id)
-    container = Container(
-        TextDisplay(f"# {settings.bot_name.capitalize()} Leaderboard{f' ({combined})' if combined else ''}"),
-        TextDisplay(
-            f"-# Total: {totals['items']:,} {settings.plural_collectible_name} owned by {totals['players']:,} players"
-        ),
-        Separator(),
-        accent_colour=settings.embed_colour,
+    }
+    await send_leaderboard(
+        interaction,
+        title=f"{settings.bot_name.capitalize()} Leaderboard{f' ({combined})' if combined else ''}",
+        subtitle=f"Total: {totals['items']:,} {settings.plural_collectible_name} "
+        f"owned by {totals['players']:,} players",
+        ranking=[(discord_ids[player_id], count) for player_id, count in counts],
+        describe=lambda count: f"Count: {count:,} ({count / totals['items'] * 100:.1f}% of all)",
     )
-    view.add_item(container)
-    menu = Menu(interaction.client, view, ChunkedListSource(entries, PER_PAGE), ItemFormatter(container, 2))
-    await menu.init()
-    await interaction.followup.send(view=view, allowed_mentions=discord.AllowedMentions(users=False))

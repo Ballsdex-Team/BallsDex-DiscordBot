@@ -12,6 +12,18 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 
+def member_role_ids(user: discord.abc.User) -> list[int]:
+    """
+    The IDs of every role of a server member, as sent by Discord with the interaction.
+
+    `Member.roles` silently leaves out the roles missing from the bot's cache, which happens behind a gateway proxy
+    that doesn't cache roles: a player with two bonus roles would only get one of them.
+    """
+    if not isinstance(user, discord.Member):
+        return []
+    return list(user._roles)
+
+
 async def is_staff(interaction: discord.Interaction["BallsDexBot"], *perms: str) -> bool:
     """
     Checks if an interacting user checks one of the following conditions:

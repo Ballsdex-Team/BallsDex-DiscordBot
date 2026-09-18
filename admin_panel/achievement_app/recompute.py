@@ -1,10 +1,10 @@
 """
 Retroactive progress: gives players the progress they already have on achievements based on what they own, for
 instance when a new collection achievement is created. Achievements counting actions (catches, trades...) can't be
-recomputed, the history of those actions isn't kept.
+recomputed, the history of those actions isn't kept, except the treasures exchanged: the trade history has them.
 """
 
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 
@@ -19,7 +19,19 @@ RECOMPUTABLE_TYPES = {
     AchievementType.FRIENDS,
     AchievementType.FAVORITES,
     AchievementType.PLAYTIME,
+    AchievementType.TRADE_TREASURES,
 }
+
+# every trade where both sides gave something (treasures or currency), with the treasures it exchanged: the other
+# trades are gifts, which also leave a trade behind
+EXCHANGES_SQL = """
+SELECT t.player1_id, t.player2_id, COUNT(o.id)
+FROM trade t
+JOIN tradeobject o ON o.trade_id = t.id
+GROUP BY t.id
+HAVING (COUNT(o.id) FILTER (WHERE o.player_id = t.player1_id) > 0 OR t.player1_money > 0)
+   AND (COUNT(o.id) FILTER (WHERE o.player_id = t.player2_id) > 0 OR t.player2_money > 0)
+"""
 
 
 def _progress_by_player(achievement: Achievement) -> tuple[dict[int, int], int]:
@@ -88,6 +100,18 @@ def _progress_by_player(achievement: Achievement) -> tuple[dict[int, int], int]:
         case AchievementType.FAVORITES:
             rows = BallInstance.objects.filter(favorite=True).values("player_id").annotate(progress=Count("id"))
             return {row["player_id"]: row["progress"] for row in rows}, target
+
+        case AchievementType.TRADE_TREASURES:
+            progress = {}
+            with connection.cursor() as cursor:
+                cursor.execute(EXCHANGES_SQL)
+                for player1_id, player2_id, exchanged in cursor.fetchall():
+                    for player_id in (player1_id, player2_id):
+                        if achievement.in_one_trade:
+                            progress[player_id] = max(progress.get(player_id, 0), exchanged)
+                        else:
+                            progress[player_id] = progress.get(player_id, 0) + exchanged
+            return {player_id: int(value) for player_id, value in progress.items()}, target
 
         case AchievementType.PLAYTIME:
             now = timezone.now()

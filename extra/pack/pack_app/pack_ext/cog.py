@@ -14,9 +14,9 @@ from django.db import transaction
 from django.utils import timezone
 from pack_models.models import PackBonusRole, PackResource, PackSettings
 
+from ballsdex.core.utils.utils import member_role_ids
 from bd_models.models import Ball, BallInstance, Player
 from settings.models import settings
-from settings.utils import format_currency
 
 from .components import ShopMenuSource, ShopPages
 
@@ -126,10 +126,8 @@ class Pack(commands.GroupCog):
             await ctx.message.add_reaction("✅")
 
     async def _role_bonus(self, interaction: discord.Interaction["BallsDexBot"]) -> int:
-        if interaction.guild_id is None or not isinstance(interaction.user, discord.Member):
-            return 0
-        role_ids = [role.id for role in interaction.user.roles]
-        if not role_ids:
+        role_ids = member_role_ids(interaction.user)
+        if interaction.guild_id is None or not role_ids:
             return 0
         bonuses = PackBonusRole.objects.filter(server_id=interaction.guild_id, role_id__in=role_ids)
         return sum([bonus async for bonus in bonuses.values_list("bonus_daily_uses", flat=True)])

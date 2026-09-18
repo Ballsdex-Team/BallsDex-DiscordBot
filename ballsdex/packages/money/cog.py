@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import discord
+from achievement_app.engine import Event, EventContext
+from achievement_app.engine import engine as achievement_engine
 from asgiref.sync import sync_to_async
 from currency_app.ledger import adjust_money
 from currency_app.models import BerryTransaction, CurrencySettings, DailyBonusRole
@@ -9,9 +11,11 @@ from discord import app_commands
 from discord.ext import commands
 from discord.utils import format_dt
 from django.db import transaction
+from django.db.models import Count, Sum
 from django.utils import timezone
 
-from ballsdex.core.utils.utils import can_mention
+from ballsdex.core.utils.leaderboard import EXTRA_ROWS, LEADERBOARD_SIZE, send_leaderboard
+from ballsdex.core.utils.utils import can_mention, member_role_ids
 from bd_models.models import Player, Trade
 from settings.models import settings
 from settings.utils import format_currency
@@ -41,6 +45,32 @@ class Money(commands.GroupCog):
             balance = player.money
         await interaction.response.send_message(
             f"You have {format_currency(balance, shortened=False, bot=self.bot)}.", ephemeral=True
+        )
+
+    @app_commands.command()
+    async def leaderboard(self, interaction: discord.Interaction["BallsDexBot"]):
+        """
+        Show the top 20 richest players.
+        """
+        await interaction.response.defer(thinking=True)
+        holders = Player.objects.filter(money__gt=0)
+        totals = await holders.aaggregate(total=Sum("money"), players=Count("id"))
+        if not totals["total"]:
+            await interaction.followup.send(f"Nobody has any {settings.currency_plural} yet.", ephemeral=True)
+            return
+
+        currency = settings.currency_display_plural(self.bot)
+        await send_leaderboard(
+            interaction,
+            title=f"{(settings.currency_name or 'currency').capitalize()} Leaderboard",
+            subtitle=f"Total: {totals['total']:,} {currency} owned by {totals['players']:,} players",
+            ranking=[
+                x
+                async for x in holders.order_by("-money").values_list("discord_id", "money")[
+                    : LEADERBOARD_SIZE + EXTRA_ROWS
+                ]
+            ],
+            describe=lambda money: f"Balance: {money:,} {currency} ({money / totals['total'] * 100:.1f}% of all)",
         )
 
     @transaction.atomic()
@@ -110,6 +140,12 @@ class Money(commands.GroupCog):
             f"You just gave {format_currency(amount)} to {user.mention}!",
             allowed_mentions=await can_mention([new_player]),
         )
+        achievement_engine.dispatch_soon(
+            new_player.pk,
+            Event.CURRENCY_RECEIVED,
+            context=EventContext(partner_discord_id=interaction.user.id, received_currency=amount),
+            channel_id=interaction.channel_id,
+        )
 
     @app_commands.command()
     async def daily(self, interaction: discord.Interaction["BallsDexBot"]):
@@ -141,15 +177,14 @@ class Money(commands.GroupCog):
 
         # a player with several qualifying roles gets every matching bonus added together
         matching_roles = []
-        if interaction.guild_id is not None and isinstance(interaction.user, discord.Member):
-            member_role_ids = [role.id for role in interaction.user.roles]
-            if member_role_ids:
-                matching_roles = [
-                    candidate
-                    async for candidate in DailyBonusRole.objects.filter(
-                        server__server_id=interaction.guild_id, role_id__in=member_role_ids
-                    )
-                ]
+        role_ids = member_role_ids(interaction.user)
+        if interaction.guild_id is not None and role_ids:
+            matching_roles = [
+                candidate
+                async for candidate in DailyBonusRole.objects.filter(
+                    server__server_id=interaction.guild_id, role_id__in=role_ids
+                )
+            ]
         role_bonus = sum(candidate.bonus_amount for candidate in matching_roles)
         total = currency_settings.base_daily_amount + streak_bonus + role_bonus
 

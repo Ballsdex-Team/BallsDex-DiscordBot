@@ -19,6 +19,8 @@ class Event(StrEnum):
     FRIEND = "friend"  # a player became friends with someone
     FAVORITE = "favorite"  # a player set a favorite treasure
     BATTLE_WIN = "battle_win"  # a player won a battle
+    COMMAND = "command"  # a player used a slash command, only sent when an achievement listens to it
+    CURRENCY_RECEIVED = "currency_received"  # a player received currency from someone, a player or an admin
     ACTIVITY = "activity"  # a player did something, only used to check time based achievements
     SYNC = "sync"  # a player asked to refresh their progress, every achievement based on a state is checked
 
@@ -108,6 +110,12 @@ def _describe_trade(achievement: Achievement) -> str:
     return f"{text}."
 
 
+def _describe_trade_treasures(achievement: Achievement) -> str:
+    count = achievement.target_value
+    treasures = _plural(count, settings.collectible_name, settings.plural_collectible_name)
+    return f"Exchange {count} {treasures} in {'a single trade' if achievement.in_one_trade else 'trades'}."
+
+
 def _describe_friends(achievement: Achievement) -> str:
     count = achievement.target_value
     return f"Have {count} {_plural(count, 'friend')}."
@@ -121,6 +129,20 @@ def _describe_favorites(achievement: Achievement) -> str:
 def _describe_battle(achievement: Achievement) -> str:
     count = achievement.target_value
     return f"Win {count if count > 1 else 'a'} {_plural(count, 'battle')}."
+
+
+def _describe_command(achievement: Achievement) -> str:
+    count = achievement.target_value
+    return f"Use /{achievement.command_name or '?'}{f' {count} times' if count > 1 else ''}."
+
+
+def _describe_receive_currency(achievement: Achievement) -> str:
+    count = achievement.target_value
+    amount = f"at least {achievement.min_currency:,} " if achievement.min_currency else ""
+    text = f"Receive {amount}{settings.currency_plural}"
+    if achievement.partner_discord_id:
+        text += f" from <@{achievement.partner_discord_id}>"
+    return f"{text}{f' {count} times' if count > 1 else ''}."
 
 
 def _describe_playtime(achievement: Achievement) -> str:
@@ -183,6 +205,15 @@ TYPES: dict[str, TypeDefinition] = {
             _describe_trade,
         ),
         TypeDefinition(
+            AchievementType.TRADE_TREASURES,
+            frozenset({Event.TRADE}),
+            ("in_one_trade",),
+            "Number of treasures",
+            "Counts the treasures changing hands in the player's trades, given and received. A trade where only one "
+            "side gives something is a gift and doesn't count. Past trades are counted with the recompute action.",
+            _describe_trade_treasures,
+        ),
+        TypeDefinition(
             AchievementType.FRIENDS,
             frozenset({Event.FRIEND, Event.SYNC}),
             (),
@@ -205,6 +236,24 @@ TYPES: dict[str, TypeDefinition] = {
             "Number of battles won",
             "Counts the battles won.",
             _describe_battle,
+        ),
+        TypeDefinition(
+            AchievementType.COMMAND,
+            frozenset({Event.COMMAND}),
+            ("command_name",),
+            "Number of uses",
+            'Counts the uses of a slash command, like "treasures list" to open the inventory. The uses from before '
+            "the achievement is published are not known.",
+            _describe_command,
+        ),
+        TypeDefinition(
+            AchievementType.RECEIVE_CURRENCY,
+            frozenset({Event.CURRENCY_RECEIVED}),
+            ("partner_discord_id", "min_currency"),
+            "Number of gifts received",
+            "Counts the times the player receives currency from someone, with the give command or the admin add "
+            "command. Set the giver's Discord ID to make one achievement per admin.",
+            _describe_receive_currency,
         ),
         TypeDefinition(
             AchievementType.PLAYTIME,

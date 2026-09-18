@@ -752,13 +752,17 @@ class TradeInstance(LayoutView):
 
     async def progress_achievements(self, trade: Trade):
         channel_id = self.message.channel.id if self.message else None
-        for receiver, giver, received_currency in (
-            (self.trader1, self.trader2, trade.player2_money),
-            (self.trader2, self.trader1, trade.player1_money),
+        for receiver, giver, received_currency, given_currency in (
+            (self.trader1, self.trader2, trade.player2_money, trade.player1_money),
+            (self.trader2, self.trader1, trade.player1_money, trade.player2_money),
         ):
             received = [x async for x in BallInstance.objects.filter(pk__in=giver.proposal)]
             context = EventContext(
-                instances=received, partner_discord_id=giver.user.id, received_currency=received_currency
+                instances=received,
+                partner_discord_id=giver.user.id,
+                received_currency=received_currency,
+                given_count=len(receiver.proposal),
+                given_currency=given_currency,
             )
             await achievement_engine.dispatch(receiver.player, Event.TRADE, context=context, channel_id=channel_id)
 

@@ -14,6 +14,7 @@ from currency_app.models import BerryTransaction
 from django.db import transaction
 from django.utils import timezone
 
+from ballsdex.core.utils.utils import member_role_ids
 from bd_models.models import BallInstance
 
 from . import pricing
@@ -70,7 +71,7 @@ async def get_total_booster_bonus(user: discord.User | discord.Member, server_id
     """
     if not isinstance(user, discord.Member):
         return 0
-    role_ids = [role.id for role in user.roles]
+    role_ids = member_role_ids(user)
     if not role_ids:
         return 0
     total = 0
@@ -87,7 +88,7 @@ async def is_blacklisted_bidder(user: discord.User | discord.Member, server_id: 
     if await AuctionBidBlacklist.objects.filter(discord_id=user.id).aexists():
         return True
     if isinstance(user, discord.Member):
-        role_ids = [role.id for role in user.roles]
+        role_ids = member_role_ids(user)
         if role_ids and await AuctionBidBlacklistRole.objects.filter(
             server_id=server_id, role_id__in=role_ids
         ).aexists():
@@ -98,7 +99,7 @@ async def is_blacklisted_bidder(user: discord.User | discord.Member, server_id: 
 async def is_auction_admin(user: discord.User | discord.Member, server_id: int) -> bool:
     if not isinstance(user, discord.Member):
         return False
-    role_ids = [role.id for role in user.roles]
+    role_ids = member_role_ids(user)
     if not role_ids:
         return False
     return await AuctionAdminRole.objects.filter(server_id=server_id, role_id__in=role_ids).aexists()
