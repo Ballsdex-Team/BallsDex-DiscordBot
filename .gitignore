@@ -60,4 +60,5 @@ extra/*
 !extra/achivement
 !extra/vote_topgg
 !extra/auction_house
+!extra/frames
 .gitmodules

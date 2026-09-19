@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 import re
+import unicodedata
 import warnings
 from typing import TYPE_CHECKING, cast
 
@@ -22,6 +23,36 @@ DISCORD_WEBHOOK_RE = re.compile(r"^https://discord.com/api/webhooks/[0-9]{17,22}
 SENTRY_ENV_RE = re.compile(r"^(?!None$)[^\s/]{,64}$")
 PYTHON_PATH_RE = re.compile(r"^[a-zA-Z_][\\.a-zA-Z0-9_]+$")
 HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+class ButtonColor(models.IntegerChoices):
+    """
+    The colors Discord allows for buttons, with the values of `discord.ButtonStyle`.
+    """
+
+    BLURPLE = 1, "Blurple"
+    GREY = 2, "Grey"
+    GREEN = 3, "Green"
+    RED = 4, "Red"
+
+
+# a custom emoji like <:name:123456789012345678>, or its ID alone
+CUSTOM_EMOJI_RE = re.compile(r"<a?:\w{2,32}:(\d{15,21})>|(\d{15,21})")
+BUTTON_EMOJI_HELP = (
+    "Emoji shown before the label: a unicode emoji like 🎯, a custom emoji like <:name:123456789012345678> or its "
+    "ID. The bot's own emojis work, the others must come from a server the bot is in."
+)
+
+
+def validate_button_emoji(value: str):
+    if not value or CUSTOM_EMOJI_RE.fullmatch(value):
+        return
+    # unicode emojis are symbols, with joiners, variation selectors and skin tones
+    if len(value) <= 16 and all(unicodedata.category(c) in ("So", "Sk", "Mn", "Me", "Cf") for c in value):
+        return
+    raise ValidationError(
+        "Use a unicode emoji like 🎯, a custom emoji like <:name:123456789012345678>, or the ID of a custom emoji."
+    )
 
 
 class Settings(models.Model):
@@ -116,6 +147,35 @@ class Settings(models.Model):
         help_text="Whether to show the rarity on the card (replaces economy icon)", default=False
     )
     catch_button_label = models.CharField(max_length=80, help_text="Label of the catch button", default="Catch me")
+    catch_button_color = models.PositiveSmallIntegerField(
+        choices=ButtonColor.choices, default=ButtonColor.BLURPLE, help_text="Color of the catch button."
+    )
+    catch_button_emoji = models.CharField(
+        max_length=64, blank=True, default="", validators=[validate_button_emoji], help_text=BUTTON_EMOJI_HELP
+    )
+    caught_button_label = models.CharField(
+        max_length=80, blank=True, default="", help_text="Label of the button once caught, empty to keep the same."
+    )
+    caught_button_color = models.PositiveSmallIntegerField(
+        choices=ButtonColor.choices, default=ButtonColor.BLURPLE, help_text="Color of the button once caught."
+    )
+    caught_button_emoji = models.CharField(
+        max_length=64, blank=True, default="", validators=[validate_button_emoji], help_text=BUTTON_EMOJI_HELP
+    )
+    despawned_button_label = models.CharField(
+        max_length=80,
+        blank=True,
+        default="",
+        help_text="Label of the button once it left without being caught, empty to keep the same.",
+    )
+    despawned_button_color = models.PositiveSmallIntegerField(
+        choices=ButtonColor.choices,
+        default=ButtonColor.BLURPLE,
+        help_text="Color of the button once it left without being caught.",
+    )
+    despawned_button_emoji = models.CharField(
+        max_length=64, blank=True, default="", validators=[validate_button_emoji], help_text=BUTTON_EMOJI_HELP
+    )
     embed_color = models.CharField(
         max_length=7,
         default="#00FFFF",

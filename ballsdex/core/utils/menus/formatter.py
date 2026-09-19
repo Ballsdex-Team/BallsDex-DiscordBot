@@ -4,7 +4,7 @@ import discord
 import discord.ui
 from django.db.models import QuerySet
 
-from bd_models.models import BallInstance
+from bd_models.models import FRAME_EMOJI, BallInstance
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -110,8 +110,9 @@ class CountryballFormatter(Formatter[QuerySet[BallInstance], discord.ui.Select])
             emoji = self.menu.bot.get_emoji(int(ball.countryball.emoji_id))
             favorite = f"{settings.favorited_collectible_emoji} " if ball.favorite else ""
             special = ball.specialcard.emoji if ball.specialcard else ""
+            frame = f"{FRAME_EMOJI} " if ball.framed else ""
             self.item.add_option(
-                label=f"{favorite}{special}#{ball.pk:0X} {ball.countryball.country}",
+                label=f"{favorite}{special}{frame}#{ball.pk:0X} {ball.countryball.country}",
                 description=(
                     f"ATK: {ball.attack}({ball.attack_bonus:+d}%) "
                     f"• HP: {ball.health}({ball.health_bonus:+d}%) • "

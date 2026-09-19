@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frames"
+version = "0.1.0"
+description = "Date-based ball art overrides, based on flaree/ballsdex-frames 0.0.9."
+authors = [{ name = "flare", email = "flare@ballsdex.com" }]
+dependencies = []
+
+[project.urls]
+Upstream = "https://github.com/flaree/ballsdex-frames"
+
+[tool.setuptools.packages.find]
+include = ["frames*"]
+
+[tool.setuptools.package-data]
+frames = ["templates/**/*"]

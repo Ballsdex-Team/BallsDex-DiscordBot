@@ -386,6 +386,33 @@ class BallGroup(models.Model):
         return [balls[i] for i in self._ball_ids if i in balls]
 
 
+# the frames package replaces the card art of the treasures caught during a frame, it keeps the frame in extra_data
+FRAME_EMOJI = "\N{FRAME WITH PICTURE}\N{VARIATION SELECTOR-16}"
+FRAME_SPECIAL_NAME = "Frame"
+FRAMED = Q(extra_data__has_key="card")
+
+
+def is_frame_special(special: "Special | None") -> bool:
+    """
+    Whether this is the "Frame" special: it is never given to treasures, it selects the framed ones in filters.
+    """
+    return special is not None and special.name.lower() == FRAME_SPECIAL_NAME.lower()
+
+
+def special_filter(special: "Special", prefix: str = "") -> Q:
+    """
+    Treasures of a special. The "Frame" special selects the framed treasures instead, whatever their special.
+
+    Parameters
+    ----------
+    prefix: str
+        Path to the treasure from the queried model, like "tradeobject__ballinstance__".
+    """
+    if is_frame_special(special):
+        return Q(**{f"{prefix}extra_data__has_key": "card"})
+    return Q(**{f"{prefix}special": special})
+
+
 class BallInstance(models.Model):
     catch_date = models.DateTimeField(auto_now_add=True)
     health_bonus = models.IntegerField(default=0)
@@ -445,10 +472,19 @@ class BallInstance(models.Model):
             text += " "
         if self.specialcard:
             text += self.specialcard.emoji or ""
+        if self.framed:
+            text += FRAME_EMOJI
         return f"{text}#{self.pk:0X} {self.countryball.country}"
 
     def __str__(self) -> str:
         return self.short_description()
+
+    @property
+    def framed(self) -> bool:
+        """
+        Whether this treasure was caught during a frame: its card uses the frame's art.
+        """
+        return isinstance(self.extra_data, dict) and bool(self.extra_data.get("card"))
 
     @property
     def is_tradeable(self) -> bool:
@@ -548,7 +584,7 @@ class BallInstance(models.Model):
         catch_time_msg = f" in {catch_time.total_seconds():.3f}s" if catch_time else ""
 
         content = (
-            f"ID: `#{self.pk:0X}`\n"
+            f"ID: `#{self.pk:0X}`{f' {FRAME_EMOJI} Frame' if self.framed else ''}\n"
             f"Caught on {format_dt(self.catch_date)}{catch_time_msg} ({format_dt(self.catch_date, style='R')}).\n"
             f"{trade_content}\n"
             f"ATK: {self.attack} ({self.attack_bonus:+d}%)\n"

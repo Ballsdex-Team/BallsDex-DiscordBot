@@ -1,0 +1,46 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Add Frame | {{ site_title|default:"Admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+  &rsaquo; <a href="{% url 'admin:frames_frameball_changelist' %}">{% trans "Frames" %}</a>
+  &rsaquo; {% trans "Add Frame" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  {% if form.errors %}
+  <p class="errornote">
+    {% blocktrans count counter=form.errors|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
+  </p>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <fieldset class="module aligned">
+      <h2>{% trans "Frame details" %}</h2>
+      {% for field in form %}
+      <div class="form-row{% if field.errors %} errors{% endif %}">
+        {{ field.errors }}
+        <div>
+          <label for="{{ field.id_for_label }}" class="{% if field.field.required %}required{% endif %}">
+            {{ field.label }}:
+          </label>
+          {{ field }}
+          {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </fieldset>
+
+    <div class="submit-row">
+      <input type="submit" value="{% trans 'Save frame' %}" class="default" />
+      <a href="{% url 'admin:frames_frameball_changelist' %}" class="closelink">{% trans "Cancel" %}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

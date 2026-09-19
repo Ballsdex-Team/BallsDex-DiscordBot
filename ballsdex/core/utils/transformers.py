@@ -10,14 +10,14 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable
 
 import discord
+from currency_app.models import ItemBall
 from discord import app_commands
 from discord.ext import commands
 from django.db.models import Model, Q
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
-from bd_models.models import Ball, BallGroup, BallInstance, Economy, Regime, Special
-from currency_app.models import ItemBall
+from bd_models.models import Ball, BallGroup, BallInstance, Economy, Regime, Special, special_filter, specials
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -188,7 +188,10 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
         balls_queryset = self.get_queryset().filter(player__discord_id=interaction.user.id)
 
         if (special := getattr(interaction.namespace, "special", None)) and special.isdigit():
-            balls_queryset = balls_queryset.filter(special_id=int(special))
+            picked = specials.get(int(special))
+            balls_queryset = balls_queryset.filter(
+                special_filter(picked) if picked is not None else Q(special_id=int(special))
+            )
 
         if interaction.command and (trade_type := interaction.command.extras.get("trade", None)):
             if trade_type == TradeCommandType.PICK:

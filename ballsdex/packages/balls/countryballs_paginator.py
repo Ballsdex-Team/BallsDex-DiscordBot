@@ -7,7 +7,7 @@ from discord.ui import ActionRow, Select, TextDisplay
 from django.db.models import Count, Exists, OuterRef, Q, Value
 
 from ballsdex.core.discord import LayoutView
-from bd_models.models import Ball, BallInstance, Player, Special
+from bd_models.models import Ball, BallInstance, Player, Special, special_filter
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -53,9 +53,9 @@ class CountryballsDuplicateSource(LayoutView):
         if self.is_special:
             special = await Special.objects.aget(id=select.values[0])
             name = special.name
-            balls_query = balls_query.filter(special=special).annotate(specials=Value("1"))
+            balls_query = balls_query.filter(special_filter(special)).annotate(specials=Value("1"))
             grouped_query = (
-                BallInstance.objects.filter(player=player, special=special)
+                BallInstance.objects.filter(special_filter(special), player=player)
                 .prefetch_related("ball")
                 .values("ball__country")
                 .annotate(count=Count("ball__country"))

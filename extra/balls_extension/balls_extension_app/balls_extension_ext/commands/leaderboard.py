@@ -7,7 +7,7 @@ from django.db.models import Count
 
 from ballsdex.core.utils.leaderboard import EXTRA_ROWS, LEADERBOARD_SIZE, send_leaderboard
 from ballsdex.core.utils.transformers import BallObtainableTransform, SpecialEnabledTransform, TTLModelTransformer
-from bd_models.models import BallInstance, Player
+from bd_models.models import BallInstance, Player, special_filter
 from settings.models import settings
 
 if TYPE_CHECKING:
@@ -55,7 +55,7 @@ async def leaderboard(
 
     query = BallInstance.objects.all()
     if special:
-        query = query.filter(special=special)
+        query = query.filter(special_filter(special))
     if countryball:
         query = query.filter(ball=countryball)
     if pack:
