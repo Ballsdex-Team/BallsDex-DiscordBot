@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 import discord
 from discord.ext import commands
 
-from ..utils import has_special_frames, pick_frame
+from ..utils import frames_depend_on_special, pick_frame
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -40,7 +40,7 @@ def pick_spawn_frame(view: BallSpawnView) -> dict | None:
         return view.ballinstance.extra_data if view.ballinstance.framed else None
     today = date.today()
     special = view.special
-    if special is None and has_special_frames(view.model.capacity_logic, today):
+    if special is None and frames_depend_on_special(view.model.capacity_logic, today):
         # the frame depends on the special, which is rolled at catch: roll it now for the spawn to show its frame,
         # and make the catch keep it, even when there is none
         special = view.get_random_special()
@@ -52,7 +52,7 @@ def pick_spawn_frame(view: BallSpawnView) -> dict | None:
 def frame_of_new_treasure(instance: BallInstance) -> dict | None:
     """
     The frame a treasure gets when it is created: the one picked when it spawned if it was caught, else the frame of
-    its special or of every treasure for today, with their chance.
+    its special (or of the treasures without special) or of every treasure for today, with their chance.
     """
     view = catching.get()
     if view is not None and view.model.pk == instance.ball_id:

@@ -75,7 +75,7 @@
   <div class="module" style="margin-top:2em">
     <h2>{% blocktrans with name=ball.country %}Add frame date(s) to {{ name }}{% endblocktrans %}</h2>
     <p class="help" style="padding:0 16px 8px">
-      {% trans "Uploading art for a date that already has a frame for the same special will replace it. Without new art, the existing art is kept. A frame for a special is separate from the frame of every treasure on the same date." %}
+      {% trans "Uploading art for a date that already has a frame for the same special will replace it. Without new art, the existing art is kept. A frame for a special, or for the treasures without special, is separate from the frame of every treasure on the same date." %}
     </p>
 
     {% if form.errors %}
