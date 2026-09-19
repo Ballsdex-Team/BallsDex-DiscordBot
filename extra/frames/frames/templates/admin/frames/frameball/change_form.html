@@ -22,6 +22,7 @@
       <thead>
         <tr>
           <th style="padding:6px 8px; text-align:left">{% trans "Date (MM-DD-YYYY)" %}</th>
+          <th style="padding:6px 8px; text-align:left">{% trans "Special" %}</th>
           <th style="padding:6px 8px; text-align:left">{% trans "Card art" %}</th>
           <th style="padding:6px 8px; text-align:left">{% trans "Layout" %}</th>
           <th style="padding:6px 8px; text-align:left">{% trans "Spawn art" %}</th>
@@ -35,6 +36,7 @@
         {% for frame in frames %}
         <tr style="border-top:1px solid #eee">
           <td style="padding:6px 8px"><strong>{{ frame.date }}</strong></td>
+          <td style="padding:6px 8px">{{ frame.special|default:_("Every treasure") }}</td>
           <td style="padding:6px 8px">
             {% if frame.card_url %}
               <img src="{{ frame.card_url }}" style="max-height:60px; display:block; margin-bottom:4px" />
@@ -52,9 +54,9 @@
           <td style="padding:6px 8px">{{ frame.data.catch|default:"—" }}</td>
           <td style="padding:6px 8px">{{ frame.data.chance|default:"100" }}%</td>
           <td style="padding:6px 8px">
-            <a href="../../{{ ball.pk }}/delete_date/{{ frame.date }}/"
+            <a href="{% url 'admin:frames_frameball_delete_date' ball.pk frame.key %}"
                style="color:#ba2121; text-decoration:none; font-weight:bold"
-               onclick="return confirm('Remove frame {{ frame.date }} from {{ ball.country }}?')">
+               onclick="return confirm('Remove frame {{ frame.label|escapejs }} from {{ ball.country|escapejs }}?')">
               {% trans "Delete" %}
             </a>
           </td>
@@ -73,7 +75,7 @@
   <div class="module" style="margin-top:2em">
     <h2>{% blocktrans with name=ball.country %}Add frame date(s) to {{ name }}{% endblocktrans %}</h2>
     <p class="help" style="padding:0 16px 8px">
-      {% trans "Uploading art for a date that already has a frame will replace it. Without new art, the existing art is kept." %}
+      {% trans "Uploading art for a date that already has a frame for the same special will replace it. Without new art, the existing art is kept. A frame for a special is separate from the frame of every treasure on the same date." %}
     </p>
 
     {% if form.errors %}

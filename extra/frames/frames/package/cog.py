@@ -1,37 +1,67 @@
 from __future__ import annotations
 
 import logging
+import os
 import random
-import re
 import string
+from contextvars import ContextVar
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
 import discord
 from discord.ext import commands
 
+from ..utils import has_special_frames, pick_frame
+
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+    from ballsdex.packages.countryballs.countryball import BallSpawnView
+    from bd_models.models import BallInstance
 
 log = logging.getLogger("ballsdex.packages.frames")
 
-FRAME_DATE_RE = re.compile(r"^\d{2}-\d{2}-\d{4}$")
-
-
-def get_active_frame(capacity_logic: Any) -> dict | None:
-    """Return today's frame entry from capacity_logic if one exists, else None."""
-    if not isinstance(capacity_logic, dict):
-        return None
-    key = date.today().strftime("%m-%d-%Y")
-    entry = capacity_logic.get(key)
-    if isinstance(entry, dict):
-        return entry
-    return None
+# the spawn being caught, while the treasure caught from it is created
+catching: ContextVar[BallSpawnView | None] = ContextVar("frames_catching", default=None)
+# the picked_frame of a spawn once its treasure got it
+NOT_PICKED: Any = object()
 
 
 def _random_name() -> str:
     source = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
     return "".join(random.choices(source, k=15))
+
+
+def pick_spawn_frame(view: BallSpawnView) -> dict | None:
+    """
+    The frame shown by a spawn. The treasure caught from it gets the same frame, see `frame_of_new_treasure`.
+    """
+    if view.ballinstance is not None:
+        # a dropped treasure keeps its own frame
+        return view.ballinstance.extra_data if view.ballinstance.framed else None
+    today = date.today()
+    special = view.special
+    if special is None and has_special_frames(view.model.capacity_logic, today):
+        # the frame depends on the special, which is rolled at catch: roll it now for the spawn to show its frame,
+        # and make the catch keep it, even when there is none
+        special = view.get_random_special()
+        view.get_random_special = lambda: special  # type: ignore[method-assign]
+    view.picked_frame = pick_frame(view.model.capacity_logic, special.pk if special else None, today)  # type: ignore[attr-defined]
+    return view.picked_frame  # type: ignore[attr-defined]
+
+
+def frame_of_new_treasure(instance: BallInstance) -> dict | None:
+    """
+    The frame a treasure gets when it is created: the one picked when it spawned if it was caught, else the frame of
+    its special or of every treasure for today, with their chance.
+    """
+    view = catching.get()
+    if view is not None and view.model.pk == instance.ball_id:
+        picked = getattr(view, "picked_frame", NOT_PICKED)
+        if picked is not NOT_PICKED:
+            # only for the treasure of this catch
+            view.picked_frame = NOT_PICKED  # type: ignore[attr-defined]
+            return picked
+    return pick_frame(instance.ball.capacity_logic, instance.special_id, date.today())
 
 
 class FramesCog(commands.Cog):
@@ -50,6 +80,8 @@ class FramesCog(commands.Cog):
 
         if "spawn" in self._originals:
             BallSpawnView.spawn = self._originals["spawn"]  # type: ignore[method-assign]
+        if "catch_ball" in self._originals:
+            BallSpawnView.catch_ball = self._originals["catch_ball"]  # type: ignore[method-assign]
         if "get_catch_message" in self._originals:
             BallSpawnView.get_catch_message = self._originals["get_catch_message"]  # type: ignore[method-assign]
         if "draw_card" in self._originals:
@@ -65,8 +97,6 @@ class FramesCog(commands.Cog):
                 pass
         if "ball_instance_save" in self._originals:
             BallInstance.save = self._originals["ball_instance_save"]  # type: ignore[method-assign]
-        if "ball_instance_acreate" in self._originals:
-            BallInstance.objects.acreate = self._originals["ball_instance_acreate"]  # type: ignore[assignment]
 
         # Remove the injected enum member
         if hasattr(FilteringChoices, "frame"):
@@ -91,59 +121,29 @@ class FramesCog(commands.Cog):
         from bd_models.models import BallInstance
 
         # ── BallInstance.save ──────────────────────────────────────────────────
+        # every new treasure goes through it: catches, packs, claims, gifts from admins...
 
         original_ball_instance_save = BallInstance.save
 
         def patched_ball_instance_save(self, *args, **kwargs):
             if not self.pk and not self.extra_data:
                 try:
-                    key = date.today().strftime("%m-%d-%Y")
-                    entry = self.ball.capacity_logic.get(key)
-                    if isinstance(entry, dict):
-                        self.extra_data = entry
+                    frame = frame_of_new_treasure(self)
+                    if frame is not None:
+                        self.extra_data = frame
                 except Exception:
-                    pass
+                    log.exception("Failed to pick the frame of a new %s", self.ball_id)
             return original_ball_instance_save(self, *args, **kwargs)
 
         self._originals["ball_instance_save"] = BallInstance.save
         BallInstance.save = patched_ball_instance_save  # type: ignore[method-assign]
 
-        # ── BallInstance.objects.acreate ───────────────────────────────────────
-
-        original_acreate = BallInstance.objects.acreate
-
-        async def patched_acreate(**kwargs):
-            if "extra_data" not in kwargs:
-                ball = kwargs.get("ball")
-                if ball is not None:
-                    try:
-                        key = date.today().strftime("%m-%d-%Y")
-                        entry = ball.capacity_logic.get(key)
-                        if isinstance(entry, dict):
-                            kwargs["extra_data"] = entry
-                    except Exception:
-                        pass
-            return await original_acreate(**kwargs)
-
-        self._originals["ball_instance_acreate"] = BallInstance.objects.acreate
-        BallInstance.objects.acreate = patched_acreate  # type: ignore[assignment]
-
         # ── BallSpawnView.spawn ────────────────────────────────────────────────
 
         async def patched_spawn(view_self: BallSpawnView, channel: discord.TextChannel) -> bool:
-            frame = get_active_frame(view_self.model.capacity_logic)
-            if frame is not None:
-                chance = frame.get("chance", 100)
-                if not (isinstance(chance, int) and 1 <= chance <= 100 and random.randint(1, 100) <= chance):
-                    # Chance failed — clear frame from in-memory capacity_logic so that
-                    # patched_acreate / patched_ball_instance_save won't apply it on catch.
-                    today_key = date.today().strftime("%m-%d-%Y")
-                    temp = dict(view_self.model.capacity_logic)
-                    temp.pop(today_key, None)
-                    view_self.model.capacity_logic = temp
-                    frame = None
+            frame = pick_spawn_frame(view_self)
             spawn_path: str | None = None
-            if frame and frame.get("spawn"):
+            if frame and frame.get("spawn") and os.path.isfile(f"./media/{frame['spawn']}"):
                 spawn_path = f"./media/{frame['spawn']}"
                 ext = frame["spawn"].rsplit(".", 1)[-1] if "." in frame["spawn"] else "png"
             else:
@@ -176,6 +176,21 @@ class FramesCog(commands.Cog):
 
         self._originals["spawn"] = BallSpawnView.spawn
         BallSpawnView.spawn = patched_spawn  # type: ignore[method-assign]
+
+        # ── BallSpawnView.catch_ball ───────────────────────────────────────────
+
+        original_catch_ball = BallSpawnView.catch_ball
+
+        async def patched_catch_ball(view_self: BallSpawnView, *args, **kwargs):
+            # the treasure created by the catch gets the frame picked by the spawn, see frame_of_new_treasure
+            token = catching.set(view_self)
+            try:
+                return await original_catch_ball(view_self, *args, **kwargs)
+            finally:
+                catching.reset(token)
+
+        self._originals["catch_ball"] = BallSpawnView.catch_ball
+        BallSpawnView.catch_ball = patched_catch_ball  # type: ignore[method-assign]
 
         # ── BallSpawnView.get_catch_message ────────────────────────────────────
 

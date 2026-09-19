@@ -12,25 +12,58 @@ from django.db.models.expressions import RawSQL
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path as urlpath, reverse
 
-from bd_models.models import Ball
+from bd_models.models import FRAME_SPECIAL_NAME, Ball, Special
 
 from .models import FrameBall
+from .utils import frame_key, is_frame_entry, parse_frame_key
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
     from django.http import HttpRequest, HttpResponse
 
-FRAME_DATE_RE = re.compile(r"^\d{2}-\d{2}-\d{4}$")
+# the keys of the frames in capacity_logic, see utils
+FRAME_KEY_SQL_RE = r"^\d{2}-\d{2}-\d{4}(:\d+)?$"
 CARD_LAYOUTS = (("artwork", "Artwork square"), ("full_art", "Full art (whole card)"))
-
-
-def _is_frame_entry(value: Any) -> bool:
-    return isinstance(value, dict) and bool({"card", "spawn", "credits", "catch"} & value.keys())
 
 
 def _save_art(data: bytes, name: str) -> str:
     """Save bytes to MEDIA_ROOT, returning the stored path."""
     return default_storage.save(name, ContentFile(data))
+
+
+def _special_field() -> forms.ModelChoiceField:
+    return forms.ModelChoiceField(
+        # the "Frame" special selects the framed treasures in the commands, it is never given to a treasure
+        queryset=Special.objects.exclude(name__iexact=FRAME_SPECIAL_NAME).order_by("name"),
+        required=False,
+        empty_label="Every treasure",
+        help_text="Only the treasures of this special get the frame. On the same day, the frame of a special goes "
+        "before the frame of every treasure.",
+    )
+
+
+def _frame_label(day: str, special: str | None) -> str:
+    return f"{day} ({special})" if special else day
+
+
+def _frames_of(ball: Ball) -> list[dict[str, Any]]:
+    """
+    The frames of a ball, by date, the frame of every treasure before the frames of a special.
+    """
+    frames: list[dict[str, Any]] = []
+    for key, value in ball.capacity_logic.items():
+        parsed = parse_frame_key(key)
+        if parsed is not None and is_frame_entry(value):
+            frames.append({"key": key, "date": parsed[0], "special_id": parsed[1], "data": value})
+    special_ids = {x["special_id"] for x in frames if x["special_id"] is not None}
+    names = dict(Special.objects.filter(pk__in=special_ids).values_list("pk", "name")) if special_ids else {}
+    for frame in frames:
+        special_id = frame["special_id"]
+        frame["special"] = None if special_id is None else names.get(special_id, f"deleted special #{special_id}")
+        frame["label"] = _frame_label(frame["date"], frame["special"])
+    # MM-DD-YYYY: by year first
+    frames.sort(key=lambda x: (x["date"][6:], x["date"][:5], x["special_id"] is not None, x["special"] or ""))
+    return frames
 
 
 # ── Forms ─────────────────────────────────────────────────────────────────────
@@ -51,6 +84,7 @@ class FrameAddForm(forms.Form):
         widget=forms.DateInput(attrs={"type": "date"}),
         help_text="End of date range — leave blank for a single day.",
     )
+    special = _special_field()
     spawn_art = forms.ImageField(
         required=False,
         help_text="Spawn art image (same format as a regular ball wild card). Leave blank to keep existing."
@@ -77,7 +111,8 @@ class FrameAddForm(forms.Form):
         max_value=100,
         initial=100,
         required=False,
-        help_text="Probability (1–100) that this frame is applied on spawn. Defaults to 100 (always).",
+        help_text="Probability (1–100) that a new treasure gets this frame, decided when it spawns. "
+        "Defaults to 100 (always).",
     )
 
     def clean(self) -> dict[str, Any]:
@@ -103,6 +138,7 @@ class FrameDateForm(forms.Form):
         widget=forms.DateInput(attrs={"type": "date"}),
         help_text="End of date range — leave blank for a single day.",
     )
+    special = _special_field()
     spawn_art = forms.ImageField(
         required=False,
         help_text="Spawn art image (same format as a regular ball wild card). Leave blank to keep existing."
@@ -129,7 +165,8 @@ class FrameDateForm(forms.Form):
         max_value=100,
         initial=100,
         required=False,
-        help_text="Probability (1–100) that this frame is applied on spawn. Defaults to 100 (always).",
+        help_text="Probability (1–100) that a new treasure gets this frame, decided when it spawns. "
+        "Defaults to 100 (always).",
     )
 
     def clean(self) -> dict[str, Any]:
@@ -157,9 +194,11 @@ def _apply_frames(
     catch_str: str,
     chance: int = 100,
     full_art: bool = False,
+    special_id: int | None = None,
 ) -> None:
     """
-    Write MM-DD-YYYY frame entries into ball.capacity_logic and persist art files.
+    Write the frame entries of each day into ball.capacity_logic and persist art files: "MM-DD-YYYY" for every
+    treasure, "MM-DD-YYYY:<special id>" for the treasures of a special.
     spawn_bytes / card_bytes may be None: a date that already has art keeps it.
     Does NOT call ball.save().
     """
@@ -168,8 +207,9 @@ def _apply_frames(
 
     current = date_from
     while current <= date_to:
-        key = current.strftime("%m-%d-%Y")
-        previous = capacity.get(key) if _is_frame_entry(capacity.get(key)) else {}
+        key = frame_key(current, special_id)
+        file_key = key.replace(":", "_")
+        previous = capacity.get(key) if is_frame_entry(capacity.get(key)) else {}
         entry: dict[str, Any] = {
             "credits": credits_str,
             "catch": catch_str,
@@ -177,17 +217,22 @@ def _apply_frames(
             "full_art": full_art,
         }
         if spawn_bytes is not None and spawn_ext is not None:
-            entry["spawn"] = _save_art(spawn_bytes, f"frame_{safe_name}_{key}_spawn.{spawn_ext}")
+            entry["spawn"] = _save_art(spawn_bytes, f"frame_{safe_name}_{file_key}_spawn.{spawn_ext}")
         elif previous.get("spawn"):
             entry["spawn"] = previous["spawn"]
         if card_bytes is not None and card_ext is not None:
-            entry["card"] = _save_art(card_bytes, f"frame_{safe_name}_{key}_card.{card_ext}")
+            entry["card"] = _save_art(card_bytes, f"frame_{safe_name}_{file_key}_card.{card_ext}")
         elif previous.get("card"):
             entry["card"] = previous["card"]
         capacity[key] = entry
         current += timedelta(days=1)
 
     ball.capacity_logic = capacity
+
+
+def _saved_frames_label(date_from: date, date_to: date, special: Special | None) -> str:
+    dates = f"{date_from:%m-%d-%Y} → {date_to:%m-%d-%Y}" if date_to != date_from else f"{date_from:%m-%d-%Y}"
+    return _frame_label(dates, special.name if special else None)
 
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
@@ -202,11 +247,11 @@ class FrameAdmin(admin.ModelAdmin):
     # ── Queryset ──────────────────────────────────────────────────────────────
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Ball]:
-        """Only show balls that have at least one valid MM-DD-YYYY frame entry."""
+        """Only show balls that have at least one frame entry."""
         return Ball.objects.annotate(
             has_frames=RawSQL(
                 "EXISTS (SELECT 1 FROM jsonb_object_keys(capacity_logic) k WHERE k ~ %s)",
-                (r"^\d{2}-\d{2}-\d{4}$",),
+                (FRAME_KEY_SQL_RE,),
             )
         ).filter(has_frames=True)
 
@@ -214,12 +259,11 @@ class FrameAdmin(admin.ModelAdmin):
 
     @admin.display(description="Frames")
     def frame_count(self, obj: Ball) -> int:
-        return sum(1 for k, v in obj.capacity_logic.items() if FRAME_DATE_RE.match(k) and _is_frame_entry(v))
+        return len(_frames_of(obj))
 
     @admin.display(description="Dates (MM-DD-YYYY)")
     def frame_dates_display(self, obj: Ball) -> str:
-        dates = sorted(k for k, v in obj.capacity_logic.items() if FRAME_DATE_RE.match(k) and _is_frame_entry(v))
-        return ", ".join(dates) if dates else "—"
+        return ", ".join(x["label"] for x in _frames_of(obj)) or "—"
 
     # ── Permissions ───────────────────────────────────────────────────────────
 
@@ -257,6 +301,7 @@ class FrameAdmin(admin.ModelAdmin):
                 ball: Ball = form.cleaned_data["ball"]
                 date_from: date = form.cleaned_data["date_from"]
                 date_to: date = form.cleaned_data.get("date_to") or date_from
+                special: Special | None = form.cleaned_data.get("special")
                 spawn_file = form.cleaned_data.get("spawn_art")
                 card_file = form.cleaned_data.get("card_art")
                 spawn_bytes = spawn_file.read() if spawn_file else None
@@ -272,12 +317,11 @@ class FrameAdmin(admin.ModelAdmin):
                     form.cleaned_data["catch_phrase"],
                     form.cleaned_data.get("chance", 100),
                     form.cleaned_data.get("card_layout") == "full_art",
+                    special.pk if special else None,
                 )
                 ball.save(update_fields=["capacity_logic"])
 
-                date_label = (
-                    f"{date_from:%m-%d-%Y} → {date_to:%m-%d-%Y}" if date_to != date_from else f"{date_from:%m-%d-%Y}"
-                )
+                date_label = _saved_frames_label(date_from, date_to, special)
                 self.message_user(request, f"Added frame(s) for {ball.country}: {date_label}.")
                 return redirect(reverse("admin:frames_frameball_changelist"))
         else:
@@ -318,6 +362,7 @@ class FrameAdmin(admin.ModelAdmin):
             if form.is_valid():
                 date_from: date = form.cleaned_data["date_from"]
                 date_to: date = form.cleaned_data.get("date_to") or date_from
+                special: Special | None = form.cleaned_data.get("special")
                 spawn_file = form.cleaned_data.get("spawn_art")
                 card_file = form.cleaned_data.get("card_art")
                 spawn_bytes = spawn_file.read() if spawn_file else None
@@ -333,12 +378,11 @@ class FrameAdmin(admin.ModelAdmin):
                     form.cleaned_data["catch_phrase"],
                     form.cleaned_data.get("chance", 100),
                     form.cleaned_data.get("card_layout") == "full_art",
+                    special.pk if special else None,
                 )
                 ball.save(update_fields=["capacity_logic"])
 
-                date_label = (
-                    f"{date_from:%m-%d-%Y} → {date_to:%m-%d-%Y}" if date_to != date_from else f"{date_from:%m-%d-%Y}"
-                )
+                date_label = _saved_frames_label(date_from, date_to, special)
                 self.message_user(request, f"Updated frames for {ball.country}: {date_label}.")
                 return redirect(".")
         else:
@@ -346,13 +390,11 @@ class FrameAdmin(admin.ModelAdmin):
 
         frames = [
             {
-                "date": k,
-                "data": v,
-                "card_url": f"/media/{v['card']}" if isinstance(v, dict) and v.get("card") else "",
-                "spawn_url": f"/media/{v['spawn']}" if isinstance(v, dict) and v.get("spawn") else "",
+                **frame,
+                "card_url": f"/media/{frame['data']['card']}" if frame["data"].get("card") else "",
+                "spawn_url": f"/media/{frame['data']['spawn']}" if frame["data"].get("spawn") else "",
             }
-            for k, v in sorted(ball.capacity_logic.items())
-            if FRAME_DATE_RE.match(k) and _is_frame_entry(v)
+            for frame in _frames_of(ball)
         ]
 
         context = {
@@ -387,23 +429,24 @@ class FrameAdmin(admin.ModelAdmin):
             from django.core.exceptions import PermissionDenied
             raise PermissionDenied
 
-        if not FRAME_DATE_RE.match(date_key):
+        if parse_frame_key(date_key) is None:
             self.message_user(request, f"Invalid date key: {date_key!r}.", level=messages.ERROR)
             return redirect(reverse("admin:frames_frameball_changelist"))
 
         ball = get_object_or_404(Ball, pk=ball_pk)
         capacity: dict[str, Any] = dict(ball.capacity_logic)
+        label = next((x["label"] for x in _frames_of(ball) if x["key"] == date_key), date_key)
 
         if date_key not in capacity:
             self.message_user(
                 request,
-                f"Frame {date_key} not found on {ball.country}.",
+                f"Frame {label} not found on {ball.country}.",
                 level=messages.WARNING,
             )
         else:
             capacity.pop(date_key)
             ball.capacity_logic = capacity
             ball.save(update_fields=["capacity_logic"])
-            self.message_user(request, f"Removed frame {date_key} from {ball.country}.")
+            self.message_user(request, f"Removed frame {label} from {ball.country}.")
 
         return redirect(reverse("admin:frames_frameball_change", args=[ball_pk]))
