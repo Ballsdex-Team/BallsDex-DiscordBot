@@ -30,6 +30,7 @@ from rich.table import Table
 from ballsdex.core import tracing
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
+from ballsdex.core.game_events import bus
 from ballsdex.core.help import HelpCommand
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.theme import apply_theme
@@ -264,6 +265,9 @@ class BallsDexBot(commands.AutoShardedBot):
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
         # discord_id -> channel where the user last interacted with the bot, to notify them where they play
         self.recent_interaction_channels: TTLCache[int, int] = TTLCache(maxsize=100_000, ttl=60 * 10)
+        # discord_id -> their last interaction, to answer them privately in the channel. Interaction tokens die
+        # after 15 minutes, the cache expires a little earlier so a follow-up is never sent to a dead one.
+        self.recent_interactions: TTLCache[int, discord.Interaction] = TTLCache(maxsize=10_000, ttl=60 * 13)
 
         if tracing.enabled():
             log.info("OpenTelemetry tracing is enabled.")
@@ -406,6 +410,15 @@ class BallsDexBot(commands.AutoShardedBot):
     async def on_interaction(self, interaction: discord.Interaction[Self]):
         if interaction.channel_id is not None:
             self.recent_interaction_channels[interaction.user.id] = interaction.channel_id
+        # autocomplete has no token to follow up on, everything else can carry a private answer later
+        if interaction.type is not discord.InteractionType.autocomplete:
+            self.recent_interactions[interaction.user.id] = interaction
+
+    async def on_app_command_completion(
+        self, interaction: discord.Interaction[Self], command: app_commands.Command | app_commands.ContextMenu
+    ):
+        # the packages rewarding players (achievements, event passes) listen to the game event bus
+        await bus.on_command_completed(interaction, command)
 
     async def on_ready(self):
         if self.cogs != {}:

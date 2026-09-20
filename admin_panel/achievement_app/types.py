@@ -5,25 +5,11 @@ described to players.
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import StrEnum
 
+from ballsdex.core.game_events import ACTIVITY_EVENTS, Event
 from settings.models import settings
 
 from .models import Achievement, AchievementType, TimeUnit
-
-
-class Event(StrEnum):
-    CATCH = "catch"  # a player caught a spawned treasure
-    OBTAIN = "obtain"  # a player got treasures in any other way (trade, pack, claim, giveaway...)
-    TRADE = "trade"  # a trade was completed
-    FRIEND = "friend"  # a player became friends with someone
-    FAVORITE = "favorite"  # a player set a favorite treasure
-    BATTLE_WIN = "battle_win"  # a player won a battle
-    COMMAND = "command"  # a player used a slash command, only sent when an achievement listens to it
-    CURRENCY_RECEIVED = "currency_received"  # a player received currency from someone, a player or an admin
-    ACTIVITY = "activity"  # a player did something, only used to check time based achievements
-    SYNC = "sync"  # a player asked to refresh their progress, every achievement based on a state is checked
-
 
 TREASURE_FILTERS = ("ball", "special", "any_special", "group", "min_attack_bonus", "min_health_bonus", "hex_contains")
 
@@ -257,7 +243,7 @@ TYPES: dict[str, TypeDefinition] = {
         ),
         TypeDefinition(
             AchievementType.PLAYTIME,
-            frozenset(Event),
+            ACTIVITY_EVENTS,
             ("time_unit",),
             "Time played, in the unit chosen below",
             "Counted from the first treasure the player caught themselves, checked whenever they do something.",

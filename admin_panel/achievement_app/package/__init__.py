@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from bd_models.signals import ownership_changed
+from ballsdex.core.game_events import bus
 
 from ..engine import engine
 from ..notifications import AchievementNotifier
@@ -9,15 +9,15 @@ from .cog import Achievement
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
-DISPATCH_UID = "achievement_engine"
+SUBSCRIBER = "achievements"
 
 
 async def setup(bot: "BallsDexBot"):
     engine.configure(bot, AchievementNotifier(bot))
-    ownership_changed.connect(engine.on_ownership_changed, dispatch_uid=DISPATCH_UID)
+    bus.subscribe(SUBSCRIBER, engine.handle_event, listens_to_command=engine.listens_to_command)
     await bot.add_cog(Achievement(bot))
 
 
 async def teardown(bot: "BallsDexBot"):
-    ownership_changed.disconnect(dispatch_uid=DISPATCH_UID)
+    bus.unsubscribe(SUBSCRIBER)
     engine.configure(None, None)

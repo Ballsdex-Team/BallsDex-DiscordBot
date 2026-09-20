@@ -4,8 +4,6 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, cast
 
 import discord
-from achievement_app.engine import Event
-from achievement_app.engine import engine as achievement_engine
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Container, LayoutView, TextDisplay
@@ -13,6 +11,7 @@ from django.db.models import Count, Exists, F, OuterRef, Q
 from django.utils import timezone
 
 from ballsdex.core.discord import LayoutView as TrackedLayoutView
+from ballsdex.core.game_events import Event, bus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import ChunkedListSource, Menu, SelectFormatter, TextFormatter, TextSource
 from ballsdex.core.utils.sorting import FilteringChoices, SortingChoices, filter_balls, sort_balls
@@ -528,7 +527,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
                 f"{f' {FRAME_EMOJI}' if countryball.framed else ''} is now a favorite {settings.collectible_name}!",
                 ephemeral=True,
             )
-            await achievement_engine.dispatch(player, Event.FAVORITE, channel_id=interaction.channel_id)
+            await bus.dispatch(player, Event.FAVORITE, channel_id=interaction.channel_id)
 
         else:
             countryball.favorite = False  # type: ignore

@@ -142,6 +142,13 @@ class CollectorTier(models.Model):
         default=False, help_text="The card has no special at all, the treasure itself is the collector card."
     )
     tradeable = models.BooleanField(default=True, help_text="Whether the claimed cards can be traded.")
+    frame_key = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+        help_text='Frame given to the claimed card, as its key in the Frames section ("09-20-2026", or '
+        '"09-20-2026:3" for a frame of one special). Leave empty for a normal card.',
+    )
     enabled = models.BooleanField(default=True, help_text="Uncheck to disable this tier for this collector only.")
     price = models.PositiveBigIntegerField(
         null=True, blank=True, help_text="Optional amount of currency players must pay to claim this tier."

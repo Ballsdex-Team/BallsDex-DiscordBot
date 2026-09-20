@@ -99,6 +99,7 @@ class BerryTransaction(models.Model):
         GIVE_RECEIVED = "give_received", "Received berries"
         SPAWN_CATCH = "spawn_catch", "Caught a berry spawn"
         ACHIEVEMENT = "achievement", "Achievement reward"
+        EVENT_PASS = "event_pass", "Event pass reward"
         TRADE = "trade", "Trade"
         ADMIN_ADJUST = "admin_adjust", "Admin adjustment"
 

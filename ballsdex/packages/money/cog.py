@@ -2,8 +2,6 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import discord
-from achievement_app.engine import Event, EventContext
-from achievement_app.engine import engine as achievement_engine
 from asgiref.sync import sync_to_async
 from currency_app.ledger import adjust_money
 from currency_app.models import BerryTransaction, CurrencySettings, DailyBonusRole
@@ -14,6 +12,7 @@ from django.db import transaction
 from django.db.models import Count, Sum
 from django.utils import timezone
 
+from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.utils.leaderboard import EXTRA_ROWS, LEADERBOARD_SIZE, send_leaderboard
 from ballsdex.core.utils.utils import can_mention, member_role_ids
 from bd_models.models import Player, Trade
@@ -140,10 +139,16 @@ class Money(commands.GroupCog):
             f"You just gave {format_currency(amount)} to {user.mention}!",
             allowed_mentions=await can_mention([new_player]),
         )
-        achievement_engine.dispatch_soon(
+        bus.dispatch_soon(
             new_player.pk,
             Event.CURRENCY_RECEIVED,
             context=EventContext(partner_discord_id=interaction.user.id, received_currency=amount),
+            channel_id=interaction.channel_id,
+        )
+        bus.dispatch_soon(
+            old_player.pk,
+            Event.CURRENCY_SENT,
+            context=EventContext(partner_discord_id=user.id, amount=amount, server_id=interaction.guild_id),
             channel_id=interaction.channel_id,
         )
 

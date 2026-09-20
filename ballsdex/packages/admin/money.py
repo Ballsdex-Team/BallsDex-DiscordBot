@@ -1,8 +1,6 @@
 import logging
 
 import discord
-from achievement_app.engine import Event, EventContext
-from achievement_app.engine import engine as achievement_engine
 from asgiref.sync import sync_to_async
 from currency_app.ledger import aadjust_money_to, reset_all_balances
 from currency_app.models import BerryTransaction
@@ -10,6 +8,7 @@ from discord.ext import commands
 from django.db import connection
 
 from ballsdex.core.bot import BallsDexBot
+from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from bd_models.models import Player
@@ -76,7 +75,7 @@ async def add(ctx: commands.Context[BallsDexBot], user: discord.User, amount: in
     )
     await ctx.send(f"{amount:,} coins have been added to {user.mention}.", ephemeral=True)
     # no channel: the command may be used in a staff channel, the player is congratulated where they play
-    achievement_engine.dispatch_soon(
+    bus.dispatch_soon(
         player.pk,
         Event.CURRENCY_RECEIVED,
         context=EventContext(partner_discord_id=ctx.author.id, received_currency=amount),

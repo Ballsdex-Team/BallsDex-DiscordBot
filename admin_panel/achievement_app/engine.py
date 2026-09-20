@@ -4,11 +4,9 @@ Makes achievements progress when players do something, unlocks them and notifies
 Achievements only progress from the bot process, once `engine.configure` was called. Actions made from the admin
 panel or management commands never unlock anything.
 
-Usage from other packages:
-
-    from achievement_app.engine import Event, EventContext, engine
-
-    await engine.dispatch(player, Event.FRIEND, channel_id=interaction.channel_id)
+The engine doesn't listen to the game itself: it subscribes to `ballsdex.core.game_events.bus`, which is where
+every package dispatches what players do. Packages telling the game something happened talk to the bus, never to
+this engine.
 """
 
 from __future__ import annotations
@@ -17,7 +15,7 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from currency_app.ledger import aadjust_money
@@ -26,6 +24,7 @@ from django.db.models import Count, Q
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
+from ballsdex.core.game_events import Event, EventContext
 from ballsdex.core.utils.background import run_on_bot_loop
 from bd_models.models import BallInstance, Friendship, Player, balls, groups
 
@@ -38,7 +37,7 @@ from .models import (
     UserAchievement,
     normalize_command,
 )
-from .types import TYPES, Event
+from .types import TYPES
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -52,20 +51,6 @@ if TYPE_CHECKING:
 __all__ = ("Event", "EventContext", "engine")
 
 log = logging.getLogger(__name__)
-
-
-@dataclass
-class EventContext:
-    # treasures caught or obtained, or the treasures received in a trade
-    instances: list[BallInstance] = field(default_factory=list)
-    # trades and currency gifts: the other player, or the admin giving currency
-    partner_discord_id: int | None = None
-    received_currency: int = 0
-    # trades only: what the player gave in exchange
-    given_count: int = 0
-    given_currency: int = 0
-    # commands only, like "treasures list"
-    command_name: str = ""
 
 
 @dataclass
@@ -150,31 +135,20 @@ class AchievementEngine:
             return
         run_on_bot_loop(lambda: self.dispatch(player_id, event, context=context, channel_id=channel_id))
 
-    def on_ownership_changed(
-        self, sender, gained: dict[int, list[BallInstance]], created: set[int] | None = None, **kwargs
-    ):
+    async def handle_event(self, player_id: int, event: Event, context: EventContext, channel_id: int | None):
         """
-        Receiver of `bd_models.signals.ownership_changed`: catches and treasures obtained in any other way.
+        Subscriber of `ballsdex.core.game_events.bus`, which is how every action reaches the engine.
         """
-        created = created or set()
-        for player_id, instances in gained.items():
-            # the countryball spawn sets this attribute on the treasures it creates
-            caught = [x for x in instances if x.pk in created and getattr(x, "_catch_channel_id", None)]
-            obtained = [x for x in instances if x not in caught]
-            if caught:
-                channel_id = getattr(caught[0], "_catch_channel_id")
-                self.dispatch_soon(
-                    player_id, Event.CATCH, context=EventContext(instances=caught), channel_id=channel_id
-                )
-            if obtained:
-                # a treasure given by someone else carries the channel of the gift, to congratulate the
-                # recipient where it happened instead of where they last played
-                channel_id = next(
-                    (channel for x in obtained if (channel := getattr(x, "_notify_channel_id", None))), None
-                )
-                self.dispatch_soon(
-                    player_id, Event.OBTAIN, context=EventContext(instances=obtained), channel_id=channel_id
-                )
+        await self.dispatch(player_id, event, context=context, channel_id=channel_id)
+
+    async def listens_to_command(self, name: str) -> bool:
+        """
+        Whether an active achievement counts the uses of this command. Asked by the bus before it dispatches one.
+        """
+        return any(
+            achievement.type == AchievementType.COMMAND and normalize_command(achievement.command_name) == name
+            for achievement in await self.active_achievements()
+        )
 
     # -- processing --------------------------------------------------------------------------------------------------
 

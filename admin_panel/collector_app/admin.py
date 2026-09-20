@@ -58,7 +58,7 @@ class TiersInline(admin.TabularInline):
     model = CollectorTier
     extra = 0
     autocomplete_fields = ("special",)
-    fields = ("level", "enabled", "special", "no_special", "tradeable", "price")
+    fields = ("level", "enabled", "special", "no_special", "tradeable", "frame_key", "price")
     verbose_name_plural = "Tiers (players pick one of these after selecting the collector)"
 
 
