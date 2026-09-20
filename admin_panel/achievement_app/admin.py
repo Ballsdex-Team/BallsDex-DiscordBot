@@ -21,6 +21,19 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
 
+def rendered_widgets(field: forms.Field) -> list[forms.Widget]:
+    """
+    The widgets an attribute must be set on to reach the HTML.
+
+    A foreign key is wrapped in a `RelatedFieldWidgetWrapper` (the add/change icons next to the field), and the
+    wrapper renders the real widget with the real widget's own attributes: anything set on the wrapper alone never
+    reaches the page. The form also deep copies its fields, so the two no longer share their attribute dict.
+    """
+    widget = field.widget
+    inner = getattr(widget, "widget", None)
+    return [widget, inner] if isinstance(inner, forms.Widget) else [widget]
+
+
 def configure_parameter_widgets(form: forms.BaseForm):
     """
     Tag every setting field with the types using it, the admin script only shows the relevant ones.
@@ -31,10 +44,9 @@ def configure_parameter_widgets(form: forms.BaseForm):
         # hidden settings may not be submitted, they fall back to their default value when cleaned
         form.fields[name].required = False
         types = [definition.type.value for definition in TYPES.values() if name in definition.fields]
-        form.fields[name].widget.attrs["data-achievement-types"] = ",".join(types)
-        form.fields[name].widget.attrs["class"] = (
-            form.fields[name].widget.attrs.get("class", "") + " achievement-param"
-        ).strip()
+        for widget in rendered_widgets(form.fields[name]):
+            widget.attrs["data-achievement-types"] = ",".join(types)
+            widget.attrs["class"] = (widget.attrs.get("class", "") + " achievement-param").strip()
     if "type" in form.fields:
         form.fields["type"].widget.attrs["data-type-help"] = json.dumps(
             {definition.type.value: definition.help for definition in TYPES.values()}
@@ -158,7 +170,9 @@ class AchievementAdmin(admin.ModelAdmin):
     actions = ("make_active", "make_draft", "make_retired", "recompute")
 
     class Media:
-        js = ("admin/achievement_dynamic_fields.js",)
+        # jQuery is listed first on purpose: the admin would otherwise be free to load the script before
+        # jquery.init.js, and `django.jQuery` would not exist yet when it runs
+        js = ("admin/js/vendor/jquery/jquery.js", "admin/js/jquery.init.js", "admin/achievement_dynamic_fields.js")
 
     def get_queryset(self, request: "HttpRequest") -> "QuerySet[Achievement]":
         return (
