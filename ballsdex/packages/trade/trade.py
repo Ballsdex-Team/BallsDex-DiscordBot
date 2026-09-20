@@ -15,8 +15,6 @@ from typing import TYPE_CHECKING, cast
 
 import discord
 from asgiref.sync import sync_to_async
-from achievement_app.engine import Event, EventContext
-from achievement_app.engine import engine as achievement_engine
 from currency_app.ledger import adjust_money
 from currency_app.models import BerryTransaction
 from discord.ui import ActionRow, Button, Item, Section, Select, Separator, TextDisplay, TextInput, Thumbnail
@@ -25,6 +23,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView, Modal
+from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.utils.background import run_on_bot_loop
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
@@ -748,10 +747,11 @@ class TradeInstance(LayoutView):
         self.stop()
         # edition of the message will be triggered by the caller
         self.add_item(TextDisplay(f"## The trade has been completed!\n-# ID: `#{trade.pk:0X}`"))
-        run_on_bot_loop(lambda: self.progress_achievements(trade))
+        run_on_bot_loop(lambda: self.progress_goals(trade))
 
-    async def progress_achievements(self, trade: Trade):
+    async def progress_goals(self, trade: Trade):
         channel_id = self.message.channel.id if self.message else None
+        server_id = self.message.guild.id if self.message and self.message.guild else None
         for receiver, giver, received_currency, given_currency in (
             (self.trader1, self.trader2, trade.player2_money, trade.player1_money),
             (self.trader2, self.trader1, trade.player1_money, trade.player2_money),
@@ -763,8 +763,9 @@ class TradeInstance(LayoutView):
                 received_currency=received_currency,
                 given_count=len(receiver.proposal),
                 given_currency=given_currency,
+                server_id=server_id,
             )
-            await achievement_engine.dispatch(receiver.player, Event.TRADE, context=context, channel_id=channel_id)
+            await bus.dispatch(receiver.player, Event.TRADE, context=context, channel_id=channel_id)
 
     async def _cleanup(self):
         self.stop()

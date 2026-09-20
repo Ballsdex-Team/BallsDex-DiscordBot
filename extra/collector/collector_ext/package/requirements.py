@@ -14,7 +14,8 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 
-from bd_models.models import BallInstance, Player
+from ballsdex.core.game_events import Event, EventContext, bus
+from bd_models.models import BallInstance, Player, balls, frame_entry
 from bd_models.signals import notify_ownership_change
 from settings.models import settings
 
@@ -204,6 +205,8 @@ def claim_tier(player_id: int, tier_id: int, server_id: int | None) -> ClaimResu
             BallInstance.objects.filter(pk__in=consumed).update(deleted=True)
             notify_ownership_change(lost={player_id: consumed})
 
+        # a tier can give its card another illustration, like the anniversary craft turning tokens into a frame
+        frame = frame_entry(balls.get(tier.collector.ball_id) or tier.collector.ball, tier.frame_key)
         card = BallInstance.objects.create(
             player_id=player_id,
             ball_id=tier.collector.ball_id,
@@ -213,6 +216,7 @@ def claim_tier(player_id: int, tier_id: int, server_id: int | None) -> ClaimResu
             attack_bonus=random.randint(-settings.max_attack_bonus, settings.max_attack_bonus),
             catch_date=now,
             server_id=server_id,
+            extra_data=dict(frame) if frame else {},
         )
         CollectorInstance.objects.create(
             player_id=player_id,
@@ -222,4 +226,14 @@ def claim_tier(player_id: int, tier_id: int, server_id: int | None) -> ClaimResu
             claimed_at=now,
             monitored=tier.level.monitored,
         )
+        # claiming a tier is what crafting is: the goals counting crafts read the collector and its tier level
+        context = EventContext(
+            instances=[card],
+            collector_id=tier.collector_id,
+            tier_level_id=tier.level_id,
+            price=tier.price or 0,
+            amount=-(tier.price or 0),
+            server_id=server_id,
+        )
+        transaction.on_commit(lambda: bus.dispatch_soon(player_id, Event.CRAFT, context=context))
     return ClaimResult("claimed", card=card, statuses=statuses)

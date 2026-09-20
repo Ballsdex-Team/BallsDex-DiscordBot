@@ -7,6 +7,7 @@ from django.db.models import F
 from django.utils import timezone
 from merchant_app.models import MerchantItem, merchant_items
 
+from ballsdex.core.game_events import Event, EventContext, bus
 from bd_models.models import BallInstance, Player
 from settings.models import settings
 from settings.utils import format_currency
@@ -97,6 +98,17 @@ async def buy_item(
 
     if reserved:
         await _refresh_cached_stock(item)
+    await bus.dispatch(
+        player,
+        Event.MERCHANT_BUY,
+        context=EventContext(
+            instances=[instance],
+            merchant_item_id=item.pk,
+            price=item.prize or 0,
+            amount=-(item.prize or 0),
+            server_id=server_id,
+        ),
+    )
     return instance
 
 

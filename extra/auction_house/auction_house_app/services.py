@@ -14,6 +14,7 @@ from currency_app.models import BerryTransaction
 from django.db import transaction
 from django.utils import timezone
 
+from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.utils.utils import member_role_ids
 from bd_models.models import BallInstance
 
@@ -183,6 +184,9 @@ def settle_direct_sale(instance_id: int, price: int, resale_price: int, server_i
         HotelStock.objects.create(
             instance=instance, server_id=server_id, buyout_price=price, resale_price=resale_price
         )
+        sale_context = EventContext(instances=[instance], price=price, amount=price, server_id=server_id)
+        seller_id = player.pk
+        transaction.on_commit(lambda: bus.dispatch_soon(seller_id, Event.SELL, context=sale_context))
         DirectSaleRecord.objects.create(
             player_id=player.pk,
             server_id=server_id,

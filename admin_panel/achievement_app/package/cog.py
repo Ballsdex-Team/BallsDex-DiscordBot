@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import discord
-from cachetools import TTLCache
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Separator, TextDisplay
@@ -14,9 +13,9 @@ from ballsdex.core.utils.menus import ChunkedListSource, ItemFormatter, Menu
 from bd_models.models import Player
 from settings.models import settings
 
-from ..engine import Event, EventContext, engine
+from ..engine import engine
 from ..models import Achievement as AchievementModel
-from ..models import AchievementType, UserAchievement, normalize_command
+from ..models import UserAchievement
 from ..notifications import achievement_item
 from ..transformers import AchievementCategoryTransform, AchievementTransform
 
@@ -39,30 +38,6 @@ class Achievement(commands.GroupCog):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
-        # players whose time-based achievements were checked recently
-        self._recent_activity: TTLCache[int, bool] = TTLCache(maxsize=100_000, ttl=60 * 60)
-
-    @commands.Cog.listener()
-    async def on_app_command_completion(
-        self, interaction: discord.Interaction["BallsDexBot"], command: app_commands.Command | app_commands.ContextMenu
-    ):
-        name = normalize_command(command.qualified_name)
-        listened = any(
-            achievement.type == AchievementType.COMMAND and normalize_command(achievement.command_name) == name
-            for achievement in await engine.active_achievements()
-        )
-        if not listened and interaction.user.id in self._recent_activity:
-            return
-        self._recent_activity[interaction.user.id] = True
-        player = await Player.objects.aget_or_none(discord_id=interaction.user.id)
-        if player is None:
-            return
-        if listened:
-            # time based achievements listen to every event, they are checked along
-            context = EventContext(command_name=name)
-            await engine.dispatch(player, Event.COMMAND, context=context, channel_id=interaction.channel_id)
-        else:
-            await engine.dispatch(player, Event.ACTIVITY, channel_id=interaction.channel_id)
 
     async def _visible_achievements(
         self, player: "PlayerModel | None", category: "AchievementCategory | None"

@@ -16,6 +16,7 @@ module, and the admin list flags it.
 from asgiref.sync import sync_to_async
 from django.db import transaction
 
+from ballsdex.core.game_events import Event, EventContext, bus
 from bd_models.models import Player
 
 
@@ -60,6 +61,14 @@ def adjust_money(
             description=description[: BerryTransaction.DESCRIPTION_MAX_LENGTH],
             server_id=server_id,
         )
+
+        # every berry movement is an event, which is what lets goals count what players spend and earn without
+        # each shop having to announce its own sales. Sent once the movement is committed, never before.
+        if amount:
+            context = EventContext(
+                amount=amount, reason=reason or BerryTransaction.Reason.UNKNOWN, server_id=server_id
+            )
+            transaction.on_commit(lambda: bus.dispatch_soon(player_id, Event.ECONOMY, context=context))
 
     if not isinstance(player, int):
         player.money = new_balance

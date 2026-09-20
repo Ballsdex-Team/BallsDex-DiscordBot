@@ -390,6 +390,24 @@ class BallGroup(models.Model):
 FRAME_EMOJI = "\N{FRAME WITH PICTURE}\N{VARIATION SELECTOR-16}"
 FRAME_SPECIAL_NAME = "Frame"
 FRAMED = Q(extra_data__has_key="card")
+# a frame entry in Ball.capacity_logic holds at least one of these, see the frames package
+FRAME_FIELDS = frozenset({"card", "spawn", "credits", "catch"})
+
+
+def frame_entry(ball: "Ball", key: str) -> dict | None:
+    """
+    The frame stored on a treasure under this key, ready to be copied into the `extra_data` of an instance, or None
+    when no frame is stored there.
+
+    Used to hand out a framed card on purpose (a craft, an event reward) instead of waiting for the day of a frame.
+    """
+    if not key or not isinstance(ball.capacity_logic, dict):
+        return None
+    entry = ball.capacity_logic.get(key)
+    if not isinstance(entry, dict) or not FRAME_FIELDS & entry.keys():
+        return None
+    # the chance of a frame only decides who gets it when catching, a card given on purpose always gets the art
+    return {name: value for name, value in entry.items() if name != "chance"}
 
 
 def is_frame_special(special: "Special | None") -> bool:

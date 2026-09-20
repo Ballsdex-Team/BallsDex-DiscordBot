@@ -3,8 +3,6 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Optional
 
 import discord
-from achievement_app.engine import Event
-from achievement_app.engine import engine as achievement_engine
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Container, Section, Separator, TextDisplay, Thumbnail
@@ -12,6 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from ballsdex.core.discord import LayoutView, View
+from ballsdex.core.game_events import Event, bus
 from ballsdex.core.utils.menus import ChunkedListSource, ItemFormatter, Menu
 from ballsdex.core.utils.transformers import BallInstanceTransform
 from bd_models.models import BallInstance, Player
@@ -824,7 +823,7 @@ class Battle(commands.GroupCog):
         except (discord.NotFound, discord.HTTPException):
             pass
 
-        await achievement_engine.dispatch(
+        await bus.dispatch(
             winner_player, Event.BATTLE_WIN, channel_id=target_message.channel.id if target_message else None
         )
 

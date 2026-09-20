@@ -13,6 +13,7 @@ from discord.ui import ActionRow, Button, Item, MediaGallery, TextDisplay, TextI
 from django.utils import timezone
 
 from ballsdex.core.discord import Container, LayoutView, Modal
+from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.formatting import format_command_mentions
 from ballsdex.core.utils.utils import can_mention
@@ -103,6 +104,12 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                     server_id=interaction.guild_id,
                 )
                 text += f"You get **{format_currency(amount, False, self.view.bot)}**"
+                bus.dispatch_soon(
+                    player.pk,
+                    Event.CATCH_REWARD,
+                    context=EventContext(instances=[ball], amount=amount, server_id=interaction.guild_id),
+                    channel_id=interaction.channel_id,
+                )
 
         await interaction.followup.send(text, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned))
         await interaction.followup.edit_message(self.view.message.id, view=self.view)

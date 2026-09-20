@@ -26,6 +26,7 @@ from django.db import transaction
 from django.db.models import F, Max
 from django.utils import timezone
 
+from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus.old import FieldPageSource, Pages
 from ballsdex.core.utils.transformers import BallEnabledTransform, BallInstanceTransform
@@ -338,6 +339,11 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
                 duration_minutes=total_minutes,
                 expires_at=timezone.now() + timedelta(minutes=total_minutes),
             )
+            context = EventContext(instances=[instance], price=price, server_id=server_id)
+            seller_id = instance.player_id
+            transaction.on_commit(
+                lambda: bus.dispatch_soon(seller_id, Event.AUCTION_CREATE, context=context)
+            )
 
     # -- /auction cancel ------------------------------------------------------------------------
 
@@ -556,6 +562,9 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
                 server_id=listing.server_id,
             )
             AuctionOffer.objects.create(listing=listing, buyer=buyer, amount=amount)
+            # only a bid that went through counts, and raising an existing bid is not a new one
+            context = EventContext(price=amount, server_id=listing.server_id)
+            transaction.on_commit(lambda: bus.dispatch_soon(buyer_id, Event.AUCTION_BID, context=context))
 
     @bid.autocomplete("listing_id")
     async def bid_autocomplete(
@@ -762,6 +771,10 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             listing.status = AuctionListing.Status.SOLD
             listing.save(update_fields=["status"])
 
+            won_context = EventContext(instances=[instance], price=offer.amount, server_id=listing.server_id)
+            winner_id = offer.buyer_id
+            transaction.on_commit(lambda: bus.dispatch_soon(winner_id, Event.AUCTION_WON, context=won_context))
+
             others = AuctionOffer.objects.filter(listing=listing, status=AuctionOffer.Status.PENDING).exclude(
                 pk=offer.pk
             )
@@ -945,6 +958,11 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             instance.save(update_fields=["player"])
             stock.status = HotelStock.Status.SOLD
             stock.save(update_fields=["status"])
+
+            context = EventContext(
+                instances=[instance], price=price, amount=-price, server_id=stock.server_id
+            )
+            transaction.on_commit(lambda: bus.dispatch_soon(buyer_id, Event.SHOP_BUY, context=context))
 
     @buy.autocomplete("stock_id")
     async def buy_autocomplete(

@@ -7,6 +7,7 @@ import discord
 from currency_app.models import Item
 from discord.ui import Button, button, select
 
+from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.utils.menus.old import Pages, menus
 from ballsdex.packages.countryballs.countryball import BallSpawnView
 from bd_models.models import Ball, BallInstance, Player
@@ -108,6 +109,16 @@ class ShopPages(Pages):
                     description=f"Bought pack {pack.name}",
                     server_id=interaction.guild_id,
                 )
+
+        # the pack is paid for, whatever the player ends up opening from it
+        await bus.dispatch(
+            player,
+            Event.PACK_BUY,
+            context=EventContext(
+                item_id=pack.pk, price=pack.prize or 0, amount=-(pack.prize or 0), server_id=interaction.guild_id
+            ),
+            channel_id=interaction.channel_id,
+        )
 
         balls = [x.cached_ball async for x in pack.balls.all()]
         if balls:

@@ -1,13 +1,12 @@
 from typing import TYPE_CHECKING
 
 import discord
-from achievement_app.engine import Event
-from achievement_app.engine import engine as achievement_engine
 from discord import app_commands
 from discord.ext import commands
 from django.db.models import Q
 
 from ballsdex.core.discord import LayoutView
+from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.enums import DONATION_POLICY_MAP, FRIEND_POLICY_MAP, MENTION_POLICY_MAP, PRIVATE_POLICY_MAP
 from ballsdex.core.utils.enums import TRADE_COOLDOWN_POLICY_MAP as TRADE_POLICY_MAP
@@ -131,8 +130,19 @@ class Player(commands.GroupCog):
 
         await Friendship.objects.acreate(player1=player1, player2=player2)
         self.active_friend_requests[(player1.discord_id, player2.discord_id)] = False
-        await achievement_engine.dispatch(player1, Event.FRIEND, channel_id=interaction.channel_id)
-        await achievement_engine.dispatch(player2, Event.FRIEND, channel_id=interaction.channel_id)
+        # each side gets the other as the partner, for goals asking to befriend someone in particular
+        await bus.dispatch(
+            player1,
+            Event.FRIEND,
+            context=EventContext(partner_discord_id=player2.discord_id, server_id=interaction.guild_id),
+            channel_id=interaction.channel_id,
+        )
+        await bus.dispatch(
+            player2,
+            Event.FRIEND,
+            context=EventContext(partner_discord_id=player1.discord_id, server_id=interaction.guild_id),
+            channel_id=interaction.channel_id,
+        )
 
     @friend.command(name="remove")
     async def friend_remove(self, interaction: discord.Interaction["BallsDexBot"], user: discord.User):

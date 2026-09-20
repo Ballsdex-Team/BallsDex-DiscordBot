@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from django.conf import settings as django_settings
 from django.db import models
 
+from ballsdex.core.game_events import normalize_command
 from bd_models.models import Ball, BallGroup, Player, Special, balls, groups, specials
 from settings.models import settings
 
@@ -26,13 +27,6 @@ class AchievementType(models.TextChoices):
     PLAYTIME = "playtime", "Play since the first catch"
     COMMAND = "command", "Use a command"
     RECEIVE_CURRENCY = "receive_currency", "Receive currency from someone"
-
-
-def normalize_command(name: str) -> str:
-    """
-    "/Treasures  List" and "treasures list" are the same command.
-    """
-    return " ".join(name.lstrip("/").lower().split())
 
 
 class TimeUnit(models.TextChoices):
