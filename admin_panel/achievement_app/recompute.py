@@ -1,14 +1,15 @@
 """
 Retroactive progress: gives players the progress they already have on achievements based on what they own, for
 instance when a new collection achievement is created. Achievements counting actions (catches, trades...) can't be
-recomputed, the history of those actions isn't kept, except the treasures exchanged: the trade history has them.
+recomputed, the history of those actions isn't kept, except the treasures exchanged or given: the trade history has
+them.
 """
 
 from django.db import connection, transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Exists, F, OuterRef, Q, QuerySet
 from django.utils import timezone
 
-from bd_models.models import Ball, BallInstance, Friendship
+from bd_models.models import Ball, BallInstance, Friendship, TradeObject
 
 from .models import DAYS_PER_UNIT, Achievement, AchievementType, PlayerAchievementStats, UserAchievement
 
@@ -20,6 +21,7 @@ RECOMPUTABLE_TYPES = {
     AchievementType.FAVORITES,
     AchievementType.PLAYTIME,
     AchievementType.TRADE_TREASURES,
+    AchievementType.GIVE_TREASURES,
 }
 
 # every trade where both sides gave something (treasures or currency), with the treasures it exchanged: the other
@@ -34,6 +36,45 @@ HAVING (COUNT(o.id) FILTER (WHERE o.player_id = t.player1_id) > 0 OR t.player1_m
 """
 
 
+def _filter_treasures[T: QuerySet](queryset: T, achievement: Achievement, prefix: str = "") -> T:
+    """
+    Apply the treasure filters of an achievement, `prefix` leading to the treasure ("ballinstance__" from a trade
+    object). The ID filter isn't applied: a database can't search the hexadecimal form of an ID.
+    """
+    if achievement.ball_id:
+        queryset = queryset.filter(**{f"{prefix}ball_id": achievement.ball_id})
+    if achievement.special_id:
+        queryset = queryset.filter(**{f"{prefix}special_id": achievement.special_id})
+    elif achievement.any_special:
+        queryset = queryset.filter(**{f"{prefix}special_id__isnull": False})
+    if achievement.group_id:
+        queryset = queryset.filter(**{f"{prefix}ball__groups": achievement.group_id})
+    if achievement.min_attack_bonus is not None:
+        queryset = queryset.filter(**{f"{prefix}attack_bonus__gte": achievement.min_attack_bonus})
+    if achievement.min_health_bonus is not None:
+        queryset = queryset.filter(**{f"{prefix}health_bonus__gte": achievement.min_health_bonus})
+    return queryset
+
+
+def _given_treasures(achievement: Achievement) -> QuerySet[TradeObject]:
+    """
+    The treasures given away, from the trade history: a donation leaves a trade where only the giver handed
+    treasures, and the other side gave nothing at all.
+    """
+    other_side = TradeObject.objects.filter(trade_id=OuterRef("trade_id")).exclude(player_id=OuterRef("player_id"))
+    given = TradeObject.objects.filter(
+        Q(player_id=F("trade__player1_id"), trade__player2_money=0)
+        | Q(player_id=F("trade__player2_id"), trade__player1_money=0),
+        ~Exists(other_side),
+    )
+    if partner := achievement.partner_discord_id:
+        given = given.filter(
+            Q(player_id=F("trade__player1_id"), trade__player2__discord_id=partner)
+            | Q(player_id=F("trade__player2_id"), trade__player1__discord_id=partner)
+        )
+    return _filter_treasures(given, achievement, "ballinstance__")
+
+
 def _progress_by_player(achievement: Achievement) -> tuple[dict[int, int], int]:
     """
     Returns the progress of every player with some progress, and the target.
@@ -41,20 +82,18 @@ def _progress_by_player(achievement: Achievement) -> tuple[dict[int, int], int]:
     target = max(achievement.target_value, 1)
     match achievement.type:
         case AchievementType.OWN:
-            queryset = BallInstance.objects.all()
-            if achievement.ball_id:
-                queryset = queryset.filter(ball_id=achievement.ball_id)
-            if achievement.special_id:
-                queryset = queryset.filter(special_id=achievement.special_id)
-            elif achievement.any_special:
-                queryset = queryset.filter(special_id__isnull=False)
-            if achievement.group_id:
-                queryset = queryset.filter(ball__groups=achievement.group_id)
-            if achievement.min_attack_bonus is not None:
-                queryset = queryset.filter(attack_bonus__gte=achievement.min_attack_bonus)
-            if achievement.min_health_bonus is not None:
-                queryset = queryset.filter(health_bonus__gte=achievement.min_health_bonus)
+            queryset = _filter_treasures(BallInstance.objects.all(), achievement)
             rows = queryset.values("player_id").annotate(progress=Count("id"))
+            return {row["player_id"]: row["progress"] for row in rows}, target
+
+        case AchievementType.GIVE_TREASURES:
+            given = _given_treasures(achievement)
+            if achievement.in_one_trade:
+                progress = {}
+                for row in given.values("trade_id", "player_id").annotate(n=Count("id")):
+                    progress[row["player_id"]] = max(progress.get(row["player_id"], 0), row["n"])
+                return progress, target
+            rows = given.values("player_id").annotate(progress=Count("id"))
             return {row["player_id"]: row["progress"] for row in rows}, target
 
         case AchievementType.COMPLETE_GROUP:

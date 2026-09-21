@@ -351,6 +351,17 @@ class AchievementEngine:
                     return Absolute(exchanged) if exchanged >= achievement.target_value else None
                 return Increment(exchanged)
 
+            case AchievementType.GIVE_TREASURES:
+                if achievement.partner_discord_id and context.partner_discord_id != achievement.partner_discord_id:
+                    return None
+                # one event per donation, carrying every treasure given at once
+                given = sum(1 for x in context.instances if achievement.matches_instance(x))
+                if not given:
+                    return None
+                if achievement.in_one_trade:
+                    return Absolute(given) if given >= achievement.target_value else None
+                return Increment(given)
+
             case AchievementType.FRIENDS:
                 friends = Friendship.objects.filter(Q(player1_id=player_id) | Q(player2_id=player_id))
                 return Absolute(await friends.acount())
