@@ -233,7 +233,7 @@ class QuestInline(admin.TabularInline):
     extra = 0
     show_change_link = True
     can_delete = False
-    fields = ("position", "name", "tier", "type", "goal", "reward", "completed_by")
+    fields = ("position", "name", "tier", "mandatory", "type", "goal", "reward", "completed_by")
     readonly_fields = fields
     ordering = ("tier__position", "position")
 
@@ -360,7 +360,16 @@ class QuestAdmin(admin.ModelAdmin):
             {
                 "description": 'Tip: "Save as new" at the bottom duplicates a quest, which is the fastest way to '
                 "build a tier.",
-                "fields": ("event_pass", "tier", "name", "description", "emoji", "thumbnail", "thumbnail_large"),
+                "fields": (
+                    "event_pass",
+                    "tier",
+                    "mandatory",
+                    "name",
+                    "description",
+                    "emoji",
+                    "thumbnail",
+                    "thumbnail_large",
+                ),
             },
         ),
         (
@@ -384,10 +393,21 @@ class QuestAdmin(admin.ModelAdmin):
             {"fields": ("enabled", "hidden", "position", "reset", "starts_at", "ends_at", "notes", "stats")},
         ),
     ]
-    list_display = ("name", "event_pass", "tier", "type", "goal", "reward", "completed_by", "enabled", "position")
+    list_display = (
+        "name",
+        "event_pass",
+        "tier",
+        "type",
+        "goal",
+        "reward",
+        "completed_by",
+        "mandatory",
+        "enabled",
+        "position",
+    )
     list_display_links = ("name",)
-    list_editable = ("enabled", "position")
-    list_filter = ("event_pass", "tier", "type", "enabled", "hidden", "reset")
+    list_editable = ("mandatory", "enabled", "position")
+    list_filter = ("event_pass", "tier", "type", "mandatory", "enabled", "hidden", "reset")
     list_select_related = ("event_pass", "tier", "reward")
     search_fields = ("name", "description", "notes")
     list_per_page = 100

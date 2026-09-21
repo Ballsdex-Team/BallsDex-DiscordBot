@@ -1,5 +1,6 @@
 """
-What a pass looks like for one player: which tiers are unlocked, how far each quest is, what can be claimed.
+What a pass looks like for one player: which tiers are unlocked and finished, how far each quest is, what can be
+claimed.
 
 The engine uses it to know whether a quest is allowed to progress, and the /pass command uses the very same code
 to draw the pass, so players can never see a tier the engine treats differently.
@@ -7,6 +8,7 @@ to draw the pass, so players can never see a tier the engine treats differently.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -81,10 +83,14 @@ class TierState:
     missing: list[str] = field(default_factory=list)
     quests: list[QuestState] = field(default_factory=list)
     reward_claimed: bool = False
+    # finishing a tier means completing the quests it asks for: its mandatory ones, or all the visible ones
+    required_done: int = 0
+    required_total: int = 0
+    uses_mandatory: bool = False
 
     @property
-    def completed(self) -> bool:
-        return self.unlocked and bool(self.quests) and all(state.completed for state in self.quests)
+    def finished(self) -> bool:
+        return self.required_total > 0 and self.required_done >= self.required_total
 
 
 @dataclass
@@ -111,15 +117,21 @@ class PassState:
         return len(self.quest_states)
 
     @property
-    def all_tiers_unlocked(self) -> bool:
-        return bool(self.tiers) and all(tier.unlocked for tier in self.tiers)
+    def all_tiers_finished(self) -> bool:
+        return bool(self.tiers) and all(tier.finished for tier in self.tiers)
 
 
-def describe_requirement(requirement: TierRequirement) -> str:
+def describe_requirement(requirement: TierRequirement, previous: TierState | None = None) -> str:
     """
-    A requirement as players read it.
+    A requirement as players read it. `previous` is the tier before, to say how far the player is in it.
     """
     match requirement.kind:
+        case RequirementKind.FINISH_PREVIOUS:
+            if previous is None:
+                return "Finish the previous tier"
+            name = f"{previous.tier.emoji} {previous.tier.name}".strip()
+            kind = "mandatory quests" if previous.uses_mandatory else "quests"
+            return f"Finish {name} ({previous.required_done}/{previous.required_total} {kind})"
         case RequirementKind.QUESTS_ALL:
             names = [quest.name for quest in requirement.quests.all()]
             return f"Complete {', '.join(names)}" if names else "Complete the quests above"
@@ -148,16 +160,59 @@ async def _own_count(player_id: int, requirement: TierRequirement) -> int:
     return await queryset.acount()
 
 
+def _required_by_tier(rows: Iterable[tuple[int, int | None, bool, bool]]) -> dict[int, set[int]]:
+    """
+    The quests each tier needs to be finished, from (quest, tier, mandatory, hidden) rows of its enabled quests: the
+    mandatory ones, or every visible one when none of them is mandatory.
+    """
+    mandatory: defaultdict[int, set[int]] = defaultdict(set)
+    visible: defaultdict[int, set[int]] = defaultdict(set)
+    for quest_id, tier_id, is_mandatory, hidden in rows:
+        if tier_id is None:
+            continue
+        if is_mandatory:
+            mandatory[tier_id].add(quest_id)
+        if not hidden:
+            visible[tier_id].add(quest_id)
+    return {tier_id: mandatory.get(tier_id) or visible[tier_id] for tier_id in mandatory.keys() | visible.keys()}
+
+
+def _finished(required: dict[int, set[int]], completed_quest_ids: set[int]) -> set[int]:
+    return {tier_id for tier_id, quest_ids in required.items() if quest_ids and quest_ids <= completed_quest_ids}
+
+
+async def _pass_progress(player_id: int, event_pass: EventPass) -> tuple[set[int], dict[int, set[int]]]:
+    """
+    The quests a player completed in a pass, and what each tier of it needs to be finished.
+    """
+    completed_quest_ids = {
+        quest_id
+        async for quest_id in PlayerQuest.objects.filter(
+            player_id=player_id, quest__event_pass=event_pass, completed_at__isnull=False
+        ).values_list("quest_id", flat=True)
+    }
+    rows = [
+        row
+        async for row in Quest.objects.filter(event_pass=event_pass, enabled=True).values_list(
+            "pk", "tier_id", "mandatory", "hidden"
+        )
+    ]
+    return completed_quest_ids, _required_by_tier(rows)
+
+
 async def _requirement_met(
     requirement: TierRequirement,
     player_id: int,
     completed_quest_ids: set[int],
     unlocked_tier_ids: set[int],
+    finished_tier_ids: set[int],
     previous_tier: PassTier | None,
     now: datetime,
     money: int,
 ) -> bool:
     match requirement.kind:
+        case RequirementKind.FINISH_PREVIOUS:
+            return previous_tier is None or previous_tier.pk in finished_tier_ids
         case RequirementKind.QUESTS_ALL:
             required = {quest.pk async for quest in requirement.quests.all()}
             return bool(required) and required <= completed_quest_ids
@@ -222,14 +277,31 @@ async def build_state(
             claimed_at=row.claimed_at if row else None,
         )
 
+    required = _required_by_tier((quest.pk, quest.tier_id, quest.mandatory, quest.hidden) for quest in quests)
+    finished_tier_ids = _finished(required, completed_quest_ids)
+    mandatory_tier_ids = {quest.tier_id for quest in quests if quest.mandatory}
+
     unlocked_tier_ids: set[int] = set()
-    previous: PassTier | None = None
+    previous: TierState | None = None
     for tier in tiers:
-        tier_state = TierState(tier=tier)
+        tier_required = required.get(tier.pk, set())
+        tier_state = TierState(
+            tier=tier,
+            required_done=len(tier_required & completed_quest_ids),
+            required_total=len(tier_required),
+            uses_mandatory=tier.pk in mandatory_tier_ids,
+        )
         requirements = list(tier.requirements.all())
         results = [
             await _requirement_met(
-                requirement, player.pk if player else 0, completed_quest_ids, unlocked_tier_ids, previous, now, money
+                requirement,
+                player.pk if player else 0,
+                completed_quest_ids,
+                unlocked_tier_ids,
+                finished_tier_ids,
+                previous.tier if previous else None,
+                now,
+                money,
             )
             if player is not None
             else False
@@ -242,13 +314,15 @@ async def build_state(
         else:
             tier_state.unlocked = all(results)
         tier_state.missing = [
-            describe_requirement(requirement) for requirement, met in zip(requirements, results, strict=True) if not met
+            describe_requirement(requirement, previous)
+            for requirement, met in zip(requirements, results, strict=True)
+            if not met
         ]
         if tier_state.unlocked:
             unlocked_tier_ids.add(tier.pk)
         tier_state.quests = [quest_state(quest) for quest in quests if quest.tier_id == tier.pk]
         state.tiers.append(tier_state)
-        previous = tier
+        previous = tier_state
 
     state.loose_quests = [quest_state(quest) for quest in quests if quest.tier_id is None]
     if player is not None:
@@ -271,12 +345,8 @@ async def unlocked_tier_ids(player_id: int, event_pass: EventPass, now: datetime
     tiers = [tier async for tier in PassTier.objects.filter(event_pass=event_pass).prefetch_related(TIER_REQUIREMENTS)]
     if not tiers:
         return set()
-    completed_quest_ids = {
-        quest_id
-        async for quest_id in PlayerQuest.objects.filter(
-            player_id=player_id, quest__event_pass=event_pass, completed_at__isnull=False
-        ).values_list("quest_id", flat=True)
-    }
+    completed_quest_ids, required = await _pass_progress(player_id, event_pass)
+    finished = _finished(required, completed_quest_ids)
     money = await Player.objects.filter(pk=player_id).values_list("money", flat=True).afirst() or 0
 
     unlocked: set[int] = set()
@@ -287,10 +357,20 @@ async def unlocked_tier_ids(player_id: int, event_pass: EventPass, now: datetime
             unlocked.add(tier.pk)
         else:
             results = [
-                await _requirement_met(requirement, player_id, completed_quest_ids, unlocked, previous, now, money)
+                await _requirement_met(
+                    requirement, player_id, completed_quest_ids, unlocked, finished, previous, now, money
+                )
                 for requirement in requirements
             ]
             if any(results) if tier.unlock_logic == "any" else all(results):
                 unlocked.add(tier.pk)
         previous = tier
     return unlocked
+
+
+async def finished_tier_ids(player_id: int, event_pass: EventPass) -> set[int]:
+    """
+    The tiers a player finished, which is what their tier rewards and the final reward wait for.
+    """
+    completed_quest_ids, required = await _pass_progress(player_id, event_pass)
+    return _finished(required, completed_quest_ids)
