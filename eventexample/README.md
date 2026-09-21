@@ -5,7 +5,7 @@ Each JSON file here describes a whole event pass (its tiers, quests and rewards)
 
 - `birthday_voyage.json`: the first anniversary event, October 9 to 18, 2026.
 - `halloween_2026.json`: one tier of five Thriller Bark quests, October 25 to November 1, 2026. The
-  Halloween 2026 special has a rarity of 0: raise it for the event, or "Shadow Harvest" can't be done.
+  Halloween 2026 special has a rarity of 0: raise it for the event, or "Haunted Ship" can't be done.
 
 ## Loading an event
 

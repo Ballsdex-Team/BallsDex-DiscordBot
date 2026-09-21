@@ -30,13 +30,13 @@
           "reward": {"cards": ["Shimotsuki Ryuma (Zombie)"]}
         },
         {
-          "name": "Ghost Hunt",
-          "emoji": "<:Perona:1485703758015893524>",
-          "description": "Catch 3 treasures with a special, Halloween ones included.",
+          "name": "Shadow Harvest",
+          "emoji": "<:Moria:1485704639394484545>",
+          "description": "Moria is after your shadow. Catch 3 treasures with a special, Halloween ones included.",
           "type": "catch",
           "goal": 3,
           "any_special": true,
-          "reward": {"cards": ["Thriller Bark"]}
+          "reward": {"cards": ["Gecko Moria"]}
         },
         {
           "name": "Doctor's Bill",
@@ -48,13 +48,13 @@
           "reward": {"cards": ["Dr.Hogback"]}
         },
         {
-          "name": "Shadow Harvest",
-          "emoji": "<:Moria:1485704639394484545>",
-          "description": "Catch 5 Halloween 2026 treasures.",
+          "name": "Haunted Ship",
+          "emoji": "<:ThrillerBarkPirates:1453876316788101268>",
+          "description": "Only the bravest crew makes it aboard Thriller Bark. Catch 5 Halloween 2026 treasures.",
           "type": "catch",
           "goal": 5,
           "special": "Halloween 2026",
-          "reward": {"cards": ["Gecko Moria"]}
+          "reward": {"cards": ["Thriller Bark"]}
         }
       ]
     }
