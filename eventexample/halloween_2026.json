@@ -36,7 +36,7 @@
           "type": "catch",
           "goal": 3,
           "any_special": true,
-          "reward": {"cards": ["Perona"]}
+          "reward": {"cards": ["Thriller Bark"]}
         },
         {
           "name": "Doctor's Bill",
