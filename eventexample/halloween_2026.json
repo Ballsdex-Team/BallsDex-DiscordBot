@@ -1,0 +1,62 @@
+{
+  "name": "Halloween 2026",
+  "emoji": "🎃",
+  "description": "Gecko Moria's haunted ship drifted in for Halloween. Every reward is a Halloween 2026 card, and finishing the five quests earns a Halloween Yomi Yomi no Mi.",
+  "colour": "#FF7518",
+  "starts_at": "2026-10-25T00:01:00Z",
+  "ends_at": "2026-11-01T23:59:00Z",
+  "claim_until": "2026-11-08T23:59:00Z",
+  "card_special": "Halloween 2026",
+  "tiers": [
+    {
+      "name": "Thriller Bark",
+      "emoji": "<:ThrillerBark:1462955556862955521>",
+      "description": "Moria is stealing shadows again. Survive the night and finish every quest to claim the Yomi Yomi no Mi.",
+      "reward": {"cards": ["Yomi Yomi no Mi (Revive Revive)"]},
+      "quests": [
+        {
+          "name": "Trick or Treat",
+          "emoji": "<:Cindry:1485721573028794368>",
+          "description": "Trick or treat! Give a treasure to another player.",
+          "type": "give_treasures",
+          "reward": {"cards": ["Victoria Cindry"]}
+        },
+        {
+          "name": "Zombie Walk",
+          "emoji": "<:Ryuma:1500825532621656075>",
+          "description": "The dead walk the deck tonight. Catch 20 treasures.",
+          "type": "catch",
+          "goal": 20,
+          "reward": {"cards": ["Shimotsuki Ryuma (Zombie)"]}
+        },
+        {
+          "name": "Shadow Harvest",
+          "emoji": "<:Moria:1485704639394484545>",
+          "description": "Moria is after your shadow. Catch 3 treasures with a special, Halloween ones included.",
+          "type": "catch",
+          "goal": 3,
+          "any_special": true,
+          "reward": {"cards": ["Gecko Moria"]}
+        },
+        {
+          "name": "Doctor's Bill",
+          "emoji": "<:Hogback:1547145434567413780>",
+          "description": "Dr. Hogback's surgeries don't come cheap. Spend 10,000 berries, anywhere.",
+          "type": "spend_currency",
+          "measure": "amount",
+          "goal": 10000,
+          "reward": {"cards": ["Dr.Hogback"]}
+        },
+        {
+          "name": "Haunted Ship",
+          "emoji": "<:ThrillerBarkPirates:1453876316788101268>",
+          "description": "Only the bravest crew makes it aboard Thriller Bark. Catch 5 Halloween 2026 treasures.",
+          "type": "catch",
+          "goal": 5,
+          "special": "Halloween 2026",
+          "reward": {"cards": ["Thriller Bark"]}
+        }
+      ]
+    }
+  ]
+}
