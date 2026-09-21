@@ -1,6 +1,6 @@
 """
-The pass as players see it: one page per tier, with what they finished, what is still locked and one button to
-claim everything they earned.
+The pass as players see it: a page per tier (several for a long one), with what they finished, what is still locked
+and one button to claim everything they earned.
 """
 
 from __future__ import annotations
@@ -25,7 +25,9 @@ if TYPE_CHECKING:
 
 type Interaction = discord.Interaction["BallsDexBot"]
 
-MAX_QUESTS_SHOWN = 12
+# a quest takes about three lines: past eight of them, a page gets too close to Discord's 4000 characters limit
+QUESTS_PER_PAGE = 8
+MANDATORY_MARK = "\N{PUSHPIN}"
 
 
 def progress_bar(progress: int, target: int, length: int = 10) -> str:
@@ -33,7 +35,7 @@ def progress_bar(progress: int, target: int, length: int = 10) -> str:
     return "\N{BLACK PARALLELOGRAM}" * filled + "\N{WHITE PARALLELOGRAM}" * (length - filled)
 
 
-def quest_line(state: QuestState, bot: BallsDexBot | None = None) -> str:
+def quest_line(state: QuestState, bot: BallsDexBot | None = None, *, pin: bool = False) -> str:
     quest = state.quest
     if quest.hidden and not state.completed:
         return "\N{BLACK QUESTION MARK ORNAMENT} **Secret quest**"
@@ -41,7 +43,7 @@ def quest_line(state: QuestState, bot: BallsDexBot | None = None) -> str:
     if state.claimable:
         mark = "\N{WRAPPED PRESENT}"
     title = f"{quest.emoji} {quest.name}".strip()
-    lines = [f"{mark} **{title}**", f"-# {state.description}"]
+    lines = [f"{mark} **{title}**{f' {MANDATORY_MARK}' if pin else ''}", f"-# {state.description}"]
     if not state.completed:
         lines.append(f"-# {progress_bar(state.progress, state.target)} {state.progress:,}/{state.target:,}")
     elif state.claimable:
@@ -59,25 +61,60 @@ class Page:
     locked: bool = False
     missing: list[str] | None = None
     reward: str = ""
+    # a long tier is split over several pages
+    part: int = 1
+    parts: int = 1
+
+
+def split_quests(quests: list[QuestState]) -> list[list[QuestState]]:
+    """
+    The quests of a tier, split into pages as even as possible: 10 quests make two pages of 5, not one of 8 and one
+    of 2.
+    """
+    if len(quests) <= QUESTS_PER_PAGE:
+        return [quests]
+    count = -(-len(quests) // QUESTS_PER_PAGE)
+    size = -(-len(quests) // count)
+    return [quests[index : index + size] for index in range(0, len(quests), size)]
 
 
 def build_pages(state: PassState, bot: BallsDexBot | None = None) -> list[Page]:
     pages: list[Page] = []
     if state.loose_quests:
-        pages.append(Page(title="Quests", tier=None, quests=state.loose_quests))
+        chunks = split_quests(state.loose_quests)
+        pages.extend(
+            Page(title="Quests", tier=None, quests=chunk, part=index, parts=len(chunks))
+            for index, chunk in enumerate(chunks, start=1)
+        )
     for tier_state in state.tiers:
         tier = tier_state.tier
-        pages.append(
+        # a locked tier doesn't list its quests, one page is enough to say what it waits for
+        chunks = split_quests(tier_state.quests) if tier_state.unlocked else [tier_state.quests]
+        pages.extend(
             Page(
                 title=f"{tier.emoji} {tier.name}".strip(),
                 tier=tier_state,
-                quests=tier_state.quests,
+                quests=chunk,
                 locked=not tier_state.unlocked,
                 missing=tier_state.missing,
                 reward=reward_preview(tier.reward, bot) if tier.reward_id else "",
+                part=index,
+                parts=len(chunks),
             )
+            for index, chunk in enumerate(chunks, start=1)
         )
     return pages or [Page(title="Quests", tier=None, quests=[])]
+
+
+def current_page(pages: list[Page]) -> int:
+    """
+    Where the pass opens: the first tier the player hasn't finished yet, so nobody has to page through the tiers
+    they are done with.
+    """
+    for index, page in enumerate(pages):
+        if page.tier is not None and not page.tier.finished:
+            return index
+    return 0
 
 
 class PageButton(Button["PassView"]):
@@ -102,16 +139,16 @@ class ClaimButton(Button["PassView"]):
 
 class PassView(LayoutView):
     """
-    One page per tier. Only the player who ran the command can use the buttons.
+    A page per tier, several for a long one. Only the player who ran the command can use the buttons.
     """
 
-    def __init__(self, bot: BallsDexBot, player: Player, state: PassState, *, index: int = 0):
+    def __init__(self, bot: BallsDexBot, player: Player, state: PassState, *, index: int | None = None):
         super().__init__(timeout=300)
         self.bot = bot
         self.player = player
         self.state = state
         self.pages = build_pages(state, bot)
-        self.index = min(index, len(self.pages) - 1)
+        self.index = min(current_page(self.pages) if index is None else index, len(self.pages) - 1)
         self.message: discord.Message | None = None
         self.restrict_author(player.discord_id)
 
@@ -176,15 +213,15 @@ class PassView(LayoutView):
     def _claimable_count(self) -> int:
         count = self.state.claimable_count
         count += sum(
-            1 for tier in self.state.tiers if tier.unlocked and tier.tier.reward_id and not tier.reward_claimed
+            1 for tier in self.state.tiers if tier.finished and tier.tier.reward_id and not tier.reward_claimed
         )
-        if self.state.all_tiers_unlocked and self.state.event_pass.final_reward_id and not self.state.final_claimed:
+        if self.state.all_tiers_finished and self.state.event_pass.final_reward_id and not self.state.final_claimed:
             count += 1
         return count
 
     def _page_text(self) -> str:
         page = self.page
-        lines = [f"## {page.title}"]
+        lines = [f"## {page.title}" + (f" ({page.part}/{page.parts})" if page.parts > 1 else "")]
         if page.locked:
             tier = page.tier.tier if page.tier else None
             if tier and tier.locked_message:
@@ -195,18 +232,30 @@ class PassView(LayoutView):
                 lines.extend(f"-# · {text}" for text in page.missing)
             return "\n".join(lines)
 
-        if page.tier and page.tier.tier.description:
-            lines.append(page.tier.tier.description)
-        if page.reward:
-            claimed = page.tier.reward_claimed if page.tier else False
-            lines.append(f"**Tier reward:** {page.reward}{' (claimed)' if claimed else ''}")
+        tier_state = page.tier
+        # the tier presentation sits on its first page only, the next ones are just the rest of its quests
+        if tier_state and page.part == 1:
+            if tier_state.tier.description:
+                lines.append(tier_state.tier.description)
+            if tier_state.uses_mandatory:
+                lines.append(
+                    f"{MANDATORY_MARK} **{tier_state.required_done}/{tier_state.required_total} mandatory quests** "
+                    "done, finish them to complete the tier."
+                )
+            if page.reward:
+                if tier_state.reward_claimed:
+                    status = " (claimed)"
+                elif tier_state.finished:
+                    status = ", ready to claim!"
+                else:
+                    status = ", for finishing the tier"
+                lines.append(f"**Tier reward:** {page.reward}{status}")
         if not page.quests:
             lines.append("-# No quest here yet.")
             return "\n".join(lines)
-        for quest_state in page.quests[:MAX_QUESTS_SHOWN]:
-            lines.append(quest_line(quest_state, self.bot))
-        if len(page.quests) > MAX_QUESTS_SHOWN:
-            lines.append(f"-# ...and {len(page.quests) - MAX_QUESTS_SHOWN} more quests")
+        pin = bool(tier_state and tier_state.uses_mandatory)
+        for quest_state in page.quests:
+            lines.append(quest_line(quest_state, self.bot, pin=pin and quest_state.quest.mandatory))
         return "\n".join(lines)
 
     async def claim(self, interaction: Interaction):
@@ -228,7 +277,7 @@ class PassView(LayoutView):
                 break
 
         for tier_state in self.state.tiers:
-            if not tier_state.unlocked or not tier_state.tier.reward_id or tier_state.reward_claimed:
+            if not tier_state.finished or not tier_state.tier.reward_id or tier_state.reward_claimed:
                 continue
             status, summary = await engine.claim_tier(
                 self.player.pk, tier_state.tier, channel_id=interaction.channel_id, server_id=interaction.guild_id
@@ -236,7 +285,7 @@ class PassView(LayoutView):
             if status == "claimed":
                 got.append(f"**{tier_state.tier.name}**\n{summary}")
 
-        if self.state.all_tiers_unlocked and event_pass.final_reward_id and not self.state.final_claimed:
+        if self.state.all_tiers_finished and event_pass.final_reward_id and not self.state.final_claimed:
             status, summary = await engine.claim_final(
                 self.player.pk, event_pass, channel_id=interaction.channel_id, server_id=interaction.guild_id
             )

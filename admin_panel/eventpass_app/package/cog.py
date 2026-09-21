@@ -159,9 +159,9 @@ class EventPassCog(commands.GroupCog, name="Event pass", group_name="pass"):
         their_state = await build_state(theirs, chosen)
         lines = [
             f"**{interaction.user.display_name}**: {my_state.completed_count}/{my_state.total_count} quests, "
-            f"{sum(1 for tier in my_state.tiers if tier.unlocked)} tiers unlocked",
+            f"{sum(1 for tier in my_state.tiers if tier.finished)} tiers finished",
             f"**{user.display_name}**: {their_state.completed_count}/{their_state.total_count} quests, "
-            f"{sum(1 for tier in their_state.tiers if tier.unlocked)} tiers unlocked",
+            f"{sum(1 for tier in their_state.tiers if tier.finished)} tiers finished",
         ]
         ahead = my_state.completed_count - their_state.completed_count
         if ahead > 0:

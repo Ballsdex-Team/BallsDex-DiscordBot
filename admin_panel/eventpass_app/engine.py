@@ -20,9 +20,9 @@ from django.utils import timezone
 
 from ballsdex.core.game_events import Event, EventContext, normalize_command
 
-from .models import EventPass, Measure, PlayerPass, PlayerQuest, Quest, QuestType, Source
+from .models import EventPass, Measure, PlayerPass, PlayerQuest, Quest, QuestType, Reward, Source
 from .rewards import grant
-from .state import REWARD_LINES, period_of, unlocked_tier_ids
+from .state import REWARD_LINES, finished_tier_ids, period_of, unlocked_tier_ids
 from .types import TYPES
 
 if TYPE_CHECKING:
@@ -203,7 +203,7 @@ class EventPassEngine:
         How much this action moves the quest, `None` when it doesn't count at all.
         """
         match quest.type:
-            case QuestType.CATCH | QuestType.OBTAIN | QuestType.AUCTION_CREATE:
+            case QuestType.CATCH | QuestType.OBTAIN | QuestType.AUCTION_CREATE | QuestType.GIVE_TREASURES:
                 count = sum(1 for x in context.instances if quest.matches_instance(x) and self._fast_enough(quest, x))
                 return Increment(count) if count else None
 
@@ -400,15 +400,15 @@ class EventPassEngine:
         self, player_id: int, tier, *, channel_id: int | None = None, server_id: int | None = None
     ) -> tuple[str, str]:
         """
-        Claim the reward of an unlocked tier, if it has one.
+        Claim the reward of a finished tier, if it has one.
         """
         event_pass = tier.event_pass
         if not event_pass.claimable():
             return ("closed", "")
         if tier.reward_id is None:
             return ("nothing", "")
-        if tier.pk not in await unlocked_tier_ids(player_id, event_pass):
-            return ("locked", "")
+        if tier.pk not in await finished_tier_ids(player_id, event_pass):
+            return ("unfinished", "")
         given = await grant(
             player_id,
             event_pass,
@@ -431,12 +431,17 @@ class EventPassEngine:
         if event_pass.final_reward_id is None:
             return ("nothing", "")
         tiers = {tier async for tier in event_pass.tiers.values_list("pk", flat=True)}
-        if tiers and not tiers <= await unlocked_tier_ids(player_id, event_pass):
-            return ("locked", "")
+        if tiers and not tiers <= await finished_tier_ids(player_id, event_pass):
+            return ("unfinished", "")
+        # loaded here: the pass comes from queries that don't join its reward, and reading `event_pass.final_reward`
+        # would be a synchronous query, which async code is not allowed to make
+        final_reward = await Reward.objects.filter(pk=event_pass.final_reward_id).afirst()
+        if final_reward is None:
+            return ("nothing", "")
         given = await grant(
             player_id,
             event_pass,
-            event_pass.final_reward,
+            final_reward,
             source=Source.FINAL,
             source_id=event_pass.pk,
             server_id=server_id,

@@ -11,7 +11,7 @@ from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 from settings.models import settings
 
-from .donation import BulkDonationRequest, add_view_all_button, check_giveable, check_recipient
+from .donation import BulkDonationRequest, add_view_all_button, check_giveable, check_recipient, dispatch_gift
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -156,3 +156,4 @@ class BulkGiveSelector(BaseBulkSelector):
             allowed_mentions=await can_mention([self.new_player, self.old_player]),
         )
         await self._finalize()
+        await dispatch_gift(interaction, self.old_player, self.new_player, valid)

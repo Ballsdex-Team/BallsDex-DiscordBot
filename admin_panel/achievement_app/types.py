@@ -102,6 +102,16 @@ def _describe_trade_treasures(achievement: Achievement) -> str:
     return f"Exchange {count} {treasures} in {'a single trade' if achievement.in_one_trade else 'trades'}."
 
 
+def _describe_give_treasures(achievement: Achievement) -> str:
+    count = achievement.target_value
+    text = f"Give {_treasures(achievement, count)}"
+    text += f" to <@{achievement.partner_discord_id}>" if achievement.partner_discord_id else " to other players"
+    # a single give moves one treasure: only the bulk give can hand several of them at once
+    if achievement.in_one_trade and count > 1:
+        text += f" at once with /{settings.balls_slash_name} bulk_give"
+    return f"{text}."
+
+
 def _describe_friends(achievement: Achievement) -> str:
     count = achievement.target_value
     return f"Have {count} {_plural(count, 'friend')}."
@@ -198,6 +208,16 @@ TYPES: dict[str, TypeDefinition] = {
             "Counts the treasures changing hands in the player's trades, given and received. A trade where only one "
             "side gives something is a gift and doesn't count. Past trades are counted with the recompute action.",
             _describe_trade_treasures,
+        ),
+        TypeDefinition(
+            AchievementType.GIVE_TREASURES,
+            frozenset({Event.GIFT}),
+            TREASURE_FILTERS + ("partner_discord_id", "in_one_trade"),
+            "Number of treasures given",
+            'Counts the treasures the player gives away with the give and bulk give commands. Tick "in one go" to '
+            "ask for that many treasures in a single donation, which only the bulk give can do. Past donations are "
+            "counted with the recompute action.",
+            _describe_give_treasures,
         ),
         TypeDefinition(
             AchievementType.FRIENDS,

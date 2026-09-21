@@ -21,6 +21,7 @@ class AchievementType(models.TextChoices):
     COMPLETION = "completion", "Reach a completion percentage"
     TRADE = "trade", "Complete trades"
     TRADE_TREASURES = "trade_treasures", "Exchange treasures in trades"
+    GIVE_TREASURES = "give_treasures", "Give treasures to players"
     FRIENDS = "friends", "Have friends"
     FAVORITES = "favorites", "Have favorite treasures"
     BATTLE_WIN = "battle_win", "Win battles"
@@ -108,7 +109,8 @@ class Achievement(models.Model):
     partner_discord_id = models.BigIntegerField(
         null=True,
         blank=True,
-        help_text="Only count trades with this Discord user, or the currency this user gives (ID).",
+        help_text="Only count what involves this Discord user (ID): the trade partner, the one giving the currency, "
+        "or the one receiving the treasures.",
     )
     min_currency = models.PositiveBigIntegerField(
         null=True,
@@ -119,7 +121,9 @@ class Achievement(models.Model):
         default=False, help_text="Only count trades where the player receives at least one treasure."
     )
     in_one_trade = models.BooleanField(
-        default=False, help_text="Ask for a single trade exchanging that many treasures, instead of a total."
+        default=False,
+        verbose_name="in one go",
+        help_text="Ask for that many treasures in a single trade or donation, instead of adding them up.",
     )
     time_unit = models.CharField(max_length=8, choices=TimeUnit.choices, default=TimeUnit.DAYS)
     command_name = models.CharField(

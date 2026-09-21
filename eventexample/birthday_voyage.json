@@ -1,0 +1,389 @@
+{
+  "name": "Birthday Voyage",
+  "emoji": "🎂",
+  "description": "OnePieceDex turns one! Sail from East Blue to the New World, collect Birthday tokens and celebrate with the whole crew.",
+  "colour": "#FDDF28",
+  "starts_at": "2026-10-09T00:01:00Z",
+  "ends_at": "2026-10-18T23:59:00Z",
+  "claim_until": "2026-10-25T23:59:00Z",
+  "token": "venustoken",
+  "card_special": "Birthday",
+  "final_reward": {"cards": ["Usopp"]},
+  "final_message": "You sailed all the way to the New World. Happy birthday, OnePieceDex! 🎂",
+  "notes": "The token is a placeholder: replace venustoken by the real Birthday token, then load the file again. The Last Present counts any Craft until it points at the collector of the token frame.",
+  "tiers": [
+    {
+      "name": "East Blue Party",
+      "emoji": "<:GoingMerry:1462962811847311391>",
+      "description": "Every pirate starts in East Blue. Learn how packs work, catch your first Birthday treasures and meet the crew.",
+      "reward": {"cards": ["Brook"]},
+      "quests": [
+        {
+          "name": "Window Shopping",
+          "emoji": "<:TreasureChest:1477305592950558892>",
+          "description": "Take a look around the pack shop with /pack shop.",
+          "type": "command",
+          "command": "pack shop",
+          "mandatory": true,
+          "reward": {"tokens": 1, "berries": 300}
+        },
+        {
+          "name": "Free Delivery",
+          "emoji": "<:DenDenMushi:1477297846024933511>",
+          "description": "Claim your free daily pack with /pack daily.",
+          "type": "command",
+          "command": "pack daily",
+          "mandatory": true,
+          "reward": {"tokens": 1, "berries": 300}
+        },
+        {
+          "name": "Know Your Metals",
+          "emoji": "<:BronzeMedal:1498797313458700470>",
+          "description": "Check the tier packs, from Bronze to Rares, with /pack tiers.",
+          "type": "command",
+          "command": "pack tiers",
+          "mandatory": true,
+          "reward": {"tokens": 1, "berries": 300}
+        },
+        {
+          "name": "First Purchase",
+          "emoji": "<:BeriBeri:1430313610219094033>",
+          "description": "Buy your very first pack, any pack.",
+          "type": "pack_buy",
+          "mandatory": true,
+          "reward": {"tokens": 1, "cards": ["Beri Beri no Mi"]}
+        },
+        {
+          "name": "A Slice of Cake",
+          "emoji": "<:CharlottePudding:1547136500590714941>",
+          "description": "It's a birthday: buy a Whole Cake Extras pack.",
+          "type": "pack_buy",
+          "item": "Whole Cake Extras",
+          "mandatory": true,
+          "reward": {"tokens": 1, "cards": ["Charlotte Pudding"]}
+        },
+        {
+          "name": "Happy Birthday!",
+          "emoji": "<:SakeCup:1477076844925685961>",
+          "description": "Catch your first Birthday treasure.",
+          "type": "catch",
+          "special": "Birthday",
+          "mandatory": true,
+          "reward": {"tokens": 2, "berries": 800}
+        },
+        {
+          "name": "Setting Sail",
+          "emoji": "<:Alvida:1501927839899844668>",
+          "description": "Every voyage starts somewhere. Catch 10 treasures.",
+          "type": "catch",
+          "goal": 10,
+          "mandatory": true,
+          "reward": {"tokens": 2, "cards": ["Alvida"]}
+        },
+        {
+          "name": "Early Bird",
+          "emoji": "<:Hibari:1479288856590160045>",
+          "description": "Catch a treasure less than 10 seconds after it appears.",
+          "type": "catch",
+          "max_catch_seconds": 10,
+          "mandatory": true,
+          "reward": {"tokens": 2, "cards": ["Hibari"]}
+        },
+        {
+          "name": "Treasure Hunter",
+          "emoji": "<:TreasureMap:1477304335192035592>",
+          "description": "Catch 3 treasures of T100 or rarer.",
+          "type": "catch",
+          "goal": 3,
+          "max_rarity": 100,
+          "mandatory": true,
+          "reward": {"tokens": 2, "cards": ["Mont Blanc Cricket"]}
+        },
+        {
+          "name": "Meet the Crew",
+          "emoji": "<:Nakama:1480629699649736745>",
+          "description": "Add a new friend with /player friend add.",
+          "type": "friend",
+          "reward": {"tokens": 2, "cards": ["Mr.2 (Bon Clay)"]}
+        },
+        {
+          "name": "Trade Winds",
+          "emoji": "<:BigNewsMorgans:1501288734803361823>",
+          "description": "Complete a trade with another player.",
+          "type": "trade",
+          "reward": {"tokens": 2, "cards": ["\"Big News\" Morgans"]}
+        },
+        {
+          "name": "Generous Soul",
+          "emoji": "<:1500Berry:1489367084344541255>",
+          "description": "Give 500 berries to other players with /money give.",
+          "type": "give_currency",
+          "measure": "amount",
+          "goal": 500,
+          "reward": {"tokens": 2, "berries": 600}
+        },
+        {
+          "name": "Buggy's Bargain",
+          "emoji": "<:BuggyBall:1477409157886906540>",
+          "description": "Sell a treasure to Buggy.",
+          "type": "sell",
+          "mandatory": true,
+          "reward": {"tokens": 2, "cards": ["Mr.3 (Galdino)"]}
+        },
+        {
+          "name": "Going Once…",
+          "emoji": "<:WantedPoster:1477411143072092243>",
+          "description": "Put a treasure up for auction on the auction house.",
+          "type": "auction_create",
+          "mandatory": true,
+          "reward": {"tokens": 2, "berries": 700}
+        },
+        {
+          "name": "Pack Rat",
+          "emoji": "<:PocketPocket:1433013547293605908>",
+          "description": "Buy 3 packs, any packs.",
+          "type": "pack_buy",
+          "goal": 3,
+          "mandatory": true,
+          "reward": {"tokens": 2, "berries": 1000}
+        }
+      ]
+    },
+    {
+      "name": "Grand Line Gifts",
+      "emoji": "<:LogPose:1477297692807008318>",
+      "description": "On the Grand Line, the party gets serious. Rumour has it someone aboard collects a certain old man who keeps shouting \"G!\", and never says no to one more.",
+      "reward": {"cards": ["Tony Tony Chopper"]},
+      "requirements": ["finish_previous", {"date": "2026-10-12T00:01:00Z"}],
+      "quests": [
+        {
+          "name": "Birthday Hunter",
+          "emoji": "<:CreamCream:1514967893283045408>",
+          "description": "Catch 3 Birthday treasures.",
+          "type": "catch",
+          "goal": 3,
+          "special": "Birthday",
+          "mandatory": true,
+          "reward": {"tokens": 3, "berries": 1500}
+        },
+        {
+          "name": "Grand Line Sailor",
+          "emoji": "<:SharkSuperb:1462971673018892471>",
+          "description": "Catch 30 treasures on the Grand Line.",
+          "type": "catch",
+          "goal": 30,
+          "mandatory": true,
+          "reward": {"tokens": 4, "cards": ["Shark Superb"]}
+        },
+        {
+          "name": "Something Special",
+          "emoji": "<:RumbleBalls:1482515605926973500>",
+          "description": "Catch 3 treasures with a special, Birthday ones included.",
+          "type": "catch",
+          "goal": 3,
+          "any_special": true,
+          "mandatory": true,
+          "reward": {"tokens": 3, "berries": 1500}
+        },
+        {
+          "name": "Speed Demon",
+          "emoji": "<:Falcon:1435264820428673085>",
+          "description": "Catch 3 treasures less than 7 seconds after they appear.",
+          "type": "catch",
+          "goal": 3,
+          "max_catch_seconds": 7,
+          "mandatory": true,
+          "reward": {"tokens": 4, "cards": ["Falcon"]}
+        },
+        {
+          "name": "Big Spender",
+          "emoji": "<:SakeBottle:1477076566960771225>",
+          "description": "Spend 20,000 berries, anywhere.",
+          "type": "spend_currency",
+          "measure": "amount",
+          "goal": 20000,
+          "mandatory": true,
+          "reward": {"tokens": 4, "berries": 2000}
+        },
+        {
+          "name": "Silver Lining",
+          "emoji": "<:SilverMedal:1449149318278807654>",
+          "description": "Buy a Silver Pack.",
+          "type": "pack_buy",
+          "item": "Silver Pack",
+          "mandatory": true,
+          "reward": {"tokens": 3, "berries": 1800}
+        },
+        {
+          "name": "The Merchant's Visit",
+          "emoji": "<:Baratie:1462971723459592283>",
+          "description": "Buy something from the merchant.",
+          "type": "merchant_buy",
+          "mandatory": true,
+          "reward": {"tokens": 3, "berries": 1500}
+        },
+        {
+          "name": "Bidding War",
+          "emoji": "<:DiceDice:1482510352758341713>",
+          "description": "Place 3 bids on the auction house.",
+          "type": "auction_bid",
+          "goal": 3,
+          "mandatory": true,
+          "reward": {"tokens": 3, "cards": ["Doc Q"]}
+        },
+        {
+          "name": "Crew Mates",
+          "emoji": "<:BartoClub:1453815053093703823>",
+          "description": "Complete 3 trades with other players.",
+          "type": "trade",
+          "goal": 3,
+          "reward": {"tokens": 3, "cards": ["Bartolomeo"]}
+        },
+        {
+          "name": "A Gift for the Captain",
+          "emoji": "<:LaoG:1547149412889796649>",
+          "description": "You brought the captain a Lao G, the one present they never say no to.",
+          "type": "give_treasures",
+          "ball": "Lao G",
+          "partner": 1355652713911685301,
+          "hidden": true,
+          "completion_message": "G! The captain loves it.",
+          "reward": {"cards": ["Charlotte Smoothie"]}
+        }
+      ]
+    },
+    {
+      "name": "New World Banquet",
+      "emoji": "<:Meat:1477301830366007463>",
+      "description": "Only the boldest make it to the banquet. Crafts, rare catches and big spending: welcome to the New World.",
+      "reward": {"cards": ["Jimbei"]},
+      "requirements": ["finish_previous", {"date": "2026-10-15T00:01:00Z"}],
+      "quests": [
+        {
+          "name": "Elemental Master",
+          "emoji": "<:ClimaTact:1468722257667817522>",
+          "description": "Craft an Elemental card.",
+          "type": "craft",
+          "craft_type": "Elemental",
+          "mandatory": true,
+          "reward": {"tokens": 5, "berries": 4000}
+        },
+        {
+          "name": "Tier One Legend",
+          "emoji": "<:DiamondDiamond:1452732259814740139>",
+          "description": "Craft a Tier 1 card.",
+          "type": "craft",
+          "craft_type": "Tier 1",
+          "mandatory": true,
+          "reward": {"tokens": 5, "cards": ["Kira Kira no Mi (Diamond Diamond)"]}
+        },
+        {
+          "name": "Birthday Bash",
+          "emoji": "<:Shirahoshi:1500824172455006320>",
+          "description": "Catch 6 Birthday treasures.",
+          "type": "catch",
+          "goal": 6,
+          "special": "Birthday",
+          "mandatory": true,
+          "reward": {"tokens": 5, "cards": ["Shirahoshi"]}
+        },
+        {
+          "name": "New World Hunter",
+          "emoji": "<:SmokeSmoke:1441214326659612786>",
+          "description": "Catch 40 treasures in the New World.",
+          "type": "catch",
+          "goal": 40,
+          "mandatory": true,
+          "reward": {"tokens": 5, "cards": ["Smoker"]}
+        },
+        {
+          "name": "High Roller",
+          "emoji": "<:GildTesoro:1461080899172044894>",
+          "description": "Spend 40,000 berries, anywhere.",
+          "type": "spend_currency",
+          "measure": "amount",
+          "goal": 40000,
+          "mandatory": true,
+          "reward": {"tokens": 5, "berries": 4000}
+        },
+        {
+          "name": "Rare Catch",
+          "emoji": "<:BasilHawkins:1541043283558670486>",
+          "description": "Catch 3 treasures of T60 or rarer.",
+          "type": "catch",
+          "goal": 3,
+          "max_rarity": 60,
+          "mandatory": true,
+          "reward": {"tokens": 4, "cards": ["Basil Hawkins"]}
+        },
+        {
+          "name": "Gold Rush",
+          "emoji": "<:GoldMedal:1445236978537988207>",
+          "description": "Buy a Gold Pack.",
+          "type": "pack_buy",
+          "item": "Gold Pack",
+          "mandatory": true,
+          "reward": {"tokens": 4, "berries": 3000}
+        },
+        {
+          "name": "Auction King",
+          "emoji": "<:CaponeBege:1540672903258050591>",
+          "description": "Win an auction on the auction house.",
+          "type": "auction_won",
+          "reward": {"tokens": 4, "cards": ["Capone Bege"]}
+        },
+        {
+          "name": "Clearance Sale",
+          "emoji": "<:Buggy:1475102213821960274>",
+          "description": "Earn 15,000 berries by selling treasures to Buggy.",
+          "type": "sell",
+          "measure": "amount",
+          "goal": 15000,
+          "reward": {"tokens": 4, "berries": 3000}
+        },
+        {
+          "name": "Full Moon",
+          "emoji": "<:Carrot:1504918794651435048>",
+          "description": "Catch 5 treasures with a special, Birthday ones included.",
+          "type": "catch",
+          "goal": 5,
+          "any_special": true,
+          "mandatory": true,
+          "reward": {"tokens": 4, "cards": ["Carrot"]}
+        },
+        {
+          "name": "Blow the Candles",
+          "emoji": "<:CharlottePerospero:1475942993692332053>",
+          "description": "Catch a Birthday treasure less than 8 seconds after it appears.",
+          "type": "catch",
+          "special": "Birthday",
+          "max_catch_seconds": 8,
+          "hidden": true,
+          "completion_message": "Make a wish!",
+          "reward": {"cards": ["Charlotte Perospero"]}
+        },
+        {
+          "name": "Legend Spotted",
+          "emoji": "<:CatarinaDevon:1475890777480757338>",
+          "description": "Catch a treasure of T30 or rarer.",
+          "type": "catch",
+          "max_rarity": 30,
+          "hidden": true,
+          "completion_message": "Not everyone gets to see one of those.",
+          "reward": {"cards": ["Catarina Devon"]}
+        },
+        {
+          "name": "The Last Present",
+          "emoji": "<:venustoken:1429420901602037874>",
+          "description": "Craft the framed Birthday token.",
+          "type": "craft",
+          "craft_type": "Craft",
+          "hidden": true,
+          "completion_message": "The last present of the voyage is yours. Happy birthday!",
+          "notes": "Placeholder: counts any Craft. Set the collector of the token frame craft once it exists.",
+          "reward": {"berries": 4000, "cards": ["Emporio Ivankov"]}
+        }
+      ]
+    }
+  ]
+}

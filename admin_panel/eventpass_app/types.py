@@ -67,13 +67,13 @@ def _treasures(quest: Quest, count: int) -> str:
         text += " with a special"
     if quest.cached_group:
         text += f" from the {quest.cached_group.name} group"
-    if quest.min_rarity is not None or quest.max_rarity is not None:
-        bounds = []
-        if quest.min_rarity is not None:
-            bounds.append(f"a rarity of {quest.min_rarity:g} or more")
-        if quest.max_rarity is not None:
-            bounds.append(f"a rarity of {quest.max_rarity:g} or less")
-        text += f" with {' and '.join(bounds)}"
+    # a lower rarity value is a rarer treasure, and players call a treasure of rarity 60 a "T60"
+    if quest.min_rarity is not None and quest.max_rarity is not None:
+        text += f" between T{quest.min_rarity:g} and T{quest.max_rarity:g}"
+    elif quest.max_rarity is not None:
+        text += f" of T{quest.max_rarity:g} or rarer"
+    elif quest.min_rarity is not None:
+        text += f" of T{quest.min_rarity:g} or more common"
     if quest.min_attack_bonus is not None or quest.min_health_bonus is not None:
         stats = []
         if quest.min_attack_bonus is not None:
@@ -129,6 +129,11 @@ def _describe_trade(quest: Quest) -> str:
 def _describe_trade_treasures(quest: Quest) -> str:
     treasures = _plural(quest.target, settings.collectible_name, settings.plural_collectible_name)
     return f"Exchange {quest.target} {treasures} in {'a single trade' if quest.in_one_trade else 'trades'}."
+
+
+def _describe_give_treasures(quest: Quest) -> str:
+    recipient = f"<@{quest.partner_discord_id}>" if quest.partner_discord_id else "other players"
+    return f"Give {_treasures(quest, quest.target)} to {recipient}{_where(quest)}."
 
 
 def _describe_friend(quest: Quest) -> str:
@@ -273,6 +278,15 @@ TYPES: dict[str, TypeDefinition] = {
             "one side gives something is a gift and doesn't count.",
             _describe_trade_treasures,
             filters_instances=False,
+        ),
+        TypeDefinition(
+            QuestType.GIVE_TREASURES,
+            frozenset({Event.GIFT}),
+            TREASURE_FILTERS + ("partner_discord_id", "main_server_only"),
+            "Number of treasures given",
+            "Counts the treasures the player gives away with the give command. Set a partner to ask for a present "
+            "to one person in particular.",
+            _describe_give_treasures,
         ),
         TypeDefinition(
             QuestType.FRIEND,

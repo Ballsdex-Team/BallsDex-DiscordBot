@@ -36,6 +36,7 @@ class QuestType(models.TextChoices):
     COMMAND = "command", "Use a command"
     TRADE = "trade", "Complete trades"
     TRADE_TREASURES = "trade_treasures", "Exchange treasures in trades"
+    GIVE_TREASURES = "give_treasures", "Give treasures to players"
     FRIEND = "friend", "Add friends"
     BATTLE_WIN = "battle_win", "Win battles"
     GIVE_CURRENCY = "give_currency", "Give berries to players"
@@ -87,8 +88,9 @@ class BonusMode(models.TextChoices):
 
 
 class RequirementKind(models.TextChoices):
+    FINISH_PREVIOUS = "finish_previous", "Finish the previous tier (its mandatory quests)"
     QUESTS_ALL = "quests_all", "Complete these quests"
-    QUESTS_COUNT = "quests_count", "Complete a number of quests of the previous tiers"
+    QUESTS_COUNT = "quests_count", "Complete a number of quests of the pass"
     PREVIOUS_TIER = "previous_tier", "Unlock the previous tier"
     OWN_TREASURES = "own_treasures", "Own treasures (tokens, a special...)"
     CURRENCY = "currency", "Have berries"
@@ -233,7 +235,7 @@ class EventPass(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="+",
-        help_text="Given when every tier is unlocked. Leave empty if the pass has no final reward.",
+        help_text="Given when every tier is finished. Leave empty if the pass has no final reward.",
     )
     final_reward_id: int | None
     final_message = models.TextField(blank=True, default="", help_text="Shown when the pass is completed.")
@@ -325,7 +327,8 @@ class PassTier(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="+",
-        help_text="Optional reward given for unlocking the tier itself.",
+        help_text="Optional reward for finishing the tier: every mandatory quest completed, or every visible quest "
+        "when none is mandatory.",
     )
     reward_id: int | None
 
@@ -414,6 +417,11 @@ class Quest(models.Model):
     position = models.PositiveSmallIntegerField(default=0, help_text="Quests are listed from the lowest position.")
     enabled = models.BooleanField(default=True, help_text="Uncheck to hide the quest without deleting it.")
     hidden = models.BooleanField(default=False, help_text="Secret quest: players only see it once they completed it.")
+    mandatory = models.BooleanField(
+        default=False,
+        help_text="Needed to finish the tier: its reward, and the tiers asking to finish it, wait for every mandatory "
+        "quest. A tier with no mandatory quest needs all its visible quests instead.",
+    )
 
     type = models.CharField(max_length=24, choices=QuestType.choices)
     target = models.PositiveBigIntegerField(verbose_name="goal", default=1, help_text="How much progress is needed.")
@@ -457,9 +465,13 @@ class Quest(models.Model):
     group = models.ForeignKey(BallGroup, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     group_id: int | None
     min_rarity = models.FloatField(
-        null=True, blank=True, help_text="Only count treasures at least this rare (the rarity value, 0 to 1)."
+        null=True,
+        blank=True,
+        help_text="Lowest rarity value counted. A lower value is rarer: 50 leaves out everything rarer than T50.",
     )
-    max_rarity = models.FloatField(null=True, blank=True, help_text="Only count treasures up to this rarity value.")
+    max_rarity = models.FloatField(
+        null=True, blank=True, help_text="Highest rarity value counted: 60 keeps T60 and everything rarer."
+    )
     min_attack_bonus = models.IntegerField(null=True, blank=True, help_text="Minimum attack bonus, in percent.")
     min_health_bonus = models.IntegerField(null=True, blank=True, help_text="Minimum health bonus, in percent.")
     hex_contains = models.CharField(
