@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
@@ -6,30 +7,29 @@ from django.db import transaction
 
 from eventpass_app.loader import PassLoader
 
-PASSES = Path(__file__).resolve().parents[2] / "passes"
-
 
 class Command(BaseCommand):
     help = "Build an event pass from a JSON file, or update the draft it built before"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "file",
-            type=str,
-            help='Path to the JSON file, or the name of a file of eventpass_app/passes, like "birthday_voyage"',
+            "file", type=str, help='Path to the JSON file, or "-" to read it from stdin (see eventexample/README.md)'
         )
         parser.add_argument("--dry-run", action="store_true", help="Check the file without saving anything")
 
     def handle(self, *args, **options):
-        path = Path(options["file"])
-        if not path.exists():
-            path = PASSES / f"{options['file'].removesuffix('.json')}.json"
-        if not path.exists():
-            raise CommandError(f"File not found: {options['file']}")
+        if options["file"] == "-":
+            raw = sys.stdin.buffer.read()
+        else:
+            path = Path(options["file"])
+            if not path.exists():
+                raise CommandError(f"File not found: {path}")
+            raw = path.read_bytes()
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as error:
-            raise CommandError(f"{path.name} is not valid JSON: {error}") from error
+            # utf-8-sig: a file saved by Notepad or piped by PowerShell starts with a byte order mark
+            data = json.loads(raw.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise CommandError(f"This is not a valid JSON file: {error}") from error
 
         loader = PassLoader(data)
         # one transaction for the whole pass: a single mistake in the file and nothing at all is saved
