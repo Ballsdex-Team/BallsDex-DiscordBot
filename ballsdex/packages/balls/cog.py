@@ -44,7 +44,7 @@ from settings.models import settings
 
 from .bulk_give_selector import BulkGiveSelector
 from .countryballs_paginator import CountryballsDuplicateSource, CountryballsViewer
-from .donation import DonationRequest, GiveSkipReason, check_giveable, check_recipient
+from .donation import DonationRequest, GiveSkipReason, check_giveable, check_recipient, dispatch_gift
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -705,6 +705,7 @@ class Balls(commands.GroupCog, name=settings.balls_slash_name.capitalize(), grou
                 allowed_mentions=await can_mention([new_player]),
             )
         await countryball.unlock()
+        await dispatch_gift(interaction, old_player, new_player, [countryball])
 
     @app_commands.command()
     async def bulk_give(

@@ -5,6 +5,7 @@ import discord
 from discord.ui import Button, button
 
 from ballsdex.core.discord import View
+from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.utils.menus import Menu
 from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
@@ -51,6 +52,21 @@ async def check_recipient(bot: "BallsDexBot", new_player: Player, old_player: Pl
     if new_player.discord_id in bot.blacklist:
         return "You cannot donate to a blacklisted user."
     return None
+
+
+async def dispatch_gift(interaction: Interaction, giver: Player, recipient: Player, countryballs: list[BallInstance]):
+    """
+    Tell the game event bus that a player gave treasures away. The recipient already gets their own event from the
+    ownership change, this one is for the giver.
+    """
+    await bus.dispatch(
+        giver,
+        Event.GIFT,
+        context=EventContext(
+            instances=countryballs, partner_discord_id=recipient.discord_id, server_id=interaction.guild_id
+        ),
+        channel_id=interaction.channel_id,
+    )
 
 
 VIEW_ALL_CUSTOM_ID = "bulk_give:view_all"
@@ -136,6 +152,7 @@ class DonationRequest(View):
             view=self,
         )
         await self.countryball.unlock()
+        await dispatch_gift(interaction, self.countryball.trade_player, self.new_player, [self.countryball])
 
     @button(style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}")
     async def deny(self, interaction: Interaction, button: Button):
@@ -214,6 +231,7 @@ class BulkDonationRequest(View):
             f"{settings.plural_collectible_name} was accepted!",
             view=self,
         )
+        await dispatch_gift(interaction, self.old_player, self.new_player, self.countryballs)
 
     @button(style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}")
     async def deny(self, interaction: Interaction, button: Button):

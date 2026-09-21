@@ -58,6 +58,7 @@ class Event(StrEnum):
 
     # -- players
     TRADE = "trade"  # a trade was completed
+    GIFT = "gift"  # a player gave treasures away with the give command
     FRIEND = "friend"  # a player became friends with someone
     BATTLE_WIN = "battle_win"  # a player won a battle
     COMMAND = "command"  # a player used a slash command
@@ -97,7 +98,7 @@ class EventContext:
     a field that an event never fills simply never matches.
     """
 
-    # treasures caught or obtained, the treasures received in a trade, the treasure bought, sold or crafted
+    # treasures caught or obtained, the treasures received in a trade, the treasures given, bought, sold or crafted
     instances: list[BallInstance] = field(default_factory=list)
     # trades, gifts, friendships: the other player, or the admin giving berries
     partner_discord_id: int | None = None
