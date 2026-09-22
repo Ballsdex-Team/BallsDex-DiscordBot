@@ -73,6 +73,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
         group: BallGroupTransform | None = None,
+        regime: RegimeTransform | None = None,
+        economy: EconomyTransform | None = None,
         ephemeral: bool = False,
     ):
         """
@@ -94,6 +96,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             Filter the list by a specific filter.
         group: BallGroup
             Filter the list by a specific group.
+        regime: Regime
+            Filter the list by a specific regime.
+        economy: Economy
+            Filter the list by a specific economy.
         ephemeral: bool
             Whether or not to send the command ephemerally.
         """
@@ -134,6 +140,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             query = query.filter(special=special)
         if group:
             query = query.filter(ball__groups=group)
+        if regime:
+            query = query.filter(ball__regime=regime)
+        if economy:
+            query = query.filter(ball__economy=economy)
         if sort:
             query = sort_balls(sort, query)
         else:
@@ -144,8 +154,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             ball_txt = countryball.country if countryball else ""
             special_txt = special.name if special else ""
             group_txt = group.name if group else ""
+            regime_txt = regime.name if regime else ""
+            economy_txt = economy.name if economy else ""
 
-            combined = " ".join(x for x in (special_txt, group_txt, ball_txt) if x)
+            combined = " ".join(x for x in (special_txt, group_txt, regime_txt, economy_txt, ball_txt) if x)
             combined_txt = f"{combined} " if combined else ""
             if user_obj == interaction.user:
                 await interaction.followup.send(
@@ -370,7 +382,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
+        countryball: BallEnabledTransform | None = None,
+        special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        group: BallGroupTransform | None = None,
         index: app_commands.Range[int, 1] = 1,
     ):
         """
@@ -380,9 +395,15 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         ----------
         user: discord.Member
             The user you would like to see
+        countryball: Ball
+            Only look at a specific countryball.
+        special: Special
+            Only look at a specific special event.
         filter: FilteringChoices
             Filter the last caught countryball by a specific filter.
             Only works if the user has caught at least one countryball.
+        group: BallGroup
+            Only look at a specific group.
         index: int
             How far back to look. 1 is the most recent catch, 2 the one before that, and so on.
         """
@@ -423,31 +444,52 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if filter:
             filter_msg = f" with the `{filter.value.replace('_', ' ')}` filter"
             query = filter_balls(filter, query, interaction.guild_id)
+        if countryball:
+            query = query.filter(ball=countryball)
+        if special:
+            query = query.filter(special=special)
+        if group:
+            query = query.filter(ball__groups=group)
+
+        combined = " ".join(
+            x
+            for x in (
+                special.name if special else "",
+                group.name if group else "",
+                countryball.country if countryball else "",
+            )
+            if x
+        )
+        combined_txt = f"{combined} " if combined else ""
+
         matches = [cb async for cb in query.order_by("-id")[index - 1 : index]]
-        countryball = matches[0] if matches else None
-        if not countryball:
+        instance = matches[0] if matches else None
+        if not instance:
             if index == 1:
                 msg = f"{'You do' if user is None else f'{user_obj.display_name} does'}"
                 await interaction.followup.send(
-                    f"{msg} not have any {settings.plural_collectible_name} yet.", ephemeral=True
+                    f"{msg} not have any {combined_txt}{settings.plural_collectible_name}{filter_msg} yet.",
+                    ephemeral=True,
                 )
             else:
                 who = "You don't" if user is None else f"{user_obj.display_name} doesn't"
                 await interaction.followup.send(
-                    f"{who} have {index} caught {settings.plural_collectible_name}{filter_msg} yet.", ephemeral=True
+                    f"{who} have {index} caught {combined_txt}{settings.plural_collectible_name}{filter_msg} yet.",
+                    ephemeral=True,
                 )
             return
 
         index_msg = "" if index == 1 else f" ({index} catches back)"
-        content, file, view = await countryball.prepare_for_message(interaction)
+        content, file, view = await instance.prepare_for_message(interaction)
         if user is not None and user.id != interaction.user.id:
             content = (
                 f"You are viewing {user.display_name}'s last caught "
-                f"{settings.collectible_name}{filter_msg}{index_msg}.\n{content}"
+                f"{combined_txt}{settings.collectible_name}{filter_msg}{index_msg}.\n{content}"
             )
         else:
             content = (
-                f"You are viewing your last caught {settings.collectible_name}{filter_msg}{index_msg}.\n" + content
+                f"You are viewing your last caught "
+                f"{combined_txt}{settings.collectible_name}{filter_msg}{index_msg}.\n{content}"
             )
         await interaction.followup.send(content=content, file=file, view=view)
         file.close()
@@ -692,6 +734,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         sort: SortingChoices | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        group: BallGroupTransform | None = None,
     ):
         """
         Give multiple countryballs to a user at once.
@@ -708,6 +751,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             Filter the selection to a specific special event
         filter: FilteringChoices
             Filter the selection by a specific filter
+        group: BallGroup
+            Filter the selection to a specific group
         """
         if user.bot:
             await interaction.response.send_message("You cannot donate to bots.", ephemeral=True)
@@ -736,6 +781,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             query = query.filter(ball=countryball)
         if special:
             query = query.filter(special=special)
+        if group:
+            query = query.filter(ball__groups=group)
         if sort:
             query = sort_balls(sort, query)
         if filter:
@@ -759,6 +806,9 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         countryball: BallEnabledTransform | None = None,
         special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
+        group: BallGroupTransform | None = None,
+        regime: RegimeTransform | None = None,
+        economy: EconomyTransform | None = None,
     ):
         """
         Count how many countryballs you have.
@@ -771,6 +821,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             The special you want to count
         filter: FilteringChoices
             Filter the count by a specific filter
+        group: BallGroup
+            The group you want to count
+        regime: Regime
+            The regime you want to count
+        economy: Economy
+            The economy you want to count
         """
         if interaction.response.is_done():
             return
@@ -781,6 +837,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             filters["ball"] = countryball
         if special:
             filters["special"] = special
+        if group:
+            filters["ball__groups"] = group
+        if regime:
+            filters["ball__regime"] = regime
+        if economy:
+            filters["ball__economy"] = economy
         filters["player__discord_id"] = interaction.user.id
 
         await interaction.response.defer(ephemeral=True, thinking=True)
@@ -789,13 +851,23 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if filter:
             query = filter_balls(filter, query, interaction.guild_id)
         balls = await query.acount()
-        country = f"{countryball.country} " if countryball else ""
         plural = "s" if balls > 1 or balls == 0 else ""
-        special_str = f"{special.name} " if special else ""
+        combined = " ".join(
+            x
+            for x in (
+                special.name if special else "",
+                group.name if group else "",
+                regime.name if regime else "",
+                economy.name if economy else "",
+                countryball.country if countryball else "",
+            )
+            if x
+        )
+        combined_txt = f"{combined} " if combined else ""
         guild_text = f" caught in {guild.name}" if filter == FilteringChoices.this_server and guild else ""
 
         await interaction.followup.send(
-            f"You have {balls:,} {special_str}{country}{settings.collectible_name}{plural}{guild_text}."
+            f"You have {balls:,} {combined_txt}{settings.collectible_name}{plural}{guild_text}."
         )
 
     @app_commands.command()
@@ -806,9 +878,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         type: DuplicateType,
         sort: DuplicateSort | None = None,
         limit: app_commands.Range[int, 1] | None = None,
+        min_count: app_commands.Range[int, 1] | None = None,
         reverse: bool = False,
         group: BallGroupTransform | None = None,
         special: SpecialEnabledTransform | None = None,
+        regime: RegimeTransform | None = None,
+        economy: EconomyTransform | None = None,
         filter: FilteringChoices | None = None,
     ):
         """
@@ -822,12 +897,18 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             Choose how the results are sorted. Defaults to most duplicated first.
         limit: int | None
             The amount of countryballs to show (default: all), can only be used with `countryballs`.
+        min_count: int | None
+            Only show results you own at least this many of.
         reverse: bool
             Show your least duplicated countryballs or specials first instead.
         group: BallGroup
             Filter the results by a specific group.
         special: Special
             Filter the results by a specific special event, can only be used with `countryballs`.
+        regime: Regime
+            Filter the results by a specific regime.
+        economy: Economy
+            Filter the results by a specific economy.
         filter: FilteringChoices
             Filter the results by a specific filter.
         """
@@ -843,6 +924,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             queryset = queryset.filter(ball__groups=group)
         if special and not is_special:
             queryset = queryset.filter(special=special)
+        if regime:
+            queryset = queryset.filter(ball__regime=regime)
+        if economy:
+            queryset = queryset.filter(ball__economy=economy)
 
         if is_special:
             queryset = queryset.filter(special_id__isnull=False).prefetch_related("special")
@@ -863,11 +948,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             }
             apply_limit = True
 
-        query = (
-            queryset.values(annotations["value_id"].name)
-            .annotate(**annotations, count=Count("value_id"))
-            .order_by(sort.value if sort else DuplicateSort.count_desc.value)
-        )
+        query = queryset.values(annotations["value_id"].name).annotate(**annotations, count=Count("value_id"))
+        if min_count is not None:
+            query = query.filter(count__gte=min_count)
+        query = query.order_by(sort.value if sort else DuplicateSort.count_desc.value)
 
         if reverse:
             query = query.reverse()
@@ -875,7 +959,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             query = query[:limit]
 
         if not await query.aexists():
-            filter_txt = " matching your filters" if group or filter or (special and not is_special) else ""
+            has_filters = any((group, filter, regime, economy, min_count, special and not is_special))
+            filter_txt = " matching your filters" if has_filters else ""
             await interaction.followup.send(
                 f"You don't have any {type.value} duplicates{filter_txt} in your inventory.", ephemeral=True
             )
@@ -909,6 +994,9 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         special: SpecialEnabledTransform | None = None,
         duplicates: bool = False,
         filter: FilteringChoices | None = None,
+        group: BallGroupTransform | None = None,
+        regime: RegimeTransform | None = None,
+        economy: EconomyTransform | None = None,
         diff_only: bool = False,
     ):
         """
@@ -924,6 +1012,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             Whether to compare duplicates.
         filter: FilteringChoices
             Filter the compared countryballs by a specific filter.
+        group: BallGroup
+            Filter the results of the comparison to a specific group.
+        regime: Regime
+            Filter the results of the comparison to a specific regime.
+        economy: Economy
+            Filter the results of the comparison to a specific economy.
         diff_only: bool
             Only show what's different between you and the other user, hiding "Both have" and
             "Neither have" - useful for large collections.
@@ -956,6 +1050,13 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
                 for x, y in balls.items()
                 if y.enabled and (special.end_date is None or y.created_at is None or y.created_at < special.end_date)
             }
+        if regime:
+            bot_countryballs = {x: y for x, y in bot_countryballs.items() if balls[x].regime_id == regime.pk}
+        if economy:
+            bot_countryballs = {x: y for x, y in bot_countryballs.items() if balls[x].economy_id == economy.pk}
+        if group:
+            group_ball_ids = {ball.pk for ball in groups[group.pk].balls} if group.pk in groups else set()
+            bot_countryballs = {x: y for x, y in bot_countryballs.items() if x in group_ball_ids}
 
         player1, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         player2, _ = await Player.objects.aget_or_create(discord_id=user.id)
@@ -972,6 +1073,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         queryset = BallInstance.objects.filter(ball__enabled=True).distinct()
         if special:
             queryset = queryset.filter(special=special)
+        if group:
+            queryset = queryset.filter(ball__groups=group)
+        if regime:
+            queryset = queryset.filter(ball__regime=regime)
+        if economy:
+            queryset = queryset.filter(ball__economy=economy)
         if filter:
             queryset = filter_balls(filter, queryset, interaction.guild_id)
         if duplicates:
@@ -983,11 +1090,11 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             list[int], [x async for x in queryset.filter(player=player2).values_list("ball_id", flat=True)]
         )
 
-        special_str = f" ({special.name})" if special else ""
+        filters_str = "".join(f" ({x.name})" for x in (special, group, regime, economy) if x)
         comparison_type = "Duplicates Comparison" if duplicates else "Comparison"
         text = (
             f"## {comparison_type} of {interaction.user.display_name} and {user.display_name}'s "
-            f"{settings.plural_collectible_name}{special_str}\n"
+            f"{settings.plural_collectible_name}{filters_str}\n"
         )
 
         def fill_fields(title: str, ids: set[int]):
@@ -1028,6 +1135,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         countryball: BallEnabledTransform | None = None,
+        filter: FilteringChoices | None = None,
         ephemeral: bool = False,
     ):
         """
@@ -1037,46 +1145,45 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         ----------
         countryball: Ball
             The countryball you want to see the collection of
+        filter: FilteringChoices
+            Filter the collection by a specific filter.
         ephemeral: bool
             Whether or not to send the command ephemerally.
         """
         await interaction.response.defer(thinking=True, ephemeral=ephemeral)
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
 
-        query = (
-            BallInstance.objects.filter(player=player)
-            .values("player_id")
-            .annotate(
-                total=Count("id"),
-                traded=Count("id", filter=Q(trade_player_id__isnull=False)),
-                specials=Count(
-                    "id",
-                    filter=Q(special_id__isnull=False)
-                    & ~Exists(Special.objects.filter(hidden=True, id=OuterRef("special_id"))),
-                ),
-            )
+        base_query = BallInstance.objects.filter(player=player)
+        if countryball:
+            base_query = base_query.filter(ball=countryball)
+        if filter:
+            base_query = filter_balls(filter, base_query, interaction.guild_id)
+
+        query = base_query.values("player_id").annotate(
+            total=Count("id"),
+            traded=Count("id", filter=Q(trade_player_id__isnull=False)),
+            specials=Count(
+                "id",
+                filter=Q(special_id__isnull=False)
+                & ~Exists(Special.objects.filter(hidden=True, id=OuterRef("special_id"))),
+            ),
         )
         specials = (
-            BallInstance.objects.filter(player=player)
-            .exclude(special=None)
+            base_query.exclude(special=None)
             .exclude(special__hidden=True)
             .values("special__name")
             .annotate(count=Count("special__name"))
             .order_by("-count")
         )
-        if countryball:
-            query = query.filter(ball=countryball)
-            specials = specials.filter(ball=countryball)
 
         try:
             counts = await query.aget()
         except BallInstance.DoesNotExist:
-            if countryball:
-                await interaction.followup.send(
-                    f"You don't have any {countryball.country} {settings.plural_collectible_name} yet."
-                )
-            else:
-                await interaction.followup.send(f"You don't have any {settings.plural_collectible_name} yet.")
+            country = f"{countryball.country} " if countryball else ""
+            filter_txt = " matching that filter" if filter else ""
+            await interaction.followup.send(
+                f"You don't have any {country}{settings.plural_collectible_name}{filter_txt} yet."
+            )
             return
         all_specials = Special.objects.filter(hidden=False)
         special_emojis = {x.name: x.emoji async for x in all_specials}
