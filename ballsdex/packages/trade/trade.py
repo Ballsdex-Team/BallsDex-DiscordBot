@@ -296,6 +296,8 @@ class TradingUser(Container):
         ):
             if ball.player_id != self.player.pk:
                 raise OwnershipError()
+            if ball.pk in self.proposal:
+                raise AlreadyLockedError()
             if await ball.is_locked(refresh=False):
                 raise AlreadyLockedError()
             if not ball.is_tradeable:
