@@ -34,23 +34,14 @@ class Command(BaseCommand):
         except KeyboardInterrupt:
             self.stdout.write(self.style.ERROR("Conversion cancelled."))
 
-    def _get_ffmpeg_command(self, to_convert: dict[Path, Path]) -> list[str]:
-        command: list[str] = ["ffmpeg"]
-        inputs: list[str] = []
-        outputs: list[str] = []
-
-        for i, (input_file, output_file) in enumerate(to_convert.items()):
-            inputs.append("-i")
-            inputs.append(str(input_file.absolute()))
-
-            outputs.append("-map")
-            outputs.append(str(i))
-            outputs.append(str(output_file.absolute()))
-
-        command.extend(inputs)
-        command.extend(outputs)
-
-        return command
+    def _get_ffmpeg_command(self, input_file: Path, output_file: Path) -> list[str]:
+        return [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(input_file.absolute()),
+            str(output_file.absolute()),
+        ]
 
     @transaction.atomic
     def convert_media(self, *args, **options):
@@ -99,21 +90,41 @@ class Command(BaseCommand):
         with tempfile.TemporaryDirectory(prefix="bd-convert-") as tmp_dir_path:
             tmp_dir = Path(tmp_dir_path)
 
-            command = self._get_ffmpeg_command(
-                {src: (tmp_dir / target.name).absolute() for src, target in to_convert.items()}
-            )
+            total = len(to_convert)
+            for index, (input_file, output_file) in enumerate(
+                to_convert.items(), start=1
+            ):
+                temp_output = tmp_dir / output_file.name
+                self.stdout.write(
+                    f"[{index}/{total}] Converting {input_file.name}..."
+                )
+                command = self._get_ffmpeg_command(
+                    input_file,
+                    temp_output,
+                )
+                result = subprocess.run(
+                    command,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                if result.returncode != 0:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Failed to convert {input_file.name}."
+                        )
+                    )
 
-            result = subprocess.run(command, capture_output=True, text=True)
+                    raise CommandError(
+                        f"ffmpeg exited with non-0 exit code "
+                        f"{result.returncode} while converting "
+                        f"{input_file.name}!\n\n"
+                        f"{result.stderr}"
+                    )
 
-            if result.returncode != 0:
-                try:
-                    raise CommandError(f"ffmpeg exited with non-0 exit code {result.returncode}!")
-                finally:
-                    self.stdout.write(f"ffmpeg did not complete successfully: error: {result.stderr}")
-
+                shutil.copy2(temp_output, media_path / output_file.name)
             self.stdout.write(self.style.SUCCESS("Files converted!"))
-            shutil.copytree(tmp_dir, media_path, dirs_exist_ok=True)
-            self.stdout.write(self.style.SUCCESS("Moved files to media dir!"))
+
 
         for model_instance, model_image, media_attr in medias:
             model_image_path = model_image.absolute()
