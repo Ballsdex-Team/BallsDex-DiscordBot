@@ -177,9 +177,19 @@ class Menu[P]:
     *formatters: Formatter[P, discord.ui.Item]
         One or more formatters which will display the data from the source. They are attached to an item that belongs to
         the view.
+    allowed_mentions: discord.AllowedMentions | None
+        Controls what page turns are allowed to ping. Since paging through a menu shouldn't notify anyone just because a later page happens to
+        contain a mention.
     """  # noqa: E501
 
-    def __init__(self, bot: "BallsDexBot", view: LayoutView, source: Source[P], *formatters: Formatter[P, Any]):
+    def __init__(
+        self,
+        bot: "BallsDexBot",
+        view: LayoutView,
+        source: Source[P],
+        *formatters: Formatter[P, Any],
+        allowed_mentions: discord.AllowedMentions | None = None,
+    ):
         self.bot = bot
         self.view = view
         self.formatters = formatters
@@ -188,6 +198,7 @@ class Menu[P]:
         self.source = source
         self.current_page = 0
         self.controls = Controls(self)
+        self.allowed_mentions = allowed_mentions if allowed_mentions is not None else discord.AllowedMentions.none()
 
     @classmethod
     def countryballs(
@@ -244,4 +255,4 @@ class Menu[P]:
     async def show_page(self, interaction: Interaction, page: int):
         await interaction.response.defer()
         await self.set_page(page)
-        await interaction.edit_original_response(view=self.view)
+        await interaction.edit_original_response(view=self.view, allowed_mentions=self.allowed_mentions)
