@@ -1,23 +1,30 @@
 {
   "name": "Setting Sail",
   "emoji": "<:StrawHat:1477078273078067252>",
-  "description": "Every pirate starts somewhere. Learn your way around the ship, catch your first treasures, and pick a Straw Hat to sail with.",
+  "description": "Every pirate starts somewhere. Find your bearings, catch your first treasures, learn how berries work, then meet the crew and pick a Straw Hat to sail with.",
   "colour": "#E63946",
   "starts_at": "2026-01-01T00:00:00Z",
   "ends_at": "2027-12-31T23:59:00Z",
-  "notes": "The tutorial: open to everyone, permanent, and every quest is doable on the very first day. It starts in the past on purpose, so it is running the moment it is published. To turn it into the beginners-only pass instead, add the access block documented in the README.",
+  "notes": "The tutorial: open to everyone, permanent, and every quest is doable on the very first day. It starts in the past on purpose, so it is running the moment it is published. Quest messages are ephemeral so a beginner never spams the channel. The two repeating quests are optional, so a daily already claimed can never block a tier.",
   "final_reward": {
     "mode": "choice",
     "pick": 1,
-    "pool": {"group": "Straw Hats", "exclude": ["Monkey D. Luffy"]}
+    "pool": {
+      "group": "Straw Hats",
+      "exclude": [
+        "Monkey D. Luffy"
+      ]
+    }
   },
-  "final_message": "Your crew is waiting. Pick the Straw Hat who sails with you! ⛵",
+  "final_message": "Your crew is waiting. Pick the Straw Hat who sails with you!",
   "tiers": [
     {
       "name": "Weighing Anchor",
       "emoji": "<:GoingMerry:1462962811847311391>",
-      "description": "Find your way around the ship. Every quest here is a command you will use every day.",
-      "reward": {"berries": 2000},
+      "description": "Before you sail, learn who you are and what you carry. Four commands you will use every day.",
+      "reward": {
+        "berries": 2000
+      },
       "quests": [
         {
           "name": "Roll Call",
@@ -26,7 +33,22 @@
           "type": "command",
           "command": "player info",
           "mandatory": true,
-          "reward": {"berries": 300}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 300
+          }
+        },
+        {
+          "name": "Your Colours",
+          "emoji": "<:Roger:1475488000241701024>",
+          "description": "Open /player settings. Choose your privacy, decide who may mention you, and put your inventory on public if you want the crew to see your collection.",
+          "type": "command",
+          "command": "player settings",
+          "mandatory": true,
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 300
+          }
         },
         {
           "name": "Ship's Hold",
@@ -35,16 +57,10 @@
           "type": "command",
           "command": "treasures list",
           "mandatory": true,
-          "reward": {"berries": 300}
-        },
-        {
-          "name": "Counting the Haul",
-          "emoji": "<:EternalPose:1477297620996198431>",
-          "description": "Count what you own with /treasures count.",
-          "type": "command",
-          "command": "treasures count",
-          "mandatory": true,
-          "reward": {"berries": 300}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 300
+          }
         },
         {
           "name": "Checking the Purse",
@@ -53,7 +69,10 @@
           "type": "command",
           "command": "berry balance",
           "mandatory": true,
-          "reward": {"berries": 300}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 300
+          }
         }
       ]
     },
@@ -61,8 +80,12 @@
       "name": "First Catch",
       "emoji": "<:TreasureChest:1477305592950558892>",
       "description": "Treasures appear in the chat on their own. Be the first to name one and it is yours.",
-      "requirements": ["finish_previous"],
-      "reward": {"berries": 3000},
+      "requirements": [
+        "finish_previous"
+      ],
+      "reward": {
+        "berries": 3000
+      },
       "quests": [
         {
           "name": "Beginner's Luck",
@@ -71,16 +94,10 @@
           "type": "catch",
           "goal": 1,
           "mandatory": true,
-          "reward": {"berries": 500}
-        },
-        {
-          "name": "Filling the Hold",
-          "emoji": "<:BuggyBall:1477409157886906540>",
-          "description": "Catch 10 treasures.",
-          "type": "catch",
-          "goal": 10,
-          "mandatory": true,
-          "reward": {"berries": 1000}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 500
+          }
         },
         {
           "name": "Fresh Off the Deck",
@@ -89,7 +106,34 @@
           "type": "command",
           "command": "treasures last",
           "mandatory": true,
-          "reward": {"berries": 300}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 300
+          }
+        },
+        {
+          "name": "Filling the Hold",
+          "emoji": "<:BuggyBall:1477409157886906540>",
+          "description": "Catch 10 treasures.",
+          "type": "catch",
+          "goal": 10,
+          "mandatory": true,
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 1000
+          }
+        },
+        {
+          "name": "Counting the Haul",
+          "emoji": "<:EternalPose:1477297620996198431>",
+          "description": "Now that the hold is filling up, count it with /treasures count.",
+          "type": "command",
+          "command": "treasures count",
+          "mandatory": true,
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 300
+          }
         },
         {
           "name": "Know Your Crew",
@@ -97,30 +141,32 @@
           "description": "Open a collection page with /treasures collection.",
           "type": "command",
           "command": "treasures collection",
-          "reward": {"berries": 300}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 300
+          }
         }
       ]
     },
     {
       "name": "Berries and Barrels",
       "emoji": "<:BeriBeri:1430313610219094033>",
-      "description": "Berries buy packs, packs hold treasures. Here is how the money moves.",
-      "requirements": ["finish_previous"],
+      "description": "Berries buy packs, packs hold treasures. Here is how the money moves, and two habits worth keeping.",
+      "requirements": [
+        "finish_previous"
+      ],
       "reward": {
         "mode": "random",
         "pick": 1,
-        "pool": {"group": "Straw Hats", "exclude": ["Monkey D. Luffy"], "min_rarity": 20}
+        "pool": {
+          "group": "Straw Hats",
+          "exclude": [
+            "Monkey D. Luffy"
+          ],
+          "min_rarity": 20
+        }
       },
       "quests": [
-        {
-          "name": "Daily Bread",
-          "emoji": "<:KibiDango:1430072633931726878>",
-          "description": "Claim your daily berries with /berry daily. Come back every day for more.",
-          "type": "command",
-          "command": "berry daily",
-          "mandatory": true,
-          "reward": {"berries": 500}
-        },
         {
           "name": "Window Shopping",
           "emoji": "<:SilverMedal:1449149318278807654>",
@@ -128,7 +174,10 @@
           "type": "command",
           "command": "pack shop",
           "mandatory": true,
-          "reward": {"berries": 300}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 300
+          }
         },
         {
           "name": "Free Delivery",
@@ -137,7 +186,10 @@
           "type": "command",
           "command": "pack daily",
           "mandatory": true,
-          "reward": {"berries": 500}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 500
+          }
         },
         {
           "name": "First Purchase",
@@ -146,7 +198,34 @@
           "type": "pack_buy",
           "goal": 1,
           "mandatory": true,
-          "reward": {"berries": 1000}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 1000
+          }
+        },
+        {
+          "name": "Daily Bread",
+          "emoji": "<:KibiDango:1430072633931726878>",
+          "description": "Claim your daily berries with /berry daily. It comes back every day, and is never needed to finish the tier, so a daily you already claimed costs you nothing.",
+          "type": "command",
+          "command": "berry daily",
+          "reset": "daily",
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 400
+          }
+        },
+        {
+          "name": "Golden Week",
+          "emoji": "<:MissGoldenweek:1532022860263063652>",
+          "description": "Catch 25 treasures in a week. It comes back every week, and is never needed to finish the tier.",
+          "type": "catch",
+          "goal": 25,
+          "reset": "weekly",
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 2500
+          }
         },
         {
           "name": "Buggy's Counter",
@@ -154,7 +233,10 @@
           "description": "Take a look at Buggy's shop with /auction shop.",
           "type": "command",
           "command": "auction shop",
-          "reward": {"berries": 300}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 300
+          }
         }
       ]
     },
@@ -162,8 +244,12 @@
       "name": "A Crew of Your Own",
       "emoji": "<:Nakama:1480629699649736745>",
       "description": "No pirate sails alone. Meet the rest of the crew and finish the tutorial.",
-      "requirements": ["finish_previous"],
-      "reward": {"berries": 5000},
+      "requirements": [
+        "finish_previous"
+      ],
+      "reward": {
+        "berries": 5000
+      },
       "quests": [
         {
           "name": "Nakama",
@@ -172,7 +258,10 @@
           "type": "friend",
           "goal": 1,
           "mandatory": true,
-          "reward": {"berries": 1000}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 1000
+          }
         },
         {
           "name": "Fair Trade",
@@ -181,7 +270,10 @@
           "type": "trade",
           "goal": 1,
           "mandatory": true,
-          "reward": {"berries": 1500}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 1500
+          }
         },
         {
           "name": "Sharing the Loot",
@@ -189,7 +281,10 @@
           "description": "Give a treasure to another player.",
           "type": "give_treasures",
           "goal": 1,
-          "reward": {"berries": 800}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 800
+          }
         },
         {
           "name": "Old Hand",
@@ -198,7 +293,10 @@
           "type": "catch",
           "goal": 50,
           "mandatory": true,
-          "reward": {"berries": 2000}
+          "announce": "ephemeral",
+          "reward": {
+            "berries": 2000
+          }
         }
       ]
     }
