@@ -158,11 +158,20 @@ def _grant(
         if reward.mode == RewardMode.ALL:
             for line in lines:
                 _give_line(result, line, player_id, event_pass, reward, server_id, channel_id)
-        elif reward.mode == RewardMode.RANDOM:
-            for line, ball in _drawn(lines, reward.pick):
-                _give_line(result, line, player_id, event_pass, reward, server_id, channel_id, ball=ball)
         else:
-            _offer_choice(result, lines, player_id, event_pass, reward, grant, label=label)
+            # berries never take part in a pick or a draw: a reward saying "500 berries and one of these three
+            # cards" should not sometimes hand over the berries instead of a card
+            treasures = []
+            for line in lines:
+                if line.kind == RewardKind.BERRIES:
+                    _give_line(result, line, player_id, event_pass, reward, server_id, channel_id)
+                else:
+                    treasures.append(line)
+            if reward.mode == RewardMode.RANDOM:
+                for line, ball in _drawn(treasures, reward.pick):
+                    _give_line(result, line, player_id, event_pass, reward, server_id, channel_id, ball=ball)
+            else:
+                _offer_choice(result, treasures, player_id, event_pass, reward, grant, label=label)
 
         grant.summary = result.summary
         grant.save(update_fields=("summary",))
@@ -253,7 +262,7 @@ def _offer_choice(
     Nothing is handed out here. The options are written down next to the grant that reserves them, so the player can
     close the pass and come back to a choice that has not moved — and can never claim it twice.
     """
-    options = [(line, ball) for line, ball in _options(lines) if line.kind != RewardKind.BERRIES]
+    options = _options(lines)
     treasures = [ball or balls.get(line.ball_id) or line.ball for line, ball in options]
     ball_ids = [ball.pk for ball in treasures if ball is not None]
     picks = max(reward.pick, 1)
@@ -394,14 +403,18 @@ def reward_preview(reward: Reward | None, bot: BallsDexBot | None = None) -> str
         return ""
     if reward.mode == RewardMode.ALL:
         return " + ".join(parts)
-    # a pool is worth naming by its size: "1 of 9 Straw Hats" says more than "1x Straw Hats"
+    # berries are given whatever the mode, so they are listed apart from what is picked or drawn
     lines = list(reward.lines.all())
-    options = sum(len(pool_balls(line)) if line.is_pool else 1 for line in lines)
-    if len(lines) == 1 and lines[0].is_pool:
-        what = lines[0].pool_description()
+    berries = [line for line in lines if line.kind == RewardKind.BERRIES]
+    treasures = [line for line in lines if line.kind != RewardKind.BERRIES]
+    # a pool is worth naming by its size: "1 of 9 Straw Hats" says more than "1x Straw Hats"
+    options = sum(len(pool_balls(line)) if line.is_pool else 1 for line in treasures)
+    if len(treasures) == 1 and treasures[0].is_pool:
+        what = treasures[0].pool_description()
     else:
-        what = " or ".join(parts)
-    if options <= 1:
-        return what
-    verb = "your pick" if reward.mode == RewardMode.CHOICE else "at random"
-    return f"{reward.pick} of {options} {what} ({verb})"
+        what = " or ".join(str(line) for line in treasures)
+    if options > 1:
+        verb = "your pick" if reward.mode == RewardMode.CHOICE else "at random"
+        what = f"{reward.pick} of {options} {what} ({verb})"
+    given = [format_currency(line.amount, False, bot) for line in berries]
+    return " + ".join([*given, what] if what else given)

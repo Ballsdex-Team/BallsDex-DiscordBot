@@ -1,6 +1,6 @@
 {
   "name": "Setting Sail",
-  "emoji": "🧭",
+  "emoji": "<:StrawHat:1477078273078067252>",
   "description": "Every pirate starts somewhere. Learn your way around the ship, catch your first treasures, and pick a Straw Hat to sail with.",
   "colour": "#E63946",
   "starts_at": "2026-10-01T00:00:00Z",
@@ -15,13 +15,13 @@
   "tiers": [
     {
       "name": "Weighing Anchor",
-      "emoji": "⚓",
+      "emoji": "<:GoingMerry:1462962811847311391>",
       "description": "Find your way around the ship. Every quest here is a command you will use every day.",
       "reward": {"berries": 2000},
       "quests": [
         {
           "name": "Roll Call",
-          "emoji": "📖",
+          "emoji": "<:WantedPoster:1477411143072092243>",
           "description": "See who you are with /player info.",
           "type": "command",
           "command": "player info",
@@ -30,7 +30,7 @@
         },
         {
           "name": "Ship's Hold",
-          "emoji": "🧰",
+          "emoji": "<:TreasureMap:1477304335192035592>",
           "description": "Open your inventory with /treasures list.",
           "type": "command",
           "command": "treasures list",
@@ -39,7 +39,7 @@
         },
         {
           "name": "Counting the Haul",
-          "emoji": "🔢",
+          "emoji": "<:EternalPose:1477297620996198431>",
           "description": "Count what you own with /treasures count.",
           "type": "command",
           "command": "treasures count",
@@ -48,7 +48,7 @@
         },
         {
           "name": "Checking the Purse",
-          "emoji": "💰",
+          "emoji": "<:GoldMedal:1445236978537988207>",
           "description": "Look at your berries with /berry balance.",
           "type": "command",
           "command": "berry balance",
@@ -59,14 +59,14 @@
     },
     {
       "name": "First Catch",
-      "emoji": "🪸",
+      "emoji": "<:TreasureChest:1477305592950558892>",
       "description": "Treasures appear in the chat on their own. Be the first to name one and it is yours.",
       "requirements": ["finish_previous"],
       "reward": {"berries": 3000},
       "quests": [
         {
           "name": "Beginner's Luck",
-          "emoji": "✨",
+          "emoji": "<:LogPose:1477297692807008318>",
           "description": "Catch your very first treasure.",
           "type": "catch",
           "goal": 1,
@@ -75,7 +75,7 @@
         },
         {
           "name": "Filling the Hold",
-          "emoji": "📦",
+          "emoji": "<:BuggyBall:1477409157886906540>",
           "description": "Catch 10 treasures.",
           "type": "catch",
           "goal": 10,
@@ -84,7 +84,7 @@
         },
         {
           "name": "Fresh Off the Deck",
-          "emoji": "🆕",
+          "emoji": "<:DenDenMushi:1477297846024933511>",
           "description": "Look at your latest catch with /treasures last.",
           "type": "command",
           "command": "treasures last",
@@ -93,7 +93,7 @@
         },
         {
           "name": "Know Your Crew",
-          "emoji": "🗂️",
+          "emoji": "<:MonsterTrio:1483189143323410525>",
           "description": "Open a collection page with /treasures collection.",
           "type": "command",
           "command": "treasures collection",
@@ -103,7 +103,7 @@
     },
     {
       "name": "Berries and Barrels",
-      "emoji": "🫐",
+      "emoji": "<:BeriBeri:1430313610219094033>",
       "description": "Berries buy packs, packs hold treasures. Here is how the money moves.",
       "requirements": ["finish_previous"],
       "reward": {
@@ -114,7 +114,7 @@
       "quests": [
         {
           "name": "Daily Bread",
-          "emoji": "🍞",
+          "emoji": "<:KibiDango:1430072633931726878>",
           "description": "Claim your daily berries with /berry daily. Come back every day for more.",
           "type": "command",
           "command": "berry daily",
@@ -123,7 +123,7 @@
         },
         {
           "name": "Window Shopping",
-          "emoji": "🛒",
+          "emoji": "<:SilverMedal:1449149318278807654>",
           "description": "Browse the pack shop with /pack shop.",
           "type": "command",
           "command": "pack shop",
@@ -132,7 +132,7 @@
         },
         {
           "name": "Free Delivery",
-          "emoji": "🎁",
+          "emoji": "<:Onigri:1482515997465509981>",
           "description": "Claim your free daily pack with /pack daily.",
           "type": "command",
           "command": "pack daily",
@@ -141,7 +141,7 @@
         },
         {
           "name": "First Purchase",
-          "emoji": "🪙",
+          "emoji": "<:BronzeMedal:1498797313458700470>",
           "description": "Buy your first pack, any pack.",
           "type": "pack_buy",
           "goal": 1,
@@ -150,7 +150,7 @@
         },
         {
           "name": "Buggy's Counter",
-          "emoji": "🤡",
+          "emoji": "<:Buggy:1475102213821960274>",
           "description": "Take a look at Buggy's shop with /auction shop.",
           "type": "command",
           "command": "auction shop",
@@ -160,14 +160,14 @@
     },
     {
       "name": "A Crew of Your Own",
-      "emoji": "🏴‍☠️",
+      "emoji": "<:Nakama:1480629699649736745>",
       "description": "No pirate sails alone. Meet the rest of the crew and finish the tutorial.",
       "requirements": ["finish_previous"],
       "reward": {"berries": 5000},
       "quests": [
         {
           "name": "Nakama",
-          "emoji": "🤝",
+          "emoji": "<:Laboon:1475261511130943508>",
           "description": "Add your first friend with /player friend add.",
           "type": "friend",
           "goal": 1,
@@ -176,7 +176,7 @@
         },
         {
           "name": "Fair Trade",
-          "emoji": "🔁",
+          "emoji": "<:DiceDice:1482510352758341713>",
           "description": "Complete your first trade with another player.",
           "type": "trade",
           "goal": 1,
@@ -185,7 +185,7 @@
         },
         {
           "name": "Sharing the Loot",
-          "emoji": "🫴",
+          "emoji": "<:Meat:1477301830366007463>",
           "description": "Give a treasure to another player.",
           "type": "give_treasures",
           "goal": 1,
@@ -193,7 +193,7 @@
         },
         {
           "name": "Old Hand",
-          "emoji": "🎖️",
+          "emoji": "<:StrawHatPirates:1453830476262408277>",
           "description": "Catch 50 treasures in total. You know the ropes now.",
           "type": "catch",
           "goal": 50,

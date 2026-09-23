@@ -113,6 +113,11 @@ exclusions. Rarity works as everywhere else: lower is rarer, so `"min_rarity": 2
 "reward": {"mode": "choice", "pick": 1, "pool": {"group": "Straw Hats", "exclude": ["Monkey D. Luffy"]}}
 ```
 
+`cards` works with the three modes too, so a hand-picked list is enough for "pick one of these three" — a pool is
+only needed when the list would be long or is better described by a filter. **Berries are never part of a pick or a
+draw**: they are always given, and only the treasures are picked or drawn, so `{"mode": "random", "pick": 2,
+"cards": [...], "berries": 500}` hands over the 500 berries and two of the cards.
+
 A choice is not given right away: it is set aside for the player, who picks it from a menu on `/pass view` whenever
 they want. Nothing is lost if they close the pass first, and it can never be picked twice. A draw avoids repeats
 while the pool is big enough, and only repeats when it is smaller than `pick`.
