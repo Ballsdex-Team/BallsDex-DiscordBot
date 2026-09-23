@@ -11,7 +11,18 @@ from typing import TYPE_CHECKING, Any
 import discord
 from discord.ext import commands
 
-from ..utils import frames_depend_on_special, pick_frame
+from ballsdex.core.utils import checks
+from ballsdex.core.utils.transformers import BallEnabledTransform
+
+from ..utils import (
+    NO_SPECIAL,
+    frame_label,
+    frames_depend_on_special,
+    is_named_key,
+    iter_frames,
+    parse_frame_key,
+    pick_frame,
+)
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -72,10 +83,10 @@ class FramesCog(commands.Cog):
 
     def cog_unload(self) -> None:
         import ballsdex.core.image_generator.image_gen as image_gen_module
-        import bd_models.models as bd_models_module
         import ballsdex.core.utils.sorting as sorting_module
-        from ballsdex.packages.countryballs.countryball import BallSpawnView
+        import bd_models.models as bd_models_module
         from ballsdex.core.utils.enums import FilteringChoices
+        from ballsdex.packages.countryballs.countryball import BallSpawnView
         from bd_models.models import BallInstance
 
         if "spawn" in self._originals:
@@ -92,6 +103,7 @@ class FramesCog(commands.Cog):
         if "balls_cog_filter_balls" in self._originals:
             try:
                 import ballsdex.packages.balls.cog as balls_cog_module
+
                 balls_cog_module.filter_balls = self._originals["balls_cog_filter_balls"]  # type: ignore[attr-defined]
             except Exception:
                 pass
@@ -117,8 +129,8 @@ class FramesCog(commands.Cog):
         import ballsdex.core.image_generator.image_gen as image_gen_module
         import bd_models.models as bd_models_module
         from ballsdex.packages.countryballs.countryball import BallSpawnView
-        from settings.models import PromptMessage, settings
         from bd_models.models import BallInstance
+        from settings.models import PromptMessage, settings
 
         # ── BallInstance.save ──────────────────────────────────────────────────
         # every new treasure goes through it: catches, packs, claims, gifts from admins...
@@ -162,8 +174,7 @@ class FramesCog(commands.Cog):
                     file_path = spawn_path or view_self.model.wild_card.path
                     await view_self.build(spawn_message, file_name, channel.guild.id)
                     view_self.message = await channel.send(
-                        view=view_self,
-                        file=discord.File(file_path, filename=file_name),
+                        view=view_self, file=discord.File(file_path, filename=file_name)
                     )
                     return True
                 else:
@@ -232,7 +243,6 @@ class FramesCog(commands.Cog):
 
         # ── FilteringChoices + filter_balls ───────────────────────────────────
 
-        import ballsdex.core.utils.enums as enums_module
         import ballsdex.core.utils.sorting as sorting_module
         from ballsdex.core.utils.enums import FilteringChoices
 
@@ -252,7 +262,7 @@ class FramesCog(commands.Cog):
         original_filter_balls = sorting_module.filter_balls
 
         def patched_filter_balls(filter, queryset, guild_id=None):
-            if filter == FilteringChoices.frame: # type: ignore
+            if filter == FilteringChoices.frame:  # type: ignore
                 return queryset.filter(extra_data__has_key="card")
             return original_filter_balls(filter, queryset, guild_id=guild_id)
 
@@ -262,9 +272,140 @@ class FramesCog(commands.Cog):
         # re-bind in the balls cog's module if already imported
         try:
             import ballsdex.packages.balls.cog as balls_cog_module
+
             balls_cog_module.filter_balls = patched_filter_balls  # type: ignore[attr-defined]
             self._originals["balls_cog_filter_balls"] = original_filter_balls
         except Exception:
             pass
 
         log.info("Frames patches applied.")
+
+
+# ── Commands ──────────────────────────────────────────────────────────────────
+
+
+def _today_keys(day: date) -> tuple[str, str]:
+    """The plain key of a day and the prefix its per-special frames use."""
+    stamp = day.strftime("%m-%d-%Y")
+    return stamp, stamp + ":"
+
+
+def _frame_line(ball_name: str, key: str, entry: dict, special_names: dict[int, str]) -> str:
+    """
+    One frame as staff read it: what it is called, what it is stored under, and who can get it.
+
+    `ball_name` is left out when the listing is already about one treasure.
+    """
+    label = frame_label(key, entry)
+    shown = f"{entry['emoji']} {label}" if entry.get("emoji") else label
+    bits = [f"**{ball_name}** — {shown}" if ball_name else shown]
+    if label != key:
+        bits.append(f"`{key}`")
+    parsed = parse_frame_key(key)
+    if parsed is not None and parsed[1] is not None:
+        target = "no special" if parsed[1] == NO_SPECIAL else special_names.get(parsed[1], f"special #{parsed[1]}")
+        bits.append(f"for {target}")
+    chance = entry.get("chance", 100)
+    if isinstance(chance, int) and chance != 100:
+        bits.append(f"{chance}%")
+    if entry.get("full_art"):
+        bits.append("full art")
+    return " · ".join(bits)
+
+
+async def _special_names() -> dict[int, str]:
+    from bd_models.models import Special
+
+    return {pk: name async for pk, name in Special.objects.values_list("pk", "name")}
+
+
+def _send_lines(header: str, lines: list[str], empty: str) -> str:
+    """
+    The listing as one message, trimmed to what Discord accepts rather than paginated: a frame listing is for
+    staff checking a handful of events, not something to browse.
+    """
+    if not lines:
+        return f"{header}\n-# {empty}"
+    text = header
+    for index, line in enumerate(lines):
+        if len(text) + len(line) > 1900:
+            return text + f"\n-# …and {len(lines) - index} more."
+        text += f"\n- {line}"
+    return text
+
+
+class FrameCommands(commands.Cog):
+    """
+    Looking at the frames from Discord, so staff do not have to open the admin to answer "what is live today?".
+    """
+
+    def __init__(self, bot: "BallsDexBot"):
+        self.bot = bot
+
+    @commands.hybrid_group(name="frames")
+    @checks.has_permissions("bd_models.change_ball")
+    async def frames_group(self, ctx: commands.Context[BallsDexBot]):
+        """
+        Frames: the alternate art a treasure can wear.
+        """
+        await ctx.send_help(ctx.command)
+
+    @frames_group.command(name="active")
+    @checks.has_permissions("bd_models.change_ball")
+    async def frames_active(self, ctx: commands.Context[BallsDexBot]):
+        """
+        The frames running today, the ones a catch can roll right now.
+        """
+        await ctx.defer(ephemeral=True)
+        from bd_models.models import balls
+
+        today = date.today()
+        plain, prefix = _today_keys(today)
+        names = await _special_names()
+        lines = []
+        for ball in balls.values():
+            for key, entry in iter_frames(ball.capacity_logic):
+                if key == plain or key.startswith(prefix):
+                    lines.append(_frame_line(ball.country, key, entry, names))
+        lines.sort()
+        header = f"## Frames running today ({today:%d/%m/%Y})"
+        await ctx.send(
+            _send_lines(header, lines, "Nothing is running today. Named frames are still givable, see /frames named."),
+            ephemeral=True,
+        )
+
+    @frames_group.command(name="named")
+    @checks.has_permissions("bd_models.change_ball")
+    async def frames_named(self, ctx: commands.Context[BallsDexBot]):
+        """
+        The frames with a name and no date: they never drop, they are only given on purpose.
+        """
+        await ctx.defer(ephemeral=True)
+        from bd_models.models import balls
+
+        names = await _special_names()
+        lines = []
+        for ball in balls.values():
+            for key, entry in iter_frames(ball.capacity_logic):
+                if is_named_key(key):
+                    lines.append(_frame_line(ball.country, key, entry, names))
+        lines.sort()
+        header = "## Named frames\n-# Never rolled on a catch: give them as a pass reward or with an admin spawn."
+        await ctx.send(_send_lines(header, lines, "No named frame yet."), ephemeral=True)
+
+    @frames_group.command(name="of")
+    @checks.has_permissions("bd_models.change_ball")
+    async def frames_of(self, ctx: commands.Context[BallsDexBot], *, countryball: BallEnabledTransform):
+        """
+        Every frame of one treasure, whatever its date.
+
+        Parameters
+        ----------
+        countryball: Ball
+            The treasure to look at.
+        """
+        await ctx.defer(ephemeral=True)
+        names = await _special_names()
+        lines = sorted(_frame_line("", key, entry, names) for key, entry in iter_frames(countryball.capacity_logic))
+        header = f"## Frames of {countryball.country}"
+        await ctx.send(_send_lines(header, lines, "This treasure has no frame."), ephemeral=True)

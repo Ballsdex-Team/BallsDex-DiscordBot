@@ -1,7 +1,16 @@
 """
-Frames live in `Ball.capacity_logic`, one entry per day: "MM-DD-YYYY" for every treasure of the ball,
-"MM-DD-YYYY:<special id>" for the treasures of that special only, and "MM-DD-YYYY:0" for the treasures without
-special only.
+Frames live in `Ball.capacity_logic`, under two kinds of key.
+
+A **dated** frame is "MM-DD-YYYY" for every treasure of the ball, "MM-DD-YYYY:<special id>" for the treasures of
+that special only, and "MM-DD-YYYY:0" for the treasures without special only. Those are the ones a catch can roll:
+on its day, a new treasure may get the art.
+
+A **named** frame is a plain slug, like "haki". It has no day, so nothing ever rolls it — it is only given on
+purpose, as a pass reward or by an admin spawn. That is what makes it easy to point at: a reward asks for "haki"
+rather than for "09-20-2026:3".
+
+Both kinds can carry a `name`, the label players and staff read, and an `emoji` shown next to it. A dated frame
+with a name can be handed out by that name too, so an event does not have to spell out a date.
 """
 
 from __future__ import annotations
@@ -12,6 +21,8 @@ from datetime import date
 from typing import Any
 
 FRAME_KEY_RE = re.compile(r"^(\d{2}-\d{2}-\d{4})(?::(\d+))?$")
+# a named frame: lowercase, no spaces, so it is easy to type in a reward
+NAME_KEY_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,31}$")
 # in place of a special ID: the treasures without special
 NO_SPECIAL = 0
 
@@ -37,6 +48,50 @@ def parse_frame_key(key: str) -> tuple[str, int | None] | None:
 
 def is_frame_entry(value: Any) -> bool:
     return isinstance(value, dict) and bool({"card", "spawn", "credits", "catch"} & value.keys())
+
+
+def slugify_frame_name(name: str) -> str:
+    """
+    The key a named frame is stored under: "Haki Aura" becomes "haki-aura".
+    """
+    slug = re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-")
+    return slug[:32].rstrip("-")
+
+
+def is_named_key(key: str) -> bool:
+    """
+    Whether this key is a named frame rather than a dated one.
+    """
+    return bool(NAME_KEY_RE.match(key)) and FRAME_KEY_RE.match(key) is None
+
+
+def iter_frames(capacity_logic: Any):
+    """
+    Every frame stored on a treasure, as (key, entry) pairs, dated or named.
+    """
+    if not isinstance(capacity_logic, dict):
+        return
+    for key, value in capacity_logic.items():
+        if is_frame_entry(value) and (parse_frame_key(key) is not None or is_named_key(key)):
+            yield key, value
+
+
+def frame_label(key: str, entry: dict) -> str:
+    """
+    What a frame is called: its name when it has one, else its key.
+    """
+    name = entry.get("name")
+    return str(name) if name else key
+
+
+def frame_mark(entry: dict | None, fallback: str = "") -> str:
+    """
+    The emoji and name shown next to a framed treasure, like "<:Haki:123> Haki".
+    """
+    if not isinstance(entry, dict):
+        return fallback
+    parts = [str(entry.get("emoji") or ""), str(entry.get("name") or fallback)]
+    return " ".join(part for part in parts if part)
 
 
 def frames_depend_on_special(capacity_logic: Any, day: date) -> bool:

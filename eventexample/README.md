@@ -158,3 +158,15 @@ beginners' pass from being farmed forever.
 
 So `position` is the knob: give the event you want players to land on the lowest number. Two passes can run side by
 side — players reach the other one by naming it, `/pass view event_pass:...`.
+
+### Frames as rewards
+
+A reward line's `frame_key` names the frame the treasure is given with. A frame can be pointed at **by its name**
+("Haki Aura", case and spaces do not matter) or by the key it is stored under ("09-20-2026", "09-20-2026:3" for
+the frame of one special). Naming it is the easy way: the name does not change when the event moves.
+
+A frame with **no date** never drops on a catch — it only exists to be given on purpose, as a pass reward or with
+an admin spawn. Create one in the Frames admin by ticking "No date" and giving it a name.
+
+From Discord, `/frames active` lists what is running today, `/frames named` the dateless ones, and
+`/frames of <treasure>` everything one treasure has.

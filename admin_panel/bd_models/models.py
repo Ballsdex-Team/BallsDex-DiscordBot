@@ -402,14 +402,42 @@ def frame_entry(ball: "Ball", key: str) -> dict | None:
     when no frame is stored there.
 
     Used to hand out a framed card on purpose (a craft, an event reward) instead of waiting for the day of a frame.
+
+    `key` is the key the frame is stored under ("haki", "09-20-2026:3"), or the name it was given. Matching the name
+    is what lets an event ask for "Haki" instead of spelling out a date.
     """
     if not key or not isinstance(ball.capacity_logic, dict):
         return None
     entry = ball.capacity_logic.get(key)
-    if not isinstance(entry, dict) or not FRAME_FIELDS & entry.keys():
+    if not _is_frame(entry):
+        entry = _frame_named(ball.capacity_logic, key)
+    if entry is None:
         return None
     # the chance of a frame only decides who gets it when catching, a card given on purpose always gets the art
     return {name: value for name, value in entry.items() if name != "chance"}
+
+
+def _is_frame(entry: object) -> bool:
+    return isinstance(entry, dict) and bool(FRAME_FIELDS & entry.keys())
+
+
+def _frame_named(capacity_logic: dict, wanted: str) -> dict | None:
+    """
+    The frame whose name matches, ignoring case and the dashes a key uses in place of spaces.
+    """
+
+    def normalised(text: str) -> str:
+        return "".join(character for character in text.lower() if character.isalnum())
+
+    target = normalised(wanted)
+    if not target:
+        return None
+    for key, entry in capacity_logic.items():
+        if not _is_frame(entry):
+            continue
+        if normalised(str(entry.get("name") or "")) == target or normalised(key) == target:
+            return entry
+    return None
 
 
 def is_frame_special(special: "Special | None") -> bool:
@@ -505,6 +533,33 @@ class BallInstance(models.Model):
         Whether this treasure was caught during a frame: its card uses the frame's art.
         """
         return isinstance(self.extra_data, dict) and bool(self.extra_data.get("card"))
+
+    @property
+    def frame_name(self) -> str:
+        """
+        Which frame this treasure carries, as staff named it, empty when the frame has no name.
+
+        Frames used to be known by their date alone, so many treasures carry no name; those keep the plain mark.
+        """
+        if not isinstance(self.extra_data, dict):
+            return ""
+        return str(self.extra_data.get("name") or "")
+
+    @property
+    def frame_mark(self) -> str:
+        """
+        What to show next to a framed treasure: the frame's own emoji and name when it has them, otherwise the
+        generic frame mark. Empty for a treasure with no frame at all.
+        """
+        if not self.framed:
+            return ""
+        if not isinstance(self.extra_data, dict):
+            return f"{FRAME_EMOJI} Frame"
+        emoji = str(self.extra_data.get("emoji") or "")
+        name = self.frame_name
+        if not emoji and not name:
+            return f"{FRAME_EMOJI} Frame"
+        return " ".join(part for part in (emoji or FRAME_EMOJI, name) if part)
 
     @property
     def is_tradeable(self) -> bool:
@@ -604,7 +659,7 @@ class BallInstance(models.Model):
         catch_time_msg = f" in {catch_time.total_seconds():.3f}s" if catch_time else ""
 
         content = (
-            f"ID: `#{self.pk:0X}`{f' {FRAME_EMOJI} Frame' if self.framed else ''}\n"
+            f"ID: `#{self.pk:0X}`{f' {self.frame_mark}' if self.framed else ''}\n"
             f"Caught on {format_dt(self.catch_date)}{catch_time_msg} ({format_dt(self.catch_date, style='R')}).\n"
             f"{trade_content}\n"
             f"ATK: {self.attack} ({self.attack_bonus:+d}%)\n"
