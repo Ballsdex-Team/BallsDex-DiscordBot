@@ -62,7 +62,8 @@ in UTC: `"2026-10-09T00:01:00Z"`.
 | `token` | The treasure given by `"tokens"` in the rewards |
 | `card_special` | The special put on every card given as a reward (`"Birthday"`) |
 | `final_reward`, `final_message` | Given once every tier is finished |
-| `main_server_id`, `main_server_only`, `position`, `notes` | Optional, as in the admin |
+| `position` | Which pass `/pass view` opens when no pass is named: the lowest position among those running. An event that is over never hides one that is running, whatever its position |
+| `main_server_id`, `main_server_only`, `notes` | Optional, as in the admin |
 | `access`, `access_logic`, `access_message` | Who is allowed on the pass, see below. Leave them out and it is open to everyone |
 | `tiers` | The tiers, in order |
 
@@ -145,3 +146,15 @@ read, and that answer is what the quests use afterwards. Someone who stops meeti
 grows past the treasure limit, a player who loses the role — **keeps the quests they can only do once**, so a pass
 started can always be finished, but the quests that come back every day or week stop for them. That is what keeps a
 beginners' pass from being farmed forever.
+
+### Which pass opens by default
+
+`/pass view` with no argument picks, in this order:
+
+1. the running pass with the lowest `position` — started, not over, published;
+2. failing that, a pass that is over but whose claim window (`claim_until`) is still open, so players who finished
+   it can still collect;
+3. for staff only, a draft, so an event can be read through before it is published.
+
+So `position` is the knob: give the event you want players to land on the lowest number. Two passes can run side by
+side — players reach the other one by naming it, `/pass view event_pass:...`.

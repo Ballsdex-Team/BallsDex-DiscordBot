@@ -35,6 +35,11 @@ async def current_pass(chosen: EventPass | None, *, staff: bool = False) -> Even
     """
     The pass a command works on: the one the player picked, or the one running right now.
 
+    When several are running, the one with the lowest `position` wins, so staff decide which event greets players
+    who type the command with no argument. An event that is over never hides one that is running, whatever its
+    position: only once nothing is running does a finished pass come back, and only while its claim window is still
+    open, so players who completed it can still collect.
+
     Staff also see the passes still in draft, whatever their dates, so an event can be checked in Discord before it
     is published. Nothing progresses in a draft, it is only there to be looked at.
     """
@@ -43,11 +48,10 @@ async def current_pass(chosen: EventPass | None, *, staff: bool = False) -> Even
             return None
         return chosen
     now = timezone.now()
-    running = (
-        await EventPass.objects.filter(status=EventPass.Status.ACTIVE, starts_at__lte=now)
-        .order_by("position", "-starts_at")
-        .afirst()
-    )
+    published = EventPass.objects.filter(status=EventPass.Status.ACTIVE, starts_at__lte=now)
+    running = await published.filter(ends_at__gte=now).order_by("position", "-starts_at").afirst()
+    if running is None:
+        running = await published.filter(claim_until__gte=now).order_by("position", "-ends_at").afirst()
     if running or not staff:
         return running
     return await EventPass.objects.filter(status=EventPass.Status.DRAFT).order_by("position", "-starts_at").afirst()
