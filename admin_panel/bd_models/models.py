@@ -183,6 +183,8 @@ class Player(models.Model):
         self, amount: int, *, reason: str = "", description: str = "", server_id: int | None = None
     ) -> None:
         """Debits the player and records the movement. See [`add_money`][] for `reason`."""
+        if amount <= 0:
+            raise ValueError("Amount to remove must be positive")
         from currency_app.ledger import aadjust_money
 
         await aadjust_money(self, -amount, reason=reason, description=description, server_id=server_id)

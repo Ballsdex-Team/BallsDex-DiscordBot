@@ -297,9 +297,11 @@ async def balls_delete(ctx: commands.Context[BallsDexBot], countryball_id: str, 
         await ctx.send(f"{settings.collectible_name.title()} {countryball_id} soft deleted.", ephemeral=True)
         log.info(f"{ctx.author} soft deleted {ball}({ball.pk}).", extra={"webhook": True})
     else:
+        ball_name = str(ball)
+        ball_id = ball.pk
         await ball.adelete()
         await ctx.send(f"{settings.collectible_name.title()} {countryball_id} hard deleted.", ephemeral=True)
-        log.info(f"{ctx.author} hard deleted {ball}({ball.pk}).", extra={"webhook": True})
+        log.info(f"{ctx.author} hard deleted {ball_name}({ball_id}).", extra={"webhook": True})
 
 
 @balls.command(name="transfer")
@@ -385,7 +387,7 @@ async def balls_transferinv(
     if currency:
         text = (
             f"Are you sure you want to transfer {balls_count} {settings.plural_collectible_name} and "
-            f"{format_currency(source_player.money)} from {source} to {dest}?"
+            f"{format_currency(source_player.money, bot=ctx.bot)} from {source} to {dest}?"
         )
     else:
         text = (
@@ -430,7 +432,7 @@ async def balls_transferinv(
 
     if currency:
         text = (
-            f"{updated} {settings.plural_collectible_name} and {format_currency(transferred_money)} "
+            f"{updated} {settings.plural_collectible_name} and {format_currency(transferred_money, bot=ctx.bot)} "
             f"transferred from {source} to {dest}."
         )
     else:
@@ -438,7 +440,7 @@ async def balls_transferinv(
     await ctx.send(text, ephemeral=True)
     log.info(
         f"{ctx.author} transferred inventory of {source} ({source.id}, {updated} {settings.plural_collectible_name}, "
-        f"{format_currency(transferred_money if currency else 0)}) to {dest} ({dest.id}).",
+        f"{format_currency(transferred_money if currency else 0, bot=ctx.bot)}) to {dest} ({dest.id}).",
         extra={"webhook": True},
     )
 

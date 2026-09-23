@@ -8,6 +8,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from settings.models import settings
 
 if TYPE_CHECKING:
+    from django.db.models.fields.files import ImageFieldFile
+
     from bd_models.models import BallInstance
 
 
@@ -40,6 +42,19 @@ stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
 credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 
 credits_color_cache = {}
+
+
+def open_image(image_file: "ImageFieldFile") -> Image.Image:
+    """
+    Load an image from a model's file field as RGBA, releasing the underlying file descriptor.
+
+    Pillow only takes ownership of the file (and closes it once the image is loaded) when it is
+    given a path. Handing it the field file directly makes Pillow treat it as a borrowed file
+    object, and the descriptor stays open on the model instance instead. Balls, regimes,
+    economies and specials are kept in caches living for the whole lifetime of the bot, so those
+    descriptors would never be released, eventually exhausting the process' limit.
+    """
+    return Image.open(image_file.path).convert("RGBA")
 
 
 def get_credit_color(image: Image.Image, region: tuple) -> tuple:
@@ -75,19 +90,18 @@ def draw_card(
     card_name: str | None = ball.cached_regime.name
     if special_image := ball_instance.special_card:
         card_name = getattr(ball_instance.specialcard, "name", card_name)
-        image = Image.open(special_image)
+        image = open_image(special_image)
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             special_credits += f" • Special Author: {ball_instance.specialcard.credits}"
     else:
-        image = Image.open(ball.cached_regime.background)
-    image = image.convert("RGBA")
+        image = open_image(ball.cached_regime.background)
     if full_art:
         with Image.open(full_art) as art:
             image = ImageOps.fit(art.convert("RGBA"), image.size)
         # the background of the special isn't shown, and every full art needs its own credits color
         special_credits = ""
         card_name = None
-    icon = Image.open(ball.cached_economy.icon).convert("RGBA") if ball.cached_economy else None
+    icon = open_image(ball.cached_economy.icon) if ball.cached_economy else None
 
     draw = ImageDraw.Draw(image)
     draw.text((50, 20), ball.short_name or ball.country, font=title_font, stroke_width=2, stroke_fill=(0, 0, 0, 255))
@@ -156,7 +170,9 @@ def draw_card(
     )
 
     if not full_art:
-        with Image.open(artwork or ball.collection_card) as art:
+        # the collection card is a model file field, so it goes through open_image to release its
+        # descriptor; `artwork` is a plain path, which Pillow closes on its own
+        with Image.open(artwork) if artwork else open_image(ball.collection_card) as art:
             image.paste(ImageOps.fit(art.convert("RGBA"), artwork_size), CORNERS[0])  # type: ignore
 
     if icon:

@@ -151,7 +151,8 @@ class BattleShopSelect(discord.ui.Select):
             )
             return
 
-        await player.remove_money(item.price)
+        if item.price:
+            await player.remove_money(item.price)
         owned, _ = await PlayerBattleItem.objects.aget_or_create(player=player, item=item)
         owned.quantity += 1
         await owned.asave(update_fields=("quantity",))

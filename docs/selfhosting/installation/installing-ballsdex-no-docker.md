@@ -52,7 +52,7 @@ Once this is configured, you also **need to enable message content intent**. Go 
 Type the following command to download the latest version of the bot:
 
 ```
-git clone https://github.com/laggron42/BallsDex-DiscordBot.git
+git clone https://github.com/Ballsdex-Team/BallsDex-DiscordBot.git
 ```
 
 Then you can use the command cd to change directory and open the folder you just downloaded:
