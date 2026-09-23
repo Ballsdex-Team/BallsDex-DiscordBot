@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import discord
 from discord.ui import ActionRow, Button, MediaGallery, Select, Separator, TextDisplay
 from discord.utils import format_dt
+from django.utils import timezone
 
 from ballsdex.core.discord import Container, LayoutView
 
@@ -224,6 +225,17 @@ class PassView(LayoutView):
             header.append(
                 "\N{CONSTRUCTION SIGN}\N{VARIATION SELECTOR-16} **Draft** — only staff can see this pass, and "
                 "nothing progresses until it is published."
+            )
+        elif event_pass.starts_at > timezone.now():
+            # published but dated in the future: the quests look live and quietly do nothing, so say it out loud
+            header.append(
+                f"\N{ALARM CLOCK} **Not started yet** — nothing progresses until "
+                f"{format_dt(event_pass.starts_at)} ({format_dt(event_pass.starts_at, style='R')})."
+            )
+        elif event_pass.ends_at < timezone.now():
+            header.append(
+                f"\N{CHEQUERED FLAG} **Over** — it ended {format_dt(event_pass.ends_at, style='R')}. "
+                "Nothing progresses, but what you finished can still be claimed."
             )
         if event_pass.description:
             header.append(event_pass.description)

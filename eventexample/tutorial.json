@@ -3,9 +3,9 @@
   "emoji": "<:StrawHat:1477078273078067252>",
   "description": "Every pirate starts somewhere. Learn your way around the ship, catch your first treasures, and pick a Straw Hat to sail with.",
   "colour": "#E63946",
-  "starts_at": "2026-10-01T00:00:00Z",
+  "starts_at": "2026-01-01T00:00:00Z",
   "ends_at": "2027-12-31T23:59:00Z",
-  "notes": "The tutorial: open to everyone, permanent, and every quest is doable on the very first day. To turn it into the beginners-only pass instead, add the access block documented in the README.",
+  "notes": "The tutorial: open to everyone, permanent, and every quest is doable on the very first day. It starts in the past on purpose, so it is running the moment it is published. To turn it into the beginners-only pass instead, add the access block documented in the README.",
   "final_reward": {
     "mode": "choice",
     "pick": 1,

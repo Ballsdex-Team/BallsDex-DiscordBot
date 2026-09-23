@@ -22,7 +22,7 @@ from ..access import check as check_access
 from ..access import role_ids_of
 from ..engine import engine
 from ..integrations import INTEGRATIONS, check_integrations
-from ..models import EventPass, PlayerQuest
+from ..models import EventPass, PlayerQuest, Quest
 from ..state import build_state
 from ..transformers import EventPassTransform
 from .views import PassView
@@ -31,17 +31,70 @@ if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
 
 
-async def current_pass(chosen: EventPass | None, *, staff: bool = False) -> EventPass | None:
+async def _completed_pass_ids(player: Player | None, passes: list[EventPass]) -> set[int]:
     """
-    The pass a command works on: the one the player picked, or the one running right now.
+    The passes among these that the player has nothing left to do on: every enabled quest completed.
 
-    When several are running, the one with the lowest `position` wins, so staff decide which event greets players
-    who type the command with no argument. An event that is over never hides one that is running, whatever its
-    position: only once nothing is running does a finished pass come back, and only while its claim window is still
-    open, so players who completed it can still collect.
+    Counted rather than rebuilt tier by tier, because this runs before a pass is even chosen.
+    """
+    if player is None or not passes:
+        return set()
+    ids = [event_pass.pk for event_pass in passes]
+    totals: dict[int, int] = {}
+    async for pass_id, total in (
+        Quest.objects.filter(event_pass_id__in=ids, enabled=True)
+        .values_list("event_pass_id")
+        .annotate(total=Count("pk"))
+    ):
+        totals[pass_id] = total
+    done: dict[int, int] = {}
+    async for pass_id, count in (
+        PlayerQuest.objects.filter(player=player, quest__event_pass_id__in=ids, completed_at__isnull=False)
+        .values_list("quest__event_pass_id")
+        .annotate(count=Count("pk", distinct=True))
+    ):
+        done[pass_id] = count
+    return {pass_id for pass_id, total in totals.items() if total and done.get(pass_id, 0) >= total}
 
-    Staff also see the passes still in draft, whatever their dates, so an event can be checked in Discord before it
-    is published. Nothing progresses in a draft, it is only there to be looked at.
+
+async def _open_to(player: Player | None, event_pass: EventPass, role_ids: set[int] | None) -> bool:
+    """
+    Whether this player may take part in a pass, used to leave the ones reserved to others out of the default.
+    """
+    if player is None:
+        return True
+    verdict = await check_access(player.pk, event_pass, role_ids=role_ids)
+    return verdict.allowed or verdict.joined
+
+
+async def _pick(candidates: list[EventPass], player: Player | None, role_ids: set[int] | None) -> EventPass | None:
+    """
+    The first pass of the list this player should land on: one they can take part in, and that they have not
+    already finished. A pass they finished still comes back when it is the only thing left, rather than greeting
+    them with nothing.
+    """
+    open_ones = [event_pass for event_pass in candidates if await _open_to(player, event_pass, role_ids)]
+    if not open_ones:
+        return None
+    completed = await _completed_pass_ids(player, open_ones)
+    unfinished = [event_pass for event_pass in open_ones if event_pass.pk not in completed]
+    return (unfinished or open_ones)[0]
+
+
+async def current_pass(
+    chosen: EventPass | None, *, staff: bool = False, player: Player | None = None, role_ids: set[int] | None = None
+) -> EventPass | None:
+    """
+    The pass a command works on: the one the player picked, or the one they should land on.
+
+    Named explicitly, a pass is always opened — that is how staff check a draft, and how a player reaches an event
+    that is not their default. With no name, the choice walks the running passes by `position` and takes the first
+    one that is **theirs to play**: not reserved to somebody else, and not one they have already finished. Someone
+    who finished everything still gets their last pass back rather than being told there is no event.
+
+    An event that is over never hides one that is running, whatever its position. Only once nothing is running does
+    a finished pass come back, and only while its claim window is open, so players who completed it can still
+    collect. Staff also see the drafts, which are there to be looked at and never progress.
     """
     if chosen is not None:
         if chosen.status == EventPass.Status.DRAFT and not staff:
@@ -49,11 +102,15 @@ async def current_pass(chosen: EventPass | None, *, staff: bool = False) -> Even
         return chosen
     now = timezone.now()
     published = EventPass.objects.filter(status=EventPass.Status.ACTIVE, starts_at__lte=now)
-    running = await published.filter(ends_at__gte=now).order_by("position", "-starts_at").afirst()
-    if running is None:
-        running = await published.filter(claim_until__gte=now).order_by("position", "-ends_at").afirst()
-    if running or not staff:
-        return running
+    running = [event_pass async for event_pass in published.filter(ends_at__gte=now).order_by("position", "-starts_at")]
+    found = await _pick(running, player, role_ids)
+    if found is None:
+        over = [
+            event_pass async for event_pass in published.filter(claim_until__gte=now).order_by("position", "-ends_at")
+        ]
+        found = await _pick(over, player, role_ids)
+    if found or not staff:
+        return found
     return await EventPass.objects.filter(status=EventPass.Status.DRAFT).order_by("position", "-starts_at").afirst()
 
 
@@ -76,14 +133,15 @@ class EventPassCog(commands.GroupCog, name="Event pass", group_name="pass"):
             The pass to open. Defaults to the one running right now.
         """
         await interaction.response.defer(thinking=True)
-        chosen = await current_pass(event_pass, staff=await is_staff(interaction))
+        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        roles = role_ids_of(interaction.user)
+        chosen = await current_pass(event_pass, staff=await is_staff(interaction), player=player, role_ids=roles)
         if chosen is None:
             await interaction.followup.send("There is no event running right now.", ephemeral=True)
             return
-        player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         # the only place a player can enter a restricted pass: their Discord roles are only readable here,
         # and the verdict written down now is what the engine reads for everything that follows
-        access = await check_access(player.pk, chosen, role_ids=role_ids_of(interaction.user), join=True)
+        access = await check_access(player.pk, chosen, role_ids=roles, join=True)
         state = await build_state(player, chosen)
         state.access = access if access.restricted else None
         view = PassView(self.bot, player, state)
@@ -101,7 +159,10 @@ class EventPassCog(commands.GroupCog, name="Event pass", group_name="pass"):
             The pass to rank. Defaults to the one running right now.
         """
         await interaction.response.defer(thinking=True)
-        chosen = await current_pass(event_pass, staff=await is_staff(interaction))
+        viewer = await Player.objects.aget_or_none(discord_id=interaction.user.id)
+        chosen = await current_pass(
+            event_pass, staff=await is_staff(interaction), player=viewer, role_ids=role_ids_of(interaction.user)
+        )
         if chosen is None:
             await interaction.followup.send("There is no event running right now.", ephemeral=True)
             return
@@ -151,7 +212,10 @@ class EventPassCog(commands.GroupCog, name="Event pass", group_name="pass"):
             The pass to compare. Defaults to the one running right now.
         """
         await interaction.response.defer(thinking=True)
-        chosen = await current_pass(event_pass, staff=await is_staff(interaction))
+        viewer = await Player.objects.aget_or_none(discord_id=interaction.user.id)
+        chosen = await current_pass(
+            event_pass, staff=await is_staff(interaction), player=viewer, role_ids=role_ids_of(interaction.user)
+        )
         if chosen is None:
             await interaction.followup.send("There is no event running right now.", ephemeral=True)
             return
