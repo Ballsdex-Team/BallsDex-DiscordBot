@@ -106,7 +106,7 @@ def _build_base_queryset(sort_oldest: bool, days: int | None) -> "QuerySet[Trade
 
     if days is not None and days > 0:
         start_date = timezone.now() - timedelta(days=days)
-        queryset = queryset.filter(date__ge=start_date)
+        queryset = queryset.filter(date__gte=start_date)
 
     return queryset
 
