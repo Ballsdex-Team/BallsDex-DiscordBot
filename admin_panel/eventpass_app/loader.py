@@ -20,13 +20,15 @@ from django.utils.dateparse import parse_datetime
 from merchant_app.models import MerchantItem
 
 from ballsdex.core.game_events import normalize_command
-from bd_models.models import Ball, BallGroup, Special
+from bd_models.models import Ball, BallGroup, Economy, Regime, Special
 
 from .models import (
+    AccessKind,
     Announce,
     BonusMode,
     EventPass,
     Logic,
+    PassRequirement,
     PassTier,
     Quest,
     QuestType,
@@ -35,6 +37,7 @@ from .models import (
     Reward,
     RewardKind,
     RewardLine,
+    RewardMode,
     TierRequirement,
 )
 from .types import PARAMETER_FIELDS, TYPES
@@ -55,7 +58,17 @@ PASS_KEYS = {
     "notes",
     "token",
     "card_special",
+    "access",
+    "access_logic",
+    "access_message",
     "tiers",
+}
+ACCESS_KEYS = {
+    "role": AccessKind.ROLE,
+    "max_treasures": AccessKind.MAX_TREASURES,
+    "min_treasures": AccessKind.MIN_TREASURES,
+    "max_berries": AccessKind.MAX_CURRENCY,
+    "min_berries": AccessKind.MIN_CURRENCY,
 }
 TIER_KEYS = {"name", "emoji", "description", "locked_message", "unlock_logic", "reward", "requirements", "quests"}
 QUEST_KEYS = {
@@ -77,7 +90,8 @@ QUEST_KEYS = {
     "notes",
     "reward",
 }
-REWARD_KEYS = {"cards", "tokens", "berries"}
+REWARD_KEYS = {"cards", "tokens", "berries", "mode", "pick", "offer", "pool"}
+POOL_KEYS = {"group", "regime", "economy", "min_rarity", "max_rarity", "exclude", "quantity"}
 
 # quest settings whose name in the file differs from the model field
 ALIASES = {"partner": "partner_discord_id", "command": "command_name", "craft_type": "tier_level"}
@@ -193,6 +207,7 @@ class PassLoader:
             },
         )
         self.event_pass = event_pass
+        self._access(event_pass, data)
         final = data.get("final_reward")
         event_pass.final_reward = self._reward(f"{name} · final reward", final, None) if final else None
         event_pass.save(update_fields=("final_reward",))
@@ -361,9 +376,77 @@ class PassLoader:
                 return normalize_command(value)
         return value
 
+    def _access(self, event_pass: EventPass, data: dict[str, Any]) -> None:
+        """
+        Who is allowed on the pass. No condition at all leaves it open to everyone.
+        """
+        logic = data.get("access_logic", Logic.ALL)
+        if logic not in Logic.values:
+            self.errors.append(f"The pass: the access logic is one of {', '.join(Logic.values)}.")
+            logic = Logic.ALL
+        EventPass.objects.filter(pk=event_pass.pk).update(
+            access_logic=logic, access_message=data.get("access_message", "")
+        )
+        event_pass.access_logic, event_pass.access_message = logic, data.get("access_message", "")
+        event_pass.access.all().delete()
+        for spec in data.get("access", []):
+            if not isinstance(spec, dict) or len(spec) not in (1, 2):
+                self.errors.append(f"The pass: unknown access condition {spec!r}.")
+                continue
+            name = next((key for key in spec if key in ACCESS_KEYS), None)
+            if name is None:
+                self.errors.append(
+                    f"The pass: an access condition is one of {', '.join(sorted(ACCESS_KEYS))}, not {sorted(spec)}."
+                )
+                continue
+            value = spec[name]
+            kind = ACCESS_KEYS[name]
+            PassRequirement.objects.create(
+                event_pass=event_pass,
+                kind=kind,
+                role_id=value if kind == AccessKind.ROLE else None,
+                role_name=spec.get("role_name", ""),
+                count=0 if kind == AccessKind.ROLE else value,
+            )
+        count = len(data.get("access", []))
+        if count:
+            self.report.append(f"  Reserved to players meeting {count} condition(s) ({logic}).")
+
+    def _pool_line(self, reward: Reward, spec: dict[str, Any], name: str) -> RewardLine | None:
+        """
+        A line that draws its treasure from a pool instead of naming one.
+        """
+        self._check_keys(spec, POOL_KEYS, f'Pool of reward "{name}"')
+        line = RewardLine(
+            reward=reward,
+            kind=RewardKind.TREASURE,
+            special=self.card_special,
+            bonus_mode=BonusMode.RANDOM,
+            quantity=spec.get("quantity", 1),
+            group=self._by_name(BallGroup, "group", spec["group"]) if spec.get("group") else None,
+            regime=self._by_name(Regime, "regime", spec["regime"]) if spec.get("regime") else None,
+            economy=self._by_name(Economy, "economy", spec["economy"]) if spec.get("economy") else None,
+            min_rarity=spec.get("min_rarity"),
+            max_rarity=spec.get("max_rarity"),
+        )
+        if not any(
+            (line.group_id, line.regime_id, line.economy_id, line.min_rarity is not None, line.max_rarity is not None)
+        ):
+            self.errors.append(
+                f'Reward "{name}": a pool needs at least a group, a regime, an economy or a rarity bound.'
+            )
+            return None
+        return line
+
     def _reward(self, name: str, spec: dict[str, Any], counted_in: str | None) -> Reward:
         self._check_keys(spec, REWARD_KEYS, f'Reward "{name}"')
-        reward, _ = Reward.objects.update_or_create(name=name[:64])
+        mode = spec.get("mode", RewardMode.ALL)
+        if mode not in RewardMode.values:
+            self.errors.append(f'Reward "{name}": the mode is one of {", ".join(RewardMode.values)}.')
+            mode = RewardMode.ALL
+        reward, _ = Reward.objects.update_or_create(
+            name=name[:64], defaults={"mode": mode, "pick": spec.get("pick", 1), "offer": spec.get("offer", 0)}
+        )
         reward.lines.all().delete()
         lines = [
             RewardLine(
@@ -375,6 +458,11 @@ class PassLoader:
             )
             for card in spec.get("cards", [])
         ]
+        pools = spec.get("pool")
+        for pool_spec in [pools] if isinstance(pools, dict) else (pools or []):
+            pool_line = self._pool_line(reward, pool_spec, name)
+            if pool_line is not None:
+                lines.append(pool_line)
         if tokens := spec.get("tokens", 0):
             if self.token is None:
                 self.errors.append(f'Reward "{name}" gives tokens, but the pass names no "token" treasure.')
@@ -391,4 +479,11 @@ class PassLoader:
         for position, line in enumerate(lines, start=1):
             line.position = position
         RewardLine.objects.bulk_create(lines)
+        # exclusions are a many-to-many, so they can only be set once the lines exist
+        pool_specs = [pools] if isinstance(pools, dict) else (pools or [])
+        pool_lines = [line for line in lines if line.is_pool]
+        for line, pool_spec in zip(pool_lines, pool_specs, strict=False):
+            excluded = [ball for ball in (self._ball(x) for x in pool_spec.get("exclude", [])) if ball]
+            if excluded:
+                line.exclude_balls.set(excluded)
         return reward

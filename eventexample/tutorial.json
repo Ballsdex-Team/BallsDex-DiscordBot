@@ -1,0 +1,206 @@
+{
+  "name": "Setting Sail",
+  "emoji": "🧭",
+  "description": "Every pirate starts somewhere. Learn your way around the ship, catch your first treasures, and pick a Straw Hat to sail with.",
+  "colour": "#E63946",
+  "starts_at": "2026-10-01T00:00:00Z",
+  "ends_at": "2027-12-31T23:59:00Z",
+  "notes": "The tutorial: open to everyone, permanent, and every quest is doable on the very first day. To turn it into the beginners-only pass instead, add the access block documented in the README.",
+  "final_reward": {
+    "mode": "choice",
+    "pick": 1,
+    "pool": {"group": "Straw Hats", "exclude": ["Monkey D. Luffy"]}
+  },
+  "final_message": "Your crew is waiting. Pick the Straw Hat who sails with you! ⛵",
+  "tiers": [
+    {
+      "name": "Weighing Anchor",
+      "emoji": "⚓",
+      "description": "Find your way around the ship. Every quest here is a command you will use every day.",
+      "reward": {"berries": 2000},
+      "quests": [
+        {
+          "name": "Roll Call",
+          "emoji": "📖",
+          "description": "See who you are with /player info.",
+          "type": "command",
+          "command": "player info",
+          "mandatory": true,
+          "reward": {"berries": 300}
+        },
+        {
+          "name": "Ship's Hold",
+          "emoji": "🧰",
+          "description": "Open your inventory with /treasures list.",
+          "type": "command",
+          "command": "treasures list",
+          "mandatory": true,
+          "reward": {"berries": 300}
+        },
+        {
+          "name": "Counting the Haul",
+          "emoji": "🔢",
+          "description": "Count what you own with /treasures count.",
+          "type": "command",
+          "command": "treasures count",
+          "mandatory": true,
+          "reward": {"berries": 300}
+        },
+        {
+          "name": "Checking the Purse",
+          "emoji": "💰",
+          "description": "Look at your berries with /berry balance.",
+          "type": "command",
+          "command": "berry balance",
+          "mandatory": true,
+          "reward": {"berries": 300}
+        }
+      ]
+    },
+    {
+      "name": "First Catch",
+      "emoji": "🪸",
+      "description": "Treasures appear in the chat on their own. Be the first to name one and it is yours.",
+      "requirements": ["finish_previous"],
+      "reward": {"berries": 3000},
+      "quests": [
+        {
+          "name": "Beginner's Luck",
+          "emoji": "✨",
+          "description": "Catch your very first treasure.",
+          "type": "catch",
+          "goal": 1,
+          "mandatory": true,
+          "reward": {"berries": 500}
+        },
+        {
+          "name": "Filling the Hold",
+          "emoji": "📦",
+          "description": "Catch 10 treasures.",
+          "type": "catch",
+          "goal": 10,
+          "mandatory": true,
+          "reward": {"berries": 1000}
+        },
+        {
+          "name": "Fresh Off the Deck",
+          "emoji": "🆕",
+          "description": "Look at your latest catch with /treasures last.",
+          "type": "command",
+          "command": "treasures last",
+          "mandatory": true,
+          "reward": {"berries": 300}
+        },
+        {
+          "name": "Know Your Crew",
+          "emoji": "🗂️",
+          "description": "Open a collection page with /treasures collection.",
+          "type": "command",
+          "command": "treasures collection",
+          "reward": {"berries": 300}
+        }
+      ]
+    },
+    {
+      "name": "Berries and Barrels",
+      "emoji": "🫐",
+      "description": "Berries buy packs, packs hold treasures. Here is how the money moves.",
+      "requirements": ["finish_previous"],
+      "reward": {
+        "mode": "random",
+        "pick": 1,
+        "pool": {"group": "Straw Hats", "exclude": ["Monkey D. Luffy"], "min_rarity": 20}
+      },
+      "quests": [
+        {
+          "name": "Daily Bread",
+          "emoji": "🍞",
+          "description": "Claim your daily berries with /berry daily. Come back every day for more.",
+          "type": "command",
+          "command": "berry daily",
+          "mandatory": true,
+          "reward": {"berries": 500}
+        },
+        {
+          "name": "Window Shopping",
+          "emoji": "🛒",
+          "description": "Browse the pack shop with /pack shop.",
+          "type": "command",
+          "command": "pack shop",
+          "mandatory": true,
+          "reward": {"berries": 300}
+        },
+        {
+          "name": "Free Delivery",
+          "emoji": "🎁",
+          "description": "Claim your free daily pack with /pack daily.",
+          "type": "command",
+          "command": "pack daily",
+          "mandatory": true,
+          "reward": {"berries": 500}
+        },
+        {
+          "name": "First Purchase",
+          "emoji": "🪙",
+          "description": "Buy your first pack, any pack.",
+          "type": "pack_buy",
+          "goal": 1,
+          "mandatory": true,
+          "reward": {"berries": 1000}
+        },
+        {
+          "name": "Buggy's Counter",
+          "emoji": "🤡",
+          "description": "Take a look at Buggy's shop with /auction shop.",
+          "type": "command",
+          "command": "auction shop",
+          "reward": {"berries": 300}
+        }
+      ]
+    },
+    {
+      "name": "A Crew of Your Own",
+      "emoji": "🏴‍☠️",
+      "description": "No pirate sails alone. Meet the rest of the crew and finish the tutorial.",
+      "requirements": ["finish_previous"],
+      "reward": {"berries": 5000},
+      "quests": [
+        {
+          "name": "Nakama",
+          "emoji": "🤝",
+          "description": "Add your first friend with /player friend add.",
+          "type": "friend",
+          "goal": 1,
+          "mandatory": true,
+          "reward": {"berries": 1000}
+        },
+        {
+          "name": "Fair Trade",
+          "emoji": "🔁",
+          "description": "Complete your first trade with another player.",
+          "type": "trade",
+          "goal": 1,
+          "mandatory": true,
+          "reward": {"berries": 1500}
+        },
+        {
+          "name": "Sharing the Loot",
+          "emoji": "🫴",
+          "description": "Give a treasure to another player.",
+          "type": "give_treasures",
+          "goal": 1,
+          "reward": {"berries": 800}
+        },
+        {
+          "name": "Old Hand",
+          "emoji": "🎖️",
+          "description": "Catch 50 treasures in total. You know the ropes now.",
+          "type": "catch",
+          "goal": 50,
+          "mandatory": true,
+          "reward": {"berries": 2000}
+        }
+      ]
+    }
+  ]
+}

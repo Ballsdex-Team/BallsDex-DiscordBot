@@ -9,14 +9,14 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import discord
-from discord.ui import ActionRow, Button, MediaGallery, Separator, TextDisplay
+from discord.ui import ActionRow, Button, MediaGallery, Select, Separator, TextDisplay
 from discord.utils import format_dt
 
 from ballsdex.core.discord import Container, LayoutView
 
 from ..engine import engine
-from ..models import EventPass, PlayerQuest
-from ..rewards import reward_preview
+from ..models import EventPass, PlayerQuest, RewardChoice
+from ..rewards import resolve_choice, reward_preview
 from ..state import PassState, QuestState, TierState, build_state
 
 if TYPE_CHECKING:
@@ -137,6 +137,42 @@ class ClaimButton(Button["PassView"]):
         await self.view.claim(interaction)
 
 
+class ChoiceSelect(Select["PassView"]):
+    """
+    The menu for one reserved reward. Its options are the treasures written down when the reward was claimed, so
+    they never change between two visits.
+    """
+
+    def __init__(self, choice: RewardChoice, bot: BallsDexBot | None):
+        self.choice = choice
+        balls = choice.option_balls()
+        options = [
+            discord.SelectOption(
+                label=ball.country[:100],
+                value=str(ball.pk),
+                emoji=_ball_emoji(bot, ball),
+                description=f"T{ball.rarity:g}",
+            )
+            for ball in balls[:25]
+        ]
+        picks = min(max(choice.picks, 1), len(options) or 1)
+        placeholder = f"Pick {picks}" if picks > 1 else "Pick your reward"
+        if choice.label:
+            placeholder = f"{placeholder} — {choice.label}"[:150]
+        super().__init__(placeholder=placeholder, min_values=picks, max_values=picks, options=options)
+
+    async def callback(self, interaction: Interaction):
+        assert self.view
+        await self.view.pick(interaction, self.choice, [int(value) for value in self.values])
+
+
+def _ball_emoji(bot: BallsDexBot | None, ball) -> discord.PartialEmoji | None:
+    if bot is None or not ball.emoji_id:
+        return None
+    emoji = bot.get_emoji(ball.emoji_id)
+    return discord.PartialEmoji(name=emoji.name, id=emoji.id) if emoji else None
+
+
 class PassView(LayoutView):
     """
     A page per tier, several for a long one. Only the player who ran the command can use the buttons.
@@ -197,6 +233,10 @@ class PassView(LayoutView):
         )
         container.add_item(TextDisplay("\n".join(header)))
         container.add_item(Separator())
+        if self.state.locked_out:
+            container.add_item(TextDisplay(self._locked_out_text()))
+            self.add_item(container)
+            return
         container.add_item(TextDisplay(self._page_text()))
         if len(self.pages) > 1:
             container.add_item(
@@ -208,9 +248,24 @@ class PassView(LayoutView):
             )
         claimable = self._claimable_count()
         container.add_item(ActionRow(ClaimButton(claimable, claimable == 0)))
+        # Discord allows five rows per container, and the pager and the claim button already take two
+        for choice in self.state.choices[:3]:
+            if choice.option_balls():
+                container.add_item(ActionRow(ChoiceSelect(choice, self.bot)))
         self.add_item(container)
 
+    def _locked_out_text(self) -> str:
+        access = self.state.access
+        default = "\N{LOCK} This event is not open to you."
+        lines = [self.state.event_pass.access_message or default]
+        if access and access.missing_text:
+            lines.append("")
+            lines.extend(f"-# · {text}" for text in access.missing_text)
+        return "\n".join(lines)
+
     def _claimable_count(self) -> int:
+        if self.state.locked_out:
+            return 0
         count = self.state.claimable_count
         count += sum(
             1 for tier in self.state.tiers if tier.finished and tier.tier.reward_id and not tier.reward_claimed
@@ -258,8 +313,34 @@ class PassView(LayoutView):
             lines.append(quest_line(quest_state, self.bot, pin=pin and quest_state.quest.mandatory))
         return "\n".join(lines)
 
+    async def pick(self, interaction: Interaction, choice: RewardChoice, ball_ids: list[int]):
+        """
+        Hand over a reward the player had reserved and is now picking.
+
+        The reward was already set aside when they claimed it, so nothing can be lost here: a second click finds
+        the choice resolved and is told so instead of giving anything twice.
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        result = await resolve_choice(
+            choice.pk, ball_ids, server_id=interaction.guild_id, channel_id=interaction.channel_id
+        )
+        await self.reload()
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except discord.HTTPException:
+                pass
+        if result.lines:
+            text = "\N{WRAPPED PRESENT} **You received:**\n" + result.summary
+        else:
+            text = "That reward was already picked."
+        await interaction.followup.send(text, ephemeral=True)
+
     async def claim(self, interaction: Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
+        if self.state.locked_out:
+            await interaction.followup.send(self._locked_out_text(), ephemeral=True)
+            return
         event_pass = self.state.event_pass
         got: list[str] = []
         problems: list[str] = []

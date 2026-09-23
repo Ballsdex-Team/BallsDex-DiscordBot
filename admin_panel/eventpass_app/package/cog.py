@@ -18,6 +18,8 @@ from ballsdex.core.utils.leaderboard import EXTRA_ROWS, LEADERBOARD_SIZE, send_l
 from ballsdex.core.utils.utils import is_staff
 from bd_models.models import Player
 
+from ..access import check as check_access
+from ..access import role_ids_of
 from ..engine import engine
 from ..integrations import INTEGRATIONS, check_integrations
 from ..models import EventPass, PlayerQuest
@@ -75,7 +77,11 @@ class EventPassCog(commands.GroupCog, name="Event pass", group_name="pass"):
             await interaction.followup.send("There is no event running right now.", ephemeral=True)
             return
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
+        # the only place a player can enter a restricted pass: their Discord roles are only readable here,
+        # and the verdict written down now is what the engine reads for everything that follows
+        access = await check_access(player.pk, chosen, role_ids=role_ids_of(interaction.user), join=True)
         state = await build_state(player, chosen)
+        state.access = access if access.restricted else None
         view = PassView(self.bot, player, state)
         view.refresh()
         view.message = await interaction.followup.send(view=view, wait=True)

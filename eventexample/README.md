@@ -63,6 +63,7 @@ in UTC: `"2026-10-09T00:01:00Z"`.
 | `card_special` | The special put on every card given as a reward (`"Birthday"`) |
 | `final_reward`, `final_message` | Given once every tier is finished |
 | `main_server_id`, `main_server_only`, `position`, `notes` | Optional, as in the admin |
+| `access`, `access_logic`, `access_message` | Who is allowed on the pass, see below. Leave them out and it is open to everyone |
 | `tiers` | The tiers, in order |
 
 ### A tier
@@ -87,6 +88,55 @@ in UTC: `"2026-10-09T00:01:00Z"`.
 | `claim_required`, `announce`, `completion_message` | As in the admin |
 | `starts_at`, `ends_at`, `enabled`, `notes` | Optional |
 | filters | `ball`, `special`, `any_special`, `group`, `min_rarity`, `max_rarity`, `min_attack_bonus`, `min_health_bonus`, `hex_contains`, `max_catch_seconds`, `main_server_only`, `partner` (Discord ID), `min_currency`, `must_receive_treasure`, `in_one_trade`, `command` (`"pack shop"`), `item` (pack), `merchant_item`, `collector`, `craft_type`. Only the ones the type uses are accepted |
-| `reward` | `{"cards": ["Alvida"], "tokens": 2, "berries": 800}`, any mix of the three |
+| `reward` | See **A reward** below |
 
 Rarity is the value of the treasure, lower is rarer: `"max_rarity": 60` means T60 or rarer.
+
+### A reward
+
+`{"cards": ["Alvida"], "tokens": 2, "berries": 800}` gives all three at once, which is the default. A reward can
+instead let the player pick, or draw for them:
+
+| Key | Meaning |
+| --- | --- |
+| `cards`, `tokens`, `berries` | Named treasures, pass tokens, and berries |
+| `pool` | A treasure taken from everything matching it, instead of a named one. One object, or a list of them |
+| `mode` | `"all"` (default, give everything), `"choice"` (the player picks) or `"random"` (drawn for them) |
+| `pick` | How many are picked or drawn, default 1 |
+| `offer` | How many options a choice shows when there are more. 0 offers them all, up to the 25 Discord allows |
+
+A pool is `{"group": "Straw Hats", "regime": "…", "economy": "…", "min_rarity": 20, "max_rarity": 60, "exclude":
+["Monkey D. Luffy"], "quantity": 1}` — every enabled treasure matching all of the filters given, minus the
+exclusions. Rarity works as everywhere else: lower is rarer, so `"min_rarity": 20` drops everything rarer than T20.
+
+```json
+"reward": {"mode": "choice", "pick": 1, "pool": {"group": "Straw Hats", "exclude": ["Monkey D. Luffy"]}}
+```
+
+A choice is not given right away: it is set aside for the player, who picks it from a menu on `/pass view` whenever
+they want. Nothing is lost if they close the pass first, and it can never be picked twice. A draw avoids repeats
+while the pool is big enough, and only repeats when it is smaller than `pick`.
+
+### Who can take part
+
+A pass with no `access` is open to everyone. With some, only the players meeting them can enter:
+
+```json
+"access": [{"max_treasures": 200}, {"role": 1234567890, "role_name": "Rookie"}],
+"access_logic": "any",
+"access_message": "This event is for new pirates: come back under 200 treasures, or ask for the Rookie role."
+```
+
+| Condition | Meaning |
+| --- | --- |
+| `{"max_treasures": 200}` / `{"min_treasures": 10}` | How many treasures the player owns |
+| `{"max_berries": 5000}` / `{"min_berries": 5000}` | How many berries they have |
+| `{"role": 1234567890, "role_name": "Rookie"}` | A Discord role. `role_name` only names it in the message players read |
+
+`access_logic` is `"all"` (default, every condition) or `"any"` (one is enough).
+
+A player is checked when they open the pass with `/pass view`, which is the only place their Discord roles can be
+read, and that answer is what the quests use afterwards. Someone who stops meeting the conditions — a beginner who
+grows past the treasure limit, a player who loses the role — **keeps the quests they can only do once**, so a pass
+started can always be finished, but the quests that come back every day or week stop for them. That is what keeps a
+beginners' pass from being farmed forever.

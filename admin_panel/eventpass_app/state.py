@@ -19,12 +19,28 @@ from django.utils import timezone
 from bd_models.models import BallInstance, Player
 from settings.utils import format_currency
 
-from .models import EventPass, PassTier, PlayerQuest, Quest, RequirementKind, Reset, RewardLine, TierRequirement
+from .access import Access
+from .models import (
+    EventPass,
+    PassTier,
+    PlayerQuest,
+    Quest,
+    RequirementKind,
+    Reset,
+    RewardChoice,
+    RewardLine,
+    TierRequirement,
+)
 from .types import player_description
 
 # every treasure a reward or a requirement points at is loaded up front: reading `quest.ball` or `line.special`
 # lazily would be a synchronous query, which async code is not allowed to make
-REWARD_LINES = Prefetch("reward__lines", queryset=RewardLine.objects.select_related("ball", "special"))
+REWARD_LINES = Prefetch(
+    "reward__lines",
+    queryset=RewardLine.objects.select_related("ball", "special", "group", "regime", "economy").prefetch_related(
+        "exclude_balls"
+    ),
+)
 TIER_REQUIREMENTS = Prefetch(
     "requirements", queryset=TierRequirement.objects.select_related("ball", "special").prefetch_related("quests")
 )
@@ -99,6 +115,17 @@ class PassState:
     tiers: list[TierState] = field(default_factory=list)
     loose_quests: list[QuestState] = field(default_factory=list)
     final_claimed: bool = False
+    # rewards reserved for the player that they still have to pick
+    choices: list[RewardChoice] = field(default_factory=list)
+    # None for an open pass, otherwise what the player may do with a restricted one
+    access: Access | None = None
+
+    @property
+    def locked_out(self) -> bool:
+        """
+        Whether the player is kept out of the pass entirely: restricted, not taking part, and not allowed in.
+        """
+        return self.access is not None and not self.access.joined and not self.access.allowed
 
     @property
     def quest_states(self) -> list[QuestState]:
@@ -238,6 +265,13 @@ async def build_state(
     """
     now = now or timezone.now()
     state = PassState(event_pass=event_pass)
+    if player is not None:
+        state.choices = [
+            choice
+            async for choice in RewardChoice.objects.filter(
+                player_id=player.pk, event_pass_id=event_pass.pk, resolved_at__isnull=True
+            ).order_by("pk")
+        ]
     if quests is None:
         quests = [
             quest

@@ -23,6 +23,7 @@ from .integrations import INTEGRATIONS, check_integrations
 from .models import (
     EventPass,
     Measure,
+    PassRequirement,
     PassTier,
     PlayerPass,
     PlayerQuest,
@@ -162,29 +163,40 @@ class QuestAdminForm(forms.ModelForm):
         return cleaned_data
 
 
-class RewardLineInline(admin.TabularInline):
+class RewardLineInline(admin.StackedInline):
     model = RewardLine
     extra = 1
-    autocomplete_fields = ("ball", "special")
-    fields = (
-        "position",
-        "kind",
-        "amount",
-        "ball",
-        "quantity",
-        "special",
-        "frame_key",
-        "bonus_mode",
-        "attack_bonus",
-        "health_bonus",
-        "tradeable",
-    )
+    autocomplete_fields = ("ball", "special", "group", "regime", "economy")
+    filter_horizontal = ("exclude_balls",)
+    fieldsets = [
+        (None, {"fields": ("position", "kind", "amount", "ball", "quantity")}),
+        (
+            "Pool",
+            {
+                "description": "Only for a treasure line that names no treasure: the reward draws one from every "
+                "enabled treasure matching all of these.",
+                "classes": ("collapse",),
+                "fields": ("group", "regime", "economy", "min_rarity", "max_rarity", "exclude_balls"),
+            },
+        ),
+        ("Card", {"fields": ("special", "frame_key", "bonus_mode", "attack_bonus", "health_bonus", "tradeable")}),
+    ]
 
 
 @admin.register(Reward)
 class RewardAdmin(admin.ModelAdmin):
     inlines = (RewardLineInline,)
-    list_display = ("name", "emoji", "content", "used_by")
+    fieldsets = [
+        (None, {"fields": ("name", "emoji", "message")}),
+        (
+            "How it is given",
+            {
+                "description": "Everything below is given at once, or the player picks from it, or it is drawn.",
+                "fields": ("mode", "pick", "offer"),
+            },
+        ),
+    ]
+    list_display = ("name", "emoji", "mode", "content", "used_by")
     search_fields = ("name", "message")
     save_as = True
 
@@ -206,6 +218,14 @@ class TierRequirementInline(admin.StackedInline):
     fields = ("kind", "count", "quests", "ball", "special", "date")
     verbose_name = "unlock requirement"
     verbose_name_plural = "unlock requirements"
+
+
+class PassRequirementInline(admin.TabularInline):
+    model = PassRequirement
+    extra = 0
+    fields = ("kind", "role_id", "role_name", "count")
+    verbose_name = "access condition"
+    verbose_name_plural = "access conditions"
 
 
 class PassTierInline(admin.TabularInline):
@@ -253,7 +273,7 @@ class QuestInline(admin.TabularInline):
 class EventPassAdmin(admin.ModelAdmin):
     save_on_top = True
     save_as = True
-    inlines = (PassTierInline, QuestInline)
+    inlines = (PassRequirementInline, PassTierInline, QuestInline)
     autocomplete_fields = ("final_reward",)
     readonly_fields = ("integration_status", "created_by", "created_at", "updated_at")
     fieldsets = [
@@ -266,6 +286,15 @@ class EventPassAdmin(admin.ModelAdmin):
             },
         ),
         ("Where", {"fields": ("main_server_only", "main_server_id")}),
+        (
+            "Who",
+            {
+                "description": "Add conditions below to reserve the pass. With none, everyone can take "
+                "part. A player who stops meeting them keeps the quests they can only do once, but the "
+                "ones that come back stop.",
+                "fields": ("access_logic", "access_message"),
+            },
+        ),
         ("End of the pass", {"fields": ("final_reward", "final_message")}),
         (
             "Publication",

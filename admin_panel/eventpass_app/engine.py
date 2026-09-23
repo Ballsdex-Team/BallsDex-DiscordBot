@@ -20,7 +20,8 @@ from django.utils import timezone
 
 from ballsdex.core.game_events import Event, EventContext, normalize_command
 
-from .models import EventPass, Measure, PlayerPass, PlayerQuest, Quest, QuestType, Reward, Source
+from .access import progress_gate
+from .models import EventPass, Measure, PlayerPass, PlayerQuest, Quest, QuestType, Reset, Reward, Source
 from .rewards import grant
 from .state import REWARD_LINES, finished_tier_ids, period_of, unlocked_tier_ids
 from .types import TYPES
@@ -146,11 +147,20 @@ class EventPassEngine:
         allowed: list[Quest] = []
         for quests in by_pass.values():
             event_pass = quests[0].event_pass
+            # a pass reserved to a role or to newcomers only moves for the players taking part in it
+            once_allowed, repeat_allowed = await progress_gate(player_id, event_pass)
+            if not once_allowed and not repeat_allowed:
+                continue
             if any(quest.tier_id for quest in quests):
                 unlocked = await unlocked_tier_ids(player_id, event_pass, now)
             else:
                 unlocked = set()
-            allowed.extend(quest for quest in quests if quest.tier_id is None or quest.tier_id in unlocked)
+            allowed.extend(
+                quest
+                for quest in quests
+                if (quest.tier_id is None or quest.tier_id in unlocked)
+                and (repeat_allowed if quest.reset != Reset.NONE else once_allowed)
+            )
         if not allowed:
             return []
 
@@ -347,6 +357,7 @@ class EventPassEngine:
                 period=period,
                 server_id=context.server_id,
                 channel_id=channel_id,
+                label=quest.name,
             )
             if given is not None:
                 await PlayerQuest.objects.filter(pk=row.pk).aupdate(claimed_at=now)
@@ -389,6 +400,7 @@ class EventPassEngine:
             period=period,
             server_id=server_id,
             channel_id=channel_id,
+            label=quest.name,
         )
         if given is None:
             await PlayerQuest.objects.filter(pk=row.pk, claimed_at__isnull=True).aupdate(claimed_at=now)
@@ -417,6 +429,7 @@ class EventPassEngine:
             source_id=tier.pk,
             server_id=server_id,
             channel_id=channel_id,
+            label=tier.name,
         )
         return ("already", "") if given is None else ("claimed", given.summary)
 
@@ -446,6 +459,7 @@ class EventPassEngine:
             source_id=event_pass.pk,
             server_id=server_id,
             channel_id=channel_id,
+            label=event_pass.name,
         )
         if given is None:
             return ("already", "")
