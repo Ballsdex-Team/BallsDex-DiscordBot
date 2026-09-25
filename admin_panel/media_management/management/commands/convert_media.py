@@ -40,6 +40,8 @@ class Command(BaseCommand):
             "-y",
             "-i",
             str(input_file.absolute()),
+            "-c:v",
+            "libwebp",
             str(output_file.absolute()),
         ]
 
