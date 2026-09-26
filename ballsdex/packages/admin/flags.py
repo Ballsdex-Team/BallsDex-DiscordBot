@@ -5,6 +5,18 @@ from ballsdex.core.utils.transformers import BallTransform, EconomyTransform, Re
 from settings.models import settings
 
 
+def collectible_aliases() -> list[str]:
+    """
+    The dex's own word for a collectible, accepted alongside "countryball".
+
+    A slash command shows this flag translated — "treasure:" on a dex whose collectibles are treasures — because
+    the bot renames "countryball" everywhere it is shown. The text form has no translator, so without this alias
+    "treasure:Monkey D. Luffy" is silently dropped and a random one spawns instead.
+    """
+    name = settings.collectible_name
+    return [name] if name and name != "countryball" else []
+
+
 class StatusFlags(FlagConverter):
     status: discord.Status | None = flag(description="The status you want to set")
     name: str | None = flag(description="Title of the activity, if not custom")
@@ -23,7 +35,8 @@ class RarityFlags(FlagConverter):
 
 class SpawnFlags(FlagConverter):
     countryball: BallTransform | None = flag(
-        description="The countryball you want to spawn. Random according to rarities if not specified."
+        description="The countryball you want to spawn. Random according to rarities if not specified.",
+        aliases=collectible_aliases(),
     )
     channel: discord.TextChannel | None = flag(
         description="The channel you want to spawn the countryball in. Current channel if not specified.", default=None
@@ -48,7 +61,9 @@ class GiveBallFlags(FlagConverter):
 
 class BallsCountFlags(FlagConverter):
     user: discord.User | None = flag(description="The player whose countryballs you are counting")
-    countryball: BallTransform | None = flag(description="Restrict countring to a specific countryball")
+    countryball: BallTransform | None = flag(
+        description="Restrict counting to a specific countryball", aliases=collectible_aliases()
+    )
     special: SpecialTransform | None = flag(description="Restrict counting to a special event")
     deleted: bool = flag(default=False, description="Count the deleted countryballs too")
 
@@ -61,7 +76,9 @@ class TradeHistoryFlags(FlagConverter):
 
 
 class UserTradeHistoryFlags(TradeHistoryFlags):
-    countryball: BallTransform | None = flag(description="The countryball you want to filter the history by")
+    countryball: BallTransform | None = flag(
+        description="The countryball you want to filter the history by", aliases=collectible_aliases()
+    )
     user2: discord.User | None = flag(description="The second user you want to check the history of")
     special: SpecialTransform | None = flag(description="The special you want to filter the history by")
 

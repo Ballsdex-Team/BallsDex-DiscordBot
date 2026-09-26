@@ -2,9 +2,8 @@ import random
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING
 
-from currency_app.models import BerryTransaction
 import discord
-from currency_app.models import Item
+from currency_app.models import BerryTransaction, Item
 from discord.ui import Button, button, select
 
 from ballsdex.core.game_events import Event, EventContext, bus
@@ -16,6 +15,21 @@ from settings.utils import format_currency
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
+
+
+async def announce_pack_opened(player: Player, pack: Item, server_id: int | None, channel_id: int | None) -> None:
+    """
+    Tell the game event bus a pack was opened, once the player is holding what was inside.
+
+    It used to fire the moment the pack was paid for, which meant a player who closed the treasure picker had
+    already ticked "buy a pack" without ever opening one.
+    """
+    await bus.dispatch(
+        player,
+        Event.PACK_BUY,
+        context=EventContext(item_id=pack.pk, price=pack.prize or 0, amount=-(pack.prize or 0), server_id=server_id),
+        channel_id=channel_id,
+    )
 
 
 class SelectBallPackSource(menus.ListPageSource):
@@ -73,6 +87,7 @@ class SelectBallPackView(Pages):
         self.disable_button()
         await self.original_interaction.edit_original_response(view=self)
         await interaction.followup.send(embed=embed, file=file)
+        await announce_pack_opened(player, pack, interaction.guild_id, interaction.channel_id)
 
     def disable_button(self):
         self.stop()
@@ -110,16 +125,8 @@ class ShopPages(Pages):
                     server_id=interaction.guild_id,
                 )
 
-        # the pack is paid for, whatever the player ends up opening from it
-        await bus.dispatch(
-            player,
-            Event.PACK_BUY,
-            context=EventContext(
-                item_id=pack.pk, price=pack.prize or 0, amount=-(pack.prize or 0), server_id=interaction.guild_id
-            ),
-            channel_id=interaction.channel_id,
-        )
-
+        # the pack is paid for here, but it is only announced once its treasure is handed over: a pack whose
+        # picker was closed was never opened, and should not count as one
         balls = [x.cached_ball async for x in pack.balls.all()]
         if balls:
             paginator = SelectBallPackView(pack, interaction, balls)
@@ -157,6 +164,7 @@ class ShopPages(Pages):
         file = discord.File(buffer, "card.webp")
         embed.set_image(url="attachment://card.webp")
         await interaction.followup.send(embed=embed, file=file)
+        await announce_pack_opened(player, pack, interaction.guild_id, interaction.channel_id)
 
     async def _get_random_countryball(self, countryballs: list[Ball]) -> Ball:
         if not countryballs:
