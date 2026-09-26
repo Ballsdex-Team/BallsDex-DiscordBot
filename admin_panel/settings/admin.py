@@ -110,6 +110,7 @@ class SettingsAdmin(admin.ModelAdmin):
                     "tip_chance",
                     "tip_position",
                     "tip_container",
+                    "pass_auto_claim",
                     "spawn_manager",
                 ),
                 "classes": ("collapse",),

@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 from django.utils import timezone
 
 from ballsdex.core.game_events import Event, EventContext, normalize_command
+from settings.models import settings
 
 from .access import progress_gate
 from .models import EventPass, Measure, PlayerPass, PlayerQuest, Quest, QuestType, Reset, Reward, Source
@@ -347,7 +348,9 @@ class EventPassEngine:
         log.debug("Player %s completed quest %s (%s)", player_id, quest.pk, period or "once")
 
         completion = Completion(quest=quest, period=period)
-        if not quest.claim_required and quest.reward_id:
+        # the quest may hand its reward over on its own, or the bot may be set to never ask for a click
+        gives_now = not quest.claim_required or settings.pass_auto_claim
+        if gives_now and quest.reward_id:
             given = await grant(
                 player_id,
                 quest.event_pass,

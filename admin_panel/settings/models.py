@@ -213,6 +213,14 @@ class Settings(models.Model):
         default=False,
     )
 
+    pass_auto_claim = models.BooleanField(
+        verbose_name="auto-claim event pass rewards",
+        help_text="Give the reward of an event pass quest the moment it is completed, instead of waiting for "
+        "the player to press Claim. Tier and end-of-pass rewards keep their button: those are the moments "
+        "worth a click. A quest already set to give its reward right away does so either way.",
+        default=False,
+    )
+
     # spawn algorithm details
     spawn_chance_min = models.PositiveIntegerField(
         help_text="Minimum base chance value to spawn a ball. Lower value leads to more spawn.", default=40
