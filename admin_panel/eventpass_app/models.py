@@ -364,6 +364,13 @@ class EventPass(models.Model):
     )
 
     starts_at = models.DateTimeField(help_text="Nothing progresses before this date.")
+    early_starts_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="early start",
+        help_text="An earlier date for the players meeting a condition marked as granting early access below. "
+        "Leave empty for a pass that opens for everybody at once.",
+    )
     ends_at = models.DateTimeField(help_text="Quests stop progressing after this date.")
     claim_until = models.DateTimeField(
         null=True,
@@ -438,10 +445,27 @@ class EventPass(models.Model):
 
     def running(self, now: datetime | None = None) -> bool:
         """
-        Whether quests can progress right now.
+        Whether quests can progress right now, for a player with no early access.
         """
         now = now or timezone.now()
         return self.status == self.Status.ACTIVE and self.starts_at <= now <= self.ends_at
+
+    def open_early(self, now: datetime | None = None) -> bool:
+        """
+        Whether the pass has opened for the players let in early, but not yet for everybody.
+
+        The engine uses it to let their quests move while the pass still looks closed to the rest.
+        """
+        now = now or timezone.now()
+        if self.early_starts_at is None or self.status != self.Status.ACTIVE:
+            return False
+        return self.early_starts_at <= now < self.starts_at
+
+    def window_open(self, now: datetime | None = None) -> bool:
+        """
+        Whether the pass is open to anybody at all, early birds included.
+        """
+        return self.running(now) or self.open_early(now)
 
     def claimable(self, now: datetime | None = None) -> bool:
         """
@@ -480,6 +504,12 @@ class PassRequirement(models.Model):
         max_length=64, blank=True, default="", help_text="Only used to name the role in the message players read."
     )
     count = models.PositiveBigIntegerField(default=0, help_text="The number of treasures or berries, for the others.")
+    grants_early_access = models.BooleanField(
+        verbose_name="lets them in early",
+        help_text="A player meeting this condition may start at the pass's early start date, before everybody "
+        "else. Ignored when the pass has no early start.",
+        default=False,
+    )
 
     @property
     def counts_live(self) -> bool:

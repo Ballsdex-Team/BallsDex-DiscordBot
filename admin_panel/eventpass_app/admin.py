@@ -223,7 +223,7 @@ class TierRequirementInline(admin.StackedInline):
 class PassRequirementInline(admin.TabularInline):
     model = PassRequirement
     extra = 0
-    fields = ("kind", "role_id", "role_name", "count")
+    fields = ("kind", "role_id", "role_name", "count", "grants_early_access")
     verbose_name = "access condition"
     verbose_name_plural = "access conditions"
 
@@ -282,7 +282,7 @@ class EventPassAdmin(admin.ModelAdmin):
             "When",
             {
                 "description": "Quests only progress between these dates. Claiming can stay open a little longer.",
-                "fields": ("starts_at", "ends_at", "claim_until"),
+                "fields": ("starts_at", "ends_at", "claim_until", "early_starts_at"),
             },
         ),
         ("Where", {"fields": ("main_server_only", "main_server_id")}),

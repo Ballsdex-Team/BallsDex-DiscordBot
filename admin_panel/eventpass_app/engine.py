@@ -23,7 +23,7 @@ from ballsdex.core.game_events import Event, EventContext, normalize_command
 from bd_models.models import BallInstance, Friendship
 from settings.models import settings
 
-from .access import progress_gate
+from .access import has_early_access, progress_gate
 from .models import EventPass, Measure, PlayerPass, PlayerQuest, Quest, QuestType, Reset, Reward, Source
 from .rewards import grant
 from .state import REWARD_LINES, finished_tier_ids, period_of, unlocked_tier_ids
@@ -132,7 +132,12 @@ class EventPassEngine:
     @staticmethod
     def _in_window(quest: Quest, now: datetime) -> bool:
         starts_at, ends_at = quest.window()
-        return quest.event_pass.running(now) and starts_at <= now <= ends_at
+        early = quest.event_pass.early_starts_at
+        if quest.starts_at is None and early is not None:
+            # a quest that follows the pass's dates opens with its early start too; who may actually play
+            # before the public start is decided per player, once the quest is a candidate
+            starts_at = min(starts_at, early)
+        return quest.event_pass.window_open(now) and starts_at <= now <= ends_at
 
     async def _process(
         self,
@@ -153,6 +158,9 @@ class EventPassEngine:
             # a pass reserved to a role or to newcomers only moves for the players taking part in it
             once_allowed, repeat_allowed = await progress_gate(player_id, event_pass)
             if not once_allowed and not repeat_allowed:
+                continue
+            # before the pass opens for everybody, only the players let in early play
+            if event_pass.open_early(now) and not await has_early_access(player_id, event_pass):
                 continue
             if any(quest.tier_id for quest in quests):
                 unlocked = await unlocked_tier_ids(player_id, event_pass, now)

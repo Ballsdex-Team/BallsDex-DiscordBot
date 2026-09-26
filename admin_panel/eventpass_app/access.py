@@ -86,14 +86,31 @@ def _verdict(requirements: list[PassRequirement], failed: list[PassRequirement],
     return not failed
 
 
-def role_ids_of(user: discord.User | discord.Member) -> set[int] | None:
+def role_ids_of(user: discord.User | discord.Member, bot=None) -> set[int] | None:
     """
-    The roles of the player, or `None` when Discord did not give us a member (a DM, a user object).
+    Every role the player wears, across all the servers the bot shares with them.
+
+    Discord only hands over the roles of the server a command was used in, so a pass reserved to a role of the
+    main server would turn away someone who typed the command somewhere else. With the bot at hand, the other
+    servers are looked at too, from the members it already has in memory — no request is made for it.
+
+    Returns `None` when no server could be read at all, which means "unknown" rather than "no roles": a role
+    condition is then left alone instead of failing, so nobody is thrown out for using the bot in DMs.
     """
+    found: set[int] = set()
+    seen_a_member = False
     roles = getattr(user, "roles", None)
-    if not roles:
-        return None
-    return {role.id for role in roles}
+    if roles:
+        seen_a_member = True
+        found.update(role.id for role in roles)
+    if bot is not None:
+        for guild in bot.guilds:
+            member = guild.get_member(user.id)
+            if member is None:
+                continue
+            seen_a_member = True
+            found.update(role.id for role in member.roles)
+    return found if seen_a_member else None
 
 
 class Access:
@@ -140,6 +157,24 @@ async def check(player_id: int, event_pass: EventPass, *, role_ids: set[int] | N
             membership or await PlayerPass.objects.filter(player_id=player_id, event_pass_id=event_pass.pk).afirst()
         )
     return Access(allowed=allowed, joined=membership is not None, missing=failed, restricted=True)
+
+
+async def has_early_access(player_id: int, event_pass: EventPass) -> bool:
+    """
+    Whether this player may start before the pass opens for everybody.
+
+    Read from the verdict stored when they last opened the pass, not counted again: the conditions that grant
+    early access are usually roles, and roles cannot be read outside an interaction. Someone who never opened the
+    pass simply waits for the public start, which is the honest answer when nothing is known about them.
+    """
+    early = [requirement async for requirement in event_pass.access.filter(grants_early_access=True)]
+    if not early:
+        return False
+    membership = await PlayerPass.objects.filter(player_id=player_id, event_pass_id=event_pass.pk).afirst()
+    if membership is None:
+        return False
+    met = set(membership.passed or [])
+    return any(requirement.pk in met for requirement in early)
 
 
 async def progress_gate(player_id: int, event_pass: EventPass) -> tuple[bool, bool]:

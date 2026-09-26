@@ -19,7 +19,7 @@ from ballsdex.core.utils.utils import is_staff
 from bd_models.models import Player
 
 from ..access import check as check_access
-from ..access import role_ids_of
+from ..access import has_early_access, role_ids_of
 from ..engine import engine
 from ..integrations import INTEGRATIONS, check_integrations
 from ..models import EventPass, PlayerQuest, Quest
@@ -103,7 +103,15 @@ async def current_pass(
     now = timezone.now()
     published = EventPass.objects.filter(status=EventPass.Status.ACTIVE, starts_at__lte=now)
     running = [event_pass async for event_pass in published.filter(ends_at__gte=now).order_by("position", "-starts_at")]
-    found = await _pick(running, player, role_ids)
+    # a pass whose early start has come is running too, for the players it let in early
+    early = [
+        event_pass
+        async for event_pass in EventPass.objects.filter(
+            status=EventPass.Status.ACTIVE, early_starts_at__lte=now, starts_at__gt=now
+        ).order_by("position", "-starts_at")
+        if player is not None and await has_early_access(player.pk, event_pass)
+    ]
+    found = await _pick(early + running, player, role_ids)
     if found is None:
         over = [
             event_pass async for event_pass in published.filter(claim_until__gte=now).order_by("position", "-ends_at")
@@ -134,7 +142,7 @@ class EventPassCog(commands.GroupCog, name="Event pass", group_name="pass"):
         """
         await interaction.response.defer(thinking=True)
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
-        roles = role_ids_of(interaction.user)
+        roles = role_ids_of(interaction.user, self.bot)
         chosen = await current_pass(event_pass, staff=await is_staff(interaction), player=player, role_ids=roles)
         if chosen is None:
             await interaction.followup.send("There is no event running right now.", ephemeral=True)
@@ -161,7 +169,10 @@ class EventPassCog(commands.GroupCog, name="Event pass", group_name="pass"):
         await interaction.response.defer(thinking=True)
         viewer = await Player.objects.aget_or_none(discord_id=interaction.user.id)
         chosen = await current_pass(
-            event_pass, staff=await is_staff(interaction), player=viewer, role_ids=role_ids_of(interaction.user)
+            event_pass,
+            staff=await is_staff(interaction),
+            player=viewer,
+            role_ids=role_ids_of(interaction.user, self.bot),
         )
         if chosen is None:
             await interaction.followup.send("There is no event running right now.", ephemeral=True)
@@ -214,7 +225,10 @@ class EventPassCog(commands.GroupCog, name="Event pass", group_name="pass"):
         await interaction.response.defer(thinking=True)
         viewer = await Player.objects.aget_or_none(discord_id=interaction.user.id)
         chosen = await current_pass(
-            event_pass, staff=await is_staff(interaction), player=viewer, role_ids=role_ids_of(interaction.user)
+            event_pass,
+            staff=await is_staff(interaction),
+            player=viewer,
+            role_ids=role_ids_of(interaction.user, self.bot),
         )
         if chosen is None:
             await interaction.followup.send("There is no event running right now.", ephemeral=True)
