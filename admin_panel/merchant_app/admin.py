@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from django.contrib import admin
 from django.http import HttpRequest
 
-from .models import GlobalShop, MerchantSettings, MerchantItem
+from .models import GlobalShop, MerchantItem, MerchantSettings
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet

@@ -104,7 +104,9 @@ class AuctionSettings(models.Model):
         managed = True
         db_table = "auctionsettings"
         constraints = [
-            models.CheckConstraint(condition=Q(min_price__lte=F("max_price")), name="auctionsettings_price_min_lte_max"),
+            models.CheckConstraint(
+                condition=Q(min_price__lte=F("max_price")), name="auctionsettings_price_min_lte_max"
+            ),
             models.CheckConstraint(
                 condition=Q(min_listing_minutes__lte=F("max_listing_minutes")),
                 name="auctionsettings_listing_minutes_min_lte_max",
@@ -153,7 +155,10 @@ class AuctionBoosterRole(models.Model):
         indexes = (models.Index(fields=("server_id",)),)
 
     def __str__(self) -> str:
-        return f"Booster role {self.role_id} in {self.server_id} (+{self.sell_bonus_percent}%/-{self.buy_discount_percent}%)"
+        return (
+            f"Booster role {self.role_id} in {self.server_id} "
+            f"(+{self.sell_bonus_percent}%/-{self.buy_discount_percent}%)"
+        )
 
 
 class SpecialPriceModifier(models.Model):
@@ -178,7 +183,9 @@ class StatBonusModifier(models.Model):
         db_table = "auctionstatbonusmodifier"
         ordering = ["value"]
         constraints = [
-            models.CheckConstraint(condition=Q(value__gte=-40) & Q(value__lte=40), name="auctionstatbonusmodifier_range")
+            models.CheckConstraint(
+                condition=Q(value__gte=-40) & Q(value__lte=40), name="auctionstatbonusmodifier_range"
+            )
         ]
 
     def __str__(self) -> str:
@@ -216,9 +223,7 @@ class AuctionListing(models.Model):
         )
         constraints = [
             models.UniqueConstraint(
-                fields=("instance",),
-                condition=Q(status="active"),
-                name="auctionlisting_one_active_per_instance",
+                fields=("instance",), condition=Q(status="active"), name="auctionlisting_one_active_per_instance"
             )
         ]
 
@@ -243,10 +248,7 @@ class AuctionOffer(models.Model):
     class Meta:
         managed = True
         db_table = "auctionoffer"
-        indexes = (
-            models.Index(fields=("listing", "status")),
-            models.Index(fields=("buyer", "status")),
-        )
+        indexes = (models.Index(fields=("listing", "status")), models.Index(fields=("buyer", "status")))
 
     def __str__(self) -> str:
         return f"Offer #{self.pk} on listing #{self.listing_id} ({self.status})"

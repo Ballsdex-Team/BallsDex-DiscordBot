@@ -10,7 +10,8 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db.models.expressions import RawSQL
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import path as urlpath, reverse
+from django.urls import path as urlpath
+from django.urls import reverse
 
 from bd_models.models import FRAME_SPECIAL_NAME, Ball, Special
 
@@ -24,6 +25,13 @@ if TYPE_CHECKING:
 # a frame is recognised by what it holds rather than by its key, so the dated and the named ones both count
 HAS_FRAME_SQL = "EXISTS (SELECT 1 FROM jsonb_each(capacity_logic) e WHERE e.value ? 'card' OR e.value ? 'spawn')"
 CARD_LAYOUTS = (("artwork", "Artwork square"), ("full_art", "Full art (whole card)"))
+
+
+def _extension(upload) -> str | None:
+    """The file extension of an upload, defaulting to png, or None when nothing was uploaded."""
+    if not upload:
+        return None
+    return upload.name.rsplit(".", 1)[-1] if "." in upload.name else "png"
 
 
 def _save_art(data: bytes, name: str) -> str:
@@ -104,12 +112,12 @@ def _frame_order(frame: dict[str, Any]) -> tuple:
 
 # ── Forms ─────────────────────────────────────────────────────────────────────
 
+
 class FrameAddForm(forms.Form):
     """Add form shown on the global 'Add Frame' page — includes a Ball picker."""
 
     ball = forms.ModelChoiceField(
-        queryset=Ball.objects.all().order_by("country"),
-        help_text="The countryball this frame applies to.",
+        queryset=Ball.objects.all().order_by("country"), help_text="The countryball this frame applies to."
     )
     name = forms.CharField(
         max_length=64,
@@ -120,8 +128,7 @@ class FrameAddForm(forms.Form):
     emoji = forms.CharField(
         max_length=64,
         required=False,
-        help_text="Shown next to the name on a framed treasure. Write a server emoji in full, like "
-        "<:Haki:1234567890>.",
+        help_text="Shown next to the name on a framed treasure. Write a server emoji in full, like <:Haki:1234567890>.",
     )
     no_date = forms.BooleanField(
         required=False,
@@ -143,11 +150,12 @@ class FrameAddForm(forms.Form):
     special = _special_field()
     spawn_art = forms.ImageField(
         required=False,
-        help_text="Spawn art image (same format as a regular ball wild card). Leave blank to keep existing."
+        help_text="Spawn art image (same format as a regular ball wild card). Leave blank to keep existing.",
     )
     card_art = forms.ImageField(
         required=False,
-        help_text="Collection card art image (same format as a regular ball collection card). Leave blank to keep existing."
+        help_text="Collection card art image (same format as a regular ball collection card). "
+        "Leave blank to keep existing.",
     )
     card_layout = forms.ChoiceField(
         choices=CARD_LAYOUTS,
@@ -199,8 +207,7 @@ class FrameDateForm(forms.Form):
     emoji = forms.CharField(
         max_length=64,
         required=False,
-        help_text="Shown next to the name on a framed treasure. Write a server emoji in full, like "
-        "<:Haki:1234567890>.",
+        help_text="Shown next to the name on a framed treasure. Write a server emoji in full, like <:Haki:1234567890>.",
     )
     no_date = forms.BooleanField(
         required=False,
@@ -222,11 +229,12 @@ class FrameDateForm(forms.Form):
     special = _special_field()
     spawn_art = forms.ImageField(
         required=False,
-        help_text="Spawn art image (same format as a regular ball wild card). Leave blank to keep existing."
+        help_text="Spawn art image (same format as a regular ball wild card). Leave blank to keep existing.",
     )
     card_art = forms.ImageField(
         required=False,
-        help_text="Collection card art image (same format as a regular ball collection card). Leave blank to keep existing."
+        help_text="Collection card art image (same format as a regular ball collection card). "
+        "Leave blank to keep existing.",
     )
     card_layout = forms.ChoiceField(
         choices=CARD_LAYOUTS,
@@ -268,6 +276,7 @@ class FrameDateForm(forms.Form):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _apply_frames(
     ball: Ball,
     date_from: date,
@@ -302,12 +311,7 @@ def _apply_frames(
     for key in keys:
         file_key = key.replace(":", "_")
         previous = capacity.get(key) if is_frame_entry(capacity.get(key)) else {}
-        entry: dict[str, Any] = {
-            "credits": credits_str,
-            "catch": catch_str,
-            "chance": chance,
-            "full_art": full_art,
-        }
+        entry: dict[str, Any] = {"credits": credits_str, "catch": catch_str, "chance": chance, "full_art": full_art}
         if name:
             entry["name"] = name
         if emoji:
@@ -347,6 +351,7 @@ def _saved_frames_label(
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 
+
 @admin.register(FrameBall)
 class FrameAdmin(admin.ModelAdmin):
     list_display = ("country", "frame_count", "frame_dates_display")
@@ -384,20 +389,18 @@ class FrameAdmin(admin.ModelAdmin):
                 "<int:ball_pk>/delete_date/<str:date_key>/",
                 self.admin_site.admin_view(self.delete_date_view),
                 name="frames_frameball_delete_date",
-            ),
+            )
         ]
         return custom + super().get_urls()
 
     # ── Add view ──────────────────────────────────────────────────────────────
 
     def add_view(
-        self,
-        request: HttpRequest,
-        form_url: str = "",
-        extra_context: dict[str, Any] | None = None,
+        self, request: HttpRequest, form_url: str = "", extra_context: dict[str, Any] | None = None
     ) -> HttpResponse:
         if not self.has_add_permission(request):
             from django.core.exceptions import PermissionDenied
+
             raise PermissionDenied
 
         if request.method == "POST":
@@ -412,14 +415,18 @@ class FrameAdmin(admin.ModelAdmin):
                 spawn_file = form.cleaned_data.get("spawn_art")
                 card_file = form.cleaned_data.get("card_art")
                 spawn_bytes = spawn_file.read() if spawn_file else None
-                spawn_ext = (spawn_file.name.rsplit(".", 1)[-1] if "." in spawn_file.name else "png") if spawn_file else None
+                spawn_ext = _extension(spawn_file)
                 card_bytes = card_file.read() if card_file else None
-                card_ext = (card_file.name.rsplit(".", 1)[-1] if "." in card_file.name else "png") if card_file else None
+                card_ext = _extension(card_file)
 
                 _apply_frames(
-                    ball, date_from, date_to,
-                    spawn_bytes, spawn_ext,
-                    card_bytes, card_ext,
+                    ball,
+                    date_from,
+                    date_to,
+                    spawn_bytes,
+                    spawn_ext,
+                    card_bytes,
+                    card_ext,
                     form.cleaned_data["credits"],
                     form.cleaned_data["catch_phrase"],
                     form.cleaned_data.get("chance", 100),
@@ -432,11 +439,7 @@ class FrameAdmin(admin.ModelAdmin):
                 ball.save(update_fields=["capacity_logic"])
 
                 date_label = _saved_frames_label(
-                    date_from,
-                    date_to,
-                    special_id,
-                    (form.cleaned_data.get("name") or "").strip(),
-                    no_date,
+                    date_from, date_to, special_id, (form.cleaned_data.get("name") or "").strip(), no_date
                 )
                 self.message_user(request, f"Added frame(s) for {ball.country}: {date_label}.")
                 return redirect(reverse("admin:frames_frameball_changelist"))
@@ -465,11 +468,7 @@ class FrameAdmin(admin.ModelAdmin):
     # ── Change view ───────────────────────────────────────────────────────────
 
     def change_view(
-        self,
-        request: HttpRequest,
-        object_id: str,
-        form_url: str = "",
-        extra_context: dict[str, Any] | None = None,
+        self, request: HttpRequest, object_id: str, form_url: str = "", extra_context: dict[str, Any] | None = None
     ) -> HttpResponse:
         ball = get_object_or_404(Ball, pk=object_id)
 
@@ -484,14 +483,18 @@ class FrameAdmin(admin.ModelAdmin):
                 spawn_file = form.cleaned_data.get("spawn_art")
                 card_file = form.cleaned_data.get("card_art")
                 spawn_bytes = spawn_file.read() if spawn_file else None
-                spawn_ext = (spawn_file.name.rsplit(".", 1)[-1] if "." in spawn_file.name else "png") if spawn_file else None
+                spawn_ext = _extension(spawn_file)
                 card_bytes = card_file.read() if card_file else None
-                card_ext = (card_file.name.rsplit(".", 1)[-1] if "." in card_file.name else "png") if card_file else None
+                card_ext = _extension(card_file)
 
                 _apply_frames(
-                    ball, date_from, date_to,
-                    spawn_bytes, spawn_ext,
-                    card_bytes, card_ext,
+                    ball,
+                    date_from,
+                    date_to,
+                    spawn_bytes,
+                    spawn_ext,
+                    card_bytes,
+                    card_ext,
                     form.cleaned_data["credits"],
                     form.cleaned_data["catch_phrase"],
                     form.cleaned_data.get("chance", 100),
@@ -504,11 +507,7 @@ class FrameAdmin(admin.ModelAdmin):
                 ball.save(update_fields=["capacity_logic"])
 
                 date_label = _saved_frames_label(
-                    date_from,
-                    date_to,
-                    special_id,
-                    (form.cleaned_data.get("name") or "").strip(),
-                    no_date,
+                    date_from, date_to, special_id, (form.cleaned_data.get("name") or "").strip(), no_date
                 )
                 self.message_user(request, f"Updated frames for {ball.country}: {date_label}.")
                 return redirect(".")
@@ -549,11 +548,10 @@ class FrameAdmin(admin.ModelAdmin):
 
     # ── Delete date view ──────────────────────────────────────────────────────
 
-    def delete_date_view(
-        self, request: HttpRequest, ball_pk: int, date_key: str
-    ) -> HttpResponse:
+    def delete_date_view(self, request: HttpRequest, ball_pk: int, date_key: str) -> HttpResponse:
         if not self.has_change_permission(request):
             from django.core.exceptions import PermissionDenied
+
             raise PermissionDenied
 
         if parse_frame_key(date_key) is None:
@@ -565,11 +563,7 @@ class FrameAdmin(admin.ModelAdmin):
         label = next((x["label"] for x in _frames_of(ball) if x["key"] == date_key), date_key)
 
         if date_key not in capacity:
-            self.message_user(
-                request,
-                f"Frame {label} not found on {ball.country}.",
-                level=messages.WARNING,
-            )
+            self.message_user(request, f"Frame {label} not found on {ball.country}.", level=messages.WARNING)
         else:
             capacity.pop(date_key)
             ball.capacity_logic = capacity

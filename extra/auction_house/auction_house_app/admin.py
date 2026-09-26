@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
 
-from bd_models.models import Special
 from django.contrib import admin
+
+from bd_models.models import Special
 
 from .models import (
     AuctionAdminRole,

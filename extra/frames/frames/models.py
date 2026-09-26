@@ -1,5 +1,3 @@
-from django.db import models
-
 from bd_models.models import Ball
 
 

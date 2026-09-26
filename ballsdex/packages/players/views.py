@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, NamedTuple, cast
 
 import discord
 from discord import ButtonStyle, SeparatorSpacing
-from discord.utils import format_dt
 from discord.ui import (
     ActionRow,
     Button,
@@ -22,6 +21,7 @@ from discord.ui import (
     Thumbnail,
     button,
 )
+from discord.utils import format_dt
 
 from ballsdex.core.discord import Modal, View
 from ballsdex.core.utils.buttons import ConfirmChoiceView

@@ -5,9 +5,15 @@ from typing import TYPE_CHECKING
 
 import discord
 from asgiref.sync import sync_to_async
-from auction_house_app import pricing, services
 from currency_app.ledger import adjust_money
 from currency_app.models import BerryTransaction
+from discord import app_commands
+from discord.ext import commands, tasks
+from django.db import transaction
+from django.db.models import F, Max
+from django.utils import timezone
+
+from auction_house_app import pricing, services
 from auction_house_app.models import (
     AuctionGuildConfig,
     AuctionListing,
@@ -20,12 +26,6 @@ from auction_house_app.models import (
     HotelStock,
     ServerActivity,
 )
-from discord import app_commands
-from discord.ext import commands, tasks
-from django.db import transaction
-from django.db.models import F, Max
-from django.utils import timezone
-
 from ballsdex.core.game_events import Event, EventContext, bus
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus.old import FieldPageSource, Pages
@@ -176,7 +176,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             description=(
                 f"<@{winner.discord_id}> just won "
                 f"{instance.description(include_emoji=True, bot=self.bot)} from Buggy's unsold stock!\n\n"
-                f"*\"{line}\"*\n— **{speaker}**"
+                f'*"{line}"*\n— **{speaker}**'
             ),
             color=AUCTION_COLOR,
         )
@@ -341,9 +341,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             )
             context = EventContext(instances=[instance], price=price, server_id=server_id)
             seller_id = instance.player_id
-            transaction.on_commit(
-                lambda: bus.dispatch_soon(seller_id, Event.AUCTION_CREATE, context=context)
-            )
+            transaction.on_commit(lambda: bus.dispatch_soon(seller_id, Event.AUCTION_CREATE, context=context))
 
     # -- /auction cancel ------------------------------------------------------------------------
 
@@ -385,9 +383,9 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             listing.instance.locked = None
             listing.instance.save(update_fields=["locked"])
 
-            pending = AuctionOffer.objects.filter(
-                listing=listing, status=AuctionOffer.Status.PENDING
-            ).select_related("buyer")
+            pending = AuctionOffer.objects.filter(listing=listing, status=AuctionOffer.Status.PENDING).select_related(
+                "buyer"
+            )
             for offer in pending:
                 adjust_money(
                     offer.buyer,
@@ -404,9 +402,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
     async def cancel_listing_autocomplete(
         self, interaction: discord.Interaction["BallsDexBot"], current: str
     ) -> list[app_commands.Choice[int]]:
-        qs = AuctionListing.objects.filter(
-            seller__discord_id=interaction.user.id, status=AuctionListing.Status.ACTIVE
-        )
+        qs = AuctionListing.objects.filter(seller__discord_id=interaction.user.id, status=AuctionListing.Status.ACTIVE)
         if current:
             qs = qs.filter(instance__ball__country__icontains=current)
         qs = qs.select_related("instance").order_by("expires_at")[:25]
@@ -446,7 +442,9 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
         listings = [listing async for listing in qs.order_by(order)]
         if not listings:
             await interaction.followup.send(
-                "No listings match that treasure." if treasure else "No treasures are currently listed on Buggy's Auction House."
+                "No listings match that treasure."
+                if treasure
+                else "No treasures are currently listed on Buggy's Auction House."
             )
             return
 
@@ -483,10 +481,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
     @app_commands.command(name="bid")
     @app_commands.rename(listing_id="listing")
     async def bid(
-        self,
-        interaction: discord.Interaction["BallsDexBot"],
-        listing_id: int,
-        amount: app_commands.Range[int, 1],
+        self, interaction: discord.Interaction["BallsDexBot"], listing_id: int, amount: app_commands.Range[int, 1]
     ):
         """
         Bid on a treasure listed on Buggy's Auction House. Your coins are held until the seller decides.
@@ -576,8 +571,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
         qs = qs.select_related("instance").order_by("expires_at")[:25]
         return [
             app_commands.Choice(
-                name=f"#{listing.id} {listing.instance.short_description()} — "
-                f"{format_currency(listing.asking_price)}",
+                name=f"#{listing.id} {listing.instance.short_description()} — {format_currency(listing.asking_price)}",
                 value=listing.id,
             )
             async for listing in qs
@@ -664,8 +658,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             buyer.refresh_from_db(fields=["money"])
             if buyer.money < additional:
                 raise RuntimeError(
-                    f"You don't have enough coins to add that much (balance: "
-                    f"{format_currency(buyer.money, False)})."
+                    f"You don't have enough coins to add that much (balance: {format_currency(buyer.money, False)})."
                 )
             adjust_money(
                 buyer,
@@ -693,9 +686,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
         seller, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         listings = [
             listing
-            async for listing in AuctionListing.objects.filter(
-                seller=seller, status=AuctionListing.Status.ACTIVE
-            )
+            async for listing in AuctionListing.objects.filter(seller=seller, status=AuctionListing.Status.ACTIVE)
             .select_related("instance")
             .prefetch_related("offers")
             .order_by("expires_at")
@@ -840,9 +831,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
         """
         await interaction.response.defer(thinking=True)
         auction_settings = await AuctionSettings.aload()
-        qs = HotelStock.objects.filter(status=HotelStock.Status.AVAILABLE).select_related(
-            "instance", "instance__ball"
-        )
+        qs = HotelStock.objects.filter(status=HotelStock.Status.AVAILABLE).select_related("instance", "instance__ball")
         if auction_settings.max_shop_rarity is not None:
             qs = qs.filter(instance__ball__rarity__lte=auction_settings.max_shop_rarity)
         cutoff = timezone.now() - timedelta(hours=auction_settings.shop_listing_hours)
@@ -959,9 +948,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             stock.status = HotelStock.Status.SOLD
             stock.save(update_fields=["status"])
 
-            context = EventContext(
-                instances=[instance], price=price, amount=-price, server_id=stock.server_id
-            )
+            context = EventContext(instances=[instance], price=price, amount=-price, server_id=stock.server_id)
             transaction.on_commit(lambda: bus.dispatch_soon(buyer_id, Event.SHOP_BUY, context=context))
 
     @buy.autocomplete("stock_id")
@@ -1197,9 +1184,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
             if auction.expires_at <= now:
                 raise RuntimeError("This featured auction has already ended.")
 
-            minimum = (
-                auction.current_bid + auction.min_bid_increment if auction.current_bid else auction.starting_bid
-            )
+            minimum = auction.current_bid + auction.min_bid_increment if auction.current_bid else auction.starting_bid
             if amount < minimum:
                 raise RuntimeError(f"Your bid must be at least {format_currency(minimum, False)}.")
 
@@ -1208,9 +1193,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
                 raise RuntimeError("You can't bid on your own featured auction.")
             bidder.refresh_from_db(fields=["money"])
             if bidder.money < amount:
-                raise RuntimeError(
-                    f"You don't have enough coins (balance: {format_currency(bidder.money, False)})."
-                )
+                raise RuntimeError(f"You don't have enough coins (balance: {format_currency(bidder.money, False)}).")
 
             previous_bidder = auction.current_bidder
             previous_bid = auction.current_bid
@@ -1310,8 +1293,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
         embed.add_field(name="Next minimum", value=format_currency(next_minimum, False, self.bot), inline=False)
         embed.add_field(
             name="​",
-            value="Use the button below (or `/auction bid`) to place a bid. Once confirmed, a bid cannot be "
-            "retracted.",
+            value="Use the button below (or `/auction bid`) to place a bid. Once confirmed, a bid cannot be retracted.",
             inline=False,
         )
         embed.set_footer(text=f"{auction.bid_count} bid(s) placed")
@@ -1540,9 +1522,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
         eligible_ids = list(activity.values_list("player_id", flat=True).distinct())
         if not eligible_ids:
             return None
-        stock_ids = list(
-            HotelStock.objects.filter(status=HotelStock.Status.AVAILABLE).values_list("pk", flat=True)
-        )
+        stock_ids = list(HotelStock.objects.filter(status=HotelStock.Status.AVAILABLE).values_list("pk", flat=True))
         if not stock_ids:
             return None
 
@@ -1565,9 +1545,7 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
                 # place the winner was drawn from.
                 home_server_id = auction_settings.giveaway_server_id
             else:
-                home_activity = (
-                    ServerActivity.objects.filter(player_id=winner_player_id).order_by("-last_seen").first()
-                )
+                home_activity = ServerActivity.objects.filter(player_id=winner_player_id).order_by("-last_seen").first()
                 home_server_id = home_activity.server_id if home_activity else None
 
             GiveawayLog.objects.create(server_id=home_server_id or 0, winner=winner, instance=instance)
@@ -1594,7 +1572,9 @@ class AuctionHouse(commands.GroupCog, name="Buggy's Auction House", group_name="
                 )
             )
             for auction in expired:
-                status = FeaturedAuction.Status.SOLD if auction.current_bidder_id else FeaturedAuction.Status.EXPIRED_UNSOLD
+                status = (
+                    FeaturedAuction.Status.SOLD if auction.current_bidder_id else FeaturedAuction.Status.EXPIRED_UNSOLD
+                )
                 self._settle_featured_close(auction, status, award_to_bidder=True)
                 closed.append(auction)
         return closed

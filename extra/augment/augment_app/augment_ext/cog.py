@@ -17,9 +17,8 @@ from settings.models import settings
 from settings.utils import format_currency
 
 if TYPE_CHECKING:
-    from bd_models.models import BallInstance
-
     from ballsdex.core.bot import BallsDexBot
+    from bd_models.models import BallInstance
 
 log = logging.getLogger(__name__)
 

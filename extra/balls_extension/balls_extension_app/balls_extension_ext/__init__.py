@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from discord import app_commands
+
 from settings.models import settings
 
 from .commands import commands

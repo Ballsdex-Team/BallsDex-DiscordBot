@@ -10,6 +10,11 @@ import discord
 from django.conf import settings as django_settings
 from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
+
+if TYPE_CHECKING:
+    # only ever named in annotations; importing them for real would make the settings app depend on the bot
+    from ballsdex.core.bot import BallsDexBot
+    from bd_models.models import Ball
 from django.db.models import F, Q
 from django.db.models.signals import post_init
 from django.dispatch import receiver
@@ -354,7 +359,7 @@ class Settings(models.Model):
                 )[0]
 
     def get_formatted_message(
-        self, category: PromptMessage.PromptType, model: Ball, mention: str, bot: BallsDexBot, **kwargs: str
+        self, category: PromptMessage.PromptType, model: "Ball", mention: str, bot: "BallsDexBot", **kwargs: str
     ):
         message = self.get_random_message(category)
         try:

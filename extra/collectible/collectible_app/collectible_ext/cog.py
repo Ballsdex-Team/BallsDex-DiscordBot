@@ -1,14 +1,12 @@
 from typing import TYPE_CHECKING
 
-from currency_app.models import BerryTransaction
 import discord
-from currency_app.models import CurrencySettings
+from currency_app.models import BerryTransaction
 from discord import app_commands
 from discord.ext import commands
 
 from ballsdex.core.utils.menus.old import FieldPageSource, Pages
 from ballsdex.core.utils.utils import inventory_privacy, is_staff
-from ballsdex.settings import settings
 from bd_models.models import BallInstance, Player
 from collectible_app.models import Collectible as CollectibleModel
 from collectible_app.models import CollectibleInstance

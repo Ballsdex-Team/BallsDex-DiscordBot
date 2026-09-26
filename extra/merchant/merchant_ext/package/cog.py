@@ -2,9 +2,8 @@ import logging
 import random
 from typing import TYPE_CHECKING
 
-from currency_app.models import BerryTransaction
 import discord
-from currency_app.models import CurrencySettings
+from currency_app.models import BerryTransaction
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import format_dt
