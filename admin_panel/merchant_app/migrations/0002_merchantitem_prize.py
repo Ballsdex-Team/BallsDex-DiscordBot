@@ -4,15 +4,10 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ('merchant_app', '0001_initial'),
-    ]
+    dependencies = [("merchant_app", "0001_initial")]
 
     operations = [
         migrations.AddField(
-            model_name='merchantitem',
-            name='prize',
-            field=models.PositiveIntegerField(blank=True, null=True),
-        ),
+            model_name="merchantitem", name="prize", field=models.PositiveIntegerField(blank=True, null=True)
+        )
     ]

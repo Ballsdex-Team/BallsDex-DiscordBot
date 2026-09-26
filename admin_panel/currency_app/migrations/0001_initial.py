@@ -5,41 +5,49 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-        ('bd_models', '0009_ballinstance_deleted_and_more'),
-    ]
+    dependencies = [("bd_models", "0009_ballinstance_deleted_and_more")]
 
     operations = [
         migrations.CreateModel(
-            name='Item',
+            name="Item",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=64)),
-                ('description', models.TextField(blank=True, help_text='An optional description for the item', null=True)),
-                ('prize', models.PositiveBigIntegerField(blank=True, help_text='The prize of the item. If blanks, it will free', null=True)),
-                ('minimum_rarity', models.FloatField(help_text='Minimum rarity range.')),
-                ('maximum_rarity', models.FloatField(help_text='Maximum rarity range.')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('special', models.ForeignKey(blank=True, help_text='The special of the item (optional)', null=True, on_delete=django.db.models.deletion.SET_NULL, to='bd_models.special')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("name", models.CharField(max_length=64)),
+                (
+                    "description",
+                    models.TextField(blank=True, help_text="An optional description for the item", null=True),
+                ),
+                (
+                    "prize",
+                    models.PositiveBigIntegerField(
+                        blank=True, help_text="The prize of the item. If blanks, it will free", null=True
+                    ),
+                ),
+                ("minimum_rarity", models.FloatField(help_text="Minimum rarity range.")),
+                ("maximum_rarity", models.FloatField(help_text="Maximum rarity range.")),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "special",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="The special of the item (optional)",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="bd_models.special",
+                    ),
+                ),
             ],
-            options={
-                'db_table': 'item',
-                'managed': True,
-            },
+            options={"db_table": "item", "managed": True},
         ),
         migrations.CreateModel(
-            name='MoneyInstance',
+            name="MoneyInstance",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.BigIntegerField(default=0)),
-                ('player', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='bd_models.player')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("amount", models.BigIntegerField(default=0)),
+                ("player", models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to="bd_models.player")),
             ],
-            options={
-                'db_table': 'moneyinstance',
-                'managed': True,
-            },
+            options={"db_table": "moneyinstance", "managed": True},
         ),
     ]

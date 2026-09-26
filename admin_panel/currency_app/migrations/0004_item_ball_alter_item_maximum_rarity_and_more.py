@@ -5,26 +5,28 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ('bd_models', '0009_ballinstance_deleted_and_more'),
-        ('currency_app', '0003_currencysettings'),
-    ]
+    dependencies = [("bd_models", "0009_ballinstance_deleted_and_more"), ("currency_app", "0003_currencysettings")]
 
     operations = [
         migrations.AddField(
-            model_name='item',
-            name='ball',
-            field=models.ForeignKey(blank=True, help_text='A specific ball to give.', null=True, on_delete=django.db.models.deletion.SET_NULL, to='bd_models.ball'),
+            model_name="item",
+            name="ball",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="A specific ball to give.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="bd_models.ball",
+            ),
         ),
         migrations.AlterField(
-            model_name='item',
-            name='maximum_rarity',
-            field=models.FloatField(blank=True, help_text='Maximum rarity range.', null=True),
+            model_name="item",
+            name="maximum_rarity",
+            field=models.FloatField(blank=True, help_text="Maximum rarity range.", null=True),
         ),
         migrations.AlterField(
-            model_name='item',
-            name='minimum_rarity',
-            field=models.FloatField(blank=True, help_text='Minimum rarity range.', null=True),
+            model_name="item",
+            name="minimum_rarity",
+            field=models.FloatField(blank=True, help_text="Minimum rarity range.", null=True),
         ),
     ]

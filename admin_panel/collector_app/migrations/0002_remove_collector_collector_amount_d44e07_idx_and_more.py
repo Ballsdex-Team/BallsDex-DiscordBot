@@ -4,18 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ('collector_app', '0001_initial'),
-    ]
+    dependencies = [("collector_app", "0001_initial")]
 
     operations = [
-        migrations.RemoveIndex(
-            model_name='collector',
-            name='collector_amount_d44e07_idx',
-        ),
-        migrations.RemoveField(
-            model_name='collector',
-            name='amount',
-        ),
+        migrations.RemoveIndex(model_name="collector", name="collector_amount_d44e07_idx"),
+        migrations.RemoveField(model_name="collector", name="amount"),
     ]

@@ -2,10 +2,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("currency_app", "0008_remove_currencysettings_emoji_id_and_more"),
-    ]
+    dependencies = [("currency_app", "0008_remove_currencysettings_emoji_id_and_more")]
 
     operations = [
         migrations.AddField(
@@ -58,9 +55,7 @@ class Migration(migrations.Migration):
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 (
                     "server_id",
-                    models.BigIntegerField(
-                        help_text="Discord server ID this configuration applies to.", unique=True
-                    ),
+                    models.BigIntegerField(help_text="Discord server ID this configuration applies to.", unique=True),
                 ),
                 ("role_id", models.BigIntegerField(help_text="Role ID granting the flat /daily bonus.")),
                 (

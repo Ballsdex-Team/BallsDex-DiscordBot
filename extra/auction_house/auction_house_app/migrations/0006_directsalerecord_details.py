@@ -2,18 +2,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("auction_house_app", "0005_featured_auctions_and_more"),
-    ]
+    dependencies = [("auction_house_app", "0005_featured_auctions_and_more")]
 
     operations = [
         migrations.AddField(
             model_name="directsalerecord",
             name="instance_id",
             field=models.PositiveBigIntegerField(
-                default=0,
-                help_text="ID of the treasure instance sold, for reference even after it moves on.",
+                default=0, help_text="ID of the treasure instance sold, for reference even after it moves on."
             ),
             preserve_default=False,
         ),

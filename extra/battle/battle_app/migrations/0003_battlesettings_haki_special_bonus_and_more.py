@@ -4,59 +4,77 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ('battle_app', '0002_battleitem_battlesettings_battlerecord_battlesession_and_more'),
-    ]
+    dependencies = [("battle_app", "0002_battleitem_battlesettings_battlerecord_battlesession_and_more")]
 
     operations = [
         migrations.AddField(
-            model_name='battlesettings',
-            name='haki_special_bonus',
-            field=models.PositiveIntegerField(default=500, help_text='Flat ATK and HP bonus for Haki Infused (⚡) special cards, same as /boss.'),
+            model_name="battlesettings",
+            name="haki_special_bonus",
+            field=models.PositiveIntegerField(
+                default=500, help_text="Flat ATK and HP bonus for Haki Infused (⚡) special cards, same as /boss."
+            ),
         ),
         migrations.AddField(
-            model_name='battlesettings',
-            name='mythical_special_bonus',
-            field=models.PositiveIntegerField(default=1500, help_text='Flat ATK and HP bonus for Mythical (🔮) special cards, same as /boss.'),
+            model_name="battlesettings",
+            name="mythical_special_bonus",
+            field=models.PositiveIntegerField(
+                default=1500, help_text="Flat ATK and HP bonus for Mythical (🔮) special cards, same as /boss."
+            ),
         ),
         migrations.AddField(
-            model_name='battlesettings',
-            name='shiny_special_bonus',
-            field=models.PositiveIntegerField(default=1000, help_text='Flat ATK and HP bonus for Shiny (✨) special cards, same as /boss.'),
+            model_name="battlesettings",
+            name="shiny_special_bonus",
+            field=models.PositiveIntegerField(
+                default=1000, help_text="Flat ATK and HP bonus for Shiny (✨) special cards, same as /boss."
+            ),
         ),
         migrations.AddField(
-            model_name='battlesettings',
-            name='tier_enemy_1_higher_multiplier',
-            field=models.FloatField(default=0.5, help_text='Damage multiplier vs. an enemy 1 tier higher (rarer).'),
+            model_name="battlesettings",
+            name="tier_enemy_1_higher_multiplier",
+            field=models.FloatField(default=0.5, help_text="Damage multiplier vs. an enemy 1 tier higher (rarer)."),
         ),
         migrations.AddField(
-            model_name='battlesettings',
-            name='tier_enemy_1_lower_multiplier',
-            field=models.FloatField(default=0.9, help_text='Damage multiplier vs. an enemy 1 tier lower (more common).'),
+            model_name="battlesettings",
+            name="tier_enemy_1_lower_multiplier",
+            field=models.FloatField(
+                default=0.9, help_text="Damage multiplier vs. an enemy 1 tier lower (more common)."
+            ),
         ),
         migrations.AddField(
-            model_name='battlesettings',
-            name='tier_enemy_2plus_higher_multiplier',
-            field=models.FloatField(default=0.3, help_text='Damage multiplier vs. an enemy 2+ tiers higher (rarer).'),
+            model_name="battlesettings",
+            name="tier_enemy_2plus_higher_multiplier",
+            field=models.FloatField(default=0.3, help_text="Damage multiplier vs. an enemy 2+ tiers higher (rarer)."),
         ),
         migrations.AddField(
-            model_name='battlesettings',
-            name='tier_enemy_2plus_lower_bonus_crit_chance',
-            field=models.FloatField(default=0.1, help_text='Extra critical-strike chance (0-1) added to ANY damaging action vs. an enemy 2+ tiers lower.'),
+            model_name="battlesettings",
+            name="tier_enemy_2plus_lower_bonus_crit_chance",
+            field=models.FloatField(
+                default=0.1,
+                help_text=(
+                    "Extra critical-strike chance (0-1) added to ANY damaging action vs. an enemy 2+ tiers lower."
+                ),
+            ),
         ),
         migrations.AddField(
-            model_name='battlesettings',
-            name='tier_enemy_2plus_lower_multiplier',
-            field=models.FloatField(default=1.0, help_text='Damage multiplier vs. an enemy 2+ tiers lower (more common).'),
+            model_name="battlesettings",
+            name="tier_enemy_2plus_lower_multiplier",
+            field=models.FloatField(
+                default=1.0, help_text="Damage multiplier vs. an enemy 2+ tiers lower (more common)."
+            ),
         ),
         migrations.AddField(
-            model_name='battlesettings',
-            name='tier_same_multiplier',
-            field=models.FloatField(default=0.7, help_text='Damage multiplier vs. an equal-tier enemy.'),
+            model_name="battlesettings",
+            name="tier_same_multiplier",
+            field=models.FloatField(default=0.7, help_text="Damage multiplier vs. an equal-tier enemy."),
         ),
         migrations.AddConstraint(
-            model_name='battlesettings',
-            constraint=models.CheckConstraint(condition=models.Q(('tier_enemy_2plus_lower_bonus_crit_chance__gte', 0), ('tier_enemy_2plus_lower_bonus_crit_chance__lte', 1)), name='battlesettings_tier_bonus_crit_bounds'),
+            model_name="battlesettings",
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    ("tier_enemy_2plus_lower_bonus_crit_chance__gte", 0),
+                    ("tier_enemy_2plus_lower_bonus_crit_chance__lte", 1),
+                ),
+                name="battlesettings_tier_bonus_crit_bounds",
+            ),
         ),
     ]

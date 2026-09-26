@@ -5,16 +5,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('bd_models', '0009_ballinstance_deleted_and_more'),
-        ('collector_app', '0003_collector_end_date_collector_start_date_and_more'),
+        ("bd_models", "0009_ballinstance_deleted_and_more"),
+        ("collector_app", "0003_collector_end_date_collector_start_date_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='collector',
-            name='ball',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='bd_models.ball'),
-        ),
+            model_name="collector",
+            name="ball",
+            field=models.ForeignKey(
+                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to="bd_models.ball"
+            ),
+        )
     ]

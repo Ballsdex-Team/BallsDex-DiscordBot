@@ -5,26 +5,25 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-        ('bd_models', '0009_ballinstance_deleted_and_more'),
-    ]
+    dependencies = [("bd_models", "0009_ballinstance_deleted_and_more")]
 
     operations = [
         migrations.CreateModel(
-            name='PackResource',
+            name="PackResource",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('uses', models.PositiveIntegerField(default=0)),
-                ('daily_cooldown', models.DateTimeField(blank=True, null=True)),
-                ('weekly_cooldown', models.DateTimeField(blank=True, null=True)),
-                ('player', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='pack_resource', to='bd_models.player')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("uses", models.PositiveIntegerField(default=0)),
+                ("daily_cooldown", models.DateTimeField(blank=True, null=True)),
+                ("weekly_cooldown", models.DateTimeField(blank=True, null=True)),
+                (
+                    "player",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE, related_name="pack_resource", to="bd_models.player"
+                    ),
+                ),
             ],
-            options={
-                'db_table': 'packresource',
-                'managed': True,
-            },
-        ),
+            options={"db_table": "packresource", "managed": True},
+        )
     ]

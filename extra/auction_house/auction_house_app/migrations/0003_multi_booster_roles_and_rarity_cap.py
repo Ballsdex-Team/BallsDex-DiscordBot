@@ -2,10 +2,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("auction_house_app", "0002_notification_channel_and_reject_status"),
-    ]
+    dependencies = [("auction_house_app", "0002_notification_channel_and_reject_status")]
 
     operations = [
         migrations.AddField(
@@ -19,18 +16,9 @@ class Migration(migrations.Migration):
                 "between 0 and 50). Leave blank for no limit.",
             ),
         ),
-        migrations.RemoveField(
-            model_name="auctionsettings",
-            name="booster_buy_discount_percent",
-        ),
-        migrations.RemoveField(
-            model_name="auctionsettings",
-            name="booster_sell_bonus_percent",
-        ),
-        migrations.RemoveField(
-            model_name="auctionguildconfig",
-            name="booster_role_id",
-        ),
+        migrations.RemoveField(model_name="auctionsettings", name="booster_buy_discount_percent"),
+        migrations.RemoveField(model_name="auctionsettings", name="booster_sell_bonus_percent"),
+        migrations.RemoveField(model_name="auctionguildconfig", name="booster_role_id"),
         migrations.CreateModel(
             name="AuctionBoosterRole",
             fields=[

@@ -3,7 +3,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("currency_app", "0011_dailybonusserver_and_multi_roles"),
         ("bd_models", "0019_guildconfig_tips_enabled"),
@@ -68,9 +67,7 @@ class Migration(migrations.Migration):
                 (
                     "server_id",
                     models.BigIntegerField(
-                        blank=True,
-                        null=True,
-                        help_text="Server the action happened in, when it came from a command.",
+                        blank=True, null=True, help_text="Server the action happened in, when it came from a command."
                     ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -92,5 +89,5 @@ class Migration(migrations.Migration):
                     models.Index(fields=["-created_at"], name="berrytx_created_idx"),
                 ],
             },
-        ),
+        )
     ]

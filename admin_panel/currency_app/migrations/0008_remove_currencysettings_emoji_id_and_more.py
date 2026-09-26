@@ -4,25 +4,11 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ('currency_app', '0007_auto_20260704_1511'),
-    ]
+    dependencies = [("currency_app", "0007_auto_20260704_1511")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='currencysettings',
-            name='emoji_id',
-        ),
-        migrations.RemoveField(
-            model_name='currencysettings',
-            name='name',
-        ),
-        migrations.RemoveField(
-            model_name='currencysettings',
-            name='plural_name',
-        ),
-        migrations.DeleteModel(
-            name='MoneyInstance',
-        ),
+        migrations.RemoveField(model_name="currencysettings", name="emoji_id"),
+        migrations.RemoveField(model_name="currencysettings", name="name"),
+        migrations.RemoveField(model_name="currencysettings", name="plural_name"),
+        migrations.DeleteModel(name="MoneyInstance"),
     ]

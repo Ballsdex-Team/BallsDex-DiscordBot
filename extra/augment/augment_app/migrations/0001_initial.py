@@ -3,7 +3,6 @@ from django.db.models import F, Q
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -16,8 +15,7 @@ class Migration(migrations.Migration):
                 (
                     "rarity_cost_min",
                     models.PositiveIntegerField(
-                        default=2500,
-                        help_text="Base augment cost in berries for the rarest cards (rarity value of 1).",
+                        default=2500, help_text="Base augment cost in berries for the rarest cards (rarity value of 1)."
                     ),
                 ),
                 (
@@ -95,5 +93,5 @@ class Migration(migrations.Migration):
                     ),
                 ],
             },
-        ),
+        )
     ]

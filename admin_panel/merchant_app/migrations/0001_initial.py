@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
     from ..models import MerchantSettings
 
+
 def default_settings_forward(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
     settings = cast(type["MerchantSettings"], apps.get_model("currency_app", "CurrencySettings"))
     settings.objects.create()
@@ -20,56 +21,78 @@ def default_settings_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaE
     # nothing to be done, model deletion will result on instance deletion anyway
     pass
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     initial = True
 
-    dependencies = [
-        ('bd_models', '0009_ballinstance_deleted_and_more'),
-    ]
+    dependencies = [("bd_models", "0009_ballinstance_deleted_and_more")]
 
     operations = [
         migrations.CreateModel(
-            name='MerchantSettings',
+            name="MerchantSettings",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('rotation', models.PositiveIntegerField(default=1440, help_text='Duration of the items in minutes. Default to 24 hours.')),
-                ('items', models.PositiveBigIntegerField(default=3, help_text='How many items will be in the store. Default to 3 items.')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "rotation",
+                    models.PositiveIntegerField(
+                        default=1440, help_text="Duration of the items in minutes. Default to 24 hours."
+                    ),
+                ),
+                (
+                    "items",
+                    models.PositiveBigIntegerField(
+                        default=3, help_text="How many items will be in the store. Default to 3 items."
+                    ),
+                ),
             ],
-            options={
-                'db_table': 'merchantsettings',
-                'managed': True,
-            },
+            options={"db_table": "merchantsettings", "managed": True},
         ),
         migrations.CreateModel(
-            name='MerchantItem',
+            name="MerchantItem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=64, unique=True)),
-                ('start_date', models.DateTimeField(blank=True, help_text='Start time of the item. If blank, starts immediately', null=True)),
-                ('end_date', models.DateTimeField(blank=True, help_text='End time of the item. If blank, the item is permanent', null=True)),
-                ('rarity', models.FloatField(help_text='Value between 0 and 1, determine if a item is rarest than other')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('ball', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='bd_models.ball')),
-                ('special', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='bd_models.special')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("name", models.CharField(max_length=64, unique=True)),
+                (
+                    "start_date",
+                    models.DateTimeField(
+                        blank=True, help_text="Start time of the item. If blank, starts immediately", null=True
+                    ),
+                ),
+                (
+                    "end_date",
+                    models.DateTimeField(
+                        blank=True, help_text="End time of the item. If blank, the item is permanent", null=True
+                    ),
+                ),
+                (
+                    "rarity",
+                    models.FloatField(help_text="Value between 0 and 1, determine if a item is rarest than other"),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("ball", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="bd_models.ball")),
+                (
+                    "special",
+                    models.ForeignKey(
+                        blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to="bd_models.special"
+                    ),
+                ),
             ],
-            options={
-                'db_table': 'merchantitem',
-                'managed': True,
-            },
+            options={"db_table": "merchantitem", "managed": True},
         ),
         migrations.CreateModel(
-            name='MerchantInstance',
+            name="MerchantInstance",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('rotation_ends_at', models.DateTimeField()),
-                ('player', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='merchant', to='bd_models.player')),
-                ('items', models.ManyToManyField(blank=True, to='merchant_app.merchantitem')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("rotation_ends_at", models.DateTimeField()),
+                (
+                    "player",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE, related_name="merchant", to="bd_models.player"
+                    ),
+                ),
+                ("items", models.ManyToManyField(blank=True, to="merchant_app.merchantitem")),
             ],
-            options={
-                'db_table': 'merchantinstance',
-                'managed': True,
-            },
+            options={"db_table": "merchantinstance", "managed": True},
         ),
-        migrations.RunPython(default_settings_forward, default_settings_backwards)
+        migrations.RunPython(default_settings_forward, default_settings_backwards),
     ]

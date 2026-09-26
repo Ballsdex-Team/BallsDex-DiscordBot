@@ -2,10 +2,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("auction_house_app", "0001_initial"),
-    ]
+    dependencies = [("auction_house_app", "0001_initial")]
 
     operations = [
         migrations.AddField(

@@ -23,27 +23,20 @@ def minutes_to_hours(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("auction_house_app", "0006_directsalerecord_details"),
-    ]
+    dependencies = [("auction_house_app", "0006_directsalerecord_details")]
 
     operations = [
         # -- listing durations move from hours to minutes ------------------------------------
         # The check constraint references both columns, so it has to go before the rename and
         # come back afterwards. Multiplying both sides by 60 preserves min <= max throughout.
-        migrations.RemoveConstraint(
-            model_name="auctionsettings", name="auctionsettings_listing_hours_min_lte_max"
-        ),
+        migrations.RemoveConstraint(model_name="auctionsettings", name="auctionsettings_listing_hours_min_lte_max"),
         migrations.RenameField(
             model_name="auctionsettings", old_name="min_listing_hours", new_name="min_listing_minutes"
         ),
         migrations.RenameField(
             model_name="auctionsettings", old_name="max_listing_hours", new_name="max_listing_minutes"
         ),
-        migrations.RenameField(
-            model_name="auctionlisting", old_name="duration_hours", new_name="duration_minutes"
-        ),
+        migrations.RenameField(model_name="auctionlisting", old_name="duration_hours", new_name="duration_minutes"),
         migrations.RunPython(hours_to_minutes, minutes_to_hours),
         migrations.AlterField(
             model_name="auctionsettings",
@@ -98,9 +91,7 @@ class Migration(migrations.Migration):
             model_name="hotelstock",
             name="instance",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="hotel_stocks",
-                to="bd_models.ballinstance",
+                on_delete=django.db.models.deletion.CASCADE, related_name="hotel_stocks", to="bd_models.ballinstance"
             ),
         ),
         migrations.AlterField(
@@ -115,9 +106,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="auctionlisting",
             constraint=models.UniqueConstraint(
-                fields=("instance",),
-                condition=Q(status="active"),
-                name="auctionlisting_one_active_per_instance",
+                fields=("instance",), condition=Q(status="active"), name="auctionlisting_one_active_per_instance"
             ),
         ),
         migrations.AddConstraint(

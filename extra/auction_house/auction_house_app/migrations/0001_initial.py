@@ -5,9 +5,7 @@ from django.db.models import F, Q
 
 def seed_stat_bonus_modifiers(apps, schema_editor):
     StatBonusModifier = apps.get_model("auction_house_app", "StatBonusModifier")
-    StatBonusModifier.objects.bulk_create(
-        [StatBonusModifier(value=value, percent=value) for value in range(-40, 41)]
-    )
+    StatBonusModifier.objects.bulk_create([StatBonusModifier(value=value, percent=value) for value in range(-40, 41)])
 
 
 def unseed_stat_bonus_modifiers(apps, schema_editor):
@@ -16,12 +14,9 @@ def unseed_stat_bonus_modifiers(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-        ("bd_models", "0019_guildconfig_tips_enabled"),
-    ]
+    dependencies = [("bd_models", "0019_guildconfig_tips_enabled")]
 
     operations = [
         migrations.CreateModel(
@@ -39,13 +34,15 @@ class Migration(migrations.Migration):
                 (
                     "min_price",
                     models.PositiveBigIntegerField(
-                        default=200, help_text="Floor applied to the computed price of any card (the most common cards)."
+                        default=200,
+                        help_text="Floor applied to the computed price of any card (the most common cards).",
                     ),
                 ),
                 (
                     "max_price",
                     models.PositiveBigIntegerField(
-                        default=300000, help_text="Cap applied to the computed price of any card (the rarest cards, T1)."
+                        default=300000,
+                        help_text="Cap applied to the computed price of any card (the rarest cards, T1).",
                     ),
                 ),
                 (
@@ -133,9 +130,7 @@ class Migration(migrations.Migration):
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 (
                     "server_id",
-                    models.BigIntegerField(
-                        help_text="Discord server ID this configuration applies to.", unique=True
-                    ),
+                    models.BigIntegerField(help_text="Discord server ID this configuration applies to.", unique=True),
                 ),
                 (
                     "booster_role_id",
@@ -171,10 +166,7 @@ class Migration(migrations.Migration):
             name="StatBonusModifier",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                (
-                    "value",
-                    models.IntegerField(help_text="Average of a card's attack and health bonus.", unique=True),
-                ),
+                ("value", models.IntegerField(help_text="Average of a card's attack and health bonus.", unique=True)),
                 (
                     "percent",
                     models.IntegerField(
@@ -188,8 +180,7 @@ class Migration(migrations.Migration):
                 "ordering": ["value"],
                 "constraints": [
                     models.CheckConstraint(
-                        condition=Q(("value__gte", -40)) & Q(("value__lte", 40)),
-                        name="auctionstatbonusmodifier_range",
+                        condition=Q(("value__gte", -40)) & Q(("value__lte", 40)), name="auctionstatbonusmodifier_range"
                     )
                 ],
             },

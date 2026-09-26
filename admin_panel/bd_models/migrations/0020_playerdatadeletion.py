@@ -2,10 +2,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("bd_models", "0019_guildconfig_tips_enabled"),
-    ]
+    dependencies = [("bd_models", "0019_guildconfig_tips_enabled")]
 
     operations = [
         migrations.CreateModel(
@@ -21,9 +18,7 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "playerdatadeletion",
                 "managed": True,
-                "indexes": [
-                    models.Index(fields=["discord_id", "-deleted_at"], name="playerdatadel_discord_idx"),
-                ],
+                "indexes": [models.Index(fields=["discord_id", "-deleted_at"], name="playerdatadel_discord_idx")],
             },
-        ),
+        )
     ]

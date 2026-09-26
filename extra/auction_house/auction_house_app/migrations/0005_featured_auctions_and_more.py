@@ -3,7 +3,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("auction_house_app", "0004_rename_max_shop_rarity"),
         ("bd_models", "0019_guildconfig_tips_enabled"),
@@ -35,10 +34,7 @@ class Migration(migrations.Migration):
             name="DirectSaleRecord",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                (
-                    "server_id",
-                    models.BigIntegerField(help_text="Server the /treasures sell command was used in."),
-                ),
+                ("server_id", models.BigIntegerField(help_text="Server the /treasures sell command was used in.")),
                 (
                     "ball_name",
                     models.CharField(

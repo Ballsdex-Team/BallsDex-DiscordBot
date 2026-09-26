@@ -24,7 +24,10 @@ class Migration(migrations.Migration):
             name="delete_balls",
             field=models.BooleanField(
                 default=False,
-                help_text="If a user meets all requirements, will the required balls be removed? Removed treasures are never watched afterwards.",
+                help_text=(
+                    "If a user meets all requirements, will the required balls be removed? Removed treasures are "
+                    "never watched afterwards."
+                ),
             ),
         ),
         migrations.AlterField(

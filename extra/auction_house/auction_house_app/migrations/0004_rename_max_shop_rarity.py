@@ -2,16 +2,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("auction_house_app", "0003_multi_booster_roles_and_rarity_cap"),
-    ]
+    dependencies = [("auction_house_app", "0003_multi_booster_roles_and_rarity_cap")]
 
     operations = [
         migrations.RenameField(
-            model_name="auctionsettings",
-            old_name="max_direct_sale_rarity",
-            new_name="max_shop_rarity",
+            model_name="auctionsettings", old_name="max_direct_sale_rarity", new_name="max_shop_rarity"
         ),
         migrations.AlterField(
             model_name="auctionsettings",

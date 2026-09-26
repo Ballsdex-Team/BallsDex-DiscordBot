@@ -4,20 +4,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ('pack_models', '0001_initial'),
-    ]
+    dependencies = [("pack_models", "0001_initial")]
 
     operations = [
-        migrations.RenameField(
-            model_name='packresource',
-            old_name='uses',
-            new_name='daily_uses',
-        ),
+        migrations.RenameField(model_name="packresource", old_name="uses", new_name="daily_uses"),
         migrations.AddField(
-            model_name='packresource',
-            name='weekly_uses',
-            field=models.PositiveIntegerField(default=0),
+            model_name="packresource", name="weekly_uses", field=models.PositiveIntegerField(default=0)
         ),
     ]

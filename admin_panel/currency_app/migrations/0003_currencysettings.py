@@ -3,12 +3,12 @@ from typing import TYPE_CHECKING, cast
 
 from django.db import migrations, models
 
-
 if TYPE_CHECKING:
     from django.apps.registry import Apps
     from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
     from ..models import CurrencySettings
+
 
 def default_settings_forward(apps: "Apps", schema_editor: "BaseDatabaseSchemaEditor"):
     settings = cast(type["CurrencySettings"], apps.get_model("currency_app", "CurrencySettings"))
@@ -22,25 +22,20 @@ def default_settings_backwards(apps: "Apps", schema_editor: "BaseDatabaseSchemaE
     # nothing to be done, model deletion will result on instance deletion anyway
     pass
 
-class Migration(migrations.Migration):
 
-    dependencies = [
-        ('currency_app', '0002_item_emoji_id'),
-    ]
+class Migration(migrations.Migration):
+    dependencies = [("currency_app", "0002_item_emoji_id")]
 
     operations = [
         migrations.CreateModel(
-            name='CurrencySettings',
+            name="CurrencySettings",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=64)),
-                ('plural_name', models.CharField(max_length=64)),
-                ('emoji_id', models.BigIntegerField(blank=True, help_text='Emoji id of the currency', null=True)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("name", models.CharField(max_length=64)),
+                ("plural_name", models.CharField(max_length=64)),
+                ("emoji_id", models.BigIntegerField(blank=True, help_text="Emoji id of the currency", null=True)),
             ],
-            options={
-                'db_table': 'currencysettings',
-                'managed': True,
-            },
+            options={"db_table": "currencysettings", "managed": True},
         ),
-        migrations.RunPython(default_settings_forward, default_settings_backwards)
+        migrations.RunPython(default_settings_forward, default_settings_backwards),
     ]

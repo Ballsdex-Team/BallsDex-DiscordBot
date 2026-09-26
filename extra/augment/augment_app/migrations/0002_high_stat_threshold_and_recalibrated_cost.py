@@ -28,10 +28,7 @@ def downgrade_existing_settings(apps: "Apps", schema_editor: "BaseDatabaseSchema
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("augment_app", "0001_initial"),
-    ]
+    dependencies = [("augment_app", "0001_initial")]
 
     operations = [
         migrations.AddField(

@@ -5,21 +5,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ('bd_models', '0015_alter_ballinstance_server_id_and_more'),
-        ('merchant_app', '0003_globalshop'),
-    ]
+    dependencies = [("bd_models", "0015_alter_ballinstance_server_id_and_more"), ("merchant_app", "0003_globalshop")]
 
     operations = [
         migrations.AddField(
-            model_name='merchantsettings',
-            name='token_ball',
-            field=models.OneToOneField(blank=True, help_text='for /merchant convert_token, set the ball to use as a token', null=True, on_delete=django.db.models.deletion.SET_NULL, to='bd_models.ball'),
+            model_name="merchantsettings",
+            name="token_ball",
+            field=models.OneToOneField(
+                blank=True,
+                help_text="for /merchant convert_token, set the ball to use as a token",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="bd_models.ball",
+            ),
         ),
         migrations.AddField(
-            model_name='merchantsettings',
-            name='token_conversion_rate',
-            field=models.PositiveIntegerField(default=1500, help_text='Coins received for each token converted when using /merchant convert_token\nExample: 1 token = 100 coins'),
+            model_name="merchantsettings",
+            name="token_conversion_rate",
+            field=models.PositiveIntegerField(
+                default=1500,
+                help_text=(
+                    "Coins received for each token converted when using /merchant convert_token\nExample: 1 token "
+                    "= 100 coins"
+                ),
+            ),
         ),
     ]

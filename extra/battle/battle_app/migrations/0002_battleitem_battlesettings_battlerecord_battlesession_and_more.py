@@ -5,124 +5,335 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ('battle_app', '0001_initial'),
-        ('bd_models', '0019_guildconfig_tips_enabled'),
-    ]
+    dependencies = [("battle_app", "0001_initial"), ("bd_models", "0019_guildconfig_tips_enabled")]
 
     operations = [
         migrations.CreateModel(
-            name='BattleItem',
+            name="BattleItem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=64, unique=True)),
-                ('description', models.CharField(blank=True, max_length=256, null=True)),
-                ('price', models.PositiveIntegerField(help_text='Cost in berries.')),
-                ('effect_type', models.CharField(choices=[('extra_heal', "Bonus %% healed on this turn's Heal action"), ('attack_boost', "Damage multiplier on this turn's Attack/Crit Gamble"), ('guaranteed_crit', "This turn's Crit Gamble always lands")], max_length=32)),
-                ('effect_value', models.FloatField(help_text='Meaning depends on effect_type (a multiplier, a %%, ...).')),
-                ('emoji_id', models.BigIntegerField(blank=True, help_text='Optional custom emoji ID for this item.', null=True)),
-                ('enabled', models.BooleanField(default=True)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("name", models.CharField(max_length=64, unique=True)),
+                ("description", models.CharField(blank=True, max_length=256, null=True)),
+                ("price", models.PositiveIntegerField(help_text="Cost in berries.")),
+                (
+                    "effect_type",
+                    models.CharField(
+                        choices=[
+                            ("extra_heal", "Bonus %% healed on this turn's Heal action"),
+                            ("attack_boost", "Damage multiplier on this turn's Attack/Crit Gamble"),
+                            ("guaranteed_crit", "This turn's Crit Gamble always lands"),
+                        ],
+                        max_length=32,
+                    ),
+                ),
+                (
+                    "effect_value",
+                    models.FloatField(help_text="Meaning depends on effect_type (a multiplier, a %%, ...)."),
+                ),
+                (
+                    "emoji_id",
+                    models.BigIntegerField(blank=True, help_text="Optional custom emoji ID for this item.", null=True),
+                ),
+                ("enabled", models.BooleanField(default=True)),
+            ],
+            options={"db_table": "battleitem", "managed": True},
+        ),
+        migrations.CreateModel(
+            name="BattleSettings",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "attack_variance_min",
+                    models.FloatField(default=0.6, help_text="Lowest multiplier applied to a hit's base damage."),
+                ),
+                (
+                    "attack_variance_max",
+                    models.FloatField(default=1.0, help_text="Highest multiplier applied to a hit's base damage."),
+                ),
+                (
+                    "crit_chance",
+                    models.FloatField(default=0.5, help_text="Chance (0-1) that a Crit Gamble action lands."),
+                ),
+                (
+                    "crit_multiplier",
+                    models.FloatField(default=2.0, help_text="Damage multiplier on a successful Crit Gamble."),
+                ),
+                (
+                    "crit_fail_multiplier",
+                    models.FloatField(default=0.5, help_text="Damage multiplier on a missed Crit Gamble."),
+                ),
+                (
+                    "dodge_chance",
+                    models.FloatField(default=0.15, help_text="Chance (0-1) that any damaging action is dodged."),
+                ),
+                (
+                    "heal_percent_min",
+                    models.FloatField(default=25.0, help_text="Minimum %% of max health restored by Heal."),
+                ),
+                (
+                    "heal_percent_max",
+                    models.FloatField(default=45.0, help_text="Maximum %% of max health restored by Heal."),
+                ),
+                (
+                    "heal_uses_per_battle",
+                    models.PositiveIntegerField(
+                        default=2, help_text="How many times a single card can use Heal in one battle."
+                    ),
+                ),
+                (
+                    "capacity_uses_per_battle",
+                    models.PositiveIntegerField(
+                        default=1, help_text="How many times a single card can use its Capacity ability in one battle."
+                    ),
+                ),
+                (
+                    "default_capacity_multiplier",
+                    models.FloatField(
+                        default=1.5,
+                        help_text=(
+                            "Damage multiplier used by the Capacity action when a card's capacity_logic is empty."
+                        ),
+                    ),
+                ),
+                (
+                    "turn_timeout_seconds",
+                    models.PositiveIntegerField(
+                        default=60,
+                        help_text="If the active player doesn't act in time, the turn auto-resolves as an Attack.",
+                    ),
+                ),
+                (
+                    "max_deck_size",
+                    models.PositiveIntegerField(default=4, help_text="Default deck size for /battle start."),
+                ),
+                (
+                    "guaranteed_daily_wins",
+                    models.PositiveIntegerField(
+                        default=3, help_text="How many wins per rolling 24h pay the flat guaranteed_win_reward."
+                    ),
+                ),
+                (
+                    "guaranteed_win_reward",
+                    models.PositiveIntegerField(
+                        default=50,
+                        help_text="Flat berries paid for each of the first guaranteed_daily_wins wins per day.",
+                    ),
+                ),
+                (
+                    "performance_base_reward",
+                    models.PositiveIntegerField(
+                        default=30, help_text="Base berries for wins past the guaranteed daily count, before scaling."
+                    ),
+                ),
+                (
+                    "performance_scale_min",
+                    models.FloatField(
+                        default=0.5,
+                        help_text="Minimum scale applied to performance_base_reward (beating a much weaker opponent).",
+                    ),
+                ),
+                (
+                    "performance_scale_max",
+                    models.FloatField(
+                        default=2.0,
+                        help_text=(
+                            "Maximum scale applied to performance_base_reward (beating a much stronger opponent)."
+                        ),
+                    ),
+                ),
+                (
+                    "max_rewarded_wins_per_opponent_per_day",
+                    models.PositiveIntegerField(
+                        default=1,
+                        help_text=(
+                            "Wins past this many against the SAME opponent in a day are still recorded but pay 0 "
+                            "berries (blunts the simplest two-account farming loop)."
+                        ),
+                    ),
+                ),
             ],
             options={
-                'db_table': 'battleitem',
-                'managed': True,
+                "db_table": "battlesettings",
+                "managed": True,
+                "constraints": [
+                    models.CheckConstraint(
+                        condition=models.Q(("attack_variance_min__lte", models.F("attack_variance_max"))),
+                        name="battlesettings_variance_min_lte_max",
+                    ),
+                    models.CheckConstraint(
+                        condition=models.Q(("heal_percent_min__lte", models.F("heal_percent_max"))),
+                        name="battlesettings_heal_min_lte_max",
+                    ),
+                    models.CheckConstraint(
+                        condition=models.Q(("performance_scale_min__lte", models.F("performance_scale_max"))),
+                        name="battlesettings_perf_scale_min_lte_max",
+                    ),
+                    models.CheckConstraint(
+                        condition=models.Q(("crit_chance__gte", 0), ("crit_chance__lte", 1)),
+                        name="battlesettings_crit_chance_bounds",
+                    ),
+                    models.CheckConstraint(
+                        condition=models.Q(("dodge_chance__gte", 0), ("dodge_chance__lte", 1)),
+                        name="battlesettings_dodge_chance_bounds",
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='BattleSettings',
+            name="BattleRecord",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('attack_variance_min', models.FloatField(default=0.6, help_text="Lowest multiplier applied to a hit's base damage.")),
-                ('attack_variance_max', models.FloatField(default=1.0, help_text="Highest multiplier applied to a hit's base damage.")),
-                ('crit_chance', models.FloatField(default=0.5, help_text='Chance (0-1) that a Crit Gamble action lands.')),
-                ('crit_multiplier', models.FloatField(default=2.0, help_text='Damage multiplier on a successful Crit Gamble.')),
-                ('crit_fail_multiplier', models.FloatField(default=0.5, help_text='Damage multiplier on a missed Crit Gamble.')),
-                ('dodge_chance', models.FloatField(default=0.15, help_text='Chance (0-1) that any damaging action is dodged.')),
-                ('heal_percent_min', models.FloatField(default=25.0, help_text='Minimum %% of max health restored by Heal.')),
-                ('heal_percent_max', models.FloatField(default=45.0, help_text='Maximum %% of max health restored by Heal.')),
-                ('heal_uses_per_battle', models.PositiveIntegerField(default=2, help_text='How many times a single card can use Heal in one battle.')),
-                ('capacity_uses_per_battle', models.PositiveIntegerField(default=1, help_text='How many times a single card can use its Capacity ability in one battle.')),
-                ('default_capacity_multiplier', models.FloatField(default=1.5, help_text="Damage multiplier used by the Capacity action when a card's capacity_logic is empty.")),
-                ('turn_timeout_seconds', models.PositiveIntegerField(default=60, help_text="If the active player doesn't act in time, the turn auto-resolves as an Attack.")),
-                ('max_deck_size', models.PositiveIntegerField(default=4, help_text='Default deck size for /battle start.')),
-                ('guaranteed_daily_wins', models.PositiveIntegerField(default=3, help_text='How many wins per rolling 24h pay the flat guaranteed_win_reward.')),
-                ('guaranteed_win_reward', models.PositiveIntegerField(default=50, help_text='Flat berries paid for each of the first guaranteed_daily_wins wins per day.')),
-                ('performance_base_reward', models.PositiveIntegerField(default=30, help_text='Base berries for wins past the guaranteed daily count, before scaling.')),
-                ('performance_scale_min', models.FloatField(default=0.5, help_text='Minimum scale applied to performance_base_reward (beating a much weaker opponent).')),
-                ('performance_scale_max', models.FloatField(default=2.0, help_text='Maximum scale applied to performance_base_reward (beating a much stronger opponent).')),
-                ('max_rewarded_wins_per_opponent_per_day', models.PositiveIntegerField(default=1, help_text='Wins past this many against the SAME opponent in a day are still recorded but pay 0 berries (blunts the simplest two-account farming loop).')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "wager_amount",
+                    models.PositiveBigIntegerField(default=0, help_text="Berries each side staked, if any."),
+                ),
+                (
+                    "winner_earnings",
+                    models.PositiveBigIntegerField(
+                        default=0, help_text="Anti-abuse win reward actually paid out (0 if capped that day)."
+                    ),
+                ),
+                ("turns", models.PositiveIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "player1",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="battles_as_player1",
+                        to="bd_models.player",
+                    ),
+                ),
+                (
+                    "player2",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="battles_as_player2",
+                        to="bd_models.player",
+                    ),
+                ),
+                (
+                    "winner",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="battles_won",
+                        to="bd_models.player",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'battlesettings',
-                'managed': True,
-                'constraints': [models.CheckConstraint(condition=models.Q(('attack_variance_min__lte', models.F('attack_variance_max'))), name='battlesettings_variance_min_lte_max'), models.CheckConstraint(condition=models.Q(('heal_percent_min__lte', models.F('heal_percent_max'))), name='battlesettings_heal_min_lte_max'), models.CheckConstraint(condition=models.Q(('performance_scale_min__lte', models.F('performance_scale_max'))), name='battlesettings_perf_scale_min_lte_max'), models.CheckConstraint(condition=models.Q(('crit_chance__gte', 0), ('crit_chance__lte', 1)), name='battlesettings_crit_chance_bounds'), models.CheckConstraint(condition=models.Q(('dodge_chance__gte', 0), ('dodge_chance__lte', 1)), name='battlesettings_dodge_chance_bounds')],
+                "db_table": "battlerecord",
+                "managed": True,
+                "indexes": [
+                    models.Index(fields=["player1"], name="battlerecor_player1_216026_idx"),
+                    models.Index(fields=["player2"], name="battlerecor_player2_cd75b0_idx"),
+                    models.Index(fields=["winner"], name="battlerecor_winner__6fbe28_idx"),
+                    models.Index(fields=["created_at"], name="battlerecor_created_e810f8_idx"),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='BattleRecord',
+            name="BattleSession",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('wager_amount', models.PositiveBigIntegerField(default=0, help_text='Berries each side staked, if any.')),
-                ('winner_earnings', models.PositiveBigIntegerField(default=0, help_text='Anti-abuse win reward actually paid out (0 if capped that day).')),
-                ('turns', models.PositiveIntegerField(default=0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('player1', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='battles_as_player1', to='bd_models.player')),
-                ('player2', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='battles_as_player2', to='bd_models.player')),
-                ('winner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='battles_won', to='bd_models.player')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("channel_id", models.BigIntegerField()),
+                ("wager_amount", models.PositiveBigIntegerField(default=0)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("proposed", "Proposed"),
+                            ("active", "Active"),
+                            ("finished", "Finished"),
+                            ("cancelled", "Cancelled"),
+                        ],
+                        default="proposed",
+                        max_length=16,
+                    ),
+                ),
+                ("state", models.JSONField(blank=True, default=dict, help_text="Decks, HP, whose turn, use counters.")),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "player1",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="battle_sessions_as_player1",
+                        to="bd_models.player",
+                    ),
+                ),
+                (
+                    "player2",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="battle_sessions_as_player2",
+                        to="bd_models.player",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'battlerecord',
-                'managed': True,
-                'indexes': [models.Index(fields=['player1'], name='battlerecor_player1_216026_idx'), models.Index(fields=['player2'], name='battlerecor_player2_cd75b0_idx'), models.Index(fields=['winner'], name='battlerecor_winner__6fbe28_idx'), models.Index(fields=['created_at'], name='battlerecor_created_e810f8_idx')],
+                "db_table": "battlesession",
+                "managed": True,
+                "indexes": [
+                    models.Index(fields=["channel_id"], name="battlesessi_channel_a7f078_idx"),
+                    models.Index(fields=["status"], name="battlesessi_status_85da97_idx"),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='BattleSession',
+            name="Matchup",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('channel_id', models.BigIntegerField()),
-                ('wager_amount', models.PositiveBigIntegerField(default=0)),
-                ('status', models.CharField(choices=[('proposed', 'Proposed'), ('active', 'Active'), ('finished', 'Finished'), ('cancelled', 'Cancelled')], default='proposed', max_length=16)),
-                ('state', models.JSONField(blank=True, default=dict, help_text='Decks, HP, whose turn, use counters.')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('player1', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='battle_sessions_as_player1', to='bd_models.player')),
-                ('player2', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='battle_sessions_as_player2', to='bd_models.player')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "damage_multiplier",
+                    models.FloatField(
+                        default=1.25,
+                        help_text="Damage multiplier applied when attacker hits defender. 1.0 = no effect.",
+                    ),
+                ),
+                (
+                    "attacker",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="matchups_as_attacker",
+                        to="bd_models.ball",
+                    ),
+                ),
+                (
+                    "defender",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="matchups_as_defender",
+                        to="bd_models.ball",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'battlesession',
-                'managed': True,
-                'indexes': [models.Index(fields=['channel_id'], name='battlesessi_channel_a7f078_idx'), models.Index(fields=['status'], name='battlesessi_status_85da97_idx')],
+                "db_table": "battlematchup",
+                "managed": True,
+                "constraints": [
+                    models.CheckConstraint(
+                        condition=models.Q(("attacker", models.F("defender")), _negated=True),
+                        name="battlematchup_attacker_neq_defender",
+                    )
+                ],
+                "unique_together": {("attacker", "defender")},
             },
         ),
         migrations.CreateModel(
-            name='Matchup',
+            name="PlayerBattleItem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('damage_multiplier', models.FloatField(default=1.25, help_text='Damage multiplier applied when attacker hits defender. 1.0 = no effect.')),
-                ('attacker', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='matchups_as_attacker', to='bd_models.ball')),
-                ('defender', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='matchups_as_defender', to='bd_models.ball')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("quantity", models.PositiveIntegerField(default=0)),
+                ("item", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="battle_app.battleitem")),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, related_name="battle_items", to="bd_models.player"
+                    ),
+                ),
             ],
-            options={
-                'db_table': 'battlematchup',
-                'managed': True,
-                'constraints': [models.CheckConstraint(condition=models.Q(('attacker', models.F('defender')), _negated=True), name='battlematchup_attacker_neq_defender')],
-                'unique_together': {('attacker', 'defender')},
-            },
-        ),
-        migrations.CreateModel(
-            name='PlayerBattleItem',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('quantity', models.PositiveIntegerField(default=0)),
-                ('item', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='battle_app.battleitem')),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='battle_items', to='bd_models.player')),
-            ],
-            options={
-                'db_table': 'playerbattleitem',
-                'managed': True,
-                'unique_together': {('player', 'item')},
-            },
+            options={"db_table": "playerbattleitem", "managed": True, "unique_together": {("player", "item")}},
         ),
     ]
