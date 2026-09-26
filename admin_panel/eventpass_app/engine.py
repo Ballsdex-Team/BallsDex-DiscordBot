@@ -16,10 +16,11 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from django.db.models import Q
 from django.utils import timezone
 
 from ballsdex.core.game_events import Event, EventContext, normalize_command
-from bd_models.models import BallInstance
+from bd_models.models import BallInstance, Friendship
 from settings.models import settings
 
 from .access import progress_gate
@@ -182,6 +183,8 @@ class EventPassEngine:
                 continue
             if not self._matches(quest, context, event):
                 continue
+            if quest.with_friend and not await self._with_a_friend(player_id, context):
+                continue
             if quest.type == QuestType.OWN_TREASURES:
                 # this one asks what the player has, not what they just did, so it is counted rather than evaluated
                 result = Absolute(await self._owned_count(player_id, quest))
@@ -193,6 +196,21 @@ class EventPassEngine:
             if completion is not None:
                 completions.append(completion)
         return completions
+
+    @staticmethod
+    async def _with_a_friend(player_id: int, context: EventContext) -> bool:
+        """
+        Whether the other player in this action is on the player's friend list.
+
+        An action with nobody on the other side never counts for such a quest: there is no friend to have done it
+        with.
+        """
+        partner = context.partner_discord_id
+        if not partner:
+            return False
+        return await Friendship.objects.filter(
+            Q(player1_id=player_id, player2__discord_id=partner) | Q(player2_id=player_id, player1__discord_id=partner)
+        ).aexists()
 
     @staticmethod
     async def _owned_count(player_id: int, quest: Quest) -> int:

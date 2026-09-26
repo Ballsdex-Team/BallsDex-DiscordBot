@@ -276,7 +276,15 @@ TYPES: dict[str, TypeDefinition] = {
         TypeDefinition(
             QuestType.TRADE,
             frozenset({Event.TRADE}),
-            ("partner_discord_id", "min_currency", "must_receive_treasure", "ball", "special", "any_special"),
+            (
+                "partner_discord_id",
+                "with_friend",
+                "min_currency",
+                "must_receive_treasure",
+                "ball",
+                "special",
+                "any_special",
+            ),
             "Number of trades",
             "Counts completed trades. The treasure filters apply to what the player receives.",
             _describe_trade,
@@ -284,7 +292,7 @@ TYPES: dict[str, TypeDefinition] = {
         TypeDefinition(
             QuestType.TRADE_TREASURES,
             frozenset({Event.TRADE}),
-            ("in_one_trade", "partner_discord_id"),
+            ("in_one_trade", "partner_discord_id", "with_friend"),
             "Number of treasures exchanged",
             "Counts the treasures changing hands in the player's trades, given and received. A trade where only "
             "one side gives something is a gift and doesn't count.",
@@ -294,7 +302,7 @@ TYPES: dict[str, TypeDefinition] = {
         TypeDefinition(
             QuestType.GIVE_TREASURES,
             frozenset({Event.GIFT}),
-            TREASURE_FILTERS + ("partner_discord_id", "main_server_only"),
+            TREASURE_FILTERS + ("partner_discord_id", "with_friend", "main_server_only"),
             "Number of treasures given",
             "Counts the treasures the player gives away with the give command. Set a partner to ask for a present "
             "to one person in particular.",
@@ -303,7 +311,7 @@ TYPES: dict[str, TypeDefinition] = {
         TypeDefinition(
             QuestType.FRIEND,
             frozenset({Event.FRIEND}),
-            ("partner_discord_id",),
+            ("partner_discord_id", "with_friend"),
             "Number of new friends",
             "Counts the friendships made during the event, not the ones the player already had.",
             _describe_friend,
@@ -322,7 +330,7 @@ TYPES: dict[str, TypeDefinition] = {
         TypeDefinition(
             QuestType.GIVE_CURRENCY,
             frozenset({Event.CURRENCY_SENT}),
-            ("partner_discord_id", "min_currency"),
+            ("partner_discord_id", "with_friend", "min_currency"),
             "Number of gifts, or berries given",
             "Counts the berries the player gives away with the give command.",
             _describe_give,
@@ -332,7 +340,7 @@ TYPES: dict[str, TypeDefinition] = {
         TypeDefinition(
             QuestType.RECEIVE_CURRENCY,
             frozenset({Event.CURRENCY_RECEIVED}),
-            ("partner_discord_id", "min_currency"),
+            ("partner_discord_id", "with_friend", "min_currency"),
             "Number of gifts, or berries received",
             "Counts the berries the player receives from someone, a player or an admin.",
             _describe_receive,

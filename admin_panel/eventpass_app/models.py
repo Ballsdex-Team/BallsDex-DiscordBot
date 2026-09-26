@@ -753,6 +753,12 @@ class Quest(models.Model):
     partner_discord_id = models.BigIntegerField(
         null=True, blank=True, help_text="Only count actions involving this Discord user (ID)."
     )
+    with_friend = models.BooleanField(
+        verbose_name="only with a friend",
+        help_text="Only count it when the other player is on the friend list. A good way to give the friend "
+        "commands a reason to exist, since nothing else in the bot points at them.",
+        default=False,
+    )
     min_currency = models.PositiveBigIntegerField(
         null=True, blank=True, help_text="Each action must move at least this many berries to count."
     )
