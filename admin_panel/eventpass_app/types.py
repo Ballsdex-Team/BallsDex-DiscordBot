@@ -109,6 +109,10 @@ def _describe_obtain(quest: Quest) -> str:
     return f"Obtain {_treasures(quest, quest.target)}{_where(quest)}."
 
 
+def _describe_own(quest: Quest) -> str:
+    return f"Own {_treasures(quest, quest.target)}."
+
+
 def _describe_currency_streak(quest: Quest) -> str:
     return f"Claim your daily {settings.currency_plural} {quest.target} days in a row."
 
@@ -343,6 +347,15 @@ TYPES: dict[str, TypeDefinition] = {
             "Counts the times a catch also gives berries, or how many berries those catches gave.",
             _describe_catch_currency,
             measures=BERRY_MEASURES,
+        ),
+        TypeDefinition(
+            QuestType.OWN_TREASURES,
+            frozenset({Event.CATCH, Event.OBTAIN}),
+            TREASURE_FILTERS,
+            "Number owned",
+            "Counts what the player has in their collection right now, not what they just did: "
+            '"own 10 treasures of T50 or rarer". Checked again every time they get one.',
+            _describe_own,
         ),
         TypeDefinition(
             QuestType.CURRENCY_STREAK,

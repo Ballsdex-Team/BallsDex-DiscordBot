@@ -53,6 +53,7 @@ class QuestType(models.TextChoices):
     AUCTION_WON = "auction_won", "Win auctions"
     CURRENCY_STREAK = "currency_streak", "Reach a daily berry streak"
     PACK_STREAK = "pack_streak", "Reach a daily pack streak"
+    OWN_TREASURES = "own_treasures", "Own treasures (how many you have, not what you do)"
 
 
 class Measure(models.TextChoices):

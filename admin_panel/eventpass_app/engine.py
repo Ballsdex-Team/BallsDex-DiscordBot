@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 from django.utils import timezone
 
 from ballsdex.core.game_events import Event, EventContext, normalize_command
+from bd_models.models import BallInstance
 from settings.models import settings
 
 from .access import progress_gate
@@ -181,13 +182,44 @@ class EventPassEngine:
                 continue
             if not self._matches(quest, context, event):
                 continue
-            result = self._evaluate(quest, context, event)
+            if quest.type == QuestType.OWN_TREASURES:
+                # this one asks what the player has, not what they just did, so it is counted rather than evaluated
+                result = Absolute(await self._owned_count(player_id, quest))
+            else:
+                result = self._evaluate(quest, context, event)
             if result is None:
                 continue
             completion = await self._apply(quest, player_id, row, period, result, now, context, channel_id)
             if completion is not None:
                 completions.append(completion)
         return completions
+
+    @staticmethod
+    async def _owned_count(player_id: int, quest: Quest) -> int:
+        """
+        How many treasures the player owns that match the quest's filters.
+
+        Counted from the database rather than followed through events: a collection changes through catches,
+        trades, gifts and sales, and a total is far easier to trust than a tally kept in step with all of them.
+        """
+        queryset = BallInstance.objects.filter(player_id=player_id, deleted=False)
+        if quest.ball_id:
+            queryset = queryset.filter(ball_id=quest.ball_id)
+        if quest.special_id:
+            queryset = queryset.filter(special_id=quest.special_id)
+        elif quest.any_special:
+            queryset = queryset.filter(special_id__isnull=False)
+        if quest.group_id:
+            queryset = queryset.filter(ball__groups=quest.group_id)
+        if quest.min_rarity is not None:
+            queryset = queryset.filter(ball__rarity__gte=quest.min_rarity)
+        if quest.max_rarity is not None:
+            queryset = queryset.filter(ball__rarity__lte=quest.max_rarity)
+        if quest.min_attack_bonus is not None:
+            queryset = queryset.filter(attack_bonus__gte=quest.min_attack_bonus)
+        if quest.min_health_bonus is not None:
+            queryset = queryset.filter(health_bonus__gte=quest.min_health_bonus)
+        return await queryset.acount()
 
     def _matches(self, quest: Quest, context: EventContext, event: Event) -> bool:
         """
