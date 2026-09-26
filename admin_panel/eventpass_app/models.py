@@ -574,6 +574,18 @@ class PassTier(models.Model):
     locked_message = models.TextField(
         blank=True, default="", help_text="Shown while the tier is locked. Leave empty for the generated text."
     )
+    announce = models.CharField(
+        max_length=9,
+        choices=Announce.choices,
+        default=Announce.PUBLIC,
+        verbose_name="completion message",
+        help_text="Where the message goes when a player finishes this tier: in the channel for everyone, in "
+        "the channel but only for them, in their DMs, or nowhere. Finishing a tier is worth showing off, so "
+        "this is public by default even when the quests inside it are not.",
+    )
+    completion_message = models.TextField(
+        blank=True, default="", help_text="Shown when the tier is finished. Leave empty for the default text."
+    )
     reward = models.ForeignKey(
         Reward,
         null=True,

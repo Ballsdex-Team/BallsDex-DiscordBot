@@ -232,7 +232,7 @@ class PassTierInline(admin.TabularInline):
     model = PassTier
     extra = 0
     show_change_link = True
-    fields = ("position", "name", "emoji", "unlock_logic", "reward", "quest_count")
+    fields = ("position", "name", "emoji", "unlock_logic", "announce", "reward", "quest_count")
     readonly_fields = ("quest_count",)
     autocomplete_fields = ("reward",)
     ordering = ("position",)
@@ -355,7 +355,18 @@ class PassTierAdmin(admin.ModelAdmin):
     list_editable = ("position",)
     search_fields = ("name",)
     ordering = ("event_pass__position", "position")
-    fields = ("event_pass", "name", "emoji", "description", "position", "unlock_logic", "locked_message", "reward")
+    fields = (
+        "event_pass",
+        "name",
+        "emoji",
+        "description",
+        "position",
+        "unlock_logic",
+        "locked_message",
+        "reward",
+        "announce",
+        "completion_message",
+    )
 
     @admin.display(description="Requirements")
     def requirement_count(self, obj: PassTier) -> int:

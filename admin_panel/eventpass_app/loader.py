@@ -70,7 +70,18 @@ ACCESS_KEYS = {
     "max_berries": AccessKind.MAX_CURRENCY,
     "min_berries": AccessKind.MIN_CURRENCY,
 }
-TIER_KEYS = {"name", "emoji", "description", "locked_message", "unlock_logic", "reward", "requirements", "quests"}
+TIER_KEYS = {
+    "name",
+    "emoji",
+    "description",
+    "locked_message",
+    "unlock_logic",
+    "reward",
+    "requirements",
+    "quests",
+    "announce",
+    "completion_message",
+}
 QUEST_KEYS = {
     "name",
     "emoji",
@@ -233,6 +244,8 @@ class PassLoader:
         logic = data.get("unlock_logic", Logic.ALL)
         if logic not in Logic.values:
             self.errors.append(f"{where}: the unlock logic is one of {', '.join(Logic.values)}.")
+        if "announce" in data and data["announce"] not in Announce.values:
+            self.errors.append(f"{where}: announce is one of {', '.join(Announce.values)}.")
         tier, _ = PassTier.objects.update_or_create(
             event_pass=event_pass,
             name=name,
@@ -242,6 +255,8 @@ class PassLoader:
                 "position": position,
                 "unlock_logic": logic,
                 "locked_message": data.get("locked_message", ""),
+                "announce": data.get("announce", Announce.PUBLIC),
+                "completion_message": data.get("completion_message", ""),
                 "reward": (
                     self._reward(f"{event_pass.name} · {name} (tier reward)", data["reward"], None)
                     if data.get("reward")

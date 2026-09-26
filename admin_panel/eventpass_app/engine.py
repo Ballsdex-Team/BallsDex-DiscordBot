@@ -24,9 +24,9 @@ from bd_models.models import BallInstance, Friendship
 from settings.models import settings
 
 from .access import has_early_access, progress_gate
-from .models import EventPass, Measure, PlayerPass, PlayerQuest, Quest, QuestType, Reset, Reward, Source
-from .rewards import grant
-from .state import REWARD_LINES, finished_tier_ids, period_of, unlocked_tier_ids
+from .models import EventPass, Measure, PassTier, PlayerPass, PlayerQuest, Quest, QuestType, Reset, Reward, Source
+from .rewards import grant, reward_preview
+from .state import REWARD_LINES, _finished, _pass_progress, finished_tier_ids, period_of, unlocked_tier_ids
 from .types import TYPES
 
 if TYPE_CHECKING:
@@ -61,6 +61,17 @@ class Completion:
     period: str
     auto_claimed: bool = False
     summary: str = ""
+
+
+@dataclass
+class TierDone:
+    """
+    A tier a player just finished. Worth its own message: the tier is the milestone, not whichever quest happened
+    to close it.
+    """
+
+    tier: PassTier
+    reward: str = ""
 
 
 class EventPassEngine:
@@ -100,8 +111,31 @@ class EventPassEngine:
         except Exception:
             log.exception("Failed to progress the quests of player %s for %s", player_id, event)
             return
-        if completions and self.notifier:
-            await self.notifier.add(player_id, completions, channel_id)
+        if not completions:
+            return
+        tiers = await self._tiers_just_finished(player_id, completions)
+        if self.notifier:
+            await self.notifier.add(player_id, completions, channel_id, tiers)
+
+    @staticmethod
+    async def _tiers_just_finished(player_id: int, completions: list[Completion]) -> list[TierDone]:
+        """
+        The tiers these completions closed: finished now, and not finished without them.
+
+        Asking both questions is what tells a milestone from a tier that was already done, and it stays right when
+        several quests land at once. Nothing extra is written down for it.
+        """
+        done: list[TierDone] = []
+        just_completed = {completion.quest.pk for completion in completions}
+        for event_pass in {completion.quest.event_pass for completion in completions}:
+            completed_ids, required = await _pass_progress(player_id, event_pass)
+            newly = _finished(required, completed_ids) - _finished(required, completed_ids - just_completed)
+            if not newly:
+                continue
+            tiers = PassTier.objects.filter(pk__in=newly).select_related("event_pass").prefetch_related(REWARD_LINES)
+            async for tier in tiers:
+                done.append(TierDone(tier=tier, reward=reward_preview(tier.reward) if tier.reward_id else ""))
+        return done
 
     async def listens_to_command(self, name: str) -> bool:
         return any(
