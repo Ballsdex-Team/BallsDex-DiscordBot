@@ -90,9 +90,11 @@ class Event(StrEnum):
     CURRENCY_SENT = "currency_sent"  # a player gave berries to someone
     CATCH_REWARD = "catch_reward"  # a player earned berries by catching a spawn
     ECONOMY = "economy"  # any berry movement, carrying its ledger reason: the catch-all of berry based goals
+    CURRENCY_STREAK = "currency_streak"  # a player claimed their daily berries, carrying the streak they are on
 
     # -- shops and crafting
     PACK_BUY = "pack_buy"  # a player bought a pack
+    PACK_STREAK = "pack_streak"  # a player claimed their daily pack, carrying the streak they are on
     MERCHANT_BUY = "merchant_buy"  # a player bought an item from the merchant
     SHOP_BUY = "shop_buy"  # a player bought a treasure from Buggy's shop
     SELL = "sell"  # a player sold a treasure to Buggy
@@ -133,6 +135,8 @@ class EventContext:
     # whether the command actually did something: False for a /daily on cooldown, a sold out shop, a buy the
     # player could not afford. None when the command never said, which is most of them.
     command_worked: bool | None = None
+    # streaks: how many days in a row the player has claimed, as it stands after this claim
+    streak: int = 0
     # berries moved by the action and, for ECONOMY, the BerryTransaction reason behind it. Signed like the ledger:
     # negative when the player paid, positive when they were credited.
     amount: int = 0

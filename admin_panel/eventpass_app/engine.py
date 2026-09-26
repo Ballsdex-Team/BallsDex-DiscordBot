@@ -294,6 +294,12 @@ class EventPassEngine:
                     return None
                 return self._purchase(quest, context)
 
+            case QuestType.CURRENCY_STREAK | QuestType.PACK_STREAK:
+                # a streak is where the player stands, not something that adds up: five days in a row is 5,
+                # not five separate claims. The goal is to reach it, so a streak that breaks afterwards does
+                # not undo the quest — an absolute result keeps the best the player ever reached
+                return Absolute(context.streak) if context.streak else None
+
             case QuestType.AUCTION_BID:
                 if quest.measure == Measure.AMOUNT:
                     return Increment(context.price) if context.price else None

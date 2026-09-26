@@ -109,6 +109,14 @@ def _describe_obtain(quest: Quest) -> str:
     return f"Obtain {_treasures(quest, quest.target)}{_where(quest)}."
 
 
+def _describe_currency_streak(quest: Quest) -> str:
+    return f"Claim your daily {settings.currency_plural} {quest.target} days in a row."
+
+
+def _describe_pack_streak(quest: Quest) -> str:
+    return f"Claim your daily pack {quest.target} days in a row."
+
+
 def _describe_command(quest: Quest) -> str:
     return f"Use /{quest.command_name or '?'}{_times(quest.target)}{_where(quest)}."
 
@@ -335,6 +343,25 @@ TYPES: dict[str, TypeDefinition] = {
             "Counts the times a catch also gives berries, or how many berries those catches gave.",
             _describe_catch_currency,
             measures=BERRY_MEASURES,
+        ),
+        TypeDefinition(
+            QuestType.CURRENCY_STREAK,
+            frozenset({Event.CURRENCY_STREAK}),
+            ("main_server_only",),
+            "Days in a row",
+            "Counts the streak of daily berry claims the player is on, not how many times they claimed. "
+            "A streak that breaks starts the count again.",
+            _describe_currency_streak,
+            filters_instances=False,
+        ),
+        TypeDefinition(
+            QuestType.PACK_STREAK,
+            frozenset({Event.PACK_STREAK}),
+            ("main_server_only",),
+            "Days in a row",
+            "Counts the streak of daily pack claims the player is on. A streak that breaks starts again.",
+            _describe_pack_streak,
+            filters_instances=False,
         ),
         TypeDefinition(
             QuestType.SPEND_CURRENCY,

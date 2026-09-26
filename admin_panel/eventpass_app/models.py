@@ -51,6 +51,8 @@ class QuestType(models.TextChoices):
     AUCTION_CREATE = "auction_create", "List treasures on the auction house"
     AUCTION_BID = "auction_bid", "Place bids on the auction house"
     AUCTION_WON = "auction_won", "Win auctions"
+    CURRENCY_STREAK = "currency_streak", "Reach a daily berry streak"
+    PACK_STREAK = "pack_streak", "Reach a daily pack streak"
 
 
 class Measure(models.TextChoices):

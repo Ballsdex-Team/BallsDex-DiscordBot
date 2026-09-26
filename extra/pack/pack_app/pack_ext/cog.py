@@ -14,7 +14,7 @@ from django.db import transaction
 from django.utils import timezone
 from pack_models.models import PackBonusRole, PackResource, PackSettings
 
-from ballsdex.core.game_events import command_did_nothing
+from ballsdex.core.game_events import Event, EventContext, bus, command_did_nothing
 from ballsdex.core.utils.utils import member_role_ids
 from bd_models.models import Ball, BallInstance, Player
 from settings.models import settings
@@ -191,6 +191,12 @@ class Pack(commands.GroupCog):
         file = discord.File(buffer, "card.webp")
         embed.set_image(url="attachment://card.webp")
         await interaction.followup.send(embed=embed, file=file)
+        await bus.dispatch(
+            player,
+            Event.PACK_STREAK,
+            context=EventContext(streak=claim.streak, server_id=interaction.guild_id),
+            channel_id=interaction.channel_id,
+        )
 
     @app_commands.command(name="weekly")
     async def weekly(self, interaction: discord.Interaction["BallsDexBot"]):

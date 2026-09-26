@@ -224,6 +224,12 @@ class Money(commands.GroupCog):
             server_id=interaction.guild_id,
         )
         await player.asave(update_fields=("extra_data",))
+        await bus.dispatch(
+            player,
+            Event.CURRENCY_STREAK,
+            context=EventContext(streak=streak_day, amount=total, server_id=interaction.guild_id),
+            channel_id=interaction.channel_id,
+        )
 
         emoji = settings.currency_emoji(self.bot) or settings.currency_symbol or ""
         lines = [
