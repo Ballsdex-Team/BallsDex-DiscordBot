@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from currency_app.models import BerryTransaction
 from django.db.models import F
 from django.utils import timezone
-from merchant_app.models import MerchantItem, merchant_items
+from merchant_app.models import MerchantItem, MerchantPurchase, merchant_items
 
 from ballsdex.core.game_events import Event, EventContext, bus
 from bd_models.models import BallInstance, Player
@@ -22,6 +22,16 @@ class PurchaseError(Exception):
     """
     The purchase could not go through, the message is meant to be shown to the player.
     """
+
+
+async def _release_player_claim(claimed: bool, player: Player, item: MerchantItem) -> None:
+    """
+    Give a player their slot back when a purchase that had claimed one fails, so a failed buy does not eat
+    into their allowance.
+    """
+    if not claimed:
+        return
+    await MerchantPurchase.objects.filter(player=player, item=item, count__gt=0).aupdate(count=F("count") - 1)
 
 
 async def _release_stock(item: MerchantItem):
@@ -47,11 +57,29 @@ async def buy_item(
     PurchaseError
         The purchase failed, with a message explaining why.
     """
+    claimed = False
+    if item.per_player_limit is not None:
+        # raising the count only while it is under the limit is atomic, the same way the stock is:
+        # two clicks from the same player cannot both get through
+        row, _ = await MerchantPurchase.objects.aget_or_create(player=player, item=item)
+        claimed = (
+            await MerchantPurchase.objects.filter(pk=row.pk, count__lt=item.per_player_limit).aupdate(
+                count=F("count") + 1
+            )
+            > 0
+        )
+        if not claimed:
+            raise PurchaseError(
+                f"You have already bought **{item.name}** "
+                f"{item.per_player_limit} time{'s' if item.per_player_limit > 1 else ''}."
+            )
+
     reserved = False
     if item.stock is not None:
         # decrementing only when some stock is left is atomic, two players can't buy the last unit
         reserved = await MerchantItem.objects.filter(pk=item.pk, stock__gt=0).aupdate(stock=F("stock") - 1) > 0
         if not reserved:
+            await _release_player_claim(claimed, player, item)
             await _refresh_cached_stock(item)
             raise PurchaseError(f"**{item.name}** is sold out!")
 
@@ -94,6 +122,7 @@ async def buy_item(
     except PurchaseError:
         if reserved:
             await _release_stock(item)
+        await _release_player_claim(claimed, player, item)
         raise
 
     if reserved:

@@ -77,6 +77,15 @@ class MerchantItem(models.Model):
         help_text="How many of this item can still be bought, all players combined. It goes down with every "
         "purchase and the item can't be bought anymore once it reaches 0. Leave empty for an unlimited stock.",
     )
+    per_player_limit = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="limit per player",
+        help_text="How many of this item one player may ever buy. Counted per player and kept for good, so a "
+        "limit of 1 makes the item a one-off. It works on its own or alongside the shop stock above: with "
+        "both, the item runs out when either is reached. Leave empty for no limit."
+        ,
+    )
     created_at = models.DateTimeField(editable=False, auto_now_add=True)
 
     @property
@@ -148,3 +157,27 @@ class GlobalShop(models.Model):
     class Meta:
         managed = True
         db_table = "globalshop"
+
+
+class MerchantPurchase(models.Model):
+    """
+    How many times one player has bought one merchant item.
+
+    A running count rather than one row per sale: the limit only ever needs the total, and a counter can be
+    raised and checked in a single statement, which is what stops two clicks from both slipping through.
+    """
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="merchant_purchases")
+    player_id: int
+    item = models.ForeignKey(MerchantItem, on_delete=models.CASCADE, related_name="purchases")
+    item_id: int
+    count = models.PositiveIntegerField(default=0, help_text="How many the player has bought so far.")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.count}x {self.item_id} by {self.player_id}"
+
+    class Meta:
+        managed = True
+        db_table = "merchantpurchase"
+        unique_together = (("player", "item"),)
