@@ -765,6 +765,13 @@ class Quest(models.Model):
         default="",
         help_text='Full name of the slash command, without the slash: "treasures list" to open the inventory.',
     )
+    require_command_effect = models.BooleanField(
+        verbose_name="only count when it worked",
+        help_text="Only count the command when it actually did something. A /daily run while it is still on "
+        "cooldown, a shop with nothing left or a purchase the player could not afford then do not count. "
+        "Commands that never report an outcome are always counted.",
+        default=False,
+    )
     item = models.ForeignKey(
         Item,
         null=True,

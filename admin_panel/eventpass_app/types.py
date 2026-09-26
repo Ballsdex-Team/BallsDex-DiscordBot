@@ -255,7 +255,7 @@ TYPES: dict[str, TypeDefinition] = {
         TypeDefinition(
             QuestType.COMMAND,
             frozenset({Event.COMMAND}),
-            ("command_name", "main_server_only"),
+            ("command_name", "require_command_effect", "main_server_only"),
             "Number of uses",
             'Counts the uses of one slash command, like "treasures list" to open the inventory.',
             _describe_command,

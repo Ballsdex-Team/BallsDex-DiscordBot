@@ -14,6 +14,7 @@ from django.db import transaction
 from django.utils import timezone
 from pack_models.models import PackBonusRole, PackResource, PackSettings
 
+from ballsdex.core.game_events import command_did_nothing
 from ballsdex.core.utils.utils import member_role_ids
 from bd_models.models import Ball, BallInstance, Player
 from settings.models import settings
@@ -148,6 +149,7 @@ class Pack(commands.GroupCog):
         role_bonus = await self._role_bonus(interaction)
         claim = await sync_to_async(claim_daily_pack)(player.pk, role_bonus, self.pack_settings)
         if not claim.allowed:
+            command_did_nothing(interaction)
             await interaction.response.send_message(
                 f"You've used all daily packs. Come back {format_dt(claim.cooldown_until, style='R')}!",  # type: ignore
                 ephemeral=True,

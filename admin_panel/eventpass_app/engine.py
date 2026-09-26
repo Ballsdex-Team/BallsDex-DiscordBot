@@ -233,6 +233,10 @@ class EventPassEngine:
             case QuestType.COMMAND:
                 if normalize_command(context.command_name) != normalize_command(quest.command_name):
                     return None
+                # only a command that said it did nothing is turned away; one that never reports still counts,
+                # so this flag can be set without making a quest impossible to finish
+                if quest.require_command_effect and context.command_worked is False:
+                    return None
                 return Increment(1)
 
             case QuestType.TRADE:

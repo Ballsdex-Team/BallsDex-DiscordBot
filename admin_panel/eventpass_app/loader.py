@@ -94,7 +94,12 @@ REWARD_KEYS = {"cards", "tokens", "berries", "mode", "pick", "offer", "pool"}
 POOL_KEYS = {"group", "regime", "economy", "min_rarity", "max_rarity", "exclude", "quantity"}
 
 # quest settings whose name in the file differs from the model field
-ALIASES = {"partner": "partner_discord_id", "command": "command_name", "craft_type": "tier_level"}
+ALIASES = {
+    "partner": "partner_discord_id",
+    "command": "command_name",
+    "craft_type": "tier_level",
+    "only_if_it_worked": "require_command_effect",
+}
 FILTER_NAMES = set(PARAMETER_FIELDS) | set(ALIASES)
 
 

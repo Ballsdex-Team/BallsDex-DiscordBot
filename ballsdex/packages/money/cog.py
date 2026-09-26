@@ -12,7 +12,7 @@ from django.db import transaction
 from django.db.models import Count, Sum
 from django.utils import timezone
 
-from ballsdex.core.game_events import Event, EventContext, bus
+from ballsdex.core.game_events import Event, EventContext, bus, command_did_nothing
 from ballsdex.core.utils.leaderboard import EXTRA_ROWS, LEADERBOARD_SIZE, send_leaderboard
 from ballsdex.core.utils.utils import can_mention, member_role_ids
 from bd_models.models import Player, Trade
@@ -183,6 +183,7 @@ class Money(commands.GroupCog):
         raw_cooldown = player.extra_data.get("berry_daily_cooldown", None)
         cooldown = datetime.fromisoformat(raw_cooldown) if raw_cooldown else None
         if cooldown is not None and cooldown >= now:
+            command_did_nothing(interaction)
             await interaction.followup.send(
                 f"You've already claimed the daily payment. Come back in {format_dt(cooldown, 'R')}"
             )
