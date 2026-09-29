@@ -5,6 +5,8 @@ import discord
 from discord.ui import Button, button
 
 from ballsdex.core.discord import View
+from ballsdex.core.events import BallGivenEvent, dispatch
+from ballsdex.core.hooks import PostGiveContext, PreGiveContext
 from ballsdex.core.utils.menus import Menu
 from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
@@ -50,7 +52,20 @@ async def check_recipient(bot: "BallsDexBot", new_player: Player, old_player: Pl
         return "You cannot interact with a user that has blocked you."
     if new_player.discord_id in bot.blacklist:
         return "You cannot donate to a blacklisted user."
+    pre_give = await bot.hooks.run(PreGiveContext(sender=old_player, recipient=new_player))
+    if pre_give.cancelled:
+        return pre_give.reason or f"You cannot give {settings.plural_collectible_name} to this player."
     return None
+
+
+async def after_give(
+    bot: "BallsDexBot", sender: Player, recipient: Player, ball_instances: list[BallInstance], trade: Trade
+):
+    """
+    Run the `post_give` hooks and dispatch the `ballsdex_ball_given` event once countryballs were given.
+    """
+    await bot.hooks.run(PostGiveContext(sender=sender, recipient=recipient, ball_instances=ball_instances, trade=trade))
+    dispatch(bot, BallGivenEvent(sender=sender, recipient=recipient, ball_instances=ball_instances, trade=trade))
 
 
 VIEW_ALL_CUSTOM_ID = "bulk_give:view_all"
@@ -120,14 +135,14 @@ class DonationRequest(View):
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
+        old_player = self.countryball.player
         self.countryball.favorite = False
-        self.countryball.trade_player = self.countryball.player
+        self.countryball.trade_player = old_player
         self.countryball.player = self.new_player
         await self.countryball.asave()
-        trade = await Trade.objects.acreate(player1=self.countryball.trade_player, player2=self.new_player)
-        await TradeObject.objects.acreate(
-            trade=trade, ballinstance=self.countryball, player=self.countryball.trade_player
-        )
+        trade = await Trade.objects.acreate(player1=old_player, player2=self.new_player)
+        await TradeObject.objects.acreate(trade=trade, ballinstance=self.countryball, player=old_player)
+        await after_give(self.bot, old_player, self.new_player, [self.countryball], trade)
         await interaction.response.edit_message(
             content=interaction.message.content  # type: ignore
             + "\n\N{WHITE HEAVY CHECK MARK} The donation was accepted!",
@@ -197,6 +212,7 @@ class BulkDonationRequest(View):
             await countryball.asave()
             await TradeObject.objects.acreate(trade=trade, ballinstance=countryball, player=self.old_player)
             await countryball.unlock()
+        await after_give(self.bot, self.old_player, self.new_player, self.countryballs, trade)
         add_view_all_button(
             self,
             self.bot,

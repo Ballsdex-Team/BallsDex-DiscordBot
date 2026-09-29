@@ -20,6 +20,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from ballsdex.core.discord import UNKNOWN_INTERACTION, Container, LayoutView, Modal
+from ballsdex.core.events import TradeCompletedEvent, dispatch
+from ballsdex.core.hooks import PostTradeContext, PreTradeContext
 from ballsdex.core.utils.buttons import ConfirmChoiceView
 from ballsdex.core.utils.menus import CountryballFormatter, Menu, ModelSource, TextFormatter, TextSource
 from bd_models.enums import TradeCooldownPolicy
@@ -721,8 +723,20 @@ class TradeInstance(LayoutView):
             raise SynchronizationError()
         await self.confirmation_lock.acquire()
         self.timeout_task.cancel()
+        pre_trade = await self.cog.bot.hooks.run(
+            PreTradeContext(trade=self, trader1=self.trader1, trader2=self.trader2)
+        )
+        if pre_trade.cancelled:
+            await self._cleanup()
+            reason = pre_trade.reason or "This trade is not allowed."
+            self.add_item(TextDisplay(f"## The trade has been cancelled\n{reason}"))
+            return
         trade = await sync_to_async(self.perform_trade_operation)()
         self.stop()
+        await self.cog.bot.hooks.run(
+            PostTradeContext(view=self, trade=trade, trader1=self.trader1, trader2=self.trader2)
+        )
+        dispatch(self.cog.bot, TradeCompletedEvent(trade=trade, trader1=self.trader1, trader2=self.trader2))
         # edition of the message will be triggered by the caller
         self.add_item(TextDisplay(f"## The trade has been completed!\n-# ID: `#{trade.pk:0X}`"))
 

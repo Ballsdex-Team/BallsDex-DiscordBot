@@ -12,6 +12,8 @@ from discord.ui import ActionRow, Button, Item, MediaGallery, TextDisplay, TextI
 from django.utils import timezone
 
 from ballsdex.core.discord import Container, LayoutView, Modal
+from ballsdex.core.events import BallCaughtEvent, BallSpawnedEvent, dispatch
+from ballsdex.core.hooks import CatchRollContext, PostCatchContext, PostSpawnContext, PreCatchContext
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.formatting import format_command_mentions
 from ballsdex.core.utils.utils import can_mention
@@ -42,19 +44,21 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
         else:
             await interaction.response.send_message(f"An error occurred with this {settings.collectible_name}.")
 
+    async def send_slow_message(self, interaction: discord.Interaction["BallsDexBot"], player: Player):
+        slow_message = settings.get_formatted_message(
+            category=PromptMessage.PromptType.SLOW,
+            mention=interaction.user.mention,
+            model=self.view.model,
+            bot=interaction.client,
+        )
+        await interaction.followup.send(slow_message, ephemeral=True, allowed_mentions=await can_mention([player]))
+
     async def on_submit(self, interaction: discord.Interaction["BallsDexBot"]):
         await interaction.response.defer(thinking=True)
 
         player, _ = await Player.objects.aget_or_create(discord_id=interaction.user.id)
         if self.view.caught:
-            slow_message = settings.get_formatted_message(
-                category=PromptMessage.PromptType.SLOW,
-                mention=interaction.user.mention,
-                model=self.view.model,
-                bot=interaction.client,
-            )
-
-            await interaction.followup.send(slow_message, ephemeral=True, allowed_mentions=await can_mention([player]))
+            await self.send_slow_message(interaction, player)
             return
 
         if not self.view.is_name_valid(self.name.value):
@@ -75,11 +79,33 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             )
             return
 
+        pre_catch = await interaction.client.hooks.run(
+            PreCatchContext(view=self.view, interaction=interaction, player=player, guess=self.name.value)
+        )
+        if pre_catch.cancelled:
+            await interaction.followup.send(
+                pre_catch.reason or f"You cannot catch this {settings.collectible_name} right now.", ephemeral=True
+            )
+            return
+        # hooks may have taken some time, someone else could have caught it in the meantime
+        if self.view.caught:
+            await self.send_slow_message(interaction, player)
+            return
+
         ball, has_caught_before = await self.view.catch_ball(interaction.user, player=player, guild=interaction.guild)
 
+        post_catch = await interaction.client.hooks.run(
+            PostCatchContext(
+                view=self.view,
+                interaction=interaction,
+                player=player,
+                ball_instance=ball,
+                is_new=has_caught_before,
+                content=self.view.get_catch_message(ball, has_caught_before, interaction.user.mention),
+            )
+        )
         await interaction.followup.send(
-            self.view.get_catch_message(ball, has_caught_before, interaction.user.mention),
-            allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+            post_catch.content, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned)
         )
         await interaction.followup.edit_message(self.view.message.id, view=self.view)
 
@@ -323,6 +349,8 @@ class BallSpawnView(LayoutView):
                 self.message = await channel.send(
                     view=self, file=discord.File(self.model.wild_card.path, filename=file_name)
                 )
+                await self.bot.hooks.run(PostSpawnContext(view=self, channel=channel))
+                dispatch(self.bot, BallSpawnedEvent(view=self, channel=channel))
                 return True
             else:
                 log.warning("Missing permission to spawn ball in channel %s.", channel)
@@ -403,6 +431,7 @@ class BallSpawnView(LayoutView):
                 # the owner caught their own dropped countryball back, nothing changed hands
                 self.ballinstance.locked = None  # type: ignore
                 await self.ballinstance.asave(update_fields=("locked",))
+                self._dispatch_caught(user, player, guild, self.ballinstance, is_new)
                 return self.ballinstance, is_new
 
             # if specified, do not create a countryball but switch owner
@@ -415,6 +444,7 @@ class BallSpawnView(LayoutView):
             self.ballinstance.player = player
             self.ballinstance.locked = None  # type: ignore
             await self.ballinstance.asave(update_fields=("player", "trade_player", "locked"))
+            self._dispatch_caught(user, player, guild, self.ballinstance, is_new)
             return self.ballinstance, is_new
 
         # stat may vary by +/- 20% of base stat
@@ -435,12 +465,24 @@ class BallSpawnView(LayoutView):
         if not special:
             special = self.get_random_special()
 
+        roll = await self.bot.hooks.run(
+            CatchRollContext(
+                view=self,
+                user=user,
+                player=player,
+                special=special,
+                attack_bonus=bonus_attack,
+                health_bonus=bonus_health,
+            )
+        )
+        special = roll.special
+
         ball = await BallInstance.objects.acreate(
             ball=self.model,
             player=player,
             special=special,
-            attack_bonus=bonus_attack,
-            health_bonus=bonus_health,
+            attack_bonus=roll.attack_bonus,
+            health_bonus=roll.health_bonus,
             server_id=guild.id if guild else None,
             spawned_time=self.message.created_at,
             catch_date=caught_time,
@@ -461,7 +503,21 @@ class BallSpawnView(LayoutView):
                 shard_id=user.guild.shard_id,
             ).inc()
 
+        self._dispatch_caught(user, player, guild, ball, is_new)
         return ball, is_new
+
+    def _dispatch_caught(
+        self,
+        user: discord.User | discord.Member,
+        player: Player,
+        guild: discord.Guild | None,
+        ball: BallInstance,
+        is_new: bool,
+    ):
+        dispatch(
+            self.bot,
+            BallCaughtEvent(view=self, user=user, player=player, guild=guild, ball_instance=ball, is_new=is_new),
+        )
 
     def get_catch_message(self, ball: BallInstance, new_ball: bool, mention: str) -> str:
         """
