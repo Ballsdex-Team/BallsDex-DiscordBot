@@ -5,19 +5,19 @@ its code:
 
 - **[Events](#events)** are notifications. They are sent once an action has completed, run in the
   background, and cannot change anything. Use them for logging, statistics, quests, webhooks...
-- **[Hooks](#hooks)** are awaited by the bot. They run in order, can block an action before it
-  happens, or modify its outcome. Use them for custom rules, anti-cheat, boosts, extra rewards...
+- **[Hooks](#hooks)** are awaited by the bot before an action happens. They run in order, and can
+  block the action or modify its outcome. Use them for custom rules, anti-cheat, boosts...
 
 | | Events | Hooks |
 |---|---|---|
 | Declared with | `@commands.Cog.listener()` | `@hook("name")` |
 | Awaited by the bot | No | Yes, one after another |
 | Can block the action | No | `pre_*` and `spawn_check` hooks |
-| Can modify the outcome | No | `catch_roll` and `post_catch` hooks |
+| Can modify the outcome | No | `catch_roll` and `catch_message` hooks |
 | Ordering | None | By `priority` |
 
-If you only need to know that something happened, prefer events: a slow listener will never
-delay the bot.
+There are no hooks running after an action: once it's done, use events. A slow listener will
+never delay the bot.
 
 Both examples below assume you already have a
 [discord.py extension](custom-package.md#adding-a-discordpy-extension) with a cog.
@@ -118,14 +118,11 @@ unregistered when the cog is removed (including on reload).
 | Hook | Context | When | Can |
 |---|---|---|---|
 | `spawn_check` | [`SpawnCheckContext`][ballsdex.core.hooks.SpawnCheckContext] | Before a natural spawn | Cancel |
-| `post_spawn` | [`PostSpawnContext`][ballsdex.core.hooks.PostSpawnContext] | After any spawn message was sent | |
 | `pre_catch` | [`PreCatchContext`][ballsdex.core.hooks.PreCatchContext] | After a correct guess, before catching | Cancel |
 | `catch_roll` | [`CatchRollContext`][ballsdex.core.hooks.CatchRollContext] | Before a new countryball is created | Edit `special`, `attack_bonus`, `health_bonus` |
-| `post_catch` | [`PostCatchContext`][ballsdex.core.hooks.PostCatchContext] | Before the catch message is sent | Edit `content` |
+| `catch_message` | [`CatchMessageContext`][ballsdex.core.hooks.CatchMessageContext] | Before the catch message is sent | Edit `content` |
 | `pre_trade` | [`PreTradeContext`][ballsdex.core.hooks.PreTradeContext] | Both users confirmed, before saving | Cancel |
-| `post_trade` | [`PostTradeContext`][ballsdex.core.hooks.PostTradeContext] | After a trade was saved | |
 | `pre_give` | [`PreGiveContext`][ballsdex.core.hooks.PreGiveContext] | Before a give or donation request | Cancel |
-| `post_give` | [`PostGiveContext`][ballsdex.core.hooks.PostGiveContext] | After countryballs were given | |
 
 A few rules to keep in mind:
 
@@ -134,7 +131,7 @@ A few rules to keep in mind:
   shown to the user, a generic message is used if you omit it.
 - A hook raising an exception, or taking longer than 3 seconds, is logged and skipped. The
   action continues as if the hook wasn't there.
-- The user is waiting on your hook: keep it fast, and move slow work to an event listener.
+- The user is waiting on your hook: keep it fast, and move slow work to an [event](#events) listener.
 
 ### Catch cooldown
 
@@ -200,21 +197,20 @@ class WeekendBoost(commands.Cog):
 
 ### Extra catch message and reward
 
-`pre_*` and `post_*` hooks pair well together. Here, players earn money for a new countryball,
-and the catch message tells them about it:
+Players earn money for a new countryball, and the catch message tells them about it:
 
 ```py
 from discord.ext import commands
 
-from ballsdex.core.hooks import PostCatchContext, hook
+from ballsdex.core.hooks import CatchMessageContext, hook
 from settings.models import settings
 
 REWARD = 50
 
 
 class CatchRewards(commands.Cog):
-    @hook("post_catch")
-    async def reward(self, ctx: PostCatchContext):
+    @hook("catch_message")
+    async def reward(self, ctx: CatchMessageContext):
         if not ctx.is_new:
             return
         await ctx.player.add_money(REWARD)
@@ -244,12 +240,16 @@ class TradeRules(commands.Cog):
 
 ### Daily donation limit
 
+Hooks and events pair well together: the `pre_give` hook blocks donations over the limit, while
+a listener counts what was actually given.
+
 ```py
 from collections import Counter
 
 from discord.ext import commands, tasks
 
-from ballsdex.core.hooks import PostGiveContext, PreGiveContext, hook
+from ballsdex.core.events import BallGivenEvent
+from ballsdex.core.hooks import PreGiveContext, hook
 
 DAILY_LIMIT = 20
 
@@ -271,9 +271,9 @@ class DonationLimit(commands.Cog):
         if self.given[ctx.sender.pk] >= DAILY_LIMIT:
             ctx.cancel(f"You can only give {DAILY_LIMIT} countryballs per day.")
 
-    @hook("post_give")
-    async def count(self, ctx: PostGiveContext):
-        self.given[ctx.sender.pk] += len(ctx.ball_instances)
+    @commands.Cog.listener()
+    async def on_ballsdex_ball_given(self, event: BallGivenEvent):
+        self.given[event.sender.pk] += len(event.ball_instances)
 ```
 
 ### Registering without a cog
@@ -283,17 +283,20 @@ Hooks can also be registered manually on `bot.hooks`, a
 unregistering them.
 
 ```py
-from ballsdex.core.hooks import PostSpawnContext
+from ballsdex.core.hooks import SpawnCheckContext
+
+BLOCKED_GUILDS = {1234567890}
 
 
-async def log_spawn(ctx: PostSpawnContext):
-    print(f"{ctx.view.model.country} spawned in {ctx.channel}")
+async def block_guilds(ctx: SpawnCheckContext):
+    if ctx.guild.id in BLOCKED_GUILDS:
+        ctx.cancel()
 
 
 async def setup(bot):
-    bot.hooks.register("post_spawn", log_spawn, priority=5)
+    bot.hooks.register("spawn_check", block_guilds, priority=5)
 
 
 async def teardown(bot):
-    bot.hooks.unregister("post_spawn", log_spawn)
+    bot.hooks.unregister("spawn_check", block_guilds)
 ```

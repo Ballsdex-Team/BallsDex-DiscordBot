@@ -6,7 +6,7 @@ from discord.ui import Button, button
 
 from ballsdex.core.discord import View
 from ballsdex.core.events import BallGivenEvent, dispatch
-from ballsdex.core.hooks import PostGiveContext, PreGiveContext
+from ballsdex.core.hooks import PreGiveContext
 from ballsdex.core.utils.menus import Menu
 from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
@@ -58,13 +58,12 @@ async def check_recipient(bot: "BallsDexBot", new_player: Player, old_player: Pl
     return None
 
 
-async def after_give(
+def dispatch_ball_given(
     bot: "BallsDexBot", sender: Player, recipient: Player, ball_instances: list[BallInstance], trade: Trade
 ):
     """
-    Run the `post_give` hooks and dispatch the `ballsdex_ball_given` event once countryballs were given.
+    Dispatch the `ballsdex_ball_given` event once countryballs were given.
     """
-    await bot.hooks.run(PostGiveContext(sender=sender, recipient=recipient, ball_instances=ball_instances, trade=trade))
     dispatch(bot, BallGivenEvent(sender=sender, recipient=recipient, ball_instances=ball_instances, trade=trade))
 
 
@@ -142,7 +141,7 @@ class DonationRequest(View):
         await self.countryball.asave()
         trade = await Trade.objects.acreate(player1=old_player, player2=self.new_player)
         await TradeObject.objects.acreate(trade=trade, ballinstance=self.countryball, player=old_player)
-        await after_give(self.bot, old_player, self.new_player, [self.countryball], trade)
+        dispatch_ball_given(self.bot, old_player, self.new_player, [self.countryball], trade)
         await interaction.response.edit_message(
             content=interaction.message.content  # type: ignore
             + "\n\N{WHITE HEAVY CHECK MARK} The donation was accepted!",
@@ -212,7 +211,7 @@ class BulkDonationRequest(View):
             await countryball.asave()
             await TradeObject.objects.acreate(trade=trade, ballinstance=countryball, player=self.old_player)
             await countryball.unlock()
-        await after_give(self.bot, self.old_player, self.new_player, self.countryballs, trade)
+        dispatch_ball_given(self.bot, self.old_player, self.new_player, self.countryballs, trade)
         add_view_all_button(
             self,
             self.bot,

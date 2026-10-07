@@ -30,7 +30,7 @@ from settings.models import settings
 
 from .bulk_give_selector import BulkGiveSelector
 from .countryballs_paginator import CountryballsDuplicateSource, CountryballsViewer
-from .donation import DonationRequest, GiveSkipReason, after_give, check_giveable, check_recipient
+from .donation import DonationRequest, GiveSkipReason, check_giveable, check_recipient, dispatch_ball_given
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -707,7 +707,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
         trade = await Trade.objects.acreate(player1=old_player, player2=new_player)
         await TradeObject.objects.acreate(trade=trade, ballinstance=countryball, player=old_player)
-        await after_give(self.bot, old_player, new_player, [countryball], trade)
+        dispatch_ball_given(self.bot, old_player, new_player, [countryball], trade)
 
         cb_txt = (
             countryball.description(short=True, include_emoji=True, bot=self.bot, is_trade=True)

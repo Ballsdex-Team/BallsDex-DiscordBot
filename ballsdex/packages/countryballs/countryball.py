@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from ballsdex.core.discord import Container, LayoutView, Modal
 from ballsdex.core.events import BallCaughtEvent, BallSpawnedEvent, dispatch
-from ballsdex.core.hooks import CatchRollContext, PostCatchContext, PostSpawnContext, PreCatchContext
+from ballsdex.core.hooks import CatchMessageContext, CatchRollContext, PreCatchContext
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.formatting import format_command_mentions
 from ballsdex.core.utils.utils import can_mention
@@ -94,8 +94,8 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
 
         ball, has_caught_before = await self.view.catch_ball(interaction.user, player=player, guild=interaction.guild)
 
-        post_catch = await interaction.client.hooks.run(
-            PostCatchContext(
+        catch_message = await interaction.client.hooks.run(
+            CatchMessageContext(
                 view=self.view,
                 interaction=interaction,
                 player=player,
@@ -105,7 +105,7 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
             )
         )
         await interaction.followup.send(
-            post_catch.content, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned)
+            catch_message.content, allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned)
         )
         await interaction.followup.edit_message(self.view.message.id, view=self.view)
 
@@ -349,7 +349,6 @@ class BallSpawnView(LayoutView):
                 self.message = await channel.send(
                     view=self, file=discord.File(self.model.wild_card.path, filename=file_name)
                 )
-                await self.bot.hooks.run(PostSpawnContext(view=self, channel=channel))
                 dispatch(self.bot, BallSpawnedEvent(view=self, channel=channel))
                 return True
             else:

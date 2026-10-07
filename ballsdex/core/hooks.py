@@ -16,21 +16,18 @@ if TYPE_CHECKING:
 
     from ballsdex.packages.countryballs.countryball import BallSpawnView
     from ballsdex.packages.trade.trade import TradeInstance, TradingUser
-    from bd_models.models import BallInstance, Player, Special, Trade
+    from bd_models.models import BallInstance, Player, Special
 
 __all__ = (
     "HOOK_TIMEOUT",
     "HookContext",
     "CancellableContext",
     "SpawnCheckContext",
-    "PostSpawnContext",
     "PreCatchContext",
     "CatchRollContext",
-    "PostCatchContext",
+    "CatchMessageContext",
     "PreTradeContext",
-    "PostTradeContext",
     "PreGiveContext",
-    "PostGiveContext",
     "HookRegistry",
     "hook",
 )
@@ -113,25 +110,6 @@ class SpawnCheckContext(CancellableContext):
 
 
 @dataclass(kw_only=True)
-class PostSpawnContext(HookContext):
-    """
-    A countryball was spawned in a channel. This includes natural spawns, admin spawns and drops.
-
-    Attributes
-    ----------
-    view: BallSpawnView
-        The view attached to the spawn message.
-    channel: discord.TextChannel
-        The channel the countryball was spawned in.
-    """
-
-    hook_name = "post_spawn"
-
-    view: BallSpawnView
-    channel: discord.TextChannel
-
-
-@dataclass(kw_only=True)
 class PreCatchContext(CancellableContext):
     """
     A user guessed the name of a countryball correctly and is about to catch it. Cancelling
@@ -190,7 +168,7 @@ class CatchRollContext(HookContext):
 
 
 @dataclass(kw_only=True)
-class PostCatchContext(HookContext):
+class CatchMessageContext(HookContext):
     """
     A countryball was caught, and the catch message is about to be sent.
 
@@ -210,7 +188,7 @@ class PostCatchContext(HookContext):
         The catch message that will be sent. Editable.
     """
 
-    hook_name = "post_catch"
+    hook_name = "catch_message"
 
     view: BallSpawnView
     interaction: discord.Interaction
@@ -244,32 +222,6 @@ class PreTradeContext(CancellableContext):
 
 
 @dataclass(kw_only=True)
-class PostTradeContext(HookContext):
-    """
-    A trade was saved. The countryballs exchanged can be fetched with
-    `TradeObject.objects.filter(trade=ctx.trade)`.
-
-    Attributes
-    ----------
-    view: TradeInstance
-        The trade view.
-    trade: Trade
-        The trade entry saved.
-    trader1: TradingUser
-        The user who started the trade.
-    trader2: TradingUser
-        The other user of the trade.
-    """
-
-    hook_name = "post_trade"
-
-    view: TradeInstance
-    trade: Trade
-    trader1: TradingUser
-    trader2: TradingUser
-
-
-@dataclass(kw_only=True)
 class PreGiveContext(CancellableContext):
     """
     A player is about to give countryballs to another, or send them a donation request.
@@ -289,43 +241,15 @@ class PreGiveContext(CancellableContext):
     recipient: Player
 
 
-@dataclass(kw_only=True)
-class PostGiveContext(HookContext):
-    """
-    Countryballs were given from a player to another.
-
-    Attributes
-    ----------
-    sender: Player
-        The player who gave.
-    recipient: Player
-        The player who received.
-    ball_instances: list[BallInstance]
-        The countryballs given.
-    trade: Trade
-        The trade entry registered for this donation.
-    """
-
-    hook_name = "post_give"
-
-    sender: Player
-    recipient: Player
-    ball_instances: list[BallInstance]
-    trade: Trade
-
-
 HOOK_NAMES: frozenset[str] = frozenset(
     cls.hook_name
     for cls in (
         SpawnCheckContext,
-        PostSpawnContext,
         PreCatchContext,
         CatchRollContext,
-        PostCatchContext,
+        CatchMessageContext,
         PreTradeContext,
-        PostTradeContext,
         PreGiveContext,
-        PostGiveContext,
     )
 )
 
