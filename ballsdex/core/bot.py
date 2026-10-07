@@ -30,6 +30,7 @@ from ballsdex.core import tracing
 from ballsdex.core.commands import Core
 from ballsdex.core.dev import Dev
 from ballsdex.core.help import HelpCommand
+from ballsdex.core.hooks import HookRegistry
 from ballsdex.core.metrics import PrometheusServer
 from ballsdex.core.utils.checks import check_perms
 from bd_models.models import (
@@ -256,6 +257,7 @@ class BallsDexBot(commands.AutoShardedBot):
         self.command_log: set[int] = set()
         self.locked_balls = TTLCache(maxsize=99999, ttl=60 * 30)
         self.impersonations: dict[int, discord.Member] = {}
+        self.hooks = HookRegistry()
 
         if tracing.enabled():
             log.info("OpenTelemetry tracing is enabled.")
@@ -350,7 +352,7 @@ class BallsDexBot(commands.AutoShardedBot):
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"{base_url}/health", timeout=ClientTimeout(total=10)) as resp:
                     return resp.status == 200
-        except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
+        except aiohttp.ClientConnectionError, asyncio.TimeoutError:
             return False
 
     async def setup_hook(self) -> None:
@@ -381,9 +383,23 @@ class BallsDexBot(commands.AutoShardedBot):
         # hook that will check before loading a cog that Django permission checks are valid
         await check_perms()
         await super().add_cog(cog, override=override, guild=guild, guilds=guilds)
+        self.hooks.add_cog(cog)
         if self.is_ready():
             await self.tree.load_command_mentions(cog=cog)
         # otherwise, bot is still starting, that will be done with the sync
+
+    async def remove_cog(
+        self,
+        name: str,
+        /,
+        *,
+        guild: discord.abc.Snowflake | None = MISSING,
+        guilds: Sequence[discord.abc.Snowflake] = MISSING,
+    ) -> commands.Cog | None:
+        cog = await super().remove_cog(name, guild=guild, guilds=guilds)
+        if cog is not None:
+            self.hooks.remove_cog(cog)
+        return cog
 
     async def on_ready(self):
         if self.cogs != {}:
