@@ -42,6 +42,7 @@ from bd_models.models import (
     Regime,
     Special,
     balls,
+    balls_groups,
     economies,
     groups,
     regimes,
@@ -326,6 +327,13 @@ class BallsDexBot(commands.AutoShardedBot):
         async for group in BallGroup.objects.all():
             group._ball_ids = frozenset(group_ball_ids[group.pk])
             groups[group.pk] = group
+
+        balls_groups.clear()
+        async for ball in Ball.objects.prefetch_related("groups"):
+            ball_groups = list(ball.groups.all())  # pyright: ignore[reportAttributeAccessIssue]
+            ball_groups.sort(key=lambda group: group.priority, reverse=True)
+            balls_groups[ball.pk] = ball_groups
+
         table.add_row("Groups", str(len(groups)))
 
         self.blacklist = set()

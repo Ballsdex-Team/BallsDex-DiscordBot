@@ -45,6 +45,7 @@ regimes: dict[int, Regime] = {}
 economies: dict[int, Economy] = {}
 specials: dict[int, Special] = {}
 groups: dict[int, BallGroup] = {}
+balls_groups: dict[int, list[BallGroup]] = {}
 
 
 class QuerySet[T: models.Model](models.QuerySet[T]):
@@ -336,6 +337,19 @@ class Ball(models.Model):
     def cached_economy(self) -> Economy | None:
         return economies.get(self.economy_id) or self.economy if self.economy_id else None
 
+    @property
+    def cached_groups(self) -> list[BallGroup]:
+        """
+        Returns a list of the groups this ball is a part of, sorted descending by group prio
+        """
+
+        # non cached is quite expensive but only runs on the panel so its fine
+        ball_groups = balls_groups.get(self.pk)
+        if ball_groups is None:
+            ball_groups = list(self.groups.all())  # pyright: ignore[reportAttributeAccessIssue]
+            ball_groups.sort(key=lambda group: group.priority, reverse=True)
+        return ball_groups
+
     def __str__(self) -> str:
         return self.country
 
@@ -361,6 +375,9 @@ class Ball(models.Model):
 class BallGroup(models.Model):
     name = models.CharField(max_length=64, unique=True)
     countryballs = models.ManyToManyField(Ball, related_name="groups", blank=True)
+
+    icon = models.ImageField(max_length=200, null=True, blank=True, help_text="256x256 PNG image")
+    priority = models.FloatField(default=0, help_text="Priority for group list (higher is rightwards)")
 
     objects: Manager[Self] = Manager()
 
