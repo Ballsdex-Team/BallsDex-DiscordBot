@@ -54,6 +54,8 @@ class GuildInfoView(discord.ui.View):
         await interaction.response.defer(thinking=True, ephemeral=True)
         counts: dict[int, int] = {}
         async for instance in self.queryset:
+            if instance.player is None:
+                continue
             counts[instance.player.discord_id] = counts.get(instance.player.discord_id, 0) + 1
         if not counts:
             await interaction.followup.send("No catches found for this period.", ephemeral=True)
@@ -160,7 +162,7 @@ async def guild(ctx: commands.Context[BallsDexBot], guild_id: str, days: int = 7
     )
     embed.add_field(
         name=f"Amount of users who caught\n{settings.plural_collectible_name} ({days} days):",
-        value=len(set([x.player.discord_id async for x in total_server_balls])),
+        value=len({x.player.discord_id async for x in total_server_balls if x.player is not None}),
     )
 
     if guild.icon:

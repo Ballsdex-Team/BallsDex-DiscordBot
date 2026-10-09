@@ -178,7 +178,7 @@ class BallInstanceTransformer(ModelTransformer[BallInstance]):
 
     async def validate(self, ctx: commands.Context["BallsDexBot"], item: BallInstance):
         # checking if the ball does belong to user, and a custom ID wasn't forced
-        if item.player.discord_id != ctx.author.id:
+        if item.player is None or item.player.discord_id != ctx.author.id:
             raise commands.BadArgument(f"That {settings.collectible_name} doesn't belong to you.")
 
     async def get_options(

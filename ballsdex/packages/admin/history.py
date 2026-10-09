@@ -51,9 +51,9 @@ async def _build_history_view(
         view = cog.history_view_cls(ctx.bot, trade, admin_view=True)
         await view.initialize(
             trade.player1,
-            await cog.fetch_user(trade.player1.discord_id),
+            await cog.fetch_user(trade.player1.discord_id) if trade.player1 else None,
             trade.player2,
-            await cog.fetch_user(trade.player2.discord_id),
+            await cog.fetch_user(trade.player2.discord_id) if trade.player2 else None,
         )
 
         prev_button = Button(label="◀ Previous", style=discord.ButtonStyle.grey, disabled=index <= 0)
@@ -214,8 +214,8 @@ async def trade_info(ctx: commands.Context["BallsDexBot"], trade_id: str):
     view = HistoryView(ctx.bot, trade, admin_view=True)
     await view.initialize(
         trade.player1,
-        await cog.fetch_user(trade.player1.discord_id),
+        await cog.fetch_user(trade.player1.discord_id) if trade.player1 else None,
         trade.player2,
-        await cog.fetch_user(trade.player2.discord_id),
+        await cog.fetch_user(trade.player2.discord_id) if trade.player2 else None,
     )
     await ctx.send(view=view, ephemeral=True)
