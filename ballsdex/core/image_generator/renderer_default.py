@@ -8,8 +8,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from settings.models import settings
 
 if TYPE_CHECKING:
-    from bd_models.models import BallInstance
     from django.db.models.fields.files import ImageFieldFile
+
+    from bd_models.models import BallInstance
 
 
 SOURCES_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "./src")
