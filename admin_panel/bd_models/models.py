@@ -44,12 +44,8 @@ balls: dict[int, Ball] = {}
 regimes: dict[int, Regime] = {}
 economies: dict[int, Economy] = {}
 specials: dict[int, Special] = {}
-<<<<<<< HEAD
 groups: dict[int, BallGroup] = {}
-||||||| parent of bcf4d6b (Variants and renderer system)
-=======
 variants: dict[int, Variant] = {}
->>>>>>> bcf4d6b (Variants and renderer system)
 
 
 class QuerySet[T: models.Model](models.QuerySet[T]):
@@ -367,7 +363,6 @@ class Ball(models.Model):
         return super().save(**kwargs)
 
 
-<<<<<<< HEAD
 class BallGroup(models.Model):
     name = models.CharField(max_length=64, unique=True)
     countryballs = models.ManyToManyField(Ball, related_name="groups", blank=True)
@@ -388,8 +383,8 @@ class BallGroup(models.Model):
     @cached_property
     def balls(self) -> list[Ball]:
         return [balls[i] for i in self._ball_ids if i in balls]
-||||||| parent of bcf4d6b (Variants and renderer system)
-=======
+
+
 class Variant(models.Model):
     name = models.CharField(max_length=64)
 
@@ -401,7 +396,6 @@ class Variant(models.Model):
 
     def __str__(self) -> str:
         return self.name
->>>>>>> bcf4d6b (Variants and renderer system)
 
 
 class BallInstance(models.Model):
