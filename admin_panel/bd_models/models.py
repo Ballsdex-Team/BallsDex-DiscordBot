@@ -8,6 +8,7 @@ from datetime import timedelta
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Self, cast
 
+from PIL import Image
 import discord
 from discord.utils import format_dt
 from django.contrib import admin
@@ -392,6 +393,8 @@ class Variant(models.Model):
     base_ball_id: int
 
     collection_card = models.ImageField(max_length=200, null=True, help_text="Image used when displaying balls")
+    credits = models.CharField(max_length=64, help_text="Author of the variant collection-card artwork", blank=True)
+
     renderer = models.CharField(max_length=128, null=True, blank=True, help_text="Renderer to use")
 
     def __str__(self) -> str:
@@ -483,6 +486,13 @@ class BallInstance(models.Model):
     def special_card(self) -> "ImageFieldFile | None":
         if self.specialcard:
             return self.specialcard.background or self.countryball.collection_card
+
+    @property
+    def collection_card(self) -> "ImageFieldFile":
+        if self.cached_variant and self.cached_variant.collection_card:
+            return self.cached_variant.collection_card
+
+        return self.countryball.collection_card
 
     @property
     def countryball(self) -> Ball:

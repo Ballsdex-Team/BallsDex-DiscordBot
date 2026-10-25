@@ -66,12 +66,8 @@ def draw_card_blackscreen(ball_instance: "BallInstance") -> tuple[Image.Image, d
 
 def draw_card_fullart(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any]]:
     ball = ball_instance.countryball
-    if ball_instance.cached_variant:
-        collection_card = ball_instance.cached_variant.collection_card
-    else:
-        collection_card = ball.collection_card
 
-    image = open_image(collection_card)
+    image = open_image(ball_instance.collection_card)
     cache_key = f"variant-{ball_instance.cached_variant.pk}" if ball_instance.cached_variant else ball.country
     return put_card_info(ball_instance, image, cache_key)
 
@@ -86,10 +82,7 @@ def draw_card_default(ball_instance: "BallInstance") -> tuple[Image.Image, dict[
     else:
         image = open_image(ball.cached_regime.background)
 
-    if ball_instance.cached_variant:
-        collection_card = ball_instance.cached_variant.collection_card
-    else:
-        collection_card = ball.collection_card
+    collection_card = ball_instance.collection_card
 
     artwork = open_image(collection_card)
     image.paste(ImageOps.fit(artwork, artwork_size), COLLECTION_CARD_CORNERS[0])  # pyright: ignore[reportArgumentType]
@@ -108,6 +101,8 @@ def put_card_info(
     special_credits = ""
     if ball_instance.specialcard and ball_instance.specialcard.credits:
         special_credits += f" • Special Author: {ball_instance.specialcard.credits}"
+    if ball_instance.cached_variant and ball_instance.cached_variant.credits:
+        special_credits += f" • Variant Author: {ball_instance.cached_variant.credits}"
 
     economy_icon = open_image(ball.cached_economy.icon) if ball.cached_economy else None
 
