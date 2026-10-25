@@ -426,7 +426,7 @@ class BallInstance(models.Model):
     tradeable_objects: TradeableManager[Self] = TradeableManager()
     all_objects: BaseBallInstanceManager[Self] = BaseBallInstanceManager()
 
-    variant = models.ForeignKey(Variant, null=True, on_delete=models.SET_NULL)
+    variant = models.ForeignKey(Variant, null=True, blank=True, on_delete=models.SET_NULL)
     variant_id: int
 
     class Meta:

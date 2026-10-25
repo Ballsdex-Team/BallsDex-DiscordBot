@@ -72,7 +72,7 @@ def draw_card_fullart(ball_instance: "BallInstance") -> tuple[Image.Image, dict[
         collection_card = ball.collection_card
 
     image = open_image(collection_card)
-    cache_key = ball_instance.cached_variant.name if ball_instance.cached_variant else ball.country
+    cache_key = f"variant-{ball_instance.cached_variant.pk}" if ball_instance.cached_variant else ball.country
     return put_card_info(ball_instance, image, cache_key)
 
 
@@ -106,7 +106,7 @@ def put_card_info(
     ball_credits = ball.credits
 
     special_credits = ""
-    if ball_instance.specialcard:
+    if ball_instance.specialcard and ball_instance.specialcard.credits:
         special_credits += f" • Special Author: {ball_instance.specialcard.credits}"
 
     economy_icon = open_image(ball.cached_economy.icon) if ball.cached_economy else None
