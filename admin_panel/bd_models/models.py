@@ -8,7 +8,6 @@ from datetime import timedelta
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Self, cast
 
-from PIL import Image
 import discord
 from discord.utils import format_dt
 from django.contrib import admin
