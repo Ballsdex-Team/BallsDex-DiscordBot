@@ -41,11 +41,13 @@ from bd_models.models import (
     Economy,
     Regime,
     Special,
+    Variant,
     balls,
     economies,
     groups,
     regimes,
     specials,
+    variants,
 )
 from settings.models import settings
 
@@ -327,6 +329,11 @@ class BallsDexBot(commands.AutoShardedBot):
             group._ball_ids = frozenset(group_ball_ids[group.pk])
             groups[group.pk] = group
         table.add_row("Groups", str(len(groups)))
+
+        variants.clear()
+        async for variant in Variant.objects.all():
+            variants[variant.pk] = variant
+        table.add_row("Variants", str(len(variants)))
 
         self.blacklist = set()
         async for blacklisted_id in BlacklistedID.objects.all().only("discord_id"):

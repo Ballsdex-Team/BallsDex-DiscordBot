@@ -1,4 +1,4 @@
-from bd_models.models import Ball, Economy, Regime, Special, balls, economies, regimes, specials
+from bd_models.models import Ball, Economy, Regime, Special, Variant, balls, economies, regimes, specials, variants
 
 
 async def refresh_cache():
@@ -24,3 +24,7 @@ async def refresh_cache():
     specials.clear()
     async for special in Special.objects.all():
         specials[special.pk] = special
+
+    variants.clear()
+    async for variant in Variant.objects.all():
+        variants[variant.pk] = variant
