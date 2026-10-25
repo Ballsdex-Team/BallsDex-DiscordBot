@@ -5,36 +5,45 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ('bd_models', '0019_guildconfig_tips_enabled'),
-    ]
+    dependencies = [("bd_models", "0019_guildconfig_tips_enabled")]
 
     operations = [
         migrations.AddField(
-            model_name='ball',
-            name='renderer',
-            field=models.CharField(blank=True, help_text='Renderer to use', max_length=128, null=True),
+            model_name="ball",
+            name="renderer",
+            field=models.CharField(blank=True, help_text="Renderer to use", max_length=128, null=True),
         ),
         migrations.AddField(
-            model_name='special',
-            name='renderer',
-            field=models.CharField(blank=True, help_text='Renderer to use', max_length=128, null=True),
+            model_name="special",
+            name="renderer",
+            field=models.CharField(blank=True, help_text="Renderer to use", max_length=128, null=True),
         ),
         migrations.CreateModel(
-            name='Variant',
+            name="Variant",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=64)),
-                ('collection_card', models.ImageField(help_text='Image used when displaying balls', max_length=200, null=True, upload_to='')),
-                ('credits', models.CharField(blank=True, help_text='Author of the variant collection-card artwork', max_length=64)),
-                ('renderer', models.CharField(blank=True, help_text='Renderer to use', max_length=128, null=True)),
-                ('base_ball', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='bd_models.ball')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("name", models.CharField(max_length=64)),
+                (
+                    "collection_card",
+                    models.ImageField(
+                        help_text="Image used when displaying balls", max_length=200, null=True, upload_to=""
+                    ),
+                ),  # noqa: E501
+                (
+                    "credits",
+                    models.CharField(
+                        blank=True, help_text="Author of the variant collection-card artwork", max_length=64
+                    ),
+                ),  # noqa: E501
+                ("renderer", models.CharField(blank=True, help_text="Renderer to use", max_length=128, null=True)),
+                ("base_ball", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="bd_models.ball")),
             ],
         ),
         migrations.AddField(
-            model_name='ballinstance',
-            name='variant',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='bd_models.variant'),
+            model_name="ballinstance",
+            name="variant",
+            field=models.ForeignKey(
+                blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to="bd_models.variant"
+            ),  # noqa: E501
         ),
     ]
