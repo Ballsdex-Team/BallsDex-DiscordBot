@@ -94,14 +94,9 @@ folder that makes development easier.
     [project]
     name = "my_cool_repo"
     version = "1.0.0"
-
-    dependencies = [
-        # you can require a specific version of ballsdex here
-        "ballsdex>=3.0.0",
-    ]
     ```
 
-    You can customize this file later to include extra dependencies and more[^1]
+    You can customize this file later to include dependencies and more[^1]
 
     [^1]: [Python packaging](https://packaging.python.org/en/latest/tutorials/packaging-projects/)
 
@@ -451,11 +446,7 @@ Once your package is ready, you can choose to publish it!
     ]
     readme = "README.md"
 
-    dependencies = [
-        # you can require a specific version of ballsdex here
-        "ballsdex>=3.0.0",
-        # and extra dependencies if needed
-    ]
+    dependencies = [] # you can require dependencies here if needed
 
     [project.urls]
     # put your own links here

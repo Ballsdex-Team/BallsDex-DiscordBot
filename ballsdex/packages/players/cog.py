@@ -14,6 +14,7 @@ from bd_models.enums import FriendPolicy
 from bd_models.models import BallInstance, Block, Friendship, Trade, balls
 from bd_models.models import Player as PlayerModel
 from settings.models import settings
+from settings.utils import format_currency
 
 from .views import RelationContainer, SettingsContainer
 
@@ -349,7 +350,7 @@ class Player(commands.GroupCog):
             title=f"**{user.display_name.title()}'s {settings.bot_name.title()} Info**", color=discord.Color.blurple()
         )
         embed.description = (
-            "Here are your statistics and settings in the bot!\n"
+            "Here are your settings and statistics in the bot!\n"
             "## Player Info\n"
             f"**Privacy Policy:** {PRIVATE_POLICY_MAP[player.privacy_policy]}\n"
             f"**Donation Policy:** {DONATION_POLICY_MAP[player.donation_policy]}\n"
@@ -359,13 +360,17 @@ class Player(commands.GroupCog):
             f"**Amount of Friends:** {friends}\n"
             f"**Amount of Blocked Users:** {blocks}\n"
             "## Player Stats\n"
-            f"**Completion:** {completion_percentage}\n"
-            f"**{settings.collectible_name.title()}s Owned:** {len(balls_owned):,}\n"
-            f"**Caught {settings.collectible_name.title()}s Owned**: {len(caught_owned):,}\n"
-            f"**Special {settings.collectible_name.title()}s:** {len(special):,}\n"
-            f"**Trades Completed:** {len(trades):,}\n"
-            f"**Amount of Users Traded With:** {len(trade_partners):,}\n"
-            # f"**Current Balance:** {player.money:,}"
+            f"**Completion:**\n{completion_percentage}\n\n"
+            f"**{settings.plural_collectible_name.title()} Owned:**\n{len(balls_owned):,}\n\n"
+            f"**Self-Caught {settings.plural_collectible_name.title()}:**\n{len(caught_owned):,}\n\n"
+            f"**Special {settings.plural_collectible_name.title()}:**\n{len(special):,}\n\n"
+            f"**Trades Completed:**\n{len(trades):,}\n\n"
+            f"**Trade Partners:**\n{len(trade_partners):,}\n\n"
+            + (
+                f"**Current Balance:**\n**{format_currency(player.money, bot=self.bot)}**"
+                if settings.currency_enabled
+                else ""
+            )
         )
         embed.set_footer(text="Keep collecting and trading to improve your stats!")
         embed.set_thumbnail(url=user.display_avatar)  # type: ignore

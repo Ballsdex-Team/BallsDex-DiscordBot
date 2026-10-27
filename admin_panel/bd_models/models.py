@@ -85,6 +85,9 @@ class GuildConfig(models.Model):
     manual_drop_enabled = models.BooleanField(
         help_text="Whether players are allowed to use the drop command in this server", default=True
     )
+    tips_enabled = models.BooleanField(
+        help_text="Whether tips are displayed below spawn messages in this server", default=True
+    )
     admin_command_synced = models.BooleanField(
         help_text="True if slash admin commands are present in this server", default=False, editable=False
     )
@@ -160,17 +163,23 @@ class Player(models.Model):
         return self.mention_policy == MentionPolicy.ALLOW
 
     async def add_money(self, amount: int) -> int:
+        # incremented by the database, not from the in-memory value, so that concurrent
+        # updates cannot overwrite each other
         if amount <= 0:
             raise ValueError("Amount to add must be positive")
-        self.money += amount
-        await self.asave(update_fields=("money",))
+        await Player.objects.filter(pk=self.pk).aupdate(money=F("money") + amount)
+        await self.arefresh_from_db(fields=["money"])
         return self.money
 
     async def remove_money(self, amount: int) -> None:
-        if self.money < amount:
+        # the affordability check is part of the UPDATE, so two concurrent calls cannot both
+        # pass it and overdraw the account
+        if amount <= 0:
+            raise ValueError("Amount to remove must be positive")
+        updated = await Player.objects.filter(pk=self.pk, money__gte=amount).aupdate(money=F("money") - amount)
+        if not updated:
             raise ValueError("Not enough money")
-        self.money -= amount
-        await self.asave(update_fields=("money",))
+        await self.arefresh_from_db(fields=["money"])
 
     def can_afford(self, amount: int) -> bool:
         return self.money >= amount

@@ -8,6 +8,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from settings.models import settings
 
 if TYPE_CHECKING:
+    from django.db.models.fields.files import ImageFieldFile
+
     from bd_models.models import BallInstance
 
 
@@ -42,6 +44,19 @@ credits_font = ImageFont.truetype(str(SOURCES_PATH / "arial.ttf"), 40)
 credits_color_cache = {}
 
 
+def open_image(image_file: "ImageFieldFile") -> Image.Image:
+    """
+    Load an image from a model's file field as RGBA, releasing the underlying file descriptor.
+
+    Pillow only takes ownership of the file (and closes it once the image is loaded) when it is
+    given a path. Handing it the field file directly makes Pillow treat it as a borrowed file
+    object, and the descriptor stays open on the model instance instead. Balls, regimes,
+    economies and specials are kept in caches living for the whole lifetime of the bot, so those
+    descriptors would never be released, eventually exhausting the process' limit.
+    """
+    return Image.open(image_file.path).convert("RGBA")
+
+
 def get_credit_color(image: Image.Image, region: tuple) -> tuple:
     image = image.crop(region)
     brightness = sum(image.convert("L").getdata()) / image.width / image.height  # type: ignore
@@ -56,13 +71,12 @@ def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any
     card_name = ball.cached_regime.name
     if special_image := ball_instance.special_card:
         card_name = getattr(ball_instance.specialcard, "name", card_name)
-        image = Image.open(special_image)
+        image = open_image(special_image)
         if ball_instance.specialcard and ball_instance.specialcard.credits:
             special_credits += f" • Special Author: {ball_instance.specialcard.credits}"
     else:
-        image = Image.open(ball.cached_regime.background)
-    image = image.convert("RGBA")
-    icon = Image.open(ball.cached_economy.icon).convert("RGBA") if ball.cached_economy else None
+        image = open_image(ball.cached_regime.background)
+    icon = open_image(ball.cached_economy.icon) if ball.cached_economy else None
 
     draw = ImageDraw.Draw(image)
     draw.text((50, 20), ball.short_name or ball.country, font=title_font, stroke_width=2, stroke_fill=(0, 0, 0, 255))
@@ -129,7 +143,7 @@ def draw_card(ball_instance: "BallInstance") -> tuple[Image.Image, dict[str, Any
         stroke_fill=(255, 255, 255, 255),
     )
 
-    artwork = Image.open(ball.collection_card).convert("RGBA")
+    artwork = open_image(ball.collection_card)
     image.paste(ImageOps.fit(artwork, artwork_size), CORNERS[0])  # type: ignore
 
     if icon:

@@ -66,8 +66,11 @@ nav:
           - selfhosting/misc/hosting-multiple-bots.md
   - Developing:
     - dev/custom-package.md
+    - dev/events-and-hooks.md
     - API Reference:
         - dev/api/bot.md
+        - dev/api/events.md
+        - dev/api/hooks.md
         - dev/api/models.md
         - Utils:
             - dev/api/utils/buttons.md

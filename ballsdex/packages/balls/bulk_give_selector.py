@@ -11,7 +11,7 @@ from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 from settings.models import settings
 
-from .donation import BulkDonationRequest, add_view_all_button, check_giveable, check_recipient
+from .donation import BulkDonationRequest, add_view_all_button, check_giveable, check_recipient, dispatch_ball_given
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -138,6 +138,7 @@ class BulkGiveSelector(BaseBulkSelector):
             await ball.asave()
             await TradeObject.objects.acreate(trade=trade, ballinstance=ball, player=self.old_player)
             await ball.unlock()
+        dispatch_ball_given(self.bot, self.old_player, self.new_player, valid, trade)
 
         result_view = View()
         add_view_all_button(

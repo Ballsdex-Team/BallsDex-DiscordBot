@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 
 from ballsdex.core import tracing
+from ballsdex.core.hooks import SpawnCheckContext
 from bd_models.models import GuildConfig
 from settings.models import settings
 
@@ -73,6 +74,12 @@ class CountryBallsSpawner(commands.Cog):
             if not channel:
                 log.warning(f"Lost channel {self.cache[guild.id]} for guild {guild.name}.")
                 del self.cache[guild.id]
+                return
+            spawn_check = await self.bot.hooks.run(
+                SpawnCheckContext(guild=guild, channel=cast(discord.TextChannel, channel), message=message, algo=algo)
+            )
+            if spawn_check.cancelled:
+                tracing.set_tag("spawn.cancelled", True)
                 return
             ball = await BallSpawnView.get_random(self.bot)
             ball.algo = algo
