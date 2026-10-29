@@ -18,7 +18,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version-file: pyproject.toml
+          python-version: "3.14"
       - name: Install dependencies
         run: uv sync --locked --extra docs && echo "$PWD/.venv/bin" >> $GITHUB_PATH
       - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
