@@ -60,6 +60,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
 
     def __init__(self, bot: "BallsDexBot"):
         self.bot = bot
+        # only consumed on a successful drop, so failed attempts don't put the user on cooldown
+        self.drop_cooldown: commands.CooldownMapping[discord.Interaction] = commands.CooldownMapping(
+            app_commands.Cooldown(1, 60), lambda i: i.user.id
+        )
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
@@ -577,6 +581,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if not countryball:
             return
 
+        bucket = self.drop_cooldown.get_bucket(interaction)
+        if bucket and (retry_after := bucket.get_retry_after()):
+            raise app_commands.CommandOnCooldown(bucket, retry_after)
+
         config = await GuildConfig.objects.aget_or_none(guild_id=interaction.guild_id)
         if config and not config.manual_drop_enabled:
             await interaction.response.send_message(
@@ -618,6 +626,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         result = await ball.spawn(interaction.channel)  # type: ignore
 
         if result:
+            if bucket:
+                bucket.update_rate_limit()
             await interaction.followup.send(f"{settings.collectible_name.title()} dropped.", ephemeral=True)
             log.info(f"{interaction.user} dropped {countryball} (`{countryball.pk:0X}`) in {interaction.channel}.")
         else:
