@@ -206,11 +206,9 @@ class BallSpawnView(LayoutView):
         The ball instance must be unlocked from trades, and will be locked until caught or timed
         out.
         """
-        if await ball_instance.is_locked():
-            raise RuntimeError("This countryball is locked for a trade")
-
         # prevent countryball from being traded while spawned
-        await ball_instance.lock_for_trade()
+        if not await ball_instance.try_lock_for_trade():
+            raise RuntimeError("This countryball is locked for a trade")
 
         view = cls(bot, ball_instance.ball)
         view.ballinstance = ball_instance

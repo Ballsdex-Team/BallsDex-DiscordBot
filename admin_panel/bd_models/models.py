@@ -560,6 +560,24 @@ class BallInstance(models.Model):
         self.locked = timezone.now()
         await self.asave(update_fields=("locked",))
 
+    async def try_lock_for_trade(self) -> bool:
+        """
+        Atomically lock this instance, only if it is currently unlocked and still owned by the
+        same player. Returns `False` if another operation got to it first.
+
+        Prefer this over `is_locked` followed by `lock_for_trade`, which leaves room for
+        concurrent interactions (double clicks, repeated commands) to both pass the check.
+        """
+        locked = timezone.now()
+        updated = (
+            await BallInstance.objects.filter(pk=self.pk, player_id=self.player_id)
+            .filter(Q(locked=None) | Q(locked__lte=locked - timedelta(minutes=30)))
+            .aupdate(locked=locked)
+        )
+        if updated:
+            self.locked = locked
+        return bool(updated)
+
     async def unlock(self):
         self.locked = None  # type: ignore
         await self.asave(update_fields=("locked",))

@@ -131,6 +131,9 @@ class DonationRequest(View):
 
     @button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
     async def accept(self, interaction: Interaction, button: Button):
+        if self.is_finished():  # already answered by a concurrent click
+            await interaction.response.defer()
+            return
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
@@ -151,6 +154,9 @@ class DonationRequest(View):
 
     @button(style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}")
     async def deny(self, interaction: Interaction, button: Button):
+        if self.is_finished():  # already answered by a concurrent click
+            await interaction.response.defer()
+            return
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
@@ -200,6 +206,9 @@ class BulkDonationRequest(View):
 
     @button(style=discord.ButtonStyle.success, emoji="\N{HEAVY CHECK MARK}\N{VARIATION SELECTOR-16}")
     async def accept(self, interaction: Interaction, button: Button):
+        if self.is_finished():  # already answered by a concurrent click
+            await interaction.response.defer()
+            return
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore
@@ -228,6 +237,9 @@ class BulkDonationRequest(View):
 
     @button(style=discord.ButtonStyle.danger, emoji="\N{HEAVY MULTIPLICATION X}\N{VARIATION SELECTOR-16}")
     async def deny(self, interaction: Interaction, button: Button):
+        if self.is_finished():  # already answered by a concurrent click
+            await interaction.response.defer()
+            return
         self.stop()
         for item in self.children:
             item.disabled = True  # type: ignore

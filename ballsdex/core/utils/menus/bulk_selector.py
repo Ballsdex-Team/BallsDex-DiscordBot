@@ -1,3 +1,4 @@
+import asyncio
 from typing import TYPE_CHECKING, Any, Generator
 
 import discord
@@ -59,6 +60,16 @@ class BaseBulkSelector(Container):
         await self.menu.init(position=7, container=self)
 
         self.display_menu: Menu | None = None
+        # quick clicks run concurrently, without this each run would stack its own page controls
+        self.update_lock = asyncio.Lock()
+
+    async def refresh(self, interaction: Interaction):
+        """
+        Rebuild the selected list and edit the message, one interaction at a time.
+        """
+        async with self.update_lock:
+            await self.update_display()
+            await interaction.edit_original_response(view=self.view)
 
     async def update_display(self):
         assert self.view
@@ -110,8 +121,7 @@ class BaseBulkSelector(Container):
             else:
                 self.formatter.defaulted.discard(int(option.value))
                 option.default = False
-        await self.update_display()
-        await interaction.edit_original_response(view=self.view)
+        await self.refresh(interaction)
 
     sep3 = Separator()
     control_row = ActionRow()
@@ -122,8 +132,7 @@ class BaseBulkSelector(Container):
         for option in self.select.options:
             self.formatter.defaulted.add(int(option.value))
             option.default = True
-        await self.update_display()
-        await interaction.edit_original_response(view=self.view)
+        await self.refresh(interaction)
 
     @control_row.button(label="Clear")
     async def clear(self, interaction: Interaction, button: Button):
@@ -131,8 +140,7 @@ class BaseBulkSelector(Container):
         self.formatter.defaulted.clear()
         for option in self.select.options:
             option.default = False
-        await self.update_display()
-        await interaction.edit_original_response(view=self.view)
+        await self.refresh(interaction)
 
     @control_row.button(label="Confirm", style=discord.ButtonStyle.success)
     async def validate(self, interaction: Interaction, button: Button):

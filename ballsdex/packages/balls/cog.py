@@ -681,7 +681,12 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             interaction = view.interaction_response
         else:
             await interaction.response.defer()
-        await countryball.lock_for_trade()
+        if not await countryball.try_lock_for_trade():
+            await interaction.followup.send(
+                f"This {settings.collectible_name} is currently locked for a trade. Please try again later.",
+                ephemeral=True,
+            )
+            return
         new_player, _ = await Player.objects.aget_or_create(discord_id=user.id)
         old_player = countryball.player
 
