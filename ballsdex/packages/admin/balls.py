@@ -15,7 +15,7 @@ from django.urls import reverse
 from ballsdex.core.bot import BallsDexBot
 from ballsdex.core.utils import checks
 from ballsdex.core.utils.buttons import ConfirmChoiceView
-from bd_models.models import Ball, BallInstance, Player, Special, Trade, TradeObject, BallGroup
+from bd_models.models import Ball, BallGroup, BallInstance, Player, Special, Trade, TradeObject
 from settings.models import settings
 from settings.utils import format_currency
 

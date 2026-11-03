@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
+from asgiref.sync import sync_to_async
 from discord.ui import ActionRow, Button, Item, MediaGallery, TextDisplay, TextInput, button
 from django.utils import timezone
 
@@ -17,10 +18,19 @@ from ballsdex.core.hooks import CatchMessageContext, CatchRollContext, PreCatchC
 from ballsdex.core.metrics import caught_balls
 from ballsdex.core.utils.formatting import format_command_mentions
 from ballsdex.core.utils.utils import can_mention
-from bd_models.models import Ball, BallInstance, GuildConfig, Player, Special, Trade, TradeObject, balls, specials, BallGroup
+from bd_models.models import (
+    Ball,
+    BallGroup,
+    BallInstance,
+    GuildConfig,
+    Player,
+    Special,
+    Trade,
+    TradeObject,
+    balls,
+    specials,
+)
 from settings.models import PromptMessage, Settings, settings
-
-from asgiref.sync import sync_to_async
 
 if TYPE_CHECKING:
     from ballsdex.core.bot import BallsDexBot
@@ -228,7 +238,7 @@ class BallSpawnView(LayoutView):
             countryballs = await sync_to_async(list)(group.countryballs.filter(enabled=True))
         else:
             countryballs = list(filter(lambda m: m.enabled, balls.values()))
-        
+
         if not countryballs:
             raise RuntimeError("No ball to spawn")
         rarities = [x.rarity for x in countryballs]
