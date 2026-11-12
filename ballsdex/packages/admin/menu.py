@@ -4,8 +4,8 @@ from discord.utils import format_dt
 from django.db.models import QuerySet
 from django.urls import reverse
 
-from ballsdex.core.utils import menus
-from bd_models.models import BlacklistHistory, Player
+from knydex.core.utils import menus
+from kny_models.models import BlacklistHistory, Player
 from settings.models import settings
 
 
