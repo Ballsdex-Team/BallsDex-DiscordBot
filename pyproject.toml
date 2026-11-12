@@ -1,5 +1,5 @@
 [project]
-name = "ballsdex"
+name = "knydex"
 version = "3.2.0"
 description = "Customizable Discord bot to collect and trade countryballs."
 authors = [
@@ -77,13 +77,13 @@ telemetry-instrumentations = [
 ]
 
 [project.scripts]
-ballsdex = "ballsdex.__main__:main"
+ballsdex = "knydex.__main__:main"
 
 [tool.hatch.build.targets.sdist]
 exclude = ["result"]
 
 [tool.hatch.build.targets.wheel]
-only-include = ["ballsdex", "admin_panel"]
+only-include = ["knydex", "admin_panel"]
 sources = ["admin_panel"]
 
 [build-system]
@@ -113,7 +113,7 @@ exclude = ["admin_panel/admin_panel/settings/*"]
 
 [tool.ruff.lint.isort]
 # list all django modules
-known-first-party = ["ballsdex", "bd_models", "admin_panel", "preview", "settings", "users"]
+known-first-party = ["knydex", "kny_models", "admin_panel", "preview", "settings", "users"]
 split-on-trailing-comma = false
 
 [tool.pyright]
