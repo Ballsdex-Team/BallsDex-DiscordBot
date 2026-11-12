@@ -7,7 +7,7 @@
 [![Black coding style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![Patreon](https://img.shields.io/badge/Patreon-donate-orange.svg)](https://patreon.com/retke)
 
-BallsDex is a bot for collecting countryballs on Discord and exchange them with your friends!
+knydex is a bot for collecting kasugai(demon slayer) on Discord and exchange them with your friends!
 
 You can invite the official bot [here](https://discord.com/api/oauth2/authorize?client_id=999736048596816014&permissions=537193536&scope=bot%20applications.commands).
 
