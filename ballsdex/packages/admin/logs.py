@@ -1,13 +1,13 @@
 import discord
 from discord.ext import commands
 
-from ballsdex.core.bot import BallsDexBot
-from ballsdex.core.utils import checks
+from knydex.core.bot import knyDexBot
+from knysdex.core.utils import checks
 
 
 @commands.hybrid_group()
 @checks.has_permissions("admincmd.logs")
-async def logs(ctx: commands.Context[BallsDexBot]):
+async def logs(ctx: commands.Context[knyDexBot]):
     """
     Bot logs management
     """
@@ -16,7 +16,7 @@ async def logs(ctx: commands.Context[BallsDexBot]):
 
 @logs.command(name="catchlogs")
 @checks.has_permissions("admincmd.logs")
-async def logs_add(ctx: commands.Context[BallsDexBot], user: discord.User):
+async def logs_add(ctx: commands.Context[knyDexBot], user: discord.User):
     """
     Add or remove a user from catch logs.
 
@@ -35,7 +35,7 @@ async def logs_add(ctx: commands.Context[BallsDexBot], user: discord.User):
 
 @logs.command(name="commandlogs")
 @checks.has_permissions("admincmd.logs")
-async def commandlogs_add(ctx: commands.Context[BallsDexBot], user: discord.User):
+async def commandlogs_add(ctx: commands.Context[knyDexBot], user: discord.User):
     """
     Add or remove a user from command logs.
 
