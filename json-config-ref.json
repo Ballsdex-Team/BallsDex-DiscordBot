@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "title": "Ballsdex configuration",
-    "description": "Core settings for the Ballsdex Discord bot",
+    "title": "DemonSlayerdex configuration",
+    "description": "Core settings for the knydex Discord bot",
     "type": "object",
     "required": [
         "discord-token",
@@ -69,33 +69,33 @@
         "collectible-name": {
             "type": "string",
             "description": "The name of the collectible, used everywhere except command descriptions.",
-            "default": "countryball"
+            "default": "kasugai"
         },
         "max-favorites": {
             "type": "integer",
             "default": 50,
-            "description": "Maximum number of favorite countryballs allowed per player",
+            "description": "Maximum number of favorite kasugai allowed per player",
             "minimum": 0
         },
         "favorited-collectible-emoji": {
             "type": "string",
             "default": "❤️",
-            "description": "The emoji used to represent a favorited countryball"
+            "description": "The emoji used to represent a favorited kasugai"
         },
         "max-attack-bonus": {
             "type": "integer",
-            "description": "The biggest/smallest attack bonus that a spawned countryball can have.",
+            "description": "The biggest/smallest attack bonus that a spawned kasugai can have.",
             "default": 20
         },
         "max-health-bonus": {
             "type": "integer",
-            "description": "The biggest/smallest health bonus that a spawned countryball can have.",
+            "description": "The biggest/smallest health bonus that a spawned kasugai can have.",
             "default": 20
         },
         "plural-collectible-name": {
             "type": "string",
             "description": "The plural name of the collectible, used everywhere except command descriptions.",
-            "default": "countryballs"
+            "default": "kasugai"
         },
         "show-rarity": {
             "type": "boolean",
@@ -105,12 +105,12 @@
         "bot-name": {
             "type": "string",
             "description": "The name of the bot, used in places such as the /completion command",
-            "default": "BallsDex"
+            "default": "knydex"
         },
         "players-group-cog-name": {
             "type": "string",
             "description": "Name of the slash command managing the collectibles (list, info, completion...). Do not add a leading slash!",
-            "default": "balls"
+            "default": "kasugai"
         },
         "admin-command": {
             "type": "object",
@@ -223,7 +223,7 @@
         },
         "spawn-chance-range": {
             "type": "array",
-            "description": "Spawn chance range. Minimum and maximum values in minutes for the spawn manager to determine when the next countryball should spawn (before taking into account activity)",
+            "description": "Spawn chance range. Minimum and maximum values in minutes for the spawn manager to determine when the next kasugai should spawn (before taking into account activity)",
             "prefixItems": [
                 {
                     "type": "integer",
@@ -239,7 +239,7 @@
         "spawn-manager": {
             "$ref": "#/$defs/python-path",
             "description": "Override the default spawn manager with your own implementation. Must be an importable Python path to a SpawnManager class.",
-            "default": "ballsdex.packages.countryballs.spawn.SpawnManager"
+            "default": "knydex.packages.kasugai.spawn.SpawnManager"
         },
         "packages": {
             "type": "array",
@@ -311,19 +311,19 @@
         },
         "catch": {
             "type": "object",
-            "description": "Customize the messages sent when attempting to catch a countryball",
+            "description": "Customize the messages sent when attempting to catch a kasugai",
             "additionalProperties": false,
             "properties": {
                 "catch_button_label": {
                     "type": "string",
                     "description": "The label displayed on the catch button",
-                    "default": "Catch me!"
+                    "default": "Catch!"
                 },
                 "caught_msgs": {
                     "type": "array",
-                    "description": "A list of messages to use when a countryball is caught. ID and stats are appended to these.\n{user}: Mention of interacting user\n{collectible}: Collectible name\n{collectibles}: Plural collectible name",
+                    "description": "A list of messages to use when a kasugai is caught. ID and stats are appended to these.\n{user}: Mention of interacting user\n{collectible}: Collectible name\n{collectibles}: Plural collectible name",
                     "default": [
-                        "{user} You caught **{ball}**!"
+                        "{user} You caught **{kasugai}**!"
                     ],
                     "items": {
                         "type": "string"
@@ -351,7 +351,7 @@
                 },
                 "slow_msgs": {
                     "type": "array",
-                    "description": "A list of messages to use when a user attempted to catch a ball, but someone else caught it before.\n{user}: Mention of interacting user\n{collectible}: Collectible name\n{collectibles}: Plural collectible name",
+                    "description": "A list of messages to use when a user attempted to catch a kasugai, but someone else caught it before.\n{user}: Mention of interacting user\n{collectible}: Collectible name\n{collectibles}: Plural collectible name",
                     "default": [
                         "{user} Sorry, this {collectible} was caught already!"
                     ],
