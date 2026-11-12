@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
-site_name: Ballsdex Discord bot
+site_name: knydex Discord bot
 site_url: https://wiki.ballsdex.com
 repo_url: https://github.com/Ballsdex-Team/BallsDex-DiscordBot
 
