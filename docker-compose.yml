@@ -1,8 +1,8 @@
 x-common-env-vars:
   - &postgres-db
-    POSTGRES_DB=ballsdex
+    POSTGRES_DB=knydex
   - &postgres-user
-    POSTGRES_USER=ballsdex
+    POSTGRES_USER=knydex
   - &postgres-url
     "BALLSDEXBOT_DB_URL=postgres://ballsdex:${POSTGRES_PASSWORD}@postgres:5432/ballsdex"
   # if serving the admin panel online, copy the file "production.example.py" and set
@@ -15,7 +15,7 @@ x-common-env-vars:
 services:
   bot:
     restart: "no"
-    image: ballsdex
+    image: knydex
     build: .
     environment:
       - *postgres-url
@@ -35,17 +35,17 @@ services:
       - "./extra:/code/extra:ro"
       - "./admin_panel/media:/code/admin_panel/media:rw"
     tty: true
-    command: python3 -m ballsdex --dev
+    command: python3 -m knydex --dev
 
     develop:
       watch:
-        - path: ./ballsdex/packages
+        - path: ./knydex/packages
           target: /opt/venv/lib/python3.14/site-packages/ballsdex/packages
           initial_sync: true
           action: sync
           ignore:
             - "*.pyc"
-        - path: ./ballsdex
+        - path: ./knydex
           target: /opt/venv/lib/python3.14/site-packages/ballsdex
           initial_sync: true
           action: sync+restart
@@ -61,7 +61,7 @@ services:
           action: rebuild
 
   admin-panel:
-    image: ballsdex
+    image: knydex
     build: .
     hostname: admin-panel
     networks:
@@ -101,7 +101,7 @@ services:
           action: rebuild
 
   migration:
-    image: ballsdex
+    image: knydex
     build: .
     networks:
       - internal
