@@ -40,7 +40,7 @@ def main(toml_file: str):
     except FileNotFoundError:
         warn("No extra.toml file found.")
         return
-    packages: list[Package] = contents.get("ballsdex", {}).get("packages", [])
+    packages: list[Package] = contents.get("knydex", {}).get("packages", [])
     list_pip_packages(packages)
 
 
