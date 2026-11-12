@@ -3,7 +3,7 @@ admin_panel/static
 pgbackups
 config.yml
 .env
-ballsdex.log*
+knydex.log*
 venv
 .venv
 .python-version
