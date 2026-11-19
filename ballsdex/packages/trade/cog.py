@@ -328,9 +328,9 @@ class Trade(commands.GroupCog):
             view = HistoryView(self.bot, trade)
             await view.initialize(
                 trade.player1,
-                await self.fetch_user(trade.player1.discord_id),
+                await self.fetch_user(trade.player1.discord_id) if trade.player1 else None,
                 trade.player2,
-                await self.fetch_user(trade.player2.discord_id),
+                await self.fetch_user(trade.player2.discord_id) if trade.player2 else None,
             )
             await interaction.followup.send(view=view, ephemeral=True)
 

@@ -60,6 +60,8 @@ class BallInstanceGuildTabular(InlinePaginated, NonrelatedInlineMixin, admin.Tab
 
     @admin.display(description="Player")
     def player(self, obj: BallInstance):
+        if obj.player is None:
+            return "-"
         opts = obj.player._meta
         admin_url = reverse(
             "%s:%s_%s_change" % (self.admin_site.name, opts.app_label, opts.model_name), None, (quote(obj.player.pk),)
