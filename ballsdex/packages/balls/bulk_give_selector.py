@@ -11,7 +11,14 @@ from bd_models.enums import DonationPolicy
 from bd_models.models import BallInstance, Player, Trade, TradeObject
 from settings.models import settings
 
-from .donation import BulkDonationRequest, add_view_all_button, check_giveable, check_recipient, dispatch_ball_given
+from .donation import (
+    BulkDonationRequest,
+    GiveSkipReason,
+    add_view_all_button,
+    check_giveable,
+    check_recipient,
+    dispatch_ball_given,
+)
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -34,6 +41,7 @@ class BulkGiveSelector(BaseBulkSelector):
         self.target_user = user
         self.new_player = new_player
         self.old_player = old_player
+        self.processing = False
         await super().configure(
             bot,
             queryset,
@@ -56,9 +64,21 @@ class BulkGiveSelector(BaseBulkSelector):
                 pass
 
     async def on_confirm(self, interaction: Interaction, selected_ids: set[int]):
-        balls = [
-            ball async for ball in BallInstance.objects.filter(id__in=selected_ids).select_related("ball", "special")
-        ]
+        # a quick double click dispatches this twice concurrently, only let the first one through
+        if self.processing:
+            await interaction.response.send_message("This donation is already being processed.", ephemeral=True)
+            return
+        self.processing = True
+        try:
+            await self._give(interaction, selected_ids)
+        finally:
+            # once finalized, the view stays locked so late clicks can't give again
+            if self.view and not self.view.is_finished():
+                self.processing = False
+
+    async def _give(self, interaction: Interaction, selected_ids: set[int]):
+        query = BallInstance.objects.filter(id__in=selected_ids, player=self.old_player)
+        balls = [ball async for ball in query.select_related("ball", "special")]
 
         valid: list[BallInstance] = []
         skipped: list = []
@@ -71,7 +91,8 @@ class BulkGiveSelector(BaseBulkSelector):
 
         if not valid:
             await interaction.response.send_message(
-                f"Nothing was given, all {len(balls)} selected {settings.plural_collectible_name} are no longer valid.",
+                f"Nothing was given, all {len(selected_ids)} selected {settings.plural_collectible_name} "
+                "are no longer valid.",
                 ephemeral=True,
             )
             return
@@ -104,8 +125,19 @@ class BulkGiveSelector(BaseBulkSelector):
             await interaction.followup.send(error, ephemeral=True)
             return
 
+        locked: list[BallInstance] = []
         for ball in valid:
-            await ball.lock_for_trade()
+            if await ball.try_lock_for_trade():
+                locked.append(ball)
+            else:
+                skipped.append(GiveSkipReason.LOCKED)
+        valid = locked
+        if not valid:
+            await interaction.followup.send(
+                f"Nothing was given, all selected {settings.plural_collectible_name} are no longer valid.",
+                ephemeral=True,
+            )
+            return
 
         skip_txt = ""
         if skipped:
