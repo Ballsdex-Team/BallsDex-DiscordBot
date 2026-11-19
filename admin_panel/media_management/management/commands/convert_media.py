@@ -14,7 +14,7 @@ CONVERTABLE_FORMATS = [".jpeg", ".png", ".jpg", ".bmp", ".gif", ".webp", ".avif"
 
 
 class Command(BaseCommand):
-    help = "Convert media files to webp for smaller size"
+    help = "Convert media files to webp for smaller size. Deduplicate first!"
 
     def add_arguments(self, parser):
         parser.add_argument(

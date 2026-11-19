@@ -21,8 +21,10 @@ def all_media() -> list[tuple[models.Model, Path, str]]:
     for model_type, media_attrs in media_types.items():
         for model_instance in model_type.objects.all():
             for media_attr in media_attrs:
-                path = Path(getattr(model_instance, media_attr).path)
-                medias.append((model_instance, path, media_attr))
+                field = getattr(model_instance, media_attr)
+                if not field:
+                    continue
+                medias.append((model_instance, Path(field.path), media_attr))
 
     return medias
 
