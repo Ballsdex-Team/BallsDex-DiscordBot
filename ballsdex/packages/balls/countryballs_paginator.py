@@ -117,7 +117,7 @@ class CountryballsDuplicateSource(LayoutView):
         embed = discord.Embed(title=f"{name} Collection", description=desc, color=discord.Color.blurple())
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         if countryball:
-            file_location = countryball.wild_card.path
+            file_location = countryball.cached_wild_card.file.path
             file = discord.File(file_location, filename="countryball.png")
             embed.set_thumbnail(url="attachment://countryball.png")
             await interaction.followup.send(embed=embed, file=file)
