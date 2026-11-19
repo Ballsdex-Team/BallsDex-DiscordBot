@@ -55,7 +55,7 @@ COPY --parents bdextra.py config/extra.toml extra /code/
 RUN --mount=type=cache,target=/root/.cache/ \
     if [ -f config/extra.toml ]; then uv pip install --reinstall $(python3 bdextra.py config/extra.toml); fi
 
-FROM nginx:1.29.3-alpine3.22 AS proxy
+FROM nginx:1.30.7-alpine3.24 AS proxy
 COPY --from=builder-base /var/www/ballsdex/static /var/www/ballsdex/static
 
 FROM base AS production
