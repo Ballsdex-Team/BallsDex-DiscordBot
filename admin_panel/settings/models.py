@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from bd_models.models import Ball
 
 COLON_IDS_RE = re.compile(r"^(\d{17,21}(;\d{17,21})*)?$")
-SLASH_COMMAND_RE = re.compile(r"^[-_'\S]{1,32}$")
+SLASH_COMMAND_RE = re.compile(r"^[a-z0-9_-]{1,32}$")
 DISCORD_INVITE_RE = re.compile(r"^https?://(discord.gg|discord(app)?.com/invite)/[a-zA-Z0-9]+$")
 DISCORD_WEBHOOK_RE = re.compile(r"^https://discord.com/api/webhooks/[0-9]{17,22}/[a-zA-Z0-9-_]{68}$")
 SENTRY_ENV_RE = re.compile(r"^(?!None$)[^\s/]{,64}$")
@@ -59,6 +59,7 @@ class Settings(models.Model):
         default=None,
         help_text="Name of your currency. Warning: currency is disabled until you set this value. "
         "The core bot does not yet come with user-facing commands to manage currency.",
+        validators=(RegexValidator(SLASH_COMMAND_RE, message="Invalid slash command name"),),
     )
     currency_plural_name = models.CharField(
         max_length=32, null=True, blank=True, default=None, help_text="Plural name of your currency."
@@ -284,7 +285,7 @@ class Settings(models.Model):
                 collectibles=self.plural_collectible_name,
                 **{k: str(v) for k, v in kwargs.items()},
             )
-        except (ValueError, IndexError, KeyError):
+        except ValueError, IndexError, KeyError:
             return message
 
     @cached_property
@@ -314,7 +315,7 @@ class Settings(models.Model):
             return tip.format(
                 collectible=self.collectible_name, collectibles=self.plural_collectible_name, bot=self.bot_name
             )
-        except (ValueError, IndexError, KeyError):
+        except ValueError, IndexError, KeyError:
             return tip
 
     @property
