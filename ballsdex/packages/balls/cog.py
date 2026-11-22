@@ -1174,7 +1174,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             .exclude(special__hidden=True)
             .values("special__name")
             .annotate(count=Count("special__name"))
-            .order_by("-count")
+            .order_by("-count", "special__name")
         )
 
         try:
