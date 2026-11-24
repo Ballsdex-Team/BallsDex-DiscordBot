@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 import discord
 from asgiref.sync import sync_to_async
 from discord.ext import commands
+from collections import defaultdict
 from django.core.exceptions import SuspiciousFileOperation
 from django.db import connection
 
@@ -13,7 +14,7 @@ from ballsdex.core.dev import send_interactive
 from ballsdex.core.discord import LayoutView, View
 from ballsdex.core.utils.formatting import pagify
 from ballsdex.core.utils.menus import Menu, TextFormatter, TextSource
-from bd_models.models import Ball
+from bd_models.models import Ball, BallGroup, Economy, Regime
 from settings.models import load_settings, settings
 
 log = logging.getLogger("ballsdex.core.commands")
@@ -289,3 +290,39 @@ class Core(commands.Cog):
         menu = Menu(self.bot, view, TextSource(text, prefix="```ansi\n", suffix="```"), TextFormatter(text_display))
         await menu.init()
         await ctx.send(view=view)
+
+    async def _sync_groups(self, ctx: commands.Context, model: type[Regime] | type[Economy], field: str, label: str):
+        ids_by_name: dict[str, set[int]] = defaultdict(set)
+        async for obj in model.objects.all():
+            async for pk in Ball.objects.filter(**{field: obj}).values_list("pk", flat=True):
+                ids_by_name[obj.name].add(pk)
+            ids_by_name[obj.name]
+
+        created = updated = 0
+        for name, ball_ids in ids_by_name.items():
+            group, was_created = await BallGroup.objects.aget_or_create(name=name)
+            await group.countryballs.aset(list(ball_ids))
+            if was_created:
+                created += 1
+            else:
+                updated += 1
+        
+        await self.bot.load_cache()
+        await ctx.send(f"{label}: created {created} group(s), updated {updated} existing group(s). "
+                       "The cache has been reloaded.")
+
+    @commands.command()
+    @commands.is_owner()
+    async def regimestogroups(self, ctx: commands.Context):
+        """
+        Creates groups corresponding to each existing regime.
+        """
+        await self._sync_groups(ctx, Regime, "regime", "Regimes")
+
+    @commands.command()
+    @commands.is_owner()
+    async def economiestogroups(self, ctx: commands.Context):
+        """
+        Creates groups corresponding to each existing economy.
+        """
+        await self._sync_groups(ctx, Economy, "economy", "Economies")
